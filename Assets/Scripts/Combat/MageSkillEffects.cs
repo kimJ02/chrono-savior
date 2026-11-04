@@ -1,3 +1,4 @@
+using System.Linq;
 using UnityEngine;
 using ChronoSavior.Core;
 
@@ -98,7 +99,7 @@ namespace ChronoSavior.Combat
         /// 원본은 중력점이 없으면 정면(가장 가까운 적)에 한 번 터뜨리지만(아래 <see cref="GravityCollapse"/>의 대체 지점), 우리 게임은
         /// 중력점이 없으면 X가 안 나간다(쿨다운도 안 쓴다, `MageAttack.TryUseSkill`) — 의도적 편차.
         /// </summary>
-        public static bool AnyWellInCollapseRange(Vector2 playerPos) => GravityWellZone.Active.Exists(w => InCollapseRange(w, playerPos));
+        public static bool AnyWellInCollapseRange(Vector2 playerPos) => GravityWellZone.Active.Any(w => InCollapseRange(w, playerPos));
 
         static bool InCollapseRange(GravityWellZone w, Vector2 playerPos) =>
             w != null &&
@@ -115,7 +116,7 @@ namespace ChronoSavior.Combat
 
         public static (int count, bool critical, int bursts) GravityCollapse(int tier, Vector2 playerPos, int playerFacing, Vector2? nearestEnemyPos)
         {
-            var wells = GravityWellZone.Active.FindAll(w => InCollapseRange(w, playerPos));
+            var wells = GravityWellZone.Active.Where(w => InCollapseRange(w, playerPos)).ToList();
             wells.Sort((a, b) => b.Stack != a.Stack ? b.Stack - a.Stack : a.Age.CompareTo(b.Age));
 
             var centers = new System.Collections.Generic.List<(Vector2 pos, int stack, GravityWellZone well)>();
@@ -200,11 +201,7 @@ namespace ChronoSavior.Combat
                     GravityBurstRing.Spawn(cx, r2, MageSpecConfig.CollapseCriticalRingLife, critical: true, ringOnly: true);
                 }
 
-                if (well != null)
-                {
-                    GravityWellZone.Active.Remove(well);
-                    Object.Destroy(well.gameObject);
-                }
+                if (well != null) well.Vanish();
             }
 
             // 원본 shake(5, 0.16)·임계 shake(9, 0.24)(:2128)는 거의 안 느껴져서 키웠다 — 2026-10-28 사용자 "블랙홀 X 눌렀을 때 화면 흔들림 넣어줘".

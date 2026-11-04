@@ -13,10 +13,16 @@ namespace ChronoSavior.Combat
     /// (2) X 스킬 대붕괴(`MageSkillEffects.GravityCollapse`)가 터뜨릴 대상 목록을 얻을 때.
     /// `ProfileService`와 같은 정적 상태라 테스트 간 오염을 막으려면 <see cref="ClearAllForTests"/>를
     /// 반드시 `[TearDown]`에서 불러야 한다.
+    ///
+    /// 목록은 **밖에선 읽기만** 한다(2026-11-05, `HANDOFF.md` "연결 규칙" 3) — 넣고 빼는 건 이 클래스 안(생성·수명 끝·개수 상한)과
+    /// <see cref="Vanish"/>뿐이다. 예전엔 공개 가변 `List`라 대붕괴가 목록을 직접 고쳤다.
     /// </summary>
     public class GravityWellZone : MonoBehaviour
     {
-        public static readonly List<GravityWellZone> Active = new List<GravityWellZone>();
+        static readonly List<GravityWellZone> active = new List<GravityWellZone>();
+
+        /// <summary>살아 있는 중력점들(읽기 전용).</summary>
+        public static IReadOnlyList<GravityWellZone> Active => active;
 
         public int Tier { get; private set; }
         public int Stack { get; private set; }
@@ -33,9 +39,9 @@ namespace ChronoSavior.Combat
 
         public static void ClearAllForTests()
         {
-            for (int i = Active.Count - 1; i >= 0; i--)
-                if (Active[i] != null) Destroy(Active[i].gameObject);
-            Active.Clear();
+            for (int i = active.Count - 1; i >= 0; i--)
+                if (active[i] != null) Destroy(active[i].gameObject);
+            active.Clear();
         }
 
         public static GravityWellZone SpawnOrMerge(Vector2 pos, int tier, float chargeK)
@@ -51,7 +57,7 @@ namespace ChronoSavior.Combat
             // 원본: 2티어부터만 "근처 기존 중력점에 중첩"이 가능하다(project_test.html:2050).
             if (tier >= 2)
             {
-                foreach (var well in Active)
+                foreach (var well in active)
                 {
                     if (well == null) continue;
                     float mergeR = MageSpecConfig.GravityWellMergeRadiusBase + well.Stack * MageSpecConfig.GravityWellMergeRadiusPerStack;
@@ -69,19 +75,15 @@ namespace ChronoSavior.Combat
             }
 
             int limit = MageSpecConfig.GravityWellLimit(tier);
-            if (Active.Count >= limit)
+            if (active.Count >= limit)
             {
                 GravityWellZone oldest = null;
                 float oldestAge = -1f;
-                foreach (var w in Active)
+                foreach (var w in active)
                 {
                     if (w != null && w.Age > oldestAge) { oldestAge = w.Age; oldest = w; }
                 }
-                if (oldest != null)
-                {
-                    Active.Remove(oldest);
-                    Destroy(oldest.gameObject);
-                }
+                if (oldest != null) oldest.Vanish();
             }
 
             var go = new GameObject("GravityWellZone");
@@ -95,7 +97,7 @@ namespace ChronoSavior.Combat
             zone.Radius = MageSpecConfig.GravityWellRadius(tier, stackGain, chargeK);
             zone.Pull = MageSpecConfig.GravityWellPull(tier, stackGain, chargeK);
             zone.SetupRing();
-            Active.Add(zone);
+            active.Add(zone);
             return zone;
         }
 
@@ -112,7 +114,17 @@ namespace ChronoSavior.Combat
             if (vortex != null) vortex.SetRadius(Radius);
         }
 
-        void OnDestroy() => Active.Remove(this);
+        /// <summary>
+        /// 지금 바로 없앤다 — 목록에서 **즉시** 빼고 오브젝트를 지운다. `Destroy`는 프레임 끝에 일어나서, 같은 프레임 안의 다음 검색
+        /// (대붕괴가 연달아 찾기, 새 중력탄의 중첩 검색)이 사라질 중력점을 또 찾지 않게 먼저 뺀다. 수명 끝·개수 상한·대붕괴가 쓴다.
+        /// </summary>
+        public void Vanish()
+        {
+            active.Remove(this);
+            Destroy(gameObject);
+        }
+
+        void OnDestroy() => active.Remove(this);
 
         void Update()
         {
@@ -165,11 +177,7 @@ namespace ChronoSavior.Combat
                 }
             }
 
-            if (Age >= life)
-            {
-                Active.Remove(this);
-                Destroy(gameObject);
-            }
+            if (Age >= life) Vanish();
         }
     }
 }

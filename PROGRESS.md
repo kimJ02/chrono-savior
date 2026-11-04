@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (13)** — **[나] 2b-1: 중력점 목록 읽기 전용 (`feature/world-links`, PlayMode 437/437).** `GravityWellZone.Active`(공개 가변 `List`) → `IReadOnlyList`,
+  없애기는 `Vanish()`(목록에서 즉시 빼고 Destroy — 대붕괴가 목록을 직접 고치던 두 줄, 수명 끝, 개수 상한이 같이 씀). 이름을 `Collapse`로 하지 않은 건 스킬 '대붕괴'와 헷갈려서.
+  `Combat/GravityWellZoneTests`(즉시 빠짐, 밖에 가변 List로 안 열림).
 - **2026-11-05 (12)** — **[나] 2b 계획 합의(문서만).** 사용자 "2b 진행 방식 Codex랑 상의". 코드 전수(런타임 탐색 14곳)를 보고 짠 안 → Codex '수정 후 착수'.
   `WorldView`를 값 복사 루프 대신 **읽기 계약 창구**(Director·LobbyWorld가 꽂고, 화면은 물을 때 읽음)로 바꾸자는 Claude 제안을 Codex가 받음. Codex 보완: 미니맵은 스포너 목록이 아니라
   살아 있는 적 전부(지금 동작 유지 — `EnemyHealth` 활성 목록), 실행 중 생기는 몹·구슬도 스포너가 Player를 넣는다(태그 예외를 안 둠), 다른 씬 카메라는 `CameraFollow2D` 등록. `HANDOFF.md` "2b 연결".

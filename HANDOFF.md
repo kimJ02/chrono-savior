@@ -144,7 +144,7 @@
    (스포너·스테이지 선택이 같이 봄), 캐릭터 그림은 `Core/CharacterArtSet` 에셋(그림·색만). **정한 것**: 스테이지 선택 카드 목록은 스폰표 복사본이 아니라 표시 정책(칸 5개)으로 두고
    테스트로 묶는다 / 캐릭터 정의 SO(이름·해금)는 해금 조건이 생길 때 / 보스 정의 SO는 안 만든다(그림 하나뿐) / 그림 도구 둘은 같은 에셋을 고친다.
    **2b 연결**(2026-11-05 Codex와 계획 합의 — 커밋 순서대로):
-   1. `GravityWellZone.Active` → `IReadOnlyList`, 대붕괴로 즉시 없애기는 `Collapse()`(지금 `MageSkillEffects`가 목록을 직접 지운다).
+   1. `GravityWellZone.Active` → `IReadOnlyList`, 없애기는 `Vanish()`(목록에서 즉시 빼고 Destroy)(지금 `MageSkillEffects`가 목록을 직접 지운다).
    2. **같은 씬은 직렬화, 실행 중 생기는 것은 만드는 쪽이 넘긴다**: `StageVisuals`(Ground·발판 2·포털)·`BossPortal`(Player)·`LobbyWorld`(Player)·`LobbyHud`(같은 씬 카메라)
       → `[SerializeField]`. 경험치 구슬·몹(`EnemyMove`)은 **스포너가 생성 때 Player를 넣는다**(태그 탐색 제거 — 예외를 두면 같은 규칙이 두 갈래가 된다, 테스트 13파일은 대상을 직접 넣게).
       다른 씬의 카메라(`StageVisuals`의 `Camera.main`)는 `CameraFollow2D`가 자기 카메라를 등록해 `CurrentCamera`로.
