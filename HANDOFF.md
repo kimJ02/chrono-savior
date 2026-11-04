@@ -101,6 +101,10 @@
    `Systems`의 읽기 전용 값 묶음 `WorldView`만 읽는다. 값을 채우는 건 그 월드의 담당 — 전투는 `CombatDirector`(같은 씬 참조와 `EnemySpawner`가 이미
    들고 있는 목록으로 — 탐색이 Director로 옮겨가지 않는다), 로비는 `LobbyWorld`. 상태가 바뀔 때나 HUD 갱신 주기(미니맵 0.15초)에만 채우고 매 프레임 복사하지 않는다.
    - 왜 '등록 목록을 UI가 직접 읽기'가 아닌가: 그러면 UI가 전투 구현 타입에 묶인다(Claude 대안을 Codex가 반대, Claude도 동의).
+   - **값과 읽기 계약을 섞는다(2026-11-05 실행 계획 검토)**: HUD는 플레이어 HP·스킬 칸·버프 줄도 읽는데 이것까지 값으로 복사하면 복사 코드가 커지고
+     이미 있는 HUD용 계약(`ISkillSlotSource`)이 무의미해진다. 그래서 체력·스킬은 **읽기 전용 인터페이스**(`IHealthView`(새로, Core)·`ISkillSlotSource`)로,
+     포털·위치·미니맵 적 좌표는 **값**으로(적 좌표는 0.15초마다 `EnemySpawner`의 기존 목록으로 — `EnemyHealth.Active` 같은 중복 목록은 만들지 않는다).
+     게시 메서드는 공개지만 부르는 곳은 `CombatDirector`·`LobbyWorld`뿐(`internal`은 UI asmdef인 LobbyWorld가 못 부른다). 월드가 내려가면 인터페이스 참조까지 비운다.
 3. **월드 안의 정적 등록 목록은 소유자 내부용**(`GunnerDrone`·`GunnerTurret`·`GravityWellZone`·`RunTransient`·`PlatformSet`·`PxScreen`). 이름을 한꺼번에 바꾸지 않는다.
    단 **밖에 공개된 가변 목록은 읽기 전용으로**(`GravityWellZone.Active`가 public 가변 `List`). 새로 만들거나 고치는 등록 API는 목록 `Active`(`IReadOnlyList`)·
    하나 `Current`로 이름을 맞춘다.
@@ -115,18 +119,28 @@
   Director는 줄 수만 보고 더 쪼개지 않는다(타격감 처리도 전투 이벤트라 Director에 둔다).
 - 씬 3개(00/10/20)는 수명과 역할이 달라서 이 규모에서도 과하지 않다.
 
-## 씬 분할 2차 — 할 일 (순서 = 커밋 단위, 2026-11-05 Codex와 합의)
+## 씬 분할 2차 — 할 일 (순서 = 커밋 단위, 2026-11-05 Codex와 실행 계획 합의)
 
-1. **`CombatDirector` 추출 — 코드만, 씬은 `20_Combat`에 컴포넌트 하나 추가.** 1회차 분배표대로 GameFlow에서 전투 책임을 떼고, GameFlow 주석을 새 역할로.
-   위 소유권 표의 쓰기 위치를 이때 맞춘다(`RunState.Tick`·`EnterBossField`, `CombatModifiers`, `RunTransient.DestroyAll`). 이벤트 구독·해제 대칭 테스트.
-   `ProfileService.Current` 읽기 전용 + `GameFlow.StartNewExpedition()`도 여기서.
-2. **로비가 전투 월드에 기대는 것 끊기 — 코드·데이터.** 캐릭터 선택은 프로필만(`PlayerRig` 탐색 제거), 스테이지 선택 그림은 `EnemyData`·보스 정의로,
-   `CharacterArtSet` SO, `WorldView` 도입(보스·포털·미니맵·로비 근접 — 위 연결 규칙 2), 같은 씬 탐색을 직렬화 참조로(규칙 1), `GravityWellZone.Active` 읽기 전용(규칙 3). 로비 카메라는 플레이어 대신 **가운데 앵커를 등록**하고
-   `CameraFollow2D`의 `GameState.Lobby` 특례를 없앤다. `LobbyWorld`는 UI 기능(`Px`·`PxArt`)을 써서 World로 못 옮긴다 → `UI/Lobby/`로 자리만 분명히.
-3. **`10_Lobby` 분리 + 씬 전환** — 로비 아바타·StageVisuals 로비 배치·전환(잠금·실패 복구·이전 월드 정지·재도전 재로드)·
-   에디터 Play에서 열려 있던 씬으로 진입(`SessionState`). StageVisuals 배경이 카메라·이전 씬에 남거나 겹치지 않는지 테스트.
-4. **마감** — UI 월드 탐색 잔여분 전수(소스 훑기 테스트로 0곳), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만.
-   테스트: 왕복·재도전·중복 없음·히트스톱 만료 timeScale·로드 실패·연속 전환.
+진행 방식: 단계마다 feature 브랜치 → 구현 → verify 폴더에서 배치 컴파일·씬 구성 검증·PlayMode 전체 → diff 발췌로 Codex 구현 리뷰 → 고침 → 사용자 확인 후 `main`.
+
+0. **세이브 교체 경계** — `ProfileService.Current`를 읽기 전용 프로퍼티로, 통째 교체 `Replace(PlayerProfile)`는 `SaveService`만. '새 원정'은
+   `GameFlow.StartNewExpedition()`이 흐름을 맡고 `SaveService`의 새 프로필 기능을 부른다(`TitleMenu`의 직접 `Reset()` 제거). 프로필 안쪽 필드 111곳은 손대지 않는다.
+1. **`CombatDirector` 추출(코드 + `20_Combat`에 오브젝트 하나)**
+   - 연결: **`GameFlow` → Director는 명시 호출**(Director가 `CombatDirector.Current`로 등록, `BeginField(mode)`·`ClearField()`), **Director → `GameFlow`는 이벤트**
+     (`RunEvents.RunEndRequested(RunEndReason)` 추가 — 새 버스를 만들지 않는다. 히트스톱은 기존 `CombatEvents.RequestHitstop`). 한 방향만 직접 안다.
+   - Director: `RunState.Tick`·`CombatModifiers.Tick`·`HitFeel.TickRedFlash`, 보스 격파 지연(멈춘 시간 1.6초, 그동안 Tick 안 함)→종료 요청, 사망·타임아웃→종료 요청,
+     처치 연출(`KillFeel` 이동)·간격 둔 흔들림·성소 버프, 보스 포털 요청(해금 확인 포함)→`EnterBossField`, 필드 정리(발판 세트·`RunTransient.DestroyAll`·
+     `CombatModifiers.ResetForRun`·`HitFeel.Reset`·플레이어 리셋 — Player는 같은 씬 직렬화 참조).
+   - `GameFlow`에 남음: ESC, `GameState.Set`, timeScale, 히트스톱 만료·쉬는 시간, `StartRun`(날짜 차감·`RunState.Begin` → Director.BeginField → Run → timeScale 1)·
+     `Pause`·`Resume`·`EndRun`(`MarkOver`·`LastEndReason`)·`EnterLobby`·`EnterTitle`(Director.ClearField — 3단계 뒤엔 전투 씬이 내려가 필요 없어짐)·`StartNewExpedition`. 옛 주석 갱신.
+   - 테스트: GameFlow를 만들던 9파일은 Director도 만드는 공용 헬퍼로. 테스트는 공개 API를 넓히지 말고 `CombatEvents` 경로로. 새로: 구독·해제 대칭, Director 없을 때 GameFlow 안전, 보스 격파 지연 중 타임아웃 안 됨.
+2. **2a 데이터** — 캐릭터 선택은 프로필만(`PlayerRig` 탐색 제거), 스테이지 선택 그림은 `EnemyData`·보스 정의로, `CharacterArtSet` SO.
+   **2b 연결** — `WorldView`(위 연결 규칙 2), 같은 씬 탐색 → 직렬화 참조(`StageVisuals`·`BossPortal`·`ExpOrb`의 Player 찾기 등), `GravityWellZone.Active` 읽기 전용,
+   로비 카메라는 가운데 앵커가 등록하고 `CameraFollow2D`의 `GameState.Lobby` 특례 제거. `LobbyWorld`는 `UI/Lobby/`로.
+3. **`10_Lobby` + 씬 전환** — `GameBoot`는 세이브 로드와 처음 부팅만, **타이틀에선 월드를 띄우지 않는다**(지금은 GameBoot가 20_Combat를 곧바로 로드). 이후 씬 흐름은 `GameFlow`:
+   `StartRun`이 20_Combat를 겹쳐 로드 → 활성 씬 → Director 등록 확인 → BeginField → Run, `EnterLobby`는 10_Lobby 로드 → 활성 → Lobby → 20_Combat 언로드, 재도전은 언로드 후 재로드.
+   '전환 중' 잠금·실패 복구·이전 월드 비활성. 에디터에서 열어 둔 씬으로 진입(`SessionState`)은 `GameFlow`가 소비하고, 20_Combat로 바로 들어올 때의 초기 상태를 명시한다.
+4. **마감** — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
 

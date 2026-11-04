@@ -219,6 +219,10 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (3)** — **[나] 씬 분할 2차 실행 계획 합의(문서만).** 사용자 "2차를 어떻게 진행할지, 지금 방식이 맞는지 Codex와 상의". GameFlow 실제 코드를 읽고 짠
+  구체안 → Codex '수정 후 착수'. 정한 것: 단계 0(세이브 교체 경계)을 앞에 떼기, GameFlow→Director는 명시 호출·Director→GameFlow는 `RunEvents.RunEndRequested`,
+  보스 격파 지연은 Director, 2단계를 2a(데이터)/2b(연결)로, 타이틀에선 월드를 안 띄움. **지난 합의 수정**: `WorldView`는 값만이 아니라 체력·스킬 칸은 읽기 계약
+  (`IHealthView`·`ISkillSlotSource`), 위치·미니맵은 값 — HUD가 HP·스킬 칸·버프 줄도 읽는다는 걸 실제 코드에서 확인해서. `HANDOFF.md` "씬 분할 2차".
 - **2026-11-05 (2)** — **[나] 구조 재검토 — 연결 규칙 확정(문서만).** 사용자 "정말 깔끔한 구조인지 다시 한번 확인". Claude가 'UI도 등록 목록을 직접 읽자(이미 9곳이 쓰는 패턴)'를
   제안했고 Codex가 'UI가 전투 구현 타입에 묶인다'고 반대 → `WorldView` 유지로 결론(Claude 동의). 대신 Claude 지적 3개 반영: 같은 씬 안은 직렬화 참조(탐색 금지),
   `WorldView`는 Director가 같은 씬 참조·스포너 목록으로 채워 탐색이 옮겨가지 않게, 공개된 가변 목록(`GravityWellZone.Active`)은 읽기 전용. `HANDOFF.md` "연결 규칙"·"경계".
