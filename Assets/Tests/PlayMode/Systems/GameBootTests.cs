@@ -147,6 +147,16 @@ public class GameBootTests
         Assert.AreEqual(1, cam.GetComponents<Component>().Count(c => c != null && c.GetType() == ppc.GetType()), "PPC가 둘 붙지 않는다");
     }
 
+    /// <summary>전투 담당은 전투 씬에 하나, 같은 씬의 Player를 직렬화로 가리킨다 — 흐름(상주 씬)은 등록(`Current`)으로 찾는다(2026-11-05).</summary>
+    [Test]
+    public void CombatDirector_LivesInTheWorld_AndPointsAtThePlayer()
+    {
+        var director = InScene<CombatDirector>(GameBoot.WorldScene).Single();
+        Assert.AreSame(director, CombatDirector.Current, "전투 씬이 뜨면 담당이 등록된다");
+        Assert.AreSame(InScene<PlayerRig>(GameBoot.WorldScene).Single().gameObject, director.Player);
+        Assert.IsEmpty(InScene<CombatDirector>(PersistentScene), "상주 씬엔 없다");
+    }
+
     /// <summary>잔상·섬영 베기 효과는 씬의 Player에 하나씩 붙어 있다(2026-11-05 — 예전엔 `PlayerRig.Awake`가 붙였다).</summary>
     [Test]
     public void Player_HasItsEffects_FromTheScene()

@@ -125,7 +125,7 @@
 
 0. **세이브 교체 경계** — `ProfileService.Current`를 읽기 전용 프로퍼티로, 통째 교체 `Replace(PlayerProfile)`는 `SaveService`만. '새 원정'은
    `GameFlow.StartNewExpedition()`이 흐름을 맡고 `SaveService`의 새 프로필 기능을 부른다(`TitleMenu`의 직접 `Reset()` 제거). 프로필 안쪽 필드 111곳은 손대지 않는다.
-1. **`CombatDirector` 추출(코드 + `20_Combat`에 오브젝트 하나)**
+1. ✅ **`CombatDirector` 추출(코드 + `20_Combat`에 오브젝트 하나)** — 2026-11-05, 로그 11-05 (6)
    - 연결: **`GameFlow` → Director는 명시 호출**(Director가 `CombatDirector.Current`로 등록, `BeginField(mode)`·`ClearField()`), **Director → `GameFlow`는 이벤트**
      (`RunEvents.RunEndRequested(RunEndReason)` 추가 — 새 버스를 만들지 않는다. 히트스톱은 기존 `CombatEvents.RequestHitstop`). 한 방향만 직접 안다.
    - Director: `RunState.Tick`·`CombatModifiers.Tick`·`HitFeel.TickRedFlash`, 보스 격파 지연(멈춘 시간 1.6초, 그동안 Tick 안 함)→종료 요청, 사망·타임아웃→종료 요청,
@@ -139,7 +139,7 @@
    로비 카메라는 가운데 앵커가 등록하고 `CameraFollow2D`의 `GameState.Lobby` 특례 제거. `LobbyWorld`는 `UI/Lobby/`로.
 3. **`10_Lobby` + 씬 전환** — `GameBoot`는 세이브 로드와 처음 부팅만, **타이틀에선 월드를 띄우지 않는다**(지금은 GameBoot가 20_Combat를 곧바로 로드). 이후 씬 흐름은 `GameFlow`:
    `StartRun`이 20_Combat를 겹쳐 로드 → 활성 씬 → Director 등록 확인 → BeginField → Run, `EnterLobby`는 10_Lobby 로드 → 활성 → Lobby → 20_Combat 언로드, 재도전은 언로드 후 재로드.
-   '전환 중' 잠금·실패 복구·이전 월드 비활성. 에디터에서 열어 둔 씬으로 진입(`SessionState`)은 `GameFlow`가 소비하고, 20_Combat로 바로 들어올 때의 초기 상태를 명시한다.
+   '전환 중' 잠금·실패 복구·이전 월드 비활성. **전투 씬 로드가 성공한 뒤에만 날짜 차감·`RunState.Begin`을 한다**(지금 `StartRun`은 담당이 없으면 오류만 남기고 멈추는데, 비동기 로드에선 로드 실패 시 날짜만 줄어드는 일이 없게 — 1단계 Codex 리뷰). 에디터에서 열어 둔 씬으로 진입(`SessionState`)은 `GameFlow`가 소비하고, 20_Combat로 바로 들어올 때의 초기 상태를 명시한다.
 4. **마감** — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다

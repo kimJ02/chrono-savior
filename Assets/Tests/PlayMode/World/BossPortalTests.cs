@@ -219,7 +219,7 @@ public class BossPortalTests
     [UnityTest]
     public IEnumerator Controller_IgnoresPortalRequestWhenLocked()
     {
-        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        var run = TestFlow.Create();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -237,7 +237,7 @@ public class BossPortalTests
     {
         FillRegionKills(1);
 
-        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        var run = TestFlow.Create();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -259,18 +259,18 @@ public class BossPortalTests
     [UnityTest]
     public IEnumerator BossDefeated_EndsRunAfterDelay()
     {
-        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        var run = TestFlow.Create();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
-        run.EnterBossField();
+        CombatDirector.Current.EnterBossField();
         yield return null;
 
         RunEvents.RaiseBossDefeated();
         yield return null;
         Assert.AreEqual(GameScene.Run, GameState.Current, "지연 없이 즉시 결과 화면이 떴다");
 
-        yield return new WaitForSecondsRealtime(GameFlow.BossDeadEndDelay + 0.2f);
+        yield return new WaitForSecondsRealtime(CombatDirector.BossDeadEndDelay + 0.2f);
 
         Assert.AreEqual(GameScene.Result, GameState.Current, "보스를 잡았는데 런이 안 끝났다");
         Assert.AreEqual(RunEndReason.BossDead, run.LastEndReason);

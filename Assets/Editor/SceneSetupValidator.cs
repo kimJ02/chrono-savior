@@ -107,6 +107,7 @@ namespace ChronoSavior.Editor
             }
             None<PlayerRig>(persistent, problems);
             None<PlatformSet>(persistent, problems);
+            None<CombatDirector>(persistent, problems);
 
             // ── 20_Combat ──
             var player = One<PlayerRig>(combat, problems);
@@ -117,6 +118,9 @@ namespace ChronoSavior.Editor
                                           typeof(PlayerAfterimages), typeof(BladeSlashVfx) })
                     if (player.GetComponent(need) == null) problems.Add($"Player에 {need.Name}이 없다");
             }
+            var director = One<CombatDirector>(combat, problems);
+            if (director != null && (player == null || director.Player != player.gameObject))
+                problems.Add("CombatDirector.Player가 이 씬의 Player를 가리키지 않는다 — 사냥 시작·보스 필드 진입 때 플레이어가 안 되돌아간다");
             var spawner = One<EnemySpawner>(combat, problems);
             if (spawner != null && spawner.monsterPrefab == null) problems.Add("EnemySpawner.monsterPrefab이 비어 있다");
             One<BossPortal>(combat, problems);

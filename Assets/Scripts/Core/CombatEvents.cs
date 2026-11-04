@@ -35,7 +35,7 @@ namespace ChronoSavior.Core
         /// 플레이어가 죽었을 때. 원본 `damagePlayer`가 체력이 0이 되면 바로 `endRun('dead')`를 부르는
         /// 자리(project_test.html:1927)에 대응한다.
         ///
-        /// `Systems`(3층)가 `Characters`(2층)를 직접 참조할 수 없어서(계층 규칙) `GameFlow`는
+        /// `Systems`(3층)가 `Characters`(2층)를 직접 참조할 수 없어서(계층 규칙) `CombatDirector`는
         /// `PlayerHealth.Died`를 직접 구독하지 못한다 — 그래서 이 이벤트를 거친다.
         /// </summary>
         public static event System.Action PlayerDied;

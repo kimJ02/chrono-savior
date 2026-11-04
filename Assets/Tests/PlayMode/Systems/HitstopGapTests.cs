@@ -42,7 +42,7 @@ public class HitstopGapTests
     // GameFlow는 첫 프레임 Start()에서 타이틀로 가며 시간을 멈춘다 — 그 뒤에 사냥을 시작해야 한다(GameFlowTests와 같은 순서).
     IEnumerator StartRun()
     {
-        rc = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        rc = TestFlow.Create();
         yield return null;
         rc.StartRun(1, RunMode.Normal);
         Assert.AreEqual(GameScene.Run, GameState.Current);

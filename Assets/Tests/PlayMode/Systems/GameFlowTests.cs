@@ -43,11 +43,8 @@ public class GameFlowTests
         ProfileService.Reset();
     }
 
-    static GameFlow NewController()
-    {
-        var go = new GameObject("TestGameFlow");
-        return go.AddComponent<GameFlow>();
-    }
+    /// <summary>게임 흐름 + 전투 담당(`TestFlow`). 플레이어 리셋을 보는 테스트는 그 플레이어를 넘긴다(실제 씬에선 직렬화 참조).</summary>
+    static GameFlow NewController(GameObject player = null) => TestFlow.Create(player);
 
     /// <summary>런 오브젝트 흉내 — 표식만 있으면 `RunTransient.DestroyAll()`이 지워야 한다.</summary>
     static GameObject NewTransient()
@@ -144,7 +141,7 @@ public class GameFlowTests
         health.TakeDamage(20f, null);
         Assert.Less(health.CurrentHp, health.MaxHp);
 
-        var rc = NewController();
+        var rc = NewController(player);
         yield return null;
         rc.StartRun(1, RunMode.Normal);
         yield return null;
@@ -239,7 +236,7 @@ public class GameFlowTests
 
         // 90초를 실제로 기다릴 순 없으니 남은 시간을 직접 태운다(RunState.Tick은 순수 계산이다).
         RunState.Tick(RunState.NormalTime + 1f);
-        yield return null; // GameFlow.Update가 0이 된 걸 보고 끝낸다
+        yield return null; // CombatDirector.Update가 0이 된 걸 보고 종료를 요청한다
 
         Assert.AreEqual(GameScene.Result, GameState.Current);
         Assert.AreEqual(RunEndReason.Timeout, rc.LastEndReason);

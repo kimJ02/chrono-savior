@@ -12,7 +12,7 @@ namespace ChronoSavior.Core
     ///   `rawDt`) `남은 시간 / 0.18` 비율로 줄어든다(:1583). 세기는 원본 px(화면 높이 720 기준)라 `World/CameraFollow2D`가
     ///   우리 화면 높이 대비 같은 비율로 옮긴다.
     /// - **화면 붉어짐**: 원본 `state.redFlash`(:1912 맞으면 0.35, :4426 초당 -2.2, :6204 `rgba(255,30,10, r×0.35)`).
-    ///   그리는 건 `UI/GameHud`, 줄이는 건 `Systems/GameFlow`.
+    ///   그리는 건 `UI/Screens/CombatHud`, 줄이는 건 `Systems/CombatDirector`.
     /// </summary>
     public static class HitFeel
     {
@@ -51,7 +51,7 @@ namespace ChronoSavior.Core
         /// <summary>
         /// 평타로 몹을 맞힐 때의 약한 흔들림(원본 px) — **원본엔 없다**(원본은 일반 타격에 흔들림이 없고 스킬·처치·피격에만 있다).
         /// 2026-10-28 사용자 결정. 히트스톱처럼 <see cref="HitShakeGap"/>초 간격을 둬서 섬영·레이저처럼 자주 맞혀도 계속 떨리지 않는다.
-        /// 거는 곳은 `Systems/GameFlow`(직접 타격·무기 틱 알림을 받는다). 모든 캐릭터 평타가 같은 값이다 — 처음 2px·0.08초는
+        /// 거는 곳은 `Systems/CombatDirector`(직접 타격·무기 틱 알림을 받는다). 모든 캐릭터 평타가 같은 값이다 — 처음 2px·0.08초는
         /// 안 보여서 5px·0.14초로 올렸다(사용자 2026-10-28 "모든 캐릭터 평타에 같은 값으로").
         /// </summary>
         public const float HitShakePx = 10f;

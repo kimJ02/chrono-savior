@@ -46,11 +46,11 @@ public class BossDefeatCarryOverTests
     [UnityTest]
     public IEnumerator BossKill_DoesNotEndTheNextRun()
     {
-        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        var run = TestFlow.Create();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
-        run.EnterBossField();
+        CombatDirector.Current.EnterBossField();
         yield return null;
 
         // 실제 보스 사망과 같은 두 이벤트: 스포너의 보스 격파 알림 + 처치 알림(보스 컴포넌트가 붙은 적).
@@ -60,7 +60,7 @@ public class BossDefeatCarryOverTests
         RunEvents.RaiseBossDefeated();
         CombatEvents.RaiseEnemyKilled(boss);
 
-        yield return new WaitForSecondsRealtime(GameFlow.BossDeadEndDelay + 0.3f);
+        yield return new WaitForSecondsRealtime(CombatDirector.BossDeadEndDelay + 0.3f);
         Assert.AreEqual(GameScene.Result, GameState.Current, "보스를 잡았는데 런이 안 끝났다");
         Assert.AreEqual(RunEndReason.BossDead, run.LastEndReason);
 

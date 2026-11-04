@@ -4,12 +4,14 @@ using ChronoSavior.Core;
 namespace ChronoSavior.Systems
 {
     /// <summary>
-    /// 게임의 뼈대 — **로비 ↔ 사냥 ↔ 일시정지 ↔ 결과**를 오가게 하는 주체.
-    /// 원본 `startRun`(:4293) / `pauseRun`(:4332) / `resumeRun`(:4346) / `endRun`(:4354) /
-    /// `toLobby`(:4382)를 한 컴포넌트로 옮긴 것이다.
+    /// 게임의 흐름 — **타이틀 ↔ 로비 ↔ 사냥 ↔ 일시정지 ↔ 결과**를 오가게 하는 주체(상주 씬 `00_Persistent`).
+    /// 원본 `startRun`(:4293) / `pauseRun`(:4332) / `resumeRun`(:4346) / `endRun`(:4354) / `toLobby`(:4382)의 화면·시간 부분이다.
     ///
-    /// 상태 자체는 <see cref="GameState"/>·<see cref="RunState"/>가 이미 들고 있고, 이 클래스는
-    /// **전이를 실행**한다(필드 정리·플레이어 리셋·시간 정지).
+    /// 상태 자체는 <see cref="GameState"/>·<see cref="RunState"/>가 들고 있고, 이 클래스는 **전이를 실행**한다.
+    /// **`GameState.Set`과 `Time.timeScale` 대입은 여기서만 한다**(`HANDOFF.md` "상태 소유권").
+    /// 전투가 벌어지는 동안의 일(필드 준비·정리, 런 타이머, 보스 필드, 처치 연출, 런을 끝낼 사건 감지)은 전투 씬의
+    /// <see cref="CombatDirector"/>가 한다 — 2026-11-05 씬 분할 2차 1단계에서 이 클래스(옛 `RunController`)에서 떼어 냈다.
+    /// 여기서는 <see cref="CombatDirector.Current"/>를 직접 부르고, 그쪽은 이벤트(`RunEvents.RunEndRequested`·`CombatEvents.HitstopRequested`)로만 알린다.
     ///
     /// ## 왜 `Time.timeScale`로 멈추는가 (확정 설계, docs/sprints/04-run-cycle.md 3번)
     /// 원본은 게임 전체가 한 개의 `frame()` 루프라 `state.scene !== 'run'`이면 `dt = 0`을 줘서
@@ -31,8 +33,7 @@ namespace ChronoSavior.Systems
         /// <summary>마지막 런이 끝난 이유. 결과 화면이 제목을 고르는 데 쓴다(원본 `endRun(reason)`).</summary>
         public RunEndReason LastEndReason { get; private set; } = RunEndReason.Timeout;
 
-        // 히트스톱 길이는 `Core/HitFeel`(원본 값, 공격·대상마다 다르다 — 2026-10-24). 예전 인스펙터 칸 두 개(맞을 때 0.045·
-        // 처치 0.085)는 없앴다.
+        // 히트스톱 길이는 `Core/HitFeel`(원본 값, 공격·대상마다 다르다 — 2026-10-24).
 
         float hitstopLeft;
 
@@ -46,32 +47,16 @@ namespace ChronoSavior.Systems
         public const float HitstopGapBypass = HitFeel.HitstopShrine;
         float hitstopCooldown;
 
-        /// <summary>원본 `setTimeout(() => endRun('bossdead'), 1600)`(project_test.html:4289).</summary>
-        public const float BossDeadEndDelay = 1.6f;
-        float bossDeadTimer = -1f;
-
         void OnEnable()
         {
-            CombatEvents.PlayerDied += HandlePlayerDied;
-            CombatEvents.EnemyKilled += HandleEnemyKilled;
             CombatEvents.HitstopRequested += Hitstop;
-            CombatEvents.EnemyDamaged += HandleEnemyHit;
-            CombatEvents.EnemyTickDamaged += HandleEnemyTick;
-            CombatEvents.ShrineBuffGranted += CombatModifiers.GrantShrineBuff;
-            RunEvents.BossPortalRequested += HandleBossPortalRequested;
-            RunEvents.BossDefeated += HandleBossDefeated;
+            RunEvents.RunEndRequested += EndRun;
         }
 
         void OnDisable()
         {
-            CombatEvents.PlayerDied -= HandlePlayerDied;
-            CombatEvents.EnemyKilled -= HandleEnemyKilled;
             CombatEvents.HitstopRequested -= Hitstop;
-            CombatEvents.EnemyDamaged -= HandleEnemyHit;
-            CombatEvents.EnemyTickDamaged -= HandleEnemyTick;
-            CombatEvents.ShrineBuffGranted -= CombatModifiers.GrantShrineBuff;
-            RunEvents.BossPortalRequested -= HandleBossPortalRequested;
-            RunEvents.BossDefeated -= HandleBossDefeated;
+            RunEvents.RunEndRequested -= EndRun;
         }
 
         void Start()
@@ -88,9 +73,7 @@ namespace ChronoSavior.Systems
         /// </summary>
         public void EnterTitle()
         {
-            ChronoSavior.World.PlatformSet.Activate(false);
-            RunTransient.DestroyAll();
-            bossDeadTimer = -1f;
+            ClearCombatField();
             GameState.Set(GameScene.Title);
             Time.timeScale = 0f;
         }
@@ -108,22 +91,8 @@ namespace ChronoSavior.Systems
 
             if (GameState.Current != GameScene.Run) return;
 
-            // 보스 격파 후 결과 화면까지의 지연. **멈춘 시간(unscaled)으로 잰다** — 히트스톱이
-            // 걸려 있으면 `Time.deltaTime`이 0이라 타이머가 안 줄고 결과 화면이 영영 안 뜬다.
-            if (bossDeadTimer >= 0f)
-            {
-                bossDeadTimer -= Time.unscaledDeltaTime;
-                if (bossDeadTimer <= 0f)
-                {
-                    bossDeadTimer = -1f;
-                    EndRun(RunEndReason.BossDead);
-                }
-                return; // 격파 뒤엔 런 타이머가 더 흐르지 않는다(timeout으로 뒤집히면 안 된다)
-            }
-
             // 히트스톱은 게임을 멈추는 것이므로 **멈춘 시간(unscaled)으로 재야 한다** —
             // `Time.deltaTime`으로 재면 timeScale이 0인 동안 타이머가 안 줄어 영원히 안 풀린다.
-            HitFeel.TickRedFlash(Time.deltaTime); // 원본 `state.redFlash -= dt * 2.2`(:4426) — 게임 시간
             if (hitstopCooldown > 0f) hitstopCooldown -= Time.unscaledDeltaTime;
             if (hitstopLeft > 0f)
             {
@@ -133,38 +102,30 @@ namespace ChronoSavior.Systems
                     Time.timeScale = 1f;
                     hitstopCooldown = HitstopGap; // 풀린 뒤 잠깐은 새로 안 멈춘다
                 }
-                return; // 멈춘 동안엔 런 타이머도 안 간다(원본도 dt=0이라 같다)
             }
-
-            // 원본 `run.timeLeft -= dt; if (<= 0) endRun('timeout')`(:4412).
-            if (RunState.Tick(Time.deltaTime)) EndRun(RunEndReason.Timeout);
-
-            // 콤보 창·연쇄 처치 창·성소 버프 감소(원본 `updateCombo` :1630 등).
-            CombatModifiers.Tick(Time.deltaTime);
         }
 
-        /// <summary>원본 `startRun(region, mode)`(project_test.html:4293).</summary>
+        /// <summary>
+        /// 원본 `startRun(region, mode)`(project_test.html:4293). 순서: 날짜·런 상태 → 전투 필드 준비(<see cref="CombatDirector.BeginField"/>) →
+        /// 사냥 화면 → 시간 흐름.
+        /// </summary>
         public void StartRun(int region, RunMode mode)
         {
+            var director = CombatDirector.Current;
+            if (director == null)
+            {
+                Debug.LogError("[GameFlow] 전투 씬(CombatDirector)이 없어 사냥을 시작할 수 없다");
+                return;
+            }
+
             // 스테이지에 들어갈 때마다 멸망까지 하루가 준다(사용자 결정 2026-10-24, PlayerProfile.doomDays).
             // 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(그건 이 함수를 안 거친다).
             if (mode == RunMode.Normal) ProfileService.Current.SpendDay();
             RunState.Begin(region, mode);
-
-            // 무대를 먼저 바꾼다 — 발판 배치와 맵 폭(`FieldBounds.MaxX`)이 여기서 정해지고,
-            // 아래의 플레이어 리셋·필드 정리가 그 값을 보고 좌표를 잡는다.
-            // 원본도 `startRun`에서 `run.mapW`와 `platforms`를 먼저 갈아끼운다(:4313·:4316).
-            ChronoSavior.World.PlatformSet.Activate(mode == RunMode.Boss);
-
-            // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 지난 런의 잔해를 지운다.
-            RunTransient.DestroyAll();
-            CombatModifiers.ResetForRun(); // 원본 `combo.n = 0; run.chainN = 0`(:4307·:4319)
             hitstopLeft = 0f;
             hitstopCooldown = 0f;
-            HitFeel.Reset();
-            bossDeadTimer = -1f;
 
-            ResetPlayer();
+            director.BeginField(mode);
 
             GameState.Set(GameScene.Run);
             Time.timeScale = 1f;
@@ -191,7 +152,10 @@ namespace ChronoSavior.Systems
             hitstopLeft = 0f;
         }
 
-        /// <summary>원본 `endRun(reason)`(:4354). 이미 끝난 런은 두 번 끝나지 않는다(`if (run.over) return`).</summary>
+        /// <summary>
+        /// 원본 `endRun(reason)`(:4354). 이미 끝난 런은 두 번 끝나지 않는다(`if (run.over) return`).
+        /// 전투 쪽의 종료 사건(사망·시간 초과·보스 격파 뒤 지연)은 `RunEvents.RunEndRequested`로 여기 온다.
+        /// </summary>
         public void EndRun(RunEndReason reason)
         {
             if (RunState.Over) return;
@@ -201,48 +165,6 @@ namespace ChronoSavior.Systems
             GameState.Set(GameScene.Result);
             Time.timeScale = 0f;
         }
-
-        /// <summary>
-        /// 보스 포탈 입장 요청을 처리한다 — **원본에 없는 전환**(사용자 지시 2026-09-16).
-        ///
-        /// 판단은 전부 여기서 한다(포탈은 요청만 던진다, <see cref="RunEvents"/> 주석 참고):
-        /// 사냥 중인지 · 이미 보스 필드가 아닌지 · 그 지역 보스가 해금됐는지.
-        /// </summary>
-        void HandleBossPortalRequested()
-        {
-            if (GameState.Current != GameScene.Run) return;
-            if (!ProfileService.Current.IsBossUnlocked(RunState.Region)) return;
-            EnterBossField();
-        }
-
-        /// <summary>
-        /// 일반 필드 → 보스 필드. 무대·타이머·필드 정리·플레이어 위치를 한 번에 바꾼다.
-        /// <see cref="StartRun"/>과 같은 순서를 쓰는 이유는 거기 주석에 있다(무대를 먼저 바꿔야
-        /// `FieldBounds.MaxX`가 갱신되고, 그 뒤 좌표 계산이 맞는다).
-        /// </summary>
-        /// <returns>실제로 전환됐으면 true.</returns>
-        public bool EnterBossField()
-        {
-            if (!RunState.EnterBossField()) return false;
-
-            ChronoSavior.World.PlatformSet.Activate(true);
-
-            // 일반 필드의 잡몹·투사체·장판을 지운다. 안 지우면 좁아진 보스 무대에 이전 필드의
-            // 몹이 맵 밖 좌표로 남아, 플레이어가 닿을 수 없는 곳에서 계속 살아 있다.
-            RunTransient.DestroyAll();
-
-            ResetPlayer(); // 좁아진 무대의 시작 지점으로
-            RunEvents.RaiseBossFieldEntered(); // 스포너가 보스를 세운다
-            return true;
-        }
-
-        /// <summary>
-        /// 보스 격파. 원본은 **1.6초 뒤에** 런을 끝낸다(`:4289`) — 즉사 연출과 보상 표시를
-        /// 볼 시간을 준다. 즉시 결과 화면을 띄우면 무엇을 잡았는지 보이지 않는다.
-        /// **보스 격파 → 런 종료 예약은 이 한 곳뿐이다**(<see cref="HandleEnemyKilled"/> 주석 참고) —
-        /// 타이머는 사냥 시작·로비 진입 때 -1로 초기화되므로 다음 런으로 새지 않는다.
-        /// </summary>
-        void HandleBossDefeated() => bossDeadTimer = BossDeadEndDelay;
 
         /// <summary>
         /// 타이틀의 "새 원정" — 세이브를 지우고(새 프로필) 로비로. 프로필 교체는 `SaveService`가, 화면 이동은 여기서 한다
@@ -257,79 +179,24 @@ namespace ChronoSavior.Systems
         /// <summary>원본 `toLobby()`(:4382).</summary>
         public void EnterLobby()
         {
-            ChronoSavior.World.PlatformSet.Activate(false); // 로비에선 일반 무대로 되돌린다
-            RunTransient.DestroyAll(); // 결과 화면을 거치지 않고 나가도 필드가 남지 않게
-            bossDeadTimer = -1f;
+            ClearCombatField(); // 결과 화면을 거치지 않고 나가도 필드가 남지 않게
             GameState.Set(GameScene.Lobby);
             Time.timeScale = 0f;
         }
 
         /// <summary>
-        /// 원본 `resetPlayerForRun()`(:1511). 구체 타입을 모르고 <see cref="IRunResettable"/>만 보고 부른다
-        /// — `Systems`(3층)가 `Characters`(2층)의 클래스를 직접 알 필요가 없다(CLAUDE.md 계층 규칙).
-        /// 섬영·드루이드 키트도 이 인터페이스만 구현하면 자동으로 같이 초기화된다.
+        /// 전투 필드를 비운다. 전투 씬이 아직 없으면(부팅 첫 프레임 — 월드 씬은 `GameBoot`가 겹쳐 부르는 중) 비울 것도 없다.
         /// </summary>
-        void ResetPlayer()
+        static void ClearCombatField()
         {
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player == null) return;
-            foreach (var resettable in player.GetComponents<IRunResettable>())
-                resettable.ResetForRun();
-        }
-
-        void HandlePlayerDied() => EndRun(RunEndReason.Dead); // 원본 :1927
-
-        float nextHitShakeTime, nextTickShakeTime;
-
-        /// <summary>
-        /// 평타·무기 틱으로 몹을 맞혔을 때 약하게 흔든다(`HitFeel.HitShakePx` — 원본엔 없는 연출, 사용자 2026-10-28).
-        /// 마지막 흔들림에서 `HitShakeGap`초가 안 지났으면 건너뛴다. 멈춘 시간(unscaled)으로 잰다 — 히트스톱 중에도 간격이 흐르게.
-        /// </summary>
-        void HandleEnemyHit(GameObject enemy) => GappedShake(ref nextHitShakeTime, HitFeel.HitShakePx, HitFeel.HitShakeTime);
-
-        /// <summary>지속 피해 틱(레이저·깔린 블랙홀 등)은 평타보다 약하게, 간격은 따로(`HitFeel.TickShakePx`, 사용자 2026-10-28).</summary>
-        void HandleEnemyTick(GameObject enemy) => GappedShake(ref nextTickShakeTime, HitFeel.TickShakePx, HitFeel.TickShakeTime);
-
-        void GappedShake(ref float nextTime, float px, float time)
-        {
-            if (GameState.Current != GameScene.Run || RunState.Over) return;
-            if (Time.unscaledTime < nextTime) return;
-            nextTime = Time.unscaledTime + HitFeel.HitShakeGap;
-            HitFeel.Shake(px, time);
-        }
-
-        void HandleEnemyKilled(GameObject enemy)
-        {
-            var (stop, shakeMag, shakeDur) = KillFeel(
-                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Boss>() != null,
-                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Shrine>() != null,
-                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.EnemyElite>() != null);
-            Hitstop(stop);
-            if (shakeMag > 0f) HitFeel.Shake(shakeMag, shakeDur);
-
-            // ⚠️ 보스 격파 뒤 결과 화면 예약은 **여기서 하지 않는다** — `RunEvents.BossDefeated` →
-            // <see cref="HandleBossDefeated"/>(`bossDeadTimer`, 멈춘 시간 기준)가 한다.
-            // 예전엔 여기서도 `Invoke(EndRunAfterBoss, 1.6)`를 걸어 **두 번** 예약했는데, `Invoke`는 게임 시간
-            // 기준이라 결과·로비의 `timeScale = 0` 동안 멈춘 채 남아 있다가 **다음 사냥 시작 직후** 터져서
-            // 방금 들어온 런을 "보스 격파"로 끝냈다(2026-09-28 사용자 발견). 취소도 안 되는 경로라 없앴다.
-        }
-
-        /// <summary>
-        /// 처치 연출 — (멈춤 초, 흔들림 세기 px, 흔들림 초). 원본 `killEnemy`(:1847~:1848), 성소는 따로 :1804~:1805
-        /// (성소는 일반 처치 멈춤을 안 거치고 0.12만).
-        /// </summary>
-        public static (float hitstop, float shakeMag, float shakeDuration) KillFeel(bool boss, bool shrine, bool elite)
-        {
-            if (shrine) return (HitFeel.HitstopShrine, 9f, 0.35f);
-            if (boss) return (HitFeel.HitstopBossKill, 14f, 0.5f);
-            if (elite) return (HitFeel.HitstopKill, 6f, 0.22f);
-            return (HitFeel.HitstopKill, 0f, 0f);
+            if (CombatDirector.Current != null) CombatDirector.Current.ClearField();
         }
 
         /// <summary>
         /// 타격감용 순간 정지 — 원본 `state.freeze = Math.max(state.freeze, ...)`(project_test.html:1685).
         /// **`timeScale`을 만지는 유일한 주체가 이 컨트롤러**라서 여기 둔다. 다른 데서 `timeScale`을
         /// 건드리면 일시정지·결과 화면과 서로 덮어써서 게임이 안 멈추거나 안 풀린다.
+        /// 전투 쪽은 `CombatEvents.RequestHitstop`으로 요청만 한다.
         ///
         /// 사냥 중이 아닐 땐 무시한다 — 로비/결과에서 걸리면 그 화면이 `timeScale = 1`로 풀려버린다.
         /// </summary>

@@ -105,10 +105,10 @@ public class HitFeelTests
     [Test]
     public void KillFeel_MatchesOriginal()
     {
-        Assert.AreEqual((0.085f, 0f, 0f), GameFlow.KillFeel(boss: false, shrine: false, elite: false));
-        Assert.AreEqual((0.085f, 6f, 0.22f), GameFlow.KillFeel(false, false, elite: true));
-        Assert.AreEqual((0.25f, 14f, 0.5f), GameFlow.KillFeel(boss: true, false, false), "보스 처치는 0.25(예전엔 0.085)");
-        Assert.AreEqual((0.12f, 9f, 0.35f), GameFlow.KillFeel(false, shrine: true, false), "성소 파괴는 0.12");
+        Assert.AreEqual((0.085f, 0f, 0f), CombatDirector.KillFeel(boss: false, shrine: false, elite: false));
+        Assert.AreEqual((0.085f, 6f, 0.22f), CombatDirector.KillFeel(false, false, elite: true));
+        Assert.AreEqual((0.25f, 14f, 0.5f), CombatDirector.KillFeel(boss: true, false, false), "보스 처치는 0.25(예전엔 0.085)");
+        Assert.AreEqual((0.12f, 9f, 0.35f), CombatDirector.KillFeel(false, shrine: true, false), "성소 파괴는 0.12");
     }
 
     [Test]

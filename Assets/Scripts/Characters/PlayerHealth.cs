@@ -42,7 +42,7 @@ namespace ChronoSavior.Characters
         /// <summary>
         /// 사망 시 1회 발생. 같은 오브젝트 안에서 쓰는 국지적 신호다.
         /// **런을 끝내는 경로는 이게 아니라 `Core.CombatEvents.PlayerDied`** — `Systems`(3층)가
-        /// `Characters`(2층)를 참조할 수 없어서 `GameFlow`는 그쪽만 구독한다(원본 :1927).
+        /// `Characters`(2층)를 참조할 수 없어서 `CombatDirector`는 그쪽만 구독한다(원본 :1927).
         /// </summary>
         public event Action Died;
 

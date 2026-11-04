@@ -97,7 +97,7 @@ public class ShrineTests
     [UnityTest]
     public IEnumerator WhenDestroyed_BuffMovesToPlayer()
     {
-        // `CombatEvents.ShrineBuffGranted` 수신은 평소 GameFlow가 하지만, 여기선 그것만 따로 잇는다.
+        // `CombatEvents.ShrineBuffGranted` 수신은 평소 CombatDirector가 하지만, 여기선 그것만 따로 잇는다.
         CombatEvents.ShrineBuffGranted += CombatModifiers.GrantShrineBuff;
 
         var shrine = NewShrine();

@@ -9,7 +9,7 @@ namespace ChronoSavior.Core
     /// `enemies = []; projectiles = []; zones = []; pickups = []; particles = []`
     /// (project_test.html:4318)에 대응한다.
     ///
-    /// 원본은 전역 배열을 비우면 끝이지만 우리는 그런 중앙 목록이 없다. 그래서 `GameFlow`가
+    /// 원본은 전역 배열을 비우면 끝이지만 우리는 그런 중앙 목록이 없다. 그래서 `CombatDirector`가
     /// **타입 목록을 들고 다니는 대신**(새 투사체가 생길 때마다 거기를 고쳐야 하고, 빠뜨려도
     /// 아무 에러가 안 난다) 이 표식 하나만 보게 했다.
     ///

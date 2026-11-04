@@ -236,7 +236,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
   씬 분할 1차가 끝났다. 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
 - **씬 구성(2026-11-04)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번 — `GameBoot`·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
-  EventSystem·공용 카메라·`Audio`) + `20_Combat.unity`(빌드 1번 — 월드: 플레이어·발판·포털·스포너·스테이지 그림·로비 건물).
+  EventSystem·공용 카메라·`Audio`) + `20_Combat.unity`(빌드 1번 — 월드: 전투 담당 `CombatDirector`·플레이어·발판·포털·스포너·스테이지 그림·로비 건물). 흐름(`GameFlow`)은 담당을 `CombatDirector.Current`로 부르고, 담당은 이벤트로만 알린다.
   **씬 파일이 유일한 원본이다** — 씬을 코드로 다시 만드는 도구는 없다(옛 `BuildPartAScene`은 삭제). 씬을 고친 뒤엔
   메뉴 `ChronoSavior/씬 구성 검증`(`Editor/SceneSetupValidator`)으로 검사한다. 에디터 Play는 어느 씬을 열어 두든 `00_Persistent`부터
   시작한다(`Editor/PlayFromPersistent`). **씬끼리는 직렬화 참조를 걸 수 없다** — 씬을 넘는 연결은 등록(예: `CameraFollow2D.Track`)으로.

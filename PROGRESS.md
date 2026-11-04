@@ -219,6 +219,15 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (6)** — **[나] 씬 분할 2차 단계 1: `CombatDirector` 추출 (`feature/combat-director`, PlayMode 423/423, 씬 구성 검증 '문제 없음').**
+  `GameFlow`(335줄)에서 전투 책임을 떼어 `Systems/CombatDirector`(전투 씬 `20_Combat`의 오브젝트, Player는 같은 씬 직렬화 참조)로:
+  필드 준비·정리(`BeginField`·`ClearField`), 런 타이머·콤보·붉어짐 Tick, 보스 포털 판단·`EnterBossField`, 보스 격파 지연(1.6초), 처치 연출(`KillFeel`)·간격 둔 흔들림·성소 버프,
+  사망·시간 초과·격파 → **`RunEvents.RunEndRequested`**(새로)로 종료 요청. `GameFlow`엔 화면 흐름·`GameState.Set`·timeScale·히트스톱 만료만 남았다(Player 태그 탐색도 사라짐).
+  연결은 한 방향: `GameFlow`가 `CombatDirector.Current`를 부르고, 담당은 이벤트로만 알린다. 담당이 둘이면 뒤엣것은 오류를 남기고 꺼진다. 전투 씬 없이 `StartRun`하면 오류만 남기고 안 들어간다.
+  **동작 변화(원본 쪽으로, 사용자에게 보고)**: 예전엔 보스 격파 지연 중 흐름이 히트스톱 만료까지 건너뛰어 **보스 처치 멈춤이 결과 화면까지 1.6초 내내 안 풀렸다** —
+  이제 0.25초 뒤 풀리고 결과 화면까지 월드가 움직인다(원본 `state.freeze` :1847 → `setTimeout 1600` :4289와 같다).
+  테스트: 새 `Systems/CombatDirectorTests`(등록·해제, 중복 거부, 꺼지면 사건 안 닿음, 전투 씬 없을 때, 격파 지연 중 시간 초과 안 됨, 멈춘 동안 타이머·콤보 그대로, 처치→히트스톱 경로),
+  `GameFlow`를 만들던 4파일은 `TestFlow.Create(player)` 도우미로, `GameBootTests`에 실제 씬 배치 확인. Codex 구현 리뷰 2회.
 - **2026-11-05 (5)** — **[나] 섬영 테스트 간헐 실패 원인 수정 (PlayMode 415/415, 섬영 테스트 3회 반복 54/54).** `Focus_Tier3_TrailHits_EnemyWithinBoostedRadius`가
   전체 실행 중 가끔 '3층 궤적 반경 안의 적이 안 맞았다'로 실패. **원인**: 테스트가 섬영·적을 기본 물리 레이어에 만들어서, 0.89 거리(반지름 합 1.0)로 겹친 콜라이더를
   물리 단계가 한 번이라도 돌면 서로 밀어냈다 — 적이 3층 판정 여유(0.05) 밖으로 밀려났고, 그 프레임에 물리 단계가 도는지가 타이밍에 달려 가끔만 실패.
