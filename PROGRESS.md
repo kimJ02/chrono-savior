@@ -126,10 +126,6 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 확인 필요 / 막힌 것
 
-- **[간헐 실패] `BladeSkillTreeTests.Focus_Tier3_TrailHits_EnemyWithinBoostedRadius`**(2026-11-05) — 전체 실행 한 번에서 '3층 궤적 반경 안의 적이 안 맞았다'(체력 38 그대로)로
-  실패, 단독 2회·전체 재실행은 통과. 적을 경계 근처(0.89, 1층 0.84 / 3층 0.942)에 두고 한 프레임 물리 뒤 판정하는 테스트라 프레임 타이밍에 따라 흔들리는 것으로 보인다.
-  섬영 파일(팀원) 쪽 — 또 나면 원인 조사.
-
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
   조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
   조건부 변경, 나머지 5종은 그대로 도형. `Enemies/`는 팀장 담당 영역이라 동작엔 문제없지만 병합 전
@@ -223,6 +219,10 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (5)** — **[나] 섬영 테스트 간헐 실패 원인 수정 (PlayMode 415/415, 섬영 테스트 3회 반복 54/54).** `Focus_Tier3_TrailHits_EnemyWithinBoostedRadius`가
+  전체 실행 중 가끔 '3층 궤적 반경 안의 적이 안 맞았다'로 실패. **원인**: 테스트가 섬영·적을 기본 물리 레이어에 만들어서, 0.89 거리(반지름 합 1.0)로 겹친 콜라이더를
+  물리 단계가 한 번이라도 돌면 서로 밀어냈다 — 적이 3층 판정 여유(0.05) 밖으로 밀려났고, 그 프레임에 물리 단계가 도는지가 타이밍에 달려 가끔만 실패.
+  **고침**: 테스트도 실제 게임처럼 Player(6)/Enemy(7) 레이어(서로 물리 충돌 꺼짐, `BladeSkillTreeTests`·`BladeCombatTests`), 반경 경계를 재는 테스트 4개는 적 몸을 고정(`pinned`).
 - **2026-11-05 (4)** — **[나] 씬 분할 2차 단계 0: 세이브 교체 경계 (`feature/profile-boundary`, PlayMode 415/415, Codex "단계 0 통과").** 사용자 "0단계 시작".
   `ProfileService.Current`를 공개 필드 → 읽기 전용 프로퍼티, 통째 교체는 `Replace`(불러오기)·`Reset`(새 프로필)이고 실행 코드에선 `SaveService`만 부른다
   (`SaveServiceTests.OnlySaveService_ReplacesOrResetsTheProfile`가 소스를 훑어 검사 — `using static`·별칭 우회도 금지). 타이틀 '새 원정'은

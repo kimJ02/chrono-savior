@@ -41,6 +41,7 @@ public class BladeCombatTests
     static GameObject NewBlade(Vector3 pos, bool withHealth = true)
     {
         var go = new GameObject("TestBlade");
+        go.layer = LayerMask.NameToLayer("Player"); // 실제 게임처럼 — Player↔Enemy 물리 충돌이 꺼져 서로 안 밀린다(BladeSkillTreeTests.NewBlade 주석)
         go.transform.position = pos;
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         var rb = go.AddComponent<Rigidbody2D>();
@@ -54,6 +55,7 @@ public class BladeCombatTests
     static GameObject NewEnemy(Vector3 pos)
     {
         var go = new GameObject("TestEnemy");
+        go.layer = LayerMask.NameToLayer("Enemy");
         go.tag = "Enemy";
         go.transform.position = pos;
         go.AddComponent<SpriteRenderer>();

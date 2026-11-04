@@ -94,6 +94,9 @@ public class BladeSkillTreeTests
     static GameObject NewBlade(Vector3 pos)
     {
         var go = new GameObject("TestBlade");
+        // 실제 게임처럼 Player 레이어 — Player↔Enemy는 물리 충돌이 꺼져 있다(CLAUDE.md 레이어 표). 기본 레이어에 두면 가까이 둔 적과 콜라이더가
+        // 겹쳐 물리 단계가 한 번 돌 때마다 서로 밀어내고, 반경 경계를 재는 테스트가 그 프레임 타이밍에 따라 가끔 실패했다(2026-11-05).
+        go.layer = LayerMask.NameToLayer("Player");
         go.transform.position = pos;
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         var rb = go.AddComponent<Rigidbody2D>();
@@ -104,9 +107,11 @@ public class BladeSkillTreeTests
         return go;
     }
 
-    static GameObject NewEnemy(Vector3 pos)
+    /// <param name="pinned">반경 경계를 재는 테스트용 — 몹이 배회로 한 걸음도 안 움직이게 몸을 고정한다(판정은 콜라이더 위치만 본다).</param>
+    static GameObject NewEnemy(Vector3 pos, bool pinned = false)
     {
         var go = new GameObject("TestEnemy");
+        go.layer = LayerMask.NameToLayer("Enemy"); // 실제 몹 프리팹과 같은 레이어 — 위 NewBlade 주석 참고
         go.tag = "Enemy";
         go.transform.position = pos;
         go.AddComponent<SpriteRenderer>();
@@ -116,6 +121,7 @@ public class BladeSkillTreeTests
         go.GetComponent<Rigidbody2D>().gravityScale = 0f;
         typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance)
             .SetValue(move, 0f);
+        if (pinned) go.GetComponent<Rigidbody2D>().constraints = RigidbodyConstraints2D.FreezeAll;
         return go;
     }
 
@@ -536,7 +542,7 @@ public class BladeSkillTreeTests
         ProfileService.Current.bladeTier = 1;
         // 1층 유효 반경(궤적 0.34 + 적 콜라이더 0.5 = 0.84) 밖, 3층 유효 반경(0.34×1.3+0.5=0.942) 안 —
         // 반경 보너스 자체를 격리해서 보려고 딱 그 사이 거리(0.89)에 둔다.
-        var enemy = NewEnemy(new Vector3(2.89f, 0.5f, 0f));
+        var enemy = NewEnemy(new Vector3(2.89f, 0.5f, 0f), pinned: true);
         yield return null;
 
         InvokeTryFocusStart(blade, 1);
@@ -555,7 +561,7 @@ public class BladeSkillTreeTests
         var blade = go.GetComponent<BladeCombat>();
         ProfileService.Current.bladeBranch = BladeBranch.Focus;
         ProfileService.Current.bladeTier = 3;
-        var enemy = NewEnemy(new Vector3(2.89f, 0.5f, 0f)); // 위 테스트와 같은 거리 — 3층 반경 안.
+        var enemy = NewEnemy(new Vector3(2.89f, 0.5f, 0f), pinned: true); // 위 테스트와 같은 거리 — 3층 반경 안.
         yield return null;
 
         InvokeTryFocusStart(blade, 3);
@@ -697,7 +703,7 @@ public class BladeSkillTreeTests
         ProfileService.Current.bladeTier = 4;
         // 3층 궤적 반경(0.34×1.3+0.5=0.942) 밖, 4층 파열 반경(0.34×1.3×1.7+0.5≈1.251) 안 —
         // 파열 전용 피해인지 격리해서 보려고 딱 그 사이 거리(1.1)에 둔다.
-        var enemy = NewEnemy(new Vector3(3.1f, 0.5f, 0f));
+        var enemy = NewEnemy(new Vector3(3.1f, 0.5f, 0f), pinned: true);
         yield return null;
 
         InvokeTryFocusStart(blade, 4);
@@ -716,7 +722,7 @@ public class BladeSkillTreeTests
         var blade = go.GetComponent<BladeCombat>();
         ProfileService.Current.bladeBranch = BladeBranch.Focus;
         ProfileService.Current.bladeTier = 3;
-        var enemy = NewEnemy(new Vector3(3.1f, 0.5f, 0f)); // 위 테스트와 같은 거리 — 4층 파열 반경 안.
+        var enemy = NewEnemy(new Vector3(3.1f, 0.5f, 0f), pinned: true); // 위 테스트와 같은 거리 — 4층 파열 반경 안.
         yield return null;
 
         InvokeTryFocusStart(blade, 3);
