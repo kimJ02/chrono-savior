@@ -24,12 +24,12 @@ namespace ChronoSavior.Core
         public const float GoldDropChance = 0.75f;  // CONFIG.goldDropChance(:744)
 
         // ⚠️ 몹별 기본 스탯(체력·피해·경험치·골드)은 더 이상 여기 없다 — `Core/EnemyData` SO가 소유한다.
-        // 몹이 7종이 되면서 "오니 상수"를 여기 두면 종류마다 상수를 늘려야 하고, CLAUDE.md
+        // 몹이 7종이 되면서 "고블린 상수"를 여기 두면 종류마다 상수를 늘려야 하고, CLAUDE.md
         // "데이터(밸런스 값)" 규칙(스탯은 SO)에도 어긋난다. 이 파일은 **지역 배율만** 맡는다.
         // 원본도 같은 구조다: `CONFIG.enemyBase[type]`(종류별 스탯) × `CONFIG.scale`(지역 배율), `:3958`.
 
         // 엘리트(원본 CONFIG.elite, project_test.html:696). 종류와 무관하게 아무 몹이나 확률로 승격된다.
-        // 새끼(splitlet)만 예외 — 원본이 `noElite: true`로 낳는다(`:1842`).
+        // 꼬마 슬라임(splitlet)만 예외 — 원본이 `noElite: true`로 낳는다(`:1842`).
         public const float EliteChance = 0.08f;
         public const float EliteHpMult = 4f;
         public const float EliteDmgMult = 1.5f;

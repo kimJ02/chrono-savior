@@ -46,7 +46,7 @@ public class GunnerAttackTests
         go.tag = "Enemy";
         go.transform.position = pos;
         go.AddComponent<SpriteRenderer>();
-        // 실제 `Enemy_Oni.prefab`과 같은 반지름 0.5를 쓴다 — 0.3으로 줄이면 총구 높이(중심+0.38)가
+        // 실제 `Enemy_Base.prefab`과 같은 반지름 0.5를 쓴다 — 0.3으로 줄이면 총구 높이(중심+0.38)가
         // 적 몸통 위로 지나가 버려서, 실제 게임에선 맞는 공격이 테스트에서만 빗나간다.
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         var move = go.AddComponent<EnemyMove>();
@@ -88,7 +88,7 @@ public class GunnerAttackTests
     {
         // 플레이어·적 둘 다 반지름 0.5 원이 지면(GroundY=0) 위에 서므로 중심이 y=0.5다.
         // 총구는 원본처럼 **발**에서 0.38 위(발 0 + 0.38 = 0.38)라 적 몸통(0~1.0) 안을 지난다
-        // (실제 크기인 키 0.5 오니는 GunnerSkillTreeTests.Bullet_HitsOniSizedEnemyOnSameGround가 본다).
+        // (실제 크기인 키 0.5 고블린은 GunnerSkillTreeTests.Bullet_HitsOniSizedEnemyOnSameGround가 본다).
         // 두 적은 서로 반지름 합(1.0)보다 멀리 떼야 물리로 밀어내지 않는다.
         var go = NewGunner(new Vector3(2f, 0.5f, 0f));
         var gunner = go.GetComponent<GunnerAttack>();

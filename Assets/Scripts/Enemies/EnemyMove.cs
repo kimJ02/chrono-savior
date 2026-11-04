@@ -5,8 +5,8 @@ using ChronoSavior.World;
 namespace ChronoSavior.Enemies
 {
 /// <summary>
-/// Part B (feature/monster-combat) - 몬스터 이동 AI. docs/sprints/01-combat-core.md 2번 스탯 범위(몹 1종=오니 기준)를
-/// 원본 updateEnemies()의 "오니·분열귀·새끼" 분기(기본 보행 AI)를 그대로 이식해서 구현한다 —
+/// Part B (feature/monster-combat) - 몬스터 이동 AI. docs/sprints/01-combat-core.md 2번 스탯 범위(몹 1종=고블린 기준)를
+/// 원본 updateEnemies()의 "고블린·슬라임·꼬마 슬라임" 분기(기본 보행 AI)를 그대로 이식해서 구현한다 —
 /// 이건 프로토타입이 아니라 실제 구현이므로 세부 동작까지 원본과 동일하게 맞춘다. 아래 각 동작은
 /// 전부 원본 코드의 특정 줄에 대응한다(주석에 표시).
 ///
@@ -34,11 +34,11 @@ namespace ChronoSavior.Enemies
 [RequireComponent(typeof(CircleCollider2D))]
 public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
 {
-    [Header("스탯 (docs/sprints/01-combat-core.md 2번 - 오니 기준 시작값, 원본 76px/s를 100px=1유닛로 축척)")]
+    [Header("스탯 (docs/sprints/01-combat-core.md 2번 - 고블린 기준 시작값, 원본 76px/s를 100px=1유닛로 축척)")]
     public float moveSpeed = 0.76f;
     public float attackPower = 13f;
 
-    [Header("AI (원본 오니 분기 그대로)")]
+    [Header("AI (원본 고블린 분기 그대로)")]
     [Tooltip("이 거리 안에 플레이어가 들어오면 그 방향으로 계속 걷는다. 원본 300px → 3유닛.")]
     public float aggroRangeX = 3f;
     [Tooltip("범위 밖일 때 배회 방향을 바꾸는 간격(최소~최대, 초). 원본 rand(1.5, 3.5).")]
@@ -112,12 +112,12 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     /// **스포너는 `Instantiate` 뒤에 종류별 컴포넌트를 붙인다** — 그 시점엔 이 스크립트의 `Awake`가
     /// 이미 끝나 있어서, 위에서 캐시한 `motion`이 계속 null로 남는다(이 프로젝트 단골 함정:
     /// `AddComponent`/`Instantiate`는 `Awake`를 그 자리에서 동기 실행한다). 그래서 컴포넌트를 다 붙인
-    /// 스포너가 마지막에 이 메서드를 한 번 불러 준다. 안 부르면 도깨비불이 중력에 떨어지고
-    /// 돌진귀가 그냥 걷기만 하는, **에러 없이 조용히 틀리는** 상태가 된다.
+    /// 스포너가 마지막에 이 메서드를 한 번 불러 준다. 안 부르면 박쥐이 중력에 떨어지고
+    /// 멧돼지가 그냥 걷기만 하는, **에러 없이 조용히 틀리는** 상태가 된다.
     /// </summary>
     public void RefreshTypeBehaviour()
     {
-        // 종류에 맞는 이동 스크립트가 붙어 있으면 그쪽을 쓴다. 없으면(오니·대오니·분열귀·새끼) 기본 보행.
+        // 종류에 맞는 이동 스크립트가 붙어 있으면 그쪽을 쓴다. 없으면(고블린·오우거·슬라임·꼬마 슬라임) 기본 보행.
         motion = GetComponent<IEnemyMotion>();
         verticalMotion = GetComponent<IEnemyVerticalMotion>();
         contactDamageModifier = GetComponent<IEnemyContactDamageModifier>();
@@ -126,7 +126,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
 
     /// <summary>
     /// 스폰 보호 시간을 덮어쓴다. 원본 `spawnEnemyAt(..., { protect: 0.35 })`(project_test.html:3968) —
-    /// 분열귀가 낳는 새끼만 일반 스폰(2초)보다 훨씬 짧은 보호를 받는다. 죽은 자리에서 바로 나오는데
+    /// 슬라임이 낳는 꼬마 슬라임만 일반 스폰(2초)보다 훨씬 짧은 보호를 받는다. 죽은 자리에서 바로 나오는데
     /// 2초나 무적이면 플레이어가 손을 못 대기 때문이다.
     /// </summary>
     public void SetSpawnProtection(float seconds)
@@ -173,7 +173,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
             target = FindNearestPlayer();
 
         // 기본 보행의 방향 판단(추적/배회)은 종류 전용 스크립트가 없을 때만 돈다 —
-        // 돌진귀·사수귀는 자기 상태기계 안에서 방향을 직접 정한다(원본도 타입별 분기 안에서 e.dir을 정함).
+        // 멧돼지·해골 궁수는 자기 상태기계 안에서 방향을 직접 정한다(원본도 타입별 분기 안에서 e.dir을 정함).
         if (motion == null) UpdateDirection();
         // 발판 가장자리 반전은 지상형만 — 비행형은 발판과 무관하다.
         if (verticalMotion == null) TryTurnBackAtPlatformEdge();
@@ -190,7 +190,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     public void ApplyKnockback(float velocityX) => knockbackX = velocityX;
 
     /// <summary>
-    /// 실제 월드 반지름. 몸집이 다른 종류(대오니는 오니의 1.74배)와 엘리트(×1.35)는 콜라이더 값을
+    /// 실제 월드 반지름. 몸집이 다른 종류(오우거는 고블린의 1.74배)와 엘리트(×1.35)는 콜라이더 값을
     /// 고치는 대신 <c>transform.localScale</c>로 키운다 — 그래야 스프라이트와 판정이 같이 커진다.
     /// 그래서 `col.radius`(로컬 값)를 그대로 쓰면 큰 몹일수록 판정이 실제보다 작아진다.
     /// </summary>
@@ -358,7 +358,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     {
         var damageable = playerTransform.GetComponent<IDamageable>();
         if (damageable == null || damageable.IsDead) return;
-        // 원본은 돌진귀가 질주 중일 때만 접촉 피해 ×1.4다(`chargeMul`, project_test.html:4147).
+        // 원본은 멧돼지가 질주 중일 때만 접촉 피해 ×1.4다(`chargeMul`, project_test.html:4147).
         float mul = contactDamageModifier != null ? contactDamageModifier.ContactDamageMultiplier : 1f;
         // 성소가 살아 있으면 여기에 ×1.3이 더 붙는다(원본 `buffed ? eDmg : 1`, :4148).
         mul *= CombatModifiers.EnemyDamageMultiplier;

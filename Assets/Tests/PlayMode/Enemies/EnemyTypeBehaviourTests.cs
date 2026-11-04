@@ -57,31 +57,31 @@ public class EnemyTypeBehaviourTests
     // ────────────────────────── 지역별 해금표 (원본 rollSpawnType :3933) ──────────────────────────
 
     /// <summary>
-    /// 1지역은 도깨비불 45% / 오니 55% 딱 두 종뿐이다. 경계값(0.45)이 오니 쪽에 붙는지까지 본다 —
+    /// 1지역은 박쥐 45% / 고블린 55% 딱 두 종뿐이다. 경계값(0.45)이 고블린 쪽에 붙는지까지 본다 —
     /// 부등호를 헷갈리면 확률이 조용히 밀린다.
     /// </summary>
     [Test]
     public void SpawnTable_Region1_OnlyWispAndOni()
     {
-        Assert.AreEqual(EnemyType.Wisp, EnemySpawnTable.RollBase(1, 0f));
-        Assert.AreEqual(EnemyType.Wisp, EnemySpawnTable.RollBase(1, 0.449f));
-        Assert.AreEqual(EnemyType.Oni, EnemySpawnTable.RollBase(1, 0.45f));
-        Assert.AreEqual(EnemyType.Oni, EnemySpawnTable.RollBase(1, 0.999f));
+        Assert.AreEqual(EnemyType.Flyer, EnemySpawnTable.RollBase(1, 0f));
+        Assert.AreEqual(EnemyType.Flyer, EnemySpawnTable.RollBase(1, 0.449f));
+        Assert.AreEqual(EnemyType.Grunt, EnemySpawnTable.RollBase(1, 0.45f));
+        Assert.AreEqual(EnemyType.Grunt, EnemySpawnTable.RollBase(1, 0.999f));
     }
 
-    /// <summary>지역이 오를수록 강한 종이 "추가"된다 — 2지역 돌진귀, 3지역 사수귀, 4지역 분열귀.</summary>
+    /// <summary>지역이 오를수록 강한 종이 "추가"된다 — 2지역 멧돼지, 3지역 해골 궁수, 4지역 슬라임.</summary>
     [Test]
     public void SpawnTable_UnlocksStrongerTypesByRegion()
     {
         Assert.AreEqual(EnemyType.Charger, EnemySpawnTable.RollBase(2, 0.99f));
         Assert.AreEqual(EnemyType.Shooter, EnemySpawnTable.RollBase(3, 0.99f));
         Assert.AreEqual(EnemyType.Splitter, EnemySpawnTable.RollBase(4, 0.99f));
-        // 3지역에서 아직 분열귀는 안 나온다(사수귀가 상한).
+        // 3지역에서 아직 슬라임은 안 나온다(해골 궁수가 상한).
         Assert.AreEqual(EnemyType.Shooter, EnemySpawnTable.RollBase(3, 0.85f));
     }
 
     /// <summary>
-    /// 새끼는 **웨이브로 절대 안 나온다** — 분열귀가 죽을 때만 생긴다(원본 :1842). 표에 섞여 들어가면
+    /// 꼬마 슬라임은 **웨이브로 절대 안 나온다** — 슬라임이 죽을 때만 생긴다(원본 :1842). 표에 섞여 들어가면
     /// 체력 14짜리가 그냥 굴러다니는 전혀 다른 게임이 된다.
     /// </summary>
     [Test]
@@ -93,15 +93,15 @@ public class EnemyTypeBehaviourTests
                     "region " + region + ", roll " + (i / 100f));
     }
 
-    /// <summary>대오니는 2지역부터만 나온다(원본 `run.region >= 2` :3944).</summary>
+    /// <summary>오우거는 2지역부터만 나온다(원본 `run.region >= 2` :3944).</summary>
     [Test]
     public void SpawnTable_BigOni_NeverInRegion1()
     {
         for (int i = 0; i < 400; i++)
-            Assert.AreNotEqual(EnemyType.BigOni, EnemySpawnTable.Roll(1));
+            Assert.AreNotEqual(EnemyType.Brute, EnemySpawnTable.Roll(1));
     }
 
-    // ────────────────────────── 돌진귀 (원본 :4061) ──────────────────────────
+    // ────────────────────────── 멧돼지 (원본 :4061) ──────────────────────────
 
     /// <summary>
     /// 접근 → 예고(정지) → 질주 → 지침(정지) 순환. **예고와 지침 동안 멈추는 게 이 몹의 핵심**이라
@@ -146,7 +146,7 @@ public class EnemyTypeBehaviourTests
 
     /// <summary>
     /// 원본 `chargeMul`(:4147) — 접촉 피해 ×1.4는 **질주 중일 때만**이다. 상시 1.4면 서 있는
-    /// 돌진귀도 아프게 때리는 다른 몹이 된다.
+    /// 멧돼지도 아프게 때리는 다른 몹이 된다.
     /// </summary>
     [Test]
     public void Charger_ContactDamageBoostOnlyWhileCharging()
@@ -181,7 +181,7 @@ public class EnemyTypeBehaviourTests
 
     /// <summary>
     /// 맵 좌우 끝에 닿으면 시간이 남아도 질주가 끝난다(원본 `e.x &lt; 60 || e.x &gt; mapW - 60`, :4078).
-    /// 없으면 돌진귀가 벽에 처박힌 채 질주 판정(접촉 피해 ×1.4)을 계속 유지한다.
+    /// 없으면 멧돼지가 벽에 처박힌 채 질주 판정(접촉 피해 ×1.4)을 계속 유지한다.
     /// </summary>
     [Test]
     public void Charger_EndsChargeAtFieldEdge()
@@ -200,7 +200,7 @@ public class EnemyTypeBehaviourTests
         Assert.IsFalse(charger.IsCharging, "맵 끝에서는 질주 시간이 남아도 끝나야 한다");
     }
 
-    // ────────────────────────── 사수귀 (원본 :4084) ──────────────────────────
+    // ────────────────────────── 해골 궁수 (원본 :4084) ──────────────────────────
 
     /// <summary>너무 가까우면 물러나고, 너무 멀면 다가가고, 사거리(3~5) 안이면 멈춘다.</summary>
     [Test]
@@ -240,7 +240,7 @@ public class EnemyTypeBehaviourTests
 
     static int CountBolts() => Object.FindObjectsByType<EnemyBolt>(FindObjectsSortMode.None).Length;
 
-    // ────────────────────────── 도깨비불 (원본 :4042) ──────────────────────────
+    // ────────────────────────── 박쥐 (원본 :4042) ──────────────────────────
 
     /// <summary>
     /// 비행형은 중력을 안 받는다. `EnemyMove.Awake`는 이미 끝난 뒤에 스포너가 컴포넌트를 붙이므로
@@ -253,7 +253,7 @@ public class EnemyTypeBehaviourTests
         var rb = enemy.GetComponent<Rigidbody2D>();
         rb.gravityScale = 1f; // Awake에서 꺼둔 걸 되돌려 "붙이기 전" 상태를 재현
 
-        enemy.AddComponent<EnemyWispMotion>();
+        enemy.AddComponent<EnemyFlyerMotion>();
         Assert.AreEqual(1f, rb.gravityScale, "아직 EnemyMove는 새 컴포넌트를 모른다");
 
         enemy.GetComponent<EnemyMove>().RefreshTypeBehaviour();
@@ -265,7 +265,7 @@ public class EnemyTypeBehaviourTests
     public void Wisp_DoesNotChaseOutsideDetectRange()
     {
         var enemy = NewEnemy(new Vector3(0f, 2f, 0f));
-        var wisp = enemy.AddComponent<EnemyWispMotion>();
+        var wisp = enemy.AddComponent<EnemyFlyerMotion>();
         var target = NewTarget(new Vector3(10f, 2f, 0f));
 
         float vx = wisp.GetHorizontalSpeed(0.016f, target.transform, 0.66f);
@@ -280,7 +280,7 @@ public class EnemyTypeBehaviourTests
     public void Wisp_VerticalSpeedIsConstantRegardlessOfDistance()
     {
         var enemy = NewEnemy(new Vector3(0f, 1f, 0f));
-        var wisp = enemy.AddComponent<EnemyWispMotion>();
+        var wisp = enemy.AddComponent<EnemyFlyerMotion>();
         const float dt = 0.1f;
         float expected = wisp.verticalSpeed * dt;
 
@@ -294,10 +294,10 @@ public class EnemyTypeBehaviourTests
         Assert.AreEqual(expected, dFar, 1e-4f);
     }
 
-    // ────────────────────────── 분열귀 (원본 :1840) ──────────────────────────
+    // ────────────────────────── 슬라임 (원본 :1840) ──────────────────────────
 
     /// <summary>
-    /// 죽으면 새끼 2마리를 **좌우로** 요청한다. 스포너를 직접 부르지 않고 버스에 요청만 던지는
+    /// 죽으면 꼬마 슬라임 2마리를 **좌우로** 요청한다. 스포너를 직접 부르지 않고 버스에 요청만 던지는
     /// 구조라(asmdef 순환참조 회피) 여기선 버스에 들어온 요청을 본다.
     /// </summary>
     [UnityTest]
@@ -317,11 +317,11 @@ public class EnemyTypeBehaviourTests
         Assert.AreEqual(2, requests.Count);
         Assert.AreEqual(EnemyType.Splitlet, requests[0].Value);
         Assert.AreEqual(EnemyType.Splitlet, requests[1].Value);
-        Assert.AreEqual(4.76f, requests[0].Key.x, 1e-3f, "왼쪽 새끼는 -0.24");
-        Assert.AreEqual(5.24f, requests[1].Key.x, 1e-3f, "오른쪽 새끼는 +0.24");
+        Assert.AreEqual(4.76f, requests[0].Key.x, 1e-3f, "왼쪽 꼬마 슬라임은 -0.24");
+        Assert.AreEqual(5.24f, requests[1].Key.x, 1e-3f, "오른쪽 꼬마 슬라임은 +0.24");
     }
 
-    /// <summary>새끼는 지면 아래에서 나오지 않는다 — 원본 `Math.min(e.y, groundY)`.</summary>
+    /// <summary>꼬마 슬라임은 지면 아래에서 나오지 않는다 — 원본 `Math.min(e.y, groundY)`.</summary>
     [UnityTest]
     public IEnumerator Splitter_ClampsChildSpawnToGround()
     {

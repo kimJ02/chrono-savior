@@ -14,7 +14,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// 지역 보스 — 원본 `spawnBoss()`(project_test.html:4155) · `updateBoss()`(`:4176`).
 ///
 /// 상태 전이는 `GetHorizontalSpeed(dt, target, ...)`가 순수 함수라 프레임을 흘리지 않고 찍을 수 있다
-/// (돌진귀 테스트와 같은 구조).
+/// (멧돼지 테스트와 같은 구조).
 /// </summary>
 public class BossTests
 {
@@ -93,7 +93,7 @@ public class BossTests
     // ────────────────────────── 행동 선택 ──────────────────────────
 
     /// <summary>
-    /// 플레이어가 **높은 발판 위**면 근접이 아니라 원거리(귀신불)로 전환한다(원본 `highUp` :4191).
+    /// 플레이어가 **높은 발판 위**면 근접이 아니라 원거리(박쥐)로 전환한다(원본 `highUp` :4191).
     /// 이게 없으면 발판 위가 완전 안전지대가 되어 보스전이 성립하지 않는다.
     /// </summary>
     [UnityTest]
@@ -108,7 +108,7 @@ public class BossTests
         boss.GetHorizontalSpeed(Boss.SpitTele, target.transform, 1f); // 예고 끝 → 발사
         yield return null;
 
-        Assert.AreEqual(Boss.SpitCount, BoltCount(), "귀신불이 3발 나가야 한다");
+        Assert.AreEqual(Boss.SpitCount, BoltCount(), "박쥐이 3발 나가야 한다");
     }
 
     /// <summary>가까우면 내려찍기 — 좌우 충격파 2발(원본 `:4215`).</summary>
@@ -205,11 +205,11 @@ public class BossTests
         Assert.AreEqual(Boss.SummonCount * 2, requests.Count);
 
         // 원본 `bossSummon`은 `opts.protect`를 안 넘긴다(`:4278`) — 그래서 **기본 2초**다.
-        // 분열귀 새끼(0.35초)와 버스를 공유한다고 값까지 따라가면 안 된다: 부하가 나오자마자
+        // 슬라임 꼬마 슬라임(0.35초)와 버스를 공유한다고 값까지 따라가면 안 된다: 부하가 나오자마자
         // 얻어맞고 사라져서, 보스전 압박이 원본보다 훨씬 약해진다.
         foreach (float p in protects)
             Assert.AreEqual(EnemySpawnRequestBus.DefaultSpawnProtect, p, 1e-4f,
-                "보스 부하가 분열귀 새끼용 짧은 스폰 보호를 받고 있다");
+                "보스 부하가 슬라임 꼬마 슬라임용 짧은 스폰 보호를 받고 있다");
     }
 
     // ────────────────────────── 진행도 ──────────────────────────

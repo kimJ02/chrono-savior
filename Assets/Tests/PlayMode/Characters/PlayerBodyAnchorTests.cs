@@ -14,7 +14,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// 원본 좌표의 높이 기준점(발)을 Unity(몸 중심)로 옮길 때의 회귀 검사 — <see cref="PlayerBody"/>.
 ///
 /// 원본 `p.y - N`의 p.y는 발인데 몸 중심에서 재 버리면, 캐릭터 키가 몬스터와 같아진 지금(0.5) 공격이
-/// 오니(키 0.5) 머리 위로 지나간다. 캐릭터 크기를 줄이면서(2026-09-28) 드러났다.
+/// 고블린(키 0.5) 머리 위로 지나간다. 캐릭터 크기를 줄이면서(2026-09-28) 드러났다.
 /// 메카닉 총알은 <c>GunnerSkillTreeTests.Bullet_HitsOniSizedEnemyOnSameGround</c>가 본다.
 /// </summary>
 public class PlayerBodyAnchorTests
@@ -91,7 +91,7 @@ public class PlayerBodyAnchorTests
         while (t < 0.5f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
 
         Assert.Less(health.CurrentHp, health.MaxHp,
-            "바닥의 오니 크기 적을 정면 마법탄이 못 맞혔다 — 발사 높이를 발에서 재는지 확인(원본 p.y - 36)");
+            "바닥의 고블린 크기 적을 정면 마법탄이 못 맞혔다 — 발사 높이를 발에서 재는지 확인(원본 p.y - 36)");
     }
 }
 }

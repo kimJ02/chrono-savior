@@ -79,7 +79,7 @@ namespace ChronoSavior.Core
         {
             A("kill1",     "첫 사냥",       "몬스터 1마리 처치",       p => p.stats.totalKills >= 1),
             A("kill500",   "몬스터 사냥꾼", "누적 500마리 처치",      p => p.stats.totalKills >= 500),
-            A("kill5k",    "백귀 참살",     "누적 5,000마리 처치",    p => p.stats.totalKills >= 5000),
+            A("kill5k",    "몬스터 학살",     "누적 5,000마리 처치",    p => p.stats.totalKills >= 5000),
             A("kill20k",   "몬스터의 재앙", "누적 20,000마리 처치",   p => p.stats.totalKills >= 20000),
             A("combo50",   "연격의 미학",   "콤보 50 달성",           p => p.stats.maxCombo >= 50),
             A("combo200",  "무아의 경지",   "콤보 200 달성",          p => p.stats.maxCombo >= 200),
@@ -92,7 +92,7 @@ namespace ChronoSavior.Core
             A("reg7",      "지옥의 문",     "7지역 정복",             p => p.IsBossCleared(7)),
             A("reg9",      "백귀야행 종결", "9지역 정복 — 완주!",     p => p.IsBossCleared(9)),
             A("boss5",     "보스 헌터",     "보스 5종 처치",          p => p.stats.bosses >= 5),
-            A("boss9",     "백귀 토벌자",   "보스 9종 처치",          p => p.stats.bosses >= 9),
+            A("boss9",     "보스 토벌자",   "보스 9종 처치",          p => p.stats.bosses >= 9),
             // 원본 :819~:823 — spec1/specAll은 "어느 캐릭터든"이다(섬영 항은 트리가 생기면 추가).
             A("spec1",     "전문화 입문",   "캐릭터 빌드 1층 개방",   p => p.mageTier >= 1 || p.gunnerTier >= 1 || p.bladeTier >= 1),
             A("specAll",   "숙련된 전투가", "캐릭터 빌드 5층 완성",   p => p.mageTier >= 5 || p.gunnerTier >= 5 || p.bladeTier >= 5),

@@ -57,7 +57,7 @@ public class BladeCombatTests
         go.tag = "Enemy";
         go.transform.position = pos;
         go.AddComponent<SpriteRenderer>();
-        // 실제 배치와 같은 반지름 0.5(Enemy_Oni.prefab 기준) — GunnerAttackTests와 동일한 관례.
+        // 실제 배치와 같은 반지름 0.5(Enemy_Base.prefab 기준) — GunnerAttackTests와 동일한 관례.
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         go.AddComponent<EnemyMove>();
         go.AddComponent<EnemyHealth>();

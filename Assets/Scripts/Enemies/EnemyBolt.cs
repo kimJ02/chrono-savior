@@ -4,7 +4,7 @@ using ChronoSavior.Core;
 namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 사수귀가 쏘는 도깨비 화염탄. 원본 `projectiles`의 `kind:'ebolt'`(project_test.html:4098 생성,
+    /// 해골 궁수가 쏘는 화살. 원본 `projectiles`의 `kind:'ebolt'`(project_test.html:4098 생성,
     /// `:3732`~`:3742` 갱신)에 대응한다 — **적이 소유한 투사체**라 플레이어만 맞힌다.
     ///
     /// 원본은 관통이 없고 플레이어에 닿는 즉시 사라지며, 수명이 다하거나 지면 아래로 내려가도 사라진다.

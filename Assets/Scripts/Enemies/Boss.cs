@@ -7,7 +7,7 @@ namespace ChronoSavior.Enemies
     /// 지역 보스 — 원본 `spawnBoss()`(project_test.html:4155)와 `updateBoss()`(`:4176`) 그대로.
     ///
     /// **상태기계 4갈래**로 돌아간다. 어느 쪽을 고를지는 `idle`에서 플레이어 위치로 정한다(`:4189`):
-    /// - 플레이어가 **높은 발판 위**(1.3유닛 이상) → **귀신불 3발**(원거리) — 발판으로 도망가도 안전하지 않게
+    /// - 플레이어가 **높은 발판 위**(1.3유닛 이상) → **박쥐 3발**(원거리) — 발판으로 도망가도 안전하지 않게
     /// - 가까우면(2.6유닛 안) → **내려찍기**: 좌우 충격파 2발 + 즉시 근접 판정
     /// - 멀면(4.8유닛 밖, 55% 확률) → **돌진**
     /// - 나머지 → 걷기
@@ -42,7 +42,7 @@ namespace ChronoSavior.Enemies
         /// <summary>보스는 거의 안 밀린다. 원본 `e.boss ? 0.08`(`:1678`).</summary>
         public const float KnockbackMultiplier = 0.08f;
 
-        // 귀신불(spit) — 원본 `CONFIG.boss.spit`
+        // 박쥐(spit) — 원본 `CONFIG.boss.spit`
         public const int SpitCount = 3;
         public const float SpitSpeed = 4.60f;      // 원본 460
         public const float SpitLife = 3.0f;
@@ -138,7 +138,7 @@ namespace ChronoSavior.Enemies
 
                 default: // Charge
                 {
-                    // 원본은 속도를 먼저 정하고 끝 판정을 한다 — 돌진귀와 같은 순서다(`:4257`).
+                    // 원본은 속도를 먼저 정하고 끝 판정을 한다 — 멧돼지와 같은 순서다(`:4257`).
                     float vx = mover.Direction * ChargeSpeed;
                     if (stateTimer <= 0f || AtFieldEdge())
                     {
@@ -202,7 +202,7 @@ namespace ChronoSavior.Enemies
             }
         }
 
-        /// <summary>귀신불 3발을 부채꼴로(원본 `:4234`) — 플레이어를 향해 조준한다.</summary>
+        /// <summary>박쥐 3발을 부채꼴로(원본 `:4234`) — 플레이어를 향해 조준한다.</summary>
         void DoSpit(Transform target)
         {
             Vector3 origin = transform.position + new Vector3(mover.Direction * 0.4f, 0.7f, 0f);
@@ -233,12 +233,12 @@ namespace ChronoSavior.Enemies
         {
             for (int i = 0; i < SummonCount; i++)
             {
-                // 원본: 첫 마리는 반드시 오니, 나머지는 오니/도깨비불 반반.
-                var type = (i == 0 || Random.value < 0.5f) ? EnemyType.Oni : EnemyType.Wisp;
+                // 원본: 첫 마리는 반드시 고블린, 나머지는 고블린/박쥐 반반.
+                var type = (i == 0 || Random.value < 0.5f) ? EnemyType.Grunt : EnemyType.Flyer;
                 float x = Mathf.Clamp(transform.position.x + Random.Range(-2.6f, 2.6f),
                                       FieldBounds.MinX + 0.8f, FieldBounds.MaxX - 0.8f);
                 // 원본 `bossSummon`은 `protect`를 안 넘긴다(`:4278`) — 그래서 **기본 2초**다.
-                // 분열귀 새끼(0.35초)와 같은 경로를 쓴다고 값까지 같으면 안 된다.
+                // 슬라임 꼬마 슬라임(0.35초)와 같은 경로를 쓴다고 값까지 같으면 안 된다.
                 EnemySpawnRequestBus.Request(new Vector2(x, FieldBounds.GroundY + 0.5f), type,
                                              EnemySpawnRequestBus.DefaultSpawnProtect);
             }

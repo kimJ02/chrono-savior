@@ -81,7 +81,7 @@ namespace ChronoSavior.Editor
         }
 
         /// <summary>
-        /// 피격 플래시 확인 — 오니 그림 3마리(그대로 / 플래시 0.75 / 0.4)를 플레이어 옆에 두고 찍는다(2026-10-24).
+        /// 피격 플래시 확인 — 고블린 그림 3마리(그대로 / 플래시 0.75 / 0.4)를 플레이어 옆에 두고 찍는다(2026-10-24).
         /// `EnemyHealth.ShowFlash`와 같은 자식 렌더러·셰이더(`Resources/Shaders/SpriteFlash`)를 쓴다.
         /// </summary>
         public static void RunFlashCheck()
@@ -95,7 +95,7 @@ namespace ChronoSavior.Editor
             FitPlayerSprite(player);
             var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
             visuals.Build();
-            var oni = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Prototype/enemy_oni.png");
+            var oni = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Prototype/enemy_grunt.png");
             var mat = new Material(Resources.Load<Shader>("Shaders/SpriteFlash"));
             float[] alphas = { 0f, 0.75f, 0.4f };
             for (int i = 0; i < alphas.Length; i++)
@@ -103,7 +103,7 @@ namespace ChronoSavior.Editor
                 var go = new GameObject("FlashCheck" + i);
                 var sr = go.AddComponent<SpriteRenderer>();
                 sr.sprite = oni;
-                float s = 0.46f / oni.bounds.size.y; // 판정 높이(EntitySizeConfig 오니 46px)에 맞춤 — 지금 게임과 같게
+                float s = 0.46f / oni.bounds.size.y; // 판정 높이(EntitySizeConfig 고블린 46px)에 맞춤 — 지금 게임과 같게
                 go.transform.localScale = new Vector3(s, s, 1f);
                 go.transform.position = new Vector3(5.0f + i * 0.9f, FieldBounds.GroundY + 0.23f, 0f);
                 if (alphas[i] <= 0f) continue;

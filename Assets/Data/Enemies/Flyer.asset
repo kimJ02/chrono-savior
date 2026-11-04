@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f74473604c977114aaf37a57370f89cb, type: 3}
-  m_Name: Wisp
+  m_Name: Flyer
   m_EditorClassIdentifier: 
   type: 0
-  displayName: "\uB3C4\uAE68\uBE44\uBD88"
+  displayName: "\uBC15\uC950"
   maxHp: 26
   attackPower: 8
   moveSpeed: 0.66

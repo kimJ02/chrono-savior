@@ -4,7 +4,7 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: -4106849304017436738
-    second: enemy_bigoni_0
+    second: enemy_brute_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: enemy_bigoni_0
+      name: enemy_brute_0
       rect:
         serializedVersion: 2
         x: 0
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      enemy_bigoni_0: -4106849304017436738
+      enemy_brute_0: -4106849304017436738
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

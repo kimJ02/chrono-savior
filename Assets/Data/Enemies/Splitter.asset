@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Splitter
   m_EditorClassIdentifier: 
   type: 5
-  displayName: "\uBD84\uC5F4\uADC0"
+  displayName: "\uC2AC\uB77C\uC784"
   maxHp: 55
   attackPower: 12
   moveSpeed: 0.6

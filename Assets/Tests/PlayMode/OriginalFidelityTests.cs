@@ -268,10 +268,10 @@ public class OriginalFidelityTests
     /// <summary>
     /// 덩치는 **서로의 비율**이 맞아야 의미가 있다. 예전엔 성소를 손으로 고른 `localScale`로
     /// 세웠는데, 프리팹 기본 스프라이트가 32×32짜리 내장 이미지라 실제로는 0.42×0.61유닛밖에
-    /// 안 됐다 — 오니보다 작은 성소가 나왔고, **눈으로 보기 전엔 아무도 몰랐다.**
+    /// 안 됐다 — 고블린보다 작은 성소가 나왔고, **눈으로 보기 전엔 아무도 몰랐다.**
     ///
     /// 원본 비율(`CONFIG`의 w/h ÷ 100)을 기준으로 못 박는다:
-    /// 오니 0.46 &lt; 성소 0.96 &lt; 보스 1.50.
+    /// 고블린 0.46 &lt; 성소 0.96 &lt; 보스 1.50.
     /// </summary>
     [Test]
     public void EntitySizes_KeepOriginalProportions()
@@ -279,14 +279,14 @@ public class OriginalFidelityTests
         float oniHeight = EntitySizeConfig.OniRadius * 2f;
 
         Assert.Greater(EntitySizeConfig.ShrineHeight, oniHeight,
-            "성소가 오니보다 작다 — 원본은 두 배 높이다(64×96 vs 42×46)");
+            "성소가 고블린보다 작다 — 원본은 두 배 높이다(64×96 vs 42×46)");
         Assert.Greater(EntitySizeConfig.BossHeight, EntitySizeConfig.ShrineHeight,
             "보스가 성소보다 작다");
 
         // 원본 그대로여야 하는 것들(`:698`·`:721`) — 여기가 틀어지면 무대 대비 덩치가 통째로 달라진다.
         Assert.AreEqual(0.96f, EntitySizeConfig.ShrineHeight, 1e-4f);
         Assert.AreEqual(1.50f, EntitySizeConfig.BossHeight, 1e-4f);
-        // 오니는 원본 46px의 절반 언저리 — 정확히 0.46은 아니고 0.50이다(반지름을 0.25로 딱 떨어지게 잡음).
+        // 고블린은 원본 46px의 절반 언저리 — 정확히 0.46은 아니고 0.50이다(반지름을 0.25로 딱 떨어지게 잡음).
         Assert.AreEqual(0.50f, oniHeight, 1e-4f);
     }
 

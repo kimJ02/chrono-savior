@@ -207,8 +207,8 @@ public class GunnerSkillTreeTests
     }
 
     /// <summary>
-    /// 오니 크기(키 0.5)의 적이 바닥에 서 있을 때, 같은 바닥에 선 메카닉의 정면 총알이 **맞아야** 한다.
-    /// 총구를 몸 중심에서 재던 시절엔 총알이 오니 머리 위로 지나갔다 — 원본 `p.y - 38`의 p.y는 발이다.
+    /// 고블린 크기(키 0.5)의 적이 바닥에 서 있을 때, 같은 바닥에 선 메카닉의 정면 총알이 **맞아야** 한다.
+    /// 총구를 몸 중심에서 재던 시절엔 총알이 고블린 머리 위로 지나갔다 — 원본 `p.y - 38`의 p.y는 발이다.
     /// </summary>
     [UnityTest]
     public IEnumerator Bullet_HitsOniSizedEnemyOnSameGround()
@@ -223,7 +223,7 @@ public class GunnerSkillTreeTests
         float t = 0f;
         while (t < 0.4f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
 
-        Assert.IsTrue(Damaged(oni), "바닥의 오니 크기 적을 정면 총알이 못 맞혔다 — 총구 높이를 발에서 재는지 확인");
+        Assert.IsTrue(Damaged(oni), "바닥의 고블린 크기 적을 정면 총알이 못 맞혔다 — 총구 높이를 발에서 재는지 확인");
     }
 
     [UnityTest]

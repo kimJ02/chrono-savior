@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Splitlet
   m_EditorClassIdentifier: 
   type: 6
-  displayName: "\uC0C8\uB07C"
+  displayName: "\uAF2C\uB9C8 \uC2AC\uB77C\uC784"
   maxHp: 14
   attackPower: 7
   moveSpeed: 1.12

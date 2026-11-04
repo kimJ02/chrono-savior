@@ -10,10 +10,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f74473604c977114aaf37a57370f89cb, type: 3}
-  m_Name: BigOni
+  m_Name: Brute
   m_EditorClassIdentifier: 
   type: 2
-  displayName: "\uB300\uC624\uB2C8"
+  displayName: "\uC624\uC6B0\uAC70"
   maxHp: 160
   attackPower: 26
   moveSpeed: 0.44

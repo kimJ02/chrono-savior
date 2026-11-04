@@ -49,7 +49,7 @@ public class PlayerHealthTests
         var hp = player.GetComponent<PlayerHealth>();
 
         Assert.AreEqual(100f, hp.MaxHp, 0.01f, "플레이어 최대 체력이 원본(baseHp 100)과 다르다");
-        hp.TakeDamage(13f, attacker); // 오니 접촉 데미지
+        hp.TakeDamage(13f, attacker); // 고블린 접촉 데미지
 
         // ±10% 난수 → 11.7~14.3이 깎인다
         float lost = hp.MaxHp - hp.CurrentHp;

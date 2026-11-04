@@ -4,7 +4,7 @@ using ChronoSavior.Core;
 namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 분열귀(splitter)가 죽을 때 새끼 2마리를 남긴다 — 원본 `killEnemy()`의 splitter 분기
+    /// 슬라임(splitter)가 죽을 때 꼬마 슬라임 2마리를 남긴다 — 원본 `killEnemy()`의 splitter 분기
     /// (project_test.html:1840~1844) 그대로.
     ///
     /// 스폰을 **직접 하지 않고** <see cref="EnemySpawnRequestBus"/>에 요청만 던진다. `Enemies`(2층)가
@@ -15,11 +15,11 @@ namespace ChronoSavior.Enemies
     public class EnemySplitOnDeath : MonoBehaviour
     {
         [Header("원본 killEnemy의 splitter 분기 (project_test.html:1840)")]
-        [Tooltip("죽을 때 남기는 새끼 수. 원본은 좌우로 2마리.")]
+        [Tooltip("죽을 때 남기는 꼬마 슬라임 수. 원본은 좌우로 2마리.")]
         public int childCount = 2;
         [Tooltip("좌우로 벌어지는 거리. 원본 ±24px ÷100.")]
         public float spawnOffsetX = 0.24f;
-        [Tooltip("남길 새끼의 종류.")]
+        [Tooltip("남길 꼬마 슬라임의 종류.")]
         public EnemyType childType = EnemyType.Splitlet;
 
         /// <summary>

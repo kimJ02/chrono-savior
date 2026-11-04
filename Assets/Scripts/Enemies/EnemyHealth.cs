@@ -10,7 +10,7 @@ namespace ChronoSavior.Enemies
     /// 피해량 계산(치명타·난수 변동) 자체는 공격 쪽(`Combat.DamageCalculator`)이 담당한다 — 원본도
     /// `dealDamage` 안에서 공격자 스탯으로 먼저 계산한 뒤 대상 체력을 깎는 순서다.
     ///
-    /// 아직 빠진 것(`docs/original-parity.md` 참고): 콤보 적립, 출혈·처형, 분열귀 분열,
+    /// 아직 빠진 것(`docs/original-parity.md` 참고): 콤보 적립, 출혈·처형, 슬라임 분열,
     /// 데미지 숫자 팝업·파티클·hitstop. 사망 시 골드·경험치 지급은 <see cref="Died"/> 이벤트로
     /// 트랙 A(`Systems`)가 구독해서 처리한다(`docs/sprints/03-growth-curve-worksplit.md` 참고) — 이 클래스 자체는
     /// 보상을 계산하지 않는다(Enemies 도메인이 Core.ProfileService 이상을 몰라야 하므로).
@@ -20,13 +20,13 @@ namespace ChronoSavior.Enemies
     public class EnemyHealth : MonoBehaviour, IDamageable, IElementAfflictable, IVulnerable
     {
         [Header("스탯 (원본 CONFIG.enemyBase.oni — project_test.html:709)")]
-        [Tooltip("최대 체력. 원본 오니 38. 몹 종류가 늘면 EnemyData(SO)로 옮긴다(스프린트 4).")]
+        [Tooltip("최대 체력. 원본 고블린 38. 몹 종류가 늘면 EnemyData(SO)로 옮긴다(스프린트 4).")]
         public float maxHp = 38f;
 
         [Header("피격 반응 (원본 그대로)")]
         [Tooltip("기본 넉백 속도(무기별 kb 지정이 없을 때). 원본 kbBase 240px/s ÷100(project_test.html:1678).")]
         public float knockbackSpeed = 2.4f;
-        [Tooltip("종류별 넉백 배율. 원본 :1678 — 대오니 0.4, 나머지 1. 스폰 시 EnemyData에서 주입된다.")]
+        [Tooltip("종류별 넉백 배율. 원본 :1678 — 오우거 0.4, 나머지 1. 스폰 시 EnemyData에서 주입된다.")]
         public float knockbackMultiplier = 1f;
 
         [Tooltip("보스인지. 레벨 페널티 하한이 25%가 아니라 50%가 된다(원본 :1652). " +
@@ -273,7 +273,7 @@ namespace ChronoSavior.Enemies
             // 도메인을 가로지르는 알림(히트스톱 등). 처치 보상은 아래 `Died` 구독자가 따로 처리한다.
             CombatEvents.RaiseEnemyKilled(gameObject);
             // 원본 killEnemy(project_test.html:1793)의 골드·경험치는 Died 구독자(트랙 A)가 처리.
-            // 연쇄처치 보너스·분열귀 분열은 아직 범위 밖 — 나중 스프린트에서 붙인다.
+            // 연쇄처치 보너스·슬라임 분열은 아직 범위 밖 — 나중 스프린트에서 붙인다.
             Died?.Invoke(this);
             Destroy(gameObject);
         }

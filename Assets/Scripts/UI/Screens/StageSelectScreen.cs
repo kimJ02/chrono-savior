@@ -193,13 +193,13 @@ namespace ChronoSavior.UI
             enter.Interactable = p.IsRegionOpen(s);
         }
 
-        /// <summary>그 지역에 나오는 몹 종류 — 원본 `rollSpawnType` 순서(도깨비불·오니 → 돌진귀 → 사수귀 → 분열귀, 2지역부터 대오니).</summary>
+        /// <summary>그 지역에 나오는 몹 종류 — 원본 `rollSpawnType` 순서(박쥐·고블린 → 멧돼지 → 해골 궁수 → 슬라임, 2지역부터 오우거).</summary>
         public static EnemyType[] MonstersOf(int region)
         {
-            if (region <= 1) return new[] { EnemyType.Wisp, EnemyType.Oni };
-            if (region == 2) return new[] { EnemyType.Wisp, EnemyType.Oni, EnemyType.Charger, EnemyType.BigOni };
-            if (region == 3) return new[] { EnemyType.Wisp, EnemyType.Oni, EnemyType.Charger, EnemyType.Shooter, EnemyType.BigOni };
-            return new[] { EnemyType.Wisp, EnemyType.Oni, EnemyType.Charger, EnemyType.Shooter, EnemyType.Splitter };
+            if (region <= 1) return new[] { EnemyType.Flyer, EnemyType.Grunt };
+            if (region == 2) return new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Brute };
+            if (region == 3) return new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Shooter, EnemyType.Brute };
+            return new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Shooter, EnemyType.Splitter };
         }
 
         static Sprite SpriteOf(EnemySpawner spawner, EnemyType type)

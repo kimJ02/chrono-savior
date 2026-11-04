@@ -71,7 +71,7 @@ public class HitFeelTests
         go.transform.position = pos;
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = TestSprite();
-        sr.color = new Color(0.85f, 0.2f, 0.2f); // Enemy_Oni 프리팹 색
+        sr.color = new Color(0.85f, 0.2f, 0.2f); // Enemy 프리팹 색
         go.AddComponent<CircleCollider2D>().radius = 0.3f;
         var move = go.AddComponent<EnemyMove>();
         var health = go.AddComponent<EnemyHealth>();

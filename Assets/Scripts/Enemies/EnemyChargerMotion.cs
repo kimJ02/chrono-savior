@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 돌진귀(charger)의 이동 상태기계 — 원본 `updateEnemies()`의 charger 분기
+    /// 멧돼지(charger)의 이동 상태기계 — 원본 `updateEnemies()`의 charger 분기
     /// (project_test.html:4061~4083)와 `CONFIG.charger`(`:716`) 그대로.
     ///
     /// **접근(walk) → 예고(tele) → 질주(charge) → 지침(tired) → 접근** 순환이다.

@@ -304,11 +304,11 @@ public static class BuildPartAScene
         return go;
     }
 
-    const string MonsterPrefabPath = "Assets/Prefabs/Enemy_Oni.prefab";
+    const string MonsterPrefabPath = "Assets/Prefabs/Enemy_Base.prefab";
 
     /// <summary>
     /// Part B(docs/sprints/01-combat-core.md 2번) 웨이브 스포너를 씬에 등록. 프리팹은 Part B가 만든
-    /// Assets/Prefabs/Enemy_Oni.prefab(구 Monster.prefab)을 그대로 참조한다 — 여기서 새로 만들지 않는다.
+    /// Assets/Prefabs/Enemy_Base.prefab(구 Monster.prefab)을 그대로 참조한다 — 여기서 새로 만들지 않는다.
     /// </summary>
     /// <summary>
     /// 게임 뼈대(로비↔사냥↔결과). 씬에 하나만 있으면 되고, 시작 시 스스로 로비 상태로 들어간다.
@@ -375,8 +375,8 @@ public static class BuildPartAScene
         BuildEnemyData.Build();
 
         // 7종 전부 등록한다. **어떤 종이 실제로 나올지는 여기가 아니라 지역별 해금표가 정한다**
-        // (`EnemySpawnTable.Roll`, 원본 rollSpawnType :3933) — 새끼(Splitlet)는 그 표에 없어서
-        // 웨이브로는 나오지 않고 분열귀가 죽을 때만 나오지만, 그때 수치를 찾아 쓰려면 여기 등록돼 있어야 한다.
+        // (`EnemySpawnTable.Roll`, 원본 rollSpawnType :3933) — 꼬마 슬라임(Splitlet)는 그 표에 없어서
+        // 웨이브로는 나오지 않고 슬라임이 죽을 때만 나오지만, 그때 수치를 찾아 쓰려면 여기 등록돼 있어야 한다.
         var types = new List<EnemyData>();
         foreach (EnemyType t in System.Enum.GetValues(typeof(EnemyType)))
         {
@@ -388,7 +388,7 @@ public static class BuildPartAScene
     }
 
     /// <summary>
-    /// Enemy_Oni.prefab(구 Monster.prefab)에 Rigidbody2D가 없었다 — 몹이 발판 높이에 스폰돼도 중력을
+    /// Enemy_Base.prefab(구 Monster.prefab)에 Rigidbody2D가 없었다 — 몹이 발판 높이에 스폰돼도 중력을
     /// 안 받아 허공에 뜬 채로 있거나(또는 발판 콜라이더를 그냥 통과)였다. 실제로 발판 위에 서 있으려면
     /// 플레이어와 동일하게 진짜 물리(Rigidbody2D + 이미 있는 CircleCollider2D)가 필요해서 프리팹에 직접 추가한다.
     ///
@@ -410,7 +410,7 @@ public static class BuildPartAScene
         rb.freezeRotation = true;
         rb.gravityScale = 1f;
 
-        // 스프린트 2 — 체력. 원본 오니 hp 38(project_test.html:709).
+        // 스프린트 2 — 체력. 원본 고블린 hp 38(project_test.html:709).
         // 위 Rigidbody2D와 같은 이유로 "있는지 검사 후 건너뛰기"를 하지 않는다(RequireComponent 자동 보충 함정).
         var health = contents.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
         if (health == null) health = contents.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
@@ -424,7 +424,7 @@ public static class BuildPartAScene
 
         PrefabUtility.SaveAsPrefabAsset(contents, MonsterPrefabPath);
         PrefabUtility.UnloadPrefabContents(contents);
-        Debug.Log("[BuildPartAScene] Enemy_Oni.prefab Rigidbody2D/EnemyHealth 확인/설정 완료");
+        Debug.Log("[BuildPartAScene] Enemy_Base.prefab Rigidbody2D/EnemyHealth 확인/설정 완료");
     }
 
     /// <summary>

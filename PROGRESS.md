@@ -14,7 +14,7 @@
 **2026-09-30 병합: `feature/gunner-tiers`** — 메카닉 스킬트리(로비에서 습득까지) + 플레이어 크기 0.5·공격 높이 발 기준
 + 캐릭터 선택이 프로필과 어긋나던 버그·보스 격파가 다음 사냥에 새던 버그 수정 + 메카닉 테스트용 에디터 메뉴
 + 전투 HUD 스킬 슬롯(Z·X·C 쿨다운, Figma 그림) + 문서를 노션 일정표 기준으로 정리(아래 로그 09-28 (5)~09-30 (2)).
-**2026-10-14 병합 → `main`**: 섬영 집중·칼날폭풍 1~5층 + 캐릭터·오니·도깨비불 아트(팀원) + 캐릭터별 레벨·경험치·SP·
+**2026-10-14 병합 → `main`**: 섬영 집중·칼날폭풍 1~5층 + 캐릭터·고블린·박쥐 아트(팀원) + 캐릭터별 레벨·경험치·SP·
 SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕괴 폭발 고리(나) + 로비 섬영 전문화 탭·섬영 업적(나, 병합 때). 로그 10-14 (1).
 **2026-10-24 병합 → `main`**: Figma 1스테이지 화면 1단계 — C안 카메라(960×540px를 정수배로, Y도 따라감) + 배경·땅·발판·캐릭터·
 보스 포탈(1.5배) Figma 원본 그림 + 타격감 원본 값(공격별 히트스톱·피격 플래시 버그·화면 흔들림·붉어짐·무적 깜빡임) +
@@ -34,7 +34,7 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
   **내 레벨이 몹보다 낮으면 레벨당 -5%**(하한 25%, 보스는 50%)라 상위 지역은 강화만으로 안 뚫린다.
 
 몹은 3.6초마다 웨이브 스폰되고, **지역별 해금표**(원본 `rollSpawnType`)에 따라 종류가 정해진다 —
-1지역은 도깨비불·오니만, 지역이 오르면 돌진귀→사수귀→분열귀가 차례로 추가되고 2지역부터 대오니도 섞인다.
+1지역은 박쥐·고블린만, 지역이 오르면 멧돼지→해골 궁수→슬라임이 차례로 추가되고 2지역부터 오우거도 섞인다.
 8% 확률로 **엘리트**(체력×4·피해×1.5·크기×1.35·보상×5)가 섞인다.
 
 ### 다음 할 일
@@ -127,7 +127,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 ## 확인 필요 / 막힌 것
 
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
-  조건 추가(2026-10-07) — 팀장 확인 필요.** 오니·도깨비불만 정식 아트(사용자 제공)를 쓰도록 1줄
+  조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
   조건부 변경, 나머지 5종은 그대로 도형. `Enemies/`는 팀장 담당 영역이라 동작엔 문제없지만 병합 전
   확인 바람. 자세한 경위·새로 만든 `ApplyCharacterArt.cs`(캐릭터 그림 적용 메뉴)는 아래 로그
   10-07 (1) 참고.
@@ -223,8 +223,14 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   네임스페이스·asmdef `YokaiFront.*` → `ChronoSavior.*`(asmdef 8개 파일 이름까지), 에디터 메뉴 `YokaiFront/` → `ChronoSavior/`, 셰이더 이름 `ChronoSavior/SpriteFlash`,
   게임 문구 '요괴' → '몬스터'(업적·아이템 '몬스터 유인향'·결과 화면 등), 제품명 `My project` → `Chrono Savior`·회사명 `DefaultCompany` → `PigeonHelicopter`
   (세이브 폴더가 `LocalLow/PigeonHelicopter/Chrono Savior/`로 바뀜 — 이 PC의 기존 세이브는 복사해 둠). 저장소 `kimJ02/yokai_unity` → `kimJ02/chrono-savior`.
-  **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(돌진귀 등)·업적 '백귀 참살'은 그대로(사용자 확인 필요).
+  **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(멧돼지 등)·업적 '몬스터 학살'은 그대로(사용자 확인 필요).
   **팀원 주의**: 내일 받을 때 `using YokaiFront…` 가 남은 작업 중 파일이 있으면 `ChronoSavior`로 바꿔야 컴파일된다.
+- **2026-11-04 (2)** — **[나] 몬스터 이름도 컨셉에 맞게 (`chore/rename-chrono-savior`).** 사용자 "몬스터 고유 이름도 직관적인 이름으로".
+  화면 이름: 도깨비불→박쥐, 오니→고블린, 대오니→오우거, 돌진귀→멧돼지, 사수귀→해골 궁수, 분열귀→슬라임, 새끼→꼬마 슬라임(업적 '백귀 참살'→'몬스터 학살', '백귀 토벌자'→'보스 토벌자').
+  코드는 행동 기준 이름: `EnemyType.Wisp/Oni/BigOni` → `Flyer/Grunt/Brute`(나머지 Charger·Shooter·Splitter·Splitlet 그대로, enum 순서 유지 → 직렬화 값 안 바뀜),
+  `EnemyWispMotion` → `EnemyFlyerMotion`, 데이터 `Wisp/Oni/BigOni.asset` → `Flyer/Grunt/Brute.asset`, 스프라이트 `enemy_wisp/oni/bigoni` → `enemy_flyer/grunt/brute`,
+  기본 몹 프리팹 `Enemy_Oni.prefab` → `Enemy_Base.prefab`(.meta 같이 옮겨 GUID 유지). 원본 키 대응표는 `docs/original-parity.md` 맨 위.
+  **확인 필요**: 지역 이름(버려진 신사·홍등 거리·저승 문턱·백귀야행 등)과 업적 '백귀야행 종결'은 옛 컨셉이 남아 있다 — 바꿀지 사용자 결정.
 
 - **2026-10-28 (2)** — **[나] 로비 한 화면 (`feature/gravity-impact-vfx`, PlayMode 400/400).** 사용자 "맨 왼쪽에서 나와 던전까지 오래 걸린다, 캐릭터가 건물보다 너무 작다, 한눈에 들어오게".
   건물을 96×104도트(0.75×0.81유닛, 캐릭터의 약 1.6배 — 틀은 9-슬라이스)로 줄여 필드 가운데에 ±0.9·±2.7 간격으로 모음, 캐릭터는 가운데서 나오고
@@ -354,7 +360,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     몹 그림(`enemy_*`)도 아직 100px/유닛·흐림 필터.
 
 - **2026-10-14 (1)** — **[나] 섬영 1~5층·아트(팀원, `main`)에 내 브랜치를 합쳐 `main`으로 (PlayMode 329/329).**
-  - 팀원이 10/14 아침 `main`에 섬영 집중·칼날폭풍 1~5층(10/07)과 캐릭터·오니·도깨비불 아트(`sprite`)를 올렸다.
+  - 팀원이 10/14 아침 `main`에 섬영 집중·칼날폭풍 1~5층(10/07)과 캐릭터·고블린·박쥐 아트(`sprite`)를 올렸다.
     내 `fix/mage-original-behavior`(캐릭터별 성장·SP +1·마법사 버그 5건·경험치 넘침·대붕괴 고리)를 합쳤다. 충돌 3곳:
     - `Combat/GravityWellZone.cs` — 중력점 높이 버그를 둘이 따로 같은 줄로 고쳤다(나 10/03, 팀원 10/07). 주석만 하나로.
     - `Core/PlayerProfile.cs` — 섬영 SP를 **섬영 성장 칸**으로 옮겼다(원본 `charProg('blade')`, 사용자 결정 "캐릭터별 분리는
@@ -378,7 +384,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   (`Tests/PlayMode/Characters/MageSkillTreeTests.cs`) 추가, 3층 발판 높이에서 터뜨렸을 때 중력점이
   그 높이 그대로 생기는지 검증.
 
-- **2026-10-07 (1)** — **[팀원, 소유권 밖 수정] 캐릭터·오니·도깨비불 정식 아트 교체 + 적용 경로 신설.**
+- **2026-10-07 (1)** — **[팀원, 소유권 밖 수정] 캐릭터·고블린·박쥐 정식 아트 교체 + 적용 경로 신설.**
   사용자가 실제 캐릭터/몬스터 그림 파일을 구해 와서 교체 요청. `Assets/Sprites/Prototype/`의
   `char_mage`·`char_gunner`·`char_blade`·`char_druid`·`enemy_oni`·`enemy_wisp` PNG를 같은 파일명으로
   덮어쓰는 것까진 `docs/prototype-sprites.md` 절차 그대로였는데, **PNG만 바꿔선 게임에 반영되지
@@ -387,8 +393,8 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   (`PlayerRig.ApplySprite`는 배열이 비면 아무것도 안 함, `BuildEnemyData.Build()`는 매번
   `asset.sprite = null`을 강제 적용).
   - **[소유권 밖, 팀장 확인 필요] `Assets/Editor/BuildEnemyData.cs`**: `asset.sprite = null` 고정을
-    `SpriteEnabledTypes`(HashSet) 조건부로 바꿔서, 정식 아트가 들어온 종류(지금은 오니·도깨비불)만
-    `BuildPrototypeSprites.Load(...)`를 쓰고 나머지 5종(대오니·돌진귀·사수귀·분열귀·새끼)은 기존대로
+    `SpriteEnabledTypes`(HashSet) 조건부로 바꿔서, 정식 아트가 들어온 종류(지금은 고블린·박쥐)만
+    `BuildPrototypeSprites.Load(...)`를 쓰고 나머지 5종(오우거·멧돼지·해골 궁수·슬라임·꼬마 슬라임)은 기존대로
     도형+색을 쓰게 했다. 한 종류 더 켜려면 그 HashSet에 `EnemyType.___` 한 줄만 추가하면 된다.
     `Enemies/`는 `docs/worksplit.md`상 팀장 담당이라 — 동작 자체는 메뉴(`ChronoSavior/Build Enemy
     Data`) 재실행만 하면 되는 1줄짜리 조건 변경이지만, 병합 전 팀장이 봐 줘야 한다.
@@ -400,7 +406,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     `ChronoSavior/Apply Character Art (Player)`를 새로 만들었다. 실행 후 씬 저장(Ctrl+S) 필요 —
     `PlayerRig.Awake()`가 Play 시작마다 `characterSprites` 값으로 SpriteRenderer를 덮어쓰기 때문에,
     SpriteRenderer에 직접 드래그하는 방식은 Play를 누르는 순간 되돌아간다(실제로 사용자가 겪음).
-  - **남은 것**: 대오니·돌진귀·사수귀·분열귀·새끼 5종은 아직 도형 그대로. 그림이 생기면
+  - **남은 것**: 오우거·멧돼지·해골 궁수·슬라임·꼬마 슬라임 5종은 아직 도형 그대로. 그림이 생기면
     `BuildEnemyData.cs`의 `SpriteEnabledTypes`에 한 줄씩 추가 + 해당 PNG를 같은 파일명으로
     덮어쓰면 된다.
 
@@ -751,15 +757,15 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - 같이 발견한 "보스 격파가 다음 사냥 직후 뜨는" 버그는 원인만 확인하고 아직 안 고쳤다(위 "확인 필요").
 
 - **2026-09-28 (6)** — **[나] 플레이어 크기 1.00 → 0.50(몬스터와 1대1) + 공격 높이를 원본대로 "발" 기준으로 (PlayMode 241/241).**
-  - 사용자 지시: "캐릭터가 너무 크다, 몬스터랑 1대1 크기로" → `EntitySizeConfig.PlayerHeight` 0.50(오니 높이와 같음).
+  - 사용자 지시: "캐릭터가 너무 크다, 몬스터랑 1대1 크기로" → `EntitySizeConfig.PlayerHeight` 0.50(고블린 높이와 같음).
   - 씬에 `PlayerRig.spriteHeight: 1`이 직렬화돼 있어서 상수만 바꾸면 게임에 반영이 안 됐다 →
     `PlayerRig.Awake`에서 상수를 읽게 했다(씬 파일은 무변경).
   - **원본 `p.y`는 발이다**(`entRect` :1003). 그런데 Unity 기준점은 몸 중심이라 `p.y - 38`(메카닉 총구)·
-    `p.y - 36`(마법탄)을 중심에서 재고 있었다 → **키 0.5 오니 머리 위로 공격이 지나갔다**(크기를 줄이기 전에도).
+    `p.y - 36`(마법탄)을 중심에서 재고 있었다 → **키 0.5 고블린 머리 위로 공격이 지나갔다**(크기를 줄이기 전에도).
     `Characters/PlayerBody.Feet`을 만들고 메카닉(총알·빔·설치기·드론)과 마법사(마법탄·아래 조준 중력점)를
     발 기준으로 바꿨다. 마법사 중력점은 "중심에서 0.34 **아래**"로 옮겨져 있던 걸 원본대로 "발에서 0.34 **위**"로.
     마법사 수정은 사용자 확인 후 진행("마법사도 고치고").
-  - 테스트 +3: 메카닉·마법사가 같은 바닥의 오니 크기 적을 정면으로 맞히는지, `Feet` 계산.
+  - 테스트 +3: 메카닉·마법사가 같은 바닥의 고블린 크기 적을 정면으로 맞히는지, `Feet` 계산.
   - 검증: 사용자가 에디터를 켜 둔 상태라 `C:\dev\chrono-savior_verify`(git worktree, 분리된 HEAD)에 같은 변경을
     올려 배치로 전체 실행 — 241/241. (CLAUDE.md 협업 규칙 7 "다른 폴더에서 실행" 방식)
   - 아직 발 기준으로 안 바꾼 곳(영향 작음): 마법사 순간이동 궤적(원본 `p.y - 28`, 키 0.5에선 차이 0.03)·
@@ -883,7 +889,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     쓰여서, "정의와 사용처가 같은 파일인 건 넣지 않는다"는 기준을 주석에 못 박았다.
   - **고친 편차**: 보스 레벨 페널티 하한(원본은 보스만 0.5, `:1652`) · 쿨감 아이템 미연결 ·
     구슬 경험치 배수 누락(`:4466`) · 웨이브 상한이 보스·성소까지 셈(`:3978`은 둘을 제외) ·
-    보스 부하가 분열귀 새끼용 0.35초 보호를 받음(원본은 기본 2초, `:4278`) ·
+    보스 부하가 슬라임 꼬마 슬라임용 0.35초 보호를 받음(원본은 기본 2초, `:4278`) ·
     성소 4건(스폰 보호 미적용 / 보스전에도 등장 / 보호 중에도 적 버프 / 살아 있으면 타이머 정지).
   - **작업 중 테스트가 두 개를 더 잡았다**: ①스폰속도 아이템을 보스전 잡몹 간격에도 곱하고 있었다
     (원본 `:4444`는 `minionInterval`을 그대로 쓴다). ②보스전 잡몹 게이트가 원본과 구조가 달랐다 —
@@ -904,7 +910,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     진행도가 붙었다(`:6271`).
   - **덩치**(사용자 지적: *"성소가 너무 작다 / 몬스터는 반으로 / 플레이어는 1.5배"*) —
     성소가 작아 보인 진짜 원인은 프리팹 기본 스프라이트가 **32×32짜리 내장 이미지**라, 거기 맞춰
-    손으로 고른 `localScale`(1.3×1.9)이 실제로는 0.42×0.61유닛이었던 것 — **오니보다도 작았다.**
+    손으로 고른 `localScale`(1.3×1.9)이 실제로는 0.42×0.61유닛이었던 것 — **고블린보다도 작았다.**
     값이 세 군데(EnemyData·PlayerRig·스포너)에 흩어져 있어 비교가 안 되던 게 근본 문제라
     **`Core/EntitySizeConfig` 한 곳으로 모았다.** 몹은 원본 크기(반지름 0.25), 성소·보스는 원본
     크기(0.64×0.96 / 1.30×1.50), 플레이어만 사용자 지정 1.5(원본의 2.7배 — 문서에 명시).
@@ -1000,20 +1006,20 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     4층 쿨감 `0.78`/`0.68`, 5층 관통 +2·폭발 반경 +0.40·화상 4스택 등).
 
 - **2026-09-09** — **몹 7종 행동 + 지역별 스폰표 + 엘리트 (PlayMode 94/94, `fb5e094`).** 단계 1의 몬스터 쪽 완료.
-  - **종류별 행동을 인터페이스로 분리** — `IEnemyMotion`(수평)·`IEnemyVerticalMotion`(비행)·`IEnemyContactDamageModifier`(돌진 ×1.4). `EnemyMove`는 중력·발판 반전·넉백·접촉처럼 **타입 공통인 것만** 계속 맡는다(원본도 `updateEnemies`가 타입 분기 뒤에 공통 코드를 돈다, `:4112`~`:4148`). 오니·대오니·새끼는 붙는 컴포넌트가 없다 — 수치만 다르기 때문(CLAUDE.md SO 규칙의 '수치만' 쪽).
-  - **순환참조 회피** — 분열귀가 새끼를 낳을 때 `Enemies`(2층)가 `Systems`(3층) 스포너를 직접 부르면 컴파일이 통째로 깨진다. CLAUDE.md에 미리 확정돼 있던 대로 `Core/EnemySpawnRequestBus`로 요청만 던진다(식별자는 `string` 대신 `EnemyType` enum으로 바꿨다 — 오타가 컴파일에서 걸리게).
-  - **`Instantiate` 뒤 컴포넌트 부착 함정** — 스포너는 인스턴스를 만든 **뒤에** 종류별 컴포넌트를 붙이는데, 그 시점엔 `EnemyMove.Awake`가 이미 끝나 캐시한 참조가 null로 남는다. `RefreshTypeBehaviour()`를 만들어 마지막에 부르게 했다. 안 부르면 도깨비불이 중력에 떨어지고 돌진귀가 그냥 걷는, **에러 없이 조용히 틀리는** 상태라 전용 테스트로 고정했다.
-  - **원본 재확인으로 잡은 편차 5건**: ①돌진귀 상태 전이 — 원본은 속도를 정한 **뒤에** 상태를 바꿔서(`:4065`~`:4082`) 예고 진입 프레임은 아직 걷고 질주 마지막 프레임은 한 번 더 질주한다(우리 쪽은 그 한 프레임이 0이라 끝에서 멈칫했다). ②몸집을 콜라이더 반지름으로만 주면 스프라이트는 그대로라 대오니가 "보이는 것보다 넓게 때리는" 몹이 된다 → `transform.localScale`로 통일하고 `EnemyMove.WorldRadius` 추가. ③이동속도 편차 `rand(0.9,1.1)`(`:3960`) 누락 — 없으면 한 웨이브가 한 덩어리로 몰려온다. ④초기 방향(`:3959`)·돌진 첫 쿨다운(`:3966`) 무작위 누락. ⑤새끼 스폰 Y가 지면 아래로 내려갈 수 있었다(원본 `Math.min(e.y, groundY)`).
-  - **지역별 해금표** `Systems/EnemySpawnTable`(원본 `rollSpawnType` `:3933`) — 균등 랜덤을 대체. 새끼는 이 표에 **절대** 안 들어간다(분열귀가 죽을 때만). 몹 레벨 `enemyLv()`는 안 넣었다 — 표가 쓰는 유일한 조건 `lv>=4`가 지역 조건과 등가라서(`regionBaseLv` `:972`), 없는 개념을 새로 들일 이유가 없었다.
-  - **엘리트** `Enemies/EnemyElite` 표식 + 스포너가 수치를 곱한다(8%, 체력×4·피해×1.5·크기×1.35·보상×5, **골드는 확률 무시하고 항상 드랍** `:1818`). 새끼는 승격 제외(원본 `noElite`). 8% 확률이 기존 테스트 기대값을 **가끔씩만** 깨뜨려서(EXP 320이 384로) `EnemySpawner.eliteChanceOverride`를 넣었다 — 음수면 설정값을 쓰고, 테스트·밸런스 실험에서만 0/1로 고정한다.
+  - **종류별 행동을 인터페이스로 분리** — `IEnemyMotion`(수평)·`IEnemyVerticalMotion`(비행)·`IEnemyContactDamageModifier`(돌진 ×1.4). `EnemyMove`는 중력·발판 반전·넉백·접촉처럼 **타입 공통인 것만** 계속 맡는다(원본도 `updateEnemies`가 타입 분기 뒤에 공통 코드를 돈다, `:4112`~`:4148`). 고블린·오우거·꼬마 슬라임은 붙는 컴포넌트가 없다 — 수치만 다르기 때문(CLAUDE.md SO 규칙의 '수치만' 쪽).
+  - **순환참조 회피** — 슬라임이 꼬마 슬라임을 낳을 때 `Enemies`(2층)가 `Systems`(3층) 스포너를 직접 부르면 컴파일이 통째로 깨진다. CLAUDE.md에 미리 확정돼 있던 대로 `Core/EnemySpawnRequestBus`로 요청만 던진다(식별자는 `string` 대신 `EnemyType` enum으로 바꿨다 — 오타가 컴파일에서 걸리게).
+  - **`Instantiate` 뒤 컴포넌트 부착 함정** — 스포너는 인스턴스를 만든 **뒤에** 종류별 컴포넌트를 붙이는데, 그 시점엔 `EnemyMove.Awake`가 이미 끝나 캐시한 참조가 null로 남는다. `RefreshTypeBehaviour()`를 만들어 마지막에 부르게 했다. 안 부르면 박쥐이 중력에 떨어지고 멧돼지가 그냥 걷는, **에러 없이 조용히 틀리는** 상태라 전용 테스트로 고정했다.
+  - **원본 재확인으로 잡은 편차 5건**: ①멧돼지 상태 전이 — 원본은 속도를 정한 **뒤에** 상태를 바꿔서(`:4065`~`:4082`) 예고 진입 프레임은 아직 걷고 질주 마지막 프레임은 한 번 더 질주한다(우리 쪽은 그 한 프레임이 0이라 끝에서 멈칫했다). ②몸집을 콜라이더 반지름으로만 주면 스프라이트는 그대로라 오우거가 "보이는 것보다 넓게 때리는" 몹이 된다 → `transform.localScale`로 통일하고 `EnemyMove.WorldRadius` 추가. ③이동속도 편차 `rand(0.9,1.1)`(`:3960`) 누락 — 없으면 한 웨이브가 한 덩어리로 몰려온다. ④초기 방향(`:3959`)·돌진 첫 쿨다운(`:3966`) 무작위 누락. ⑤꼬마 슬라임 스폰 Y가 지면 아래로 내려갈 수 있었다(원본 `Math.min(e.y, groundY)`).
+  - **지역별 해금표** `Systems/EnemySpawnTable`(원본 `rollSpawnType` `:3933`) — 균등 랜덤을 대체. 꼬마 슬라임은 이 표에 **절대** 안 들어간다(슬라임이 죽을 때만). 몹 레벨 `enemyLv()`는 안 넣었다 — 표가 쓰는 유일한 조건 `lv>=4`가 지역 조건과 등가라서(`regionBaseLv` `:972`), 없는 개념을 새로 들일 이유가 없었다.
+  - **엘리트** `Enemies/EnemyElite` 표식 + 스포너가 수치를 곱한다(8%, 체력×4·피해×1.5·크기×1.35·보상×5, **골드는 확률 무시하고 항상 드랍** `:1818`). 꼬마 슬라임은 승격 제외(원본 `noElite`). 8% 확률이 기존 테스트 기대값을 **가끔씩만** 깨뜨려서(EXP 320이 384로) `EnemySpawner.eliteChanceOverride`를 넣었다 — 음수면 설정값을 쓰고, 테스트·밸런스 실험에서만 0/1로 고정한다.
 
 - **2026-09-09** — **단계 1 착수: 캐릭터 뼈대 + 메카닉 0차 + EnemyData SO 전환 (PlayMode 77/77).** 세 덩어리를 순서대로 `main`에 병합·push.
   - **캐릭터 뼈대(착수 전제)** — `Core/CharacterId` + `CharacterStats.StatMultiplier`(원본 `CHAR_STAT_MULT` `:1282`, 섬영만 1.5이고 **statAtk·statMaxHp에만** 곱한다), `CharacterMover2D.MoveMode.Inertial`(원본 `bladeMove` `:2454`), `Characters/PlayerRig`+`ICharacterKit`(원본 `updatePlayer` 무기별 분기 `:3509`), Tab 캐릭터 전환(임시). 키트를 컴포넌트로 붙이기만 하면 `PlayerRig`가 자동 등록해서 팀원이 그 파일을 고칠 필요가 없다.
   - **테스트가 실제 버그를 잡음**: JS `Math.sign(0)`은 0인데 Unity `Mathf.Sign(0f)`은 1이라, 정지 상태의 첫 입력이 "이미 달리던 중"으로 오판돼 baseSpeed에 한 프레임 가속이 더 붙었다(원본은 정확히 baseSpeed). 명시적 부호 비교로 교체.
   - **메카닉 0차** — `GunnerAttack`/`GunnerBullet`. 원본 `gunnerFire()`(`:2188`)의 `laserTier==0` 분기 그대로(cd 0.24/statAs, 탄속 13.2, 수명 0.62, 피해 statAtk×0.82, 관통 1, 넉백 kb:95를 총알 진행 방향으로). **0차엔 스택이 아예 안 쌓인다** — `addGunnerStack`이 갈래 미선택이면 즉시 반환(`:1414`).
-  - **`EnemyData` SO 전환** — CLAUDE.md 규칙("2번째 적 종류를 만들기 전에 SO 전환을 끝낸다") 이행. `Core/EnemyData`+`EnemyType` 7종, `Assets/Editor/BuildEnemyData`가 원본 `CONFIG.enemyBase`(`:707`~`:714`)·넉백 배율(`:1678`) 그대로 에셋 7개를 생성. `DifficultyScalingConfig`에서 오니 기본 스탯을 걷어내 **지역 배율만** 맡게 하고(원본도 `enemyBase[type] × scale` 두 층, `:3958`), `EnemySpawner`가 스폰 시 스탯·몸집·색·넉백저항을 주입 + 처치 보상도 종류별 값을 쓴다.
-  - **테스트 2건의 숨은 문제도 같이 수정**: 총알 테스트가 적 콜라이더를 0.3으로 둬서 실제 게임에선 맞는 공격이 테스트에서만 빗나갔다(실제 프리팹은 0.5). 대붕괴 테스트는 3중첩 피해가 치명타를 만나면 오니를 한 방에 죽여 파괴된 오브젝트를 참조하는 **플래키 테스트**였다 — "죽었거나 체력이 깎였거나"로 완화.
-  - **남긴 판단**: 우리 포트는 플레이어·오니를 원본(34×56, 42×46px)보다 크게(지름 1유닛) 잡아둔 계통 편차가 있다. 이번에 바꾸면 스폰 높이·충돌·기존 테스트가 한꺼번에 흔들려서, 오니를 현재 값에 고정하고 **종류 간 상대 크기만** 원본 비율로 환산했다. 절대 크기 재조정은 별도 작업.
+  - **`EnemyData` SO 전환** — CLAUDE.md 규칙("2번째 적 종류를 만들기 전에 SO 전환을 끝낸다") 이행. `Core/EnemyData`+`EnemyType` 7종, `Assets/Editor/BuildEnemyData`가 원본 `CONFIG.enemyBase`(`:707`~`:714`)·넉백 배율(`:1678`) 그대로 에셋 7개를 생성. `DifficultyScalingConfig`에서 고블린 기본 스탯을 걷어내 **지역 배율만** 맡게 하고(원본도 `enemyBase[type] × scale` 두 층, `:3958`), `EnemySpawner`가 스폰 시 스탯·몸집·색·넉백저항을 주입 + 처치 보상도 종류별 값을 쓴다.
+  - **테스트 2건의 숨은 문제도 같이 수정**: 총알 테스트가 적 콜라이더를 0.3으로 둬서 실제 게임에선 맞는 공격이 테스트에서만 빗나갔다(실제 프리팹은 0.5). 대붕괴 테스트는 3중첩 피해가 치명타를 만나면 고블린을 한 방에 죽여 파괴된 오브젝트를 참조하는 **플래키 테스트**였다 — "죽었거나 체력이 깎였거나"로 완화.
+  - **남긴 판단**: 우리 포트는 플레이어·고블린을 원본(34×56, 42×46px)보다 크게(지름 1유닛) 잡아둔 계통 편차가 있다. 이번에 바꾸면 스폰 높이·충돌·기존 테스트가 한꺼번에 흔들려서, 고블린을 현재 값에 고정하고 **종류 간 상대 크기만** 원본 비율로 환산했다. 절대 크기 재조정은 별도 작업.
 
 - **2026-09-09** — **회의 결과로 진행 순서 전면 재편 — "캐릭터·몬스터 폭 먼저, 깊이는 나중".** 기존 계획은 메타 시스템(런사이클→로비UI→세이브→배수체인→아이템)을 먼저 쌓는 순서였는데, 회의에서 **① 모든 캐릭터를 0차(=기본공격만)까지 + 모든 몬스터를 프로토타입 그대로 → ② 캐릭터 하나씩 5차까지 심화 → ③ 완성된 캐릭터부터 밸런스**로 바꿨다. 밸런스를 잡으려면 비교 대상이 다 있어야 하기 때문(캐릭터 하나만 깊게 파 놓으면 "캐릭터가 센 건지 몹이 약한 건지"를 못 가른다).
   - **"0차" 정의 확정**(사용자 확인): 각 캐릭터의 **기본공격만 있는 상태**. 원본이 `tier < 1`이면 X 스킬을 막는 그 상태다(`:2169`/`:2741`/`:3385`). 기본공격이 채우는 자원(메카닉 스택·드루이드 마나)은 기본공격의 일부라 같이 이식하되 소비처가 전부 X 스킬이라 0차엔 쌓이기만 한다.
@@ -1066,7 +1072,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 - **2026-09-08** — **스프린트 2 초안 접수 → 검토 → 팀 분업 확정.** 팀원이 `HANDOFF_sprint2_draft.md`("성장곡선 검증" — 체력/피격무적·처치보상·레벨EXP·골드강화5종·가상지역레벨·검증방법)를 `origin/main`에 push.
   - **겹치는 작업 발견**: 초안 "1. 체력 시스템" 항목이 바로 아래 로그(같은 날짜, 원본 전수 분석 로드맵)에서 이미 `feature/health-damage`에 구현·검증까지 끝낸 것과 사실상 동일 범위. 이 사실을 확인하고 사용자에게 알림.
   - 초안이 "확인 필요"로 남긴 3건을 논의해 확정: HP 0 처리(정지+R키 재시작 — 원안의 "로그만"은 죽을 때마다 에디터 재시작해야 해서 검증 자체를 방해한다고 판단해 변경), 강화 입력(숫자키+`OnGUI` 디버그 표시 — 표시가 없으면 "체감 벽" 검증이 불가능해서 원안에 추가), `regionLv` 트리거(누적 처치 100마리당 1 — 원본 `regionKillTarget`과 가장 가까움, 시간/레벨 기준은 원본에 없는 설계라 기각).
-  - **트랙 분업 확정**: 트랙 A(팀원, Enemies/Systems 도메인) = 처치 보상 + 난이도 스케일링. 트랙 B(나, Core/Characters 도메인) = 레벨업 + 골드 강화 + 스탯 적용. 근거: 팀원은 최근(`d27af46`) `Enemy_Oni.prefab`/물리 세팅을 직접 다뤘고, 나는 `PlayerHealth`/`MageAttack`/`CharacterMover2D`를 이번 세션에서 직접 만들어 가장 잘 앎. 상세 분업표는 `docs/sprint2-handoff-split.md`.
+  - **트랙 분업 확정**: 트랙 A(팀원, Enemies/Systems 도메인) = 처치 보상 + 난이도 스케일링. 트랙 B(나, Core/Characters 도메인) = 레벨업 + 골드 강화 + 스탯 적용. 근거: 팀원은 최근(`d27af46`) `Enemy_Base.prefab`/물리 세팅을 직접 다뤘고, 나는 `PlayerHealth`/`MageAttack`/`CharacterMover2D`를 이번 세션에서 직접 만들어 가장 잘 앎. 상세 분업표는 `docs/sprint2-handoff-split.md`.
   - **공유 계약**: `Core.PlayerProfile`(`level, exp, gold, spUsed, upgrades{atk,hp,ms,atkSpeed,crit}`, `as`는 C# 예약어라 `atkSpeed`로 대체) + `Core.ProfileService.Current` 정적 접근자. 트랙 A는 `AddGold()`/`AddExp()` 메서드만 호출(필드 직접 증가 금지 — 레벨업 판정은 트랙 B 소유). `EnemyHealth`에 스탯 배율 setter(`SetMaxHp` 등) 필요 — `Awake()`가 이미 돈 뒤 `maxHp` 필드만 바꾸면 `CurrentHp`엔 반영 안 되는 이 프로젝트 단골 함정 주의(RequireComponent 자동보충·AddComponent Awake타이밍과 같은 종류).
   - 이어서 0단계(`feature/health-damage` 병합)를 바로 진행 — 아래 이 로그 항목 참고.
 - **2026-09-03** — **원본 전수 분석 → 포팅 로드맵 작성 + 스프린트 2(체력&데미지) 확정·구현.** 사용자가 "프로토타입 전체적으로 분석하고 어떻게 업데이트할지 문서로 작성"을 요청.
@@ -1081,14 +1087,14 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - PlayMode 30/30. `feature/health-damage` 브랜치에 커밋(`c4518ad`) — 당시엔 `main` 미병합. CLAUDE.md "문서 구조" 규칙대로 HANDOFF.md를 `docs/sprints/01-combat-core.md`로 옮기고 이 스펙으로 교체하려 했으나, 같은 날 팀원 초안이 도착해 스프린트 2 범위 자체가 위(9월8일 로그) 항목처럼 재확정됨.
 - **2026-09-08** — **0단계 완료: `feature/health-damage` → `main` 병합.** 위 스프린트 2 구현을 그대로 `main`에 반영(`--no-ff` 병합). PROGRESS.md만 충돌(로그 두 버전 병합, "다음 할 일" 새로 씀) — 코드 파일은 전부 깨끗하게 병합됨. 다음은 `Core/PlayerProfile` 스캐폴딩.
 - **2026-08-29** — **버그 수정: 플레이어·몬스터가 서로 겹치지 못하고 물리로 밀어내는 문제.** 사용자가 리팩터링 이후분을 직접 플레이해보다 발견해 지적. 원본(`project_test.html:4148` `updateEnemies()`)은 물리엔진이 없어 `rectsOverlap()`로 접촉만 검사해 `damagePlayer()`를 부르고 끝 — 겹쳐도 밀어내는 로직 자체가 없다. 반면 Unity 쪽은 발판 착지를 위해 Player·Enemy 둘 다 `Rigidbody2D`(Dynamic) + 막힌(non-trigger) `CircleCollider2D`를 쓰는데, 같은 물리 레이어(`Default`, 0번)라 겹치는 순간 Physics2D가 자동으로 밀어냈다 — 원본엔 없는, 실제 물리엔진 도입(2025-08-25) 부작용이었음(그동안 안 걸리다가 이번에 처음 지적됨).
-  - 콜라이더를 트리거로 바꾸면 발판 충돌까지 깨지므로, 새 물리 레이어 `Player`(6)·`Enemy`(7) 신설(`CLAUDE.md` "번호/이름 예약표" 갱신) 후 Player 오브젝트·`Enemy_Oni` 프리팹에 각각 배정, **Physics2D Layer Collision Matrix에서 Player×Enemy 충돌만 비활성화**(Player×Ground, Enemy×Ground는 유지)하는 방식으로 해결.
+  - 콜라이더를 트리거로 바꾸면 발판 충돌까지 깨지므로, 새 물리 레이어 `Player`(6)·`Enemy`(7) 신설(`CLAUDE.md` "번호/이름 예약표" 갱신) 후 Player 오브젝트·`Enemy_Base` 프리팹에 각각 배정, **Physics2D Layer Collision Matrix에서 Player×Enemy 충돌만 비활성화**(Player×Ground, Enemy×Ground는 유지)하는 방식으로 해결.
   - 접촉 데미지 판정은 원래도 물리 충돌과 무관하게 `EnemyMove.OverlapsTarget()`의 수동 거리 계산으로 처리되고 있어 코드 수정은 불필요 — 순수 프로젝트 세팅(TagManager/Physics2DSettings) 변경만으로 해결됨.
   - 사용자가 Unity 에디터에서 직접 레이어·콜리전 매트릭스 설정 후 플레이로 재확인 완료. 코드 변경이 없어 컴파일/PlayMode 테스트에는 영향 없음(재실행 안 함 — 다음 코드 변경 시 같이 재검증).
   - `main`에서 바로 진행(팀원이 동시에 이 레포를 안 건드리고 있음을 확인함, CLAUDE.md 협업규칙 3번 예외 — 이미 병합된 기능의 소규모 후속 수정).
 - **2026-08-26** — **대규모 리팩터링 완료 — 폴더/네임스페이스/asmdef 분리 + `Monster`→`Enemy` 리네임.** 사용자가 "리펙터링 ㄱㄱㄱ"로 승인, CLAUDE.md "대규모 리팩터링 절차"(미병합 브랜치 0개 확인 → 진행 중 선언 → 단일 커밋 → 배치 검증 → 병합)를 그대로 따라 진행. 착수 전 미병합 브랜치 0개 확인(`feature/monster-combat`/`feature/player-field` 둘 다 `main` 대비 unique 커밋 없음).
   - **폴더 = 네임스페이스 = asmdef 이름 일치**: `Assets/Scripts/`를 `Core/World/Combat/Characters/Enemies/Systems` 6개 폴더로 분리(전부 `git mv`로 이동해 히스토리 보존), 각각 `ChronoSavior.<도메인>` 네임스페이스 + 같은 이름의 asmdef 신설. 계층(`Core`←`World`/`Combat`←`Characters`/`Enemies`←`Systems`)대로 `references` 설정, 같은 층(`Characters`↔`Enemies`)은 서로 참조 안 함. 기존 단일 `ChronoSavior.Runtime.asmdef`는 삭제.
   - **`Core/ISpawnProtectable.cs` 신설** — 리팩터 도중 실제 계층 위반을 발견: `MageProjectile`(`Characters`)·`PlayerAttack`(`Combat`)이 `MonsterMove`(`Enemies` 예정) 타입을 직접 `GetComponent`하고 있었다. `Enemies`를 모르는 도메인이 스폰 무적 상태만 물을 수 있게 `Core`에 인터페이스를 만들고 `EnemyMove`가 구현, 공격 스크립트는 `GetComponent<ISpawnProtectable>()`로 전환.
-  - **`Monster`→`Enemy` 리네임**: `MonsterMove.cs`→`EnemyMove.cs`, `MonsterSpawner.cs`→`EnemySpawner.cs`(클래스명도 동일하게), `Monster.prefab`→`Enemy_Oni.prefab`(내부 `m_Name`도 갱신). `BuildPartAScene.cs`의 프리팹 경로 상수·타입 참조 전부 갱신.
+  - **`Monster`→`Enemy` 리네임**: `MonsterMove.cs`→`EnemyMove.cs`, `MonsterSpawner.cs`→`EnemySpawner.cs`(클래스명도 동일하게), `Monster.prefab`→`Enemy_Base.prefab`(내부 `m_Name`도 갱신). `BuildPartAScene.cs`의 프리팹 경로 상수·타입 참조 전부 갱신.
   - `Assets/Editor/BuildPartAScene.cs`도 `ChronoSavior.Editor` 네임스페이스로 감쌈 — **배치모드 `-executeMethod`는 이제 `ChronoSavior.Editor.BuildPartAScene.Build`처럼 전체 경로가 필요**(옛 짧은 이름은 "class could not be found"로 실패).
   - `Assets/Tests/PlayMode/`도 도메인별 하위 폴더(`Combat/Characters/Enemies/`)로 재배치, `MonsterSpawnAndMoveTests.cs`→`Enemies/EnemySpawnAndMoveTests.cs`로 리네임하며 내부 타입 참조 갱신, 전부 `ChronoSavior.Tests.PlayMode` 네임스페이스로 감쌈. `ChronoSavior.PlayModeTests.asmdef`의 참조를 옛 `ChronoSavior.Runtime` 대신 새 6개 asmdef로 교체.
   - **1차 배치 검증에서 실제 컴파일 에러 발견**: `EnemySpawnAndMoveTests.cs`에 `using ChronoSavior.Enemies;`를 빠뜨려서 `EnemyMove`를 못 찾음(CS0246) — 추가하고 재검증. 두 번째 시도에선 컴파일은 통과했지만 `-executeMethod BuildPartAScene.Build`(옛 이름)가 네임스페이스 이동 때문에 실패 — `ChronoSavior.Editor.BuildPartAScene.Build`로 고쳐서 씬 재생성 성공.
@@ -1118,7 +1124,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 - **2026-08-26** — **몬스터가 발판 스폰 포인트를 골라도 실제로는 바닥에만 나던 문제 + 이동 AI를 원본 그대로 재구현.** 사용자가 "왜 적이 바닥 축에서 스폰되냐, 발판 위에도 소환된다며 거짓말했냐, 제대로 작업해봐"라고 지적 — 확인해보니 실제로 X좌표만 발판 위치에서 빌리고 Y는 항상 GroundY로 고정해뒀던 게 맞았다(발판에 스폰된다는 말과 실제 동작이 달랐음). 사용자가 이어서 "이건 프로토타입이 아니라 실제 구현이니 원본과 세세한 부분까지 그대로 만들어야 한다, 단순화는 나중에 지시하겠다"고 명확히 함 — 원본 `updateEnemies()`를 처음부터 끝까지 다시 읽고 몹 관련 물리/AI를 전부 이식:
   - **몹도 실제 중력을 받는다**(`e.vy += gravity*dt`) — `Monster.prefab`에 `Rigidbody2D` 추가, `MonsterMove`가 `transform.position +=` 대신 물리 기반 이동으로 전환. (막혔던 지점: `[RequireComponent(typeof(Rigidbody2D))]`를 붙이면 프리팹 파일에 실제로 없어도 로드 시점에 엔진이 메모리상으로만 자동 보충해서 "이미 있음" 체크가 거짓으로 통과 — 항상 로드→설정→저장하도록 `EnsureMonsterPrefabPhysics()` 수정.)
   - **스폰 위치가 실제 발판 높이를 쓴다** — 발판 스폰 포인트는 `FieldLayout.PlatformLandingY()`(발판 윗면+몹 반지름)로 스폰, 이제 물리로 그 위에 실제로 선다.
-  - **추적/배회 AI**: 원본 오니 분기 그대로 — 플레이어가 추적범위(300px=3유닛) 안이면 방향만 맞추고 계속 걷는다(도달해도 안 멈춤). 범위 밖이면 1.5~3.5초마다 무작위로 방향을 바꾸며 배회. 이전엔 항상 무조건 플레이어를 향해 걷다가 접촉 시 멈추는, 원본에 없는 동작이었음.
+  - **추적/배회 AI**: 원본 고블린 분기 그대로 — 플레이어가 추적범위(300px=3유닛) 안이면 방향만 맞추고 계속 걷는다(도달해도 안 멈춤). 범위 밖이면 1.5~3.5초마다 무작위로 방향을 바꾸며 배회. 이전엔 항상 무조건 플레이어를 향해 걷다가 접촉 시 멈추는, 원본에 없는 동작이었음.
   - **발판 가장자리 반전**(원본 주석 "발판 위 몹은 가장자리에서 되돌아간다 — 내려오지 않는다"): 발판 위에서 정지 중이고 가장자리 14px 안쪽이면 그 자리에 고정하고 안쪽으로 방향 반전. 몹이 실제로 발판 위에 계속 남아있게 됨(전 버전은 이 로직이 없어서 그냥 물리로 굴러떨어지게 뒀었는데, 원본과 다른 동작이었음).
   - **접촉 데미지**: 원본은 매 프레임 겹침 판정 + 무쿨다운(반복 방지는 플레이어 무적시간이 담당) — `contactDistance`로 멈춰서 쿨다운 도는 방식을 걷어내고 겹치는 동안 매 프레임 호출로 교체(실제 데미지는 Health 없어서 여전히 스텁).
   - `FieldLayout.cs`에 `PlatformLandingY`/`PlatformLeftX`/`PlatformRightX` 헬퍼 추가(스포너·이동 AI가 공유).
@@ -1152,7 +1158,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - `PROGRESS.md` — 이 파일. 양쪽 로그 다 보존해서 병합
   - 충돌 해결만으론 컴파일이 안 돼서 추가로 고침: `MonsterSpawner.TryGetSpawnPosition()`이 옛 `FieldBounds.Min/Max`(Vector2) API를 쓰고 있었는데, 새 `FieldBounds`엔 그 필드가 없어져서 `FieldBounds.RandomX()`/`FieldBounds.GroundY`를 쓰도록 수정
   - 인터페이스 계약 위반도 같이 수정: `MonsterMove`의 추적 로직이 X·Y 둘 다 플레이어를 쫓아가고 있어서, 플레이어가 발판 위에 있으면 몬스터가 공중으로 떠오르는 문제가 있었음 — X축만 이동하고 Y는 `FieldBounds.GroundY`에 고정하도록 수정
-  - 병합 중 추가로 발견한 버그: `Monster.prefab`/`MonsterMove.cs`의 `moveSpeed`가 원본 오니 스탯(76, px/s 스케일)을 캐릭터 이동속도와 같은 규칙(100px=1유닛, ÷100)으로 축척하지 않고 그대로 쓰고 있었음 — 26유닛 필드를 0.34초에 주파하는 셈이라 명백한 버그. `0.76`로 수정.
+  - 병합 중 추가로 발견한 버그: `Monster.prefab`/`MonsterMove.cs`의 `moveSpeed`가 원본 고블린 스탯(76, px/s 스케일)을 캐릭터 이동속도와 같은 규칙(100px=1유닛, ÷100)으로 축척하지 않고 그대로 쓰고 있었음 — 26유닛 필드를 0.34초에 주파하는 셈이라 명백한 버그. `0.76`로 수정.
 - **2026-08-25** — **물리엔진 실물 전환 + 원본 발판 15개 + 마법사(bow) 차지샷 구현.** 사용자 피드백("왜 이렇게 퀄리티가 낮지? 물리엔진이랑 마법사 캐릭터 기본공격을 구현해줘봐 그리고 플랫폼도 구현해줘")으로 이번 스프린트 범위를 확장(HANDOFF.md 1·3번 개정, 위 표 참고).
   - `CharacterMover2D`: 손으로 적분하던 중력(vy 변수)을 없애고 `Rigidbody2D`(실제 gravityScale) + `Physics2D.OverlapCircle` 접지 판정으로 교체. 전역 중력은 `Physics2D.gravity=(0,-26)`(원본 2600px/s² 축척).
   - `Ground` 물리 레이어 신설(`BuildPartAScene.EnsureGroundLayer`가 TagManager.asset에 직접 등록) — 바닥·발판만 여기 소속, 접지 판정이 플레이어/적/투사체를 오탐하지 않게.

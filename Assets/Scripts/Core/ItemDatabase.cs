@@ -93,7 +93,7 @@ namespace ChronoSavior.Core
         public static readonly ItemDef[] All =
         {
             // ---- 스탯 아이템: 축 하나당 정확히 하나 ----
-            Stat("atk",     "오니의 송곳니", "🦷", ItemGrade.Common, ItemStat.Atk,     6f,    "공격력 +6"),
+            Stat("atk",     "고블린의 송곳니", "🦷", ItemGrade.Common, ItemStat.Atk,     6f,    "공격력 +6"),
             Stat("hp",      "산군의 심장",   "🫀", ItemGrade.Common, ItemStat.Hp,      60f,   "최대 체력 +60"),
             Stat("gold",    "황금 향로",     "🏮", ItemGrade.Common, ItemStat.Gold,    1.15f, "골드 획득 ×1.15", mul: true),
             Stat("exp",     "수행의 굴레",   "📿", ItemGrade.Common, ItemStat.Exp,     1.15f, "경험치 획득 ×1.15", mul: true),

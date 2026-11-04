@@ -3,7 +3,7 @@ using UnityEngine;
 namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 사수귀(shooter)의 거리 유지 + 사격 — 원본 `updateEnemies()`의 shooter 분기
+    /// 해골 궁수(shooter)의 거리 유지 + 사격 — 원본 `updateEnemies()`의 shooter 분기
     /// (project_test.html:4084~4102)와 `CONFIG.shooter`(`:717`) 그대로.
     ///
     /// **너무 가까우면 물러나고, 너무 멀면 다가가고, 사거리 안(300~500px)에 들어오면 멈춰서 쏜다.**

@@ -116,7 +116,7 @@ public class EnemySpawner : MonoBehaviour
     float cachedMonsterRadius = -1f; // Awake 시점엔 monsterPrefab이 아직 할당 전이라(씬 빌드 순서상)
                                       // 필요할 때 지연 계산한다(GetMonsterRadius 참고).
 
-    // 몹이 몹을 낳는 요청(분열귀 → 새끼, 보스 → 부하)을 받는다. 정적 이벤트라 **반드시 OnDisable에서
+    // 몹이 몹을 낳는 요청(슬라임 → 꼬마 슬라임, 보스 → 부하)을 받는다. 정적 이벤트라 **반드시 OnDisable에서
     // 해제**해야 파괴된 스포너를 계속 참조하지 않는다(CLAUDE.md "낮은 층이 높은 층의 기능을 요청" 항목).
 
     float shrineTimer = Shrine.FirstAt;
@@ -175,10 +175,10 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 몹이 낳는 몹 — 분열귀의 새끼(원본 `:1842`)와 보스의 부하(`:4278`)가 같이 지나간다.
+    /// 몹이 낳는 몹 — 슬라임의 꼬마 슬라임(원본 `:1842`)와 보스의 부하(`:4278`)가 같이 지나간다.
     /// 웨이브 상한과 무관하게 즉시 스폰한다 — 원본도 죽은 자리에서 바로 낳는다.
     ///
-    /// **스폰 보호 시간은 요청자가 정한다**: 새끼는 0.35초, 부하는 기본 2초다. 여기서 하나로
+    /// **스폰 보호 시간은 요청자가 정한다**: 꼬마 슬라임은 0.35초, 부하는 기본 2초다. 여기서 하나로
     /// 고정하면 둘 중 하나가 원본과 달라진다(예전엔 부하까지 0.35초를 받고 있었다).
     /// </summary>
     void HandleSpawnRequest(Vector2 position, EnemyType enemyType, float spawnProtectSeconds)
@@ -187,7 +187,7 @@ public class EnemySpawner : MonoBehaviour
 
         var data = FindData(enemyType);
         var monster = Instantiate(monsterPrefab, position, Quaternion.identity);
-        // 원본 `noElite: true`(project_test.html:1842) — 새끼는 엘리트로 승격되지 않는다.
+        // 원본 `noElite: true`(project_test.html:1842) — 꼬마 슬라임은 엘리트로 승격되지 않는다.
         ApplyEnemyData(monster, data, allowElite: false);
 
         var move = monster.GetComponent<EnemyMove>();
@@ -294,7 +294,7 @@ public class EnemySpawner : MonoBehaviour
             health.Died += HandleShrineDestroyed;
         }
 
-        // 원본 w:64 h:96(`:698`) — 오니(42×46)의 두 배 높이인 세로로 긴 구조물이다.
+        // 원본 w:64 h:96(`:698`) — 고블린(42×46)의 두 배 높이인 세로로 긴 구조물이다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(1f, 0.54f, 0.42f); // 원본 colors.soul '#ff8a6a'
         FitToWorldSize(go, shrineSprite,
@@ -345,7 +345,7 @@ public class EnemySpawner : MonoBehaviour
             move.moveSpeed = Boss.MoveSpeed;
         }
 
-        // 원본 w:130 h:150(`:721`) — 오니(42×46)의 3배쯤 되는 덩치다.
+        // 원본 w:130 h:150(`:721`) — 고블린(42×46)의 3배쯤 되는 덩치다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(0.78f, 0.42f, 1f); // 원본 colors.soul '#c86aff'
         // 탄환 스프라이트는 **그림을 갈아끼우기 전**의 원형을 쓴다 — 보스 그림을 그대로 쓰면
@@ -367,7 +367,7 @@ public class EnemySpawner : MonoBehaviour
     /// 예전엔 "스프라이트를 갈아끼우되 보이던 크기를 유지"하는 방식이었는데, 그 '보이던 크기'가
     /// 애초에 틀렸다. 프리팹의 기본 스프라이트가 32×32짜리 내장 이미지라, 거기에 맞춰 손으로
     /// 고른 `localScale`(성소 1.3×1.9)이 실제로는 0.42×0.61유닛밖에 안 됐다 —
-    /// **원본 성소(0.64×0.96)보다 작고, 오니보다도 작았다.** 눈으로 보기 전엔 알 수 없는 종류의
+    /// **원본 성소(0.64×0.96)보다 작고, 고블린보다도 작았다.** 눈으로 보기 전엔 알 수 없는 종류의
     /// 어긋남이라, 기준을 "원본 유닛 크기"로 바꿔 손으로 고른 숫자를 없앴다.
     ///
     /// 콜라이더가 같은 GameObject에 있어 `localScale`이 물리에도 걸리므로, 반지름은 역으로 나눠
@@ -623,10 +623,10 @@ public class EnemySpawner : MonoBehaviour
     /// <summary>
     /// 종류별 몸집(`EnemyData.colliderRadius`)과 엘리트 확대(원본 `w: base.w * sizeMul`, `:3954`)를
     /// **`transform.localScale`로** 적용한다. 콜라이더 반지름만 바꾸면 스프라이트는 그대로라
-    /// 대오니가 "보이는 것보다 훨씬 넓게 때리는" 몹이 된다 — 눈에 안 보이는 종류의 어긋남이라
+    /// 오우거가 "보이는 것보다 훨씬 넓게 때리는" 몹이 된다 — 눈에 안 보이는 종류의 어긋남이라
     /// 굳이 스케일 쪽으로 통일했다(<see cref="EnemyMove.WorldRadius"/> 참고).
     ///
-    /// 스폰 지점 Y는 프리팹 반지름(오니 0.5) 기준으로 이미 계산돼 있으므로, 커진 만큼 들어올려
+    /// 스폰 지점 Y는 프리팹 반지름(고블린 0.5) 기준으로 이미 계산돼 있으므로, 커진 만큼 들어올려
     /// 발을 지면/발판에 맞춘다. 안 그러면 큰 몹이 지면에 파묻힌 채 물리에 밀려 튀어오른다.
     /// </summary>
     void ApplySize(GameObject monster, EnemyData data, bool elite)
@@ -634,7 +634,7 @@ public class EnemySpawner : MonoBehaviour
         var col = monster.GetComponent<CircleCollider2D>();
         if (col == null) return;
 
-        float prefabWorldRadius = col.radius * monster.transform.localScale.x; // 오니 기준 0.5
+        float prefabWorldRadius = col.radius * monster.transform.localScale.x; // 고블린 기준 0.5
         if (prefabWorldRadius <= 0f) return;
 
         float wantRadius = (data != null ? data.colliderRadius : prefabWorldRadius)
@@ -666,7 +666,7 @@ public class EnemySpawner : MonoBehaviour
     /// 종류별 행동 스크립트를 붙인다 — 원본 `updateEnemies()`의 타입 분기(project_test.html:4042~4111)와
     /// `killEnemy()`의 분열 분기(`:1840`)에 각각 대응한다.
     ///
-    /// 오니·대오니·새끼는 **붙일 게 없다**. 셋 다 기본 보행 AI를 그대로 쓰고 수치만 다르기 때문이다
+    /// 고블린·오우거·꼬마 슬라임은 **붙일 게 없다**. 셋 다 기본 보행 AI를 그대로 쓰고 수치만 다르기 때문이다
     /// (CLAUDE.md "SO는 수치만, 행동이 다르면 스크립트 분리" 규칙의 '수치만' 쪽).
     ///
     /// 붙인 뒤 <see cref="EnemyMove.RefreshTypeBehaviour"/>를 **반드시** 불러야 한다 —
@@ -676,9 +676,9 @@ public class EnemySpawner : MonoBehaviour
     {
         switch (data.type)
         {
-            case EnemyType.Wisp:
-                monster.AddComponent<EnemyWispMotion>();
-                // 원본은 도깨비불만 스폰 지점보다 50px 위에서 나온다(`y: type === 'wisp' ? y - 50 : y`,
+            case EnemyType.Flyer:
+                monster.AddComponent<EnemyFlyerMotion>();
+                // 원본은 박쥐만 스폰 지점보다 50px 위에서 나온다(`y: type === 'wisp' ? y - 50 : y`,
                 // project_test.html:3955 — 원본은 Y+가 아래라 부호가 뒤집힌다).
                 monster.transform.position += new Vector3(0f, 0.5f, 0f);
                 break;

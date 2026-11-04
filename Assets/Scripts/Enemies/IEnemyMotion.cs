@@ -22,7 +22,7 @@ namespace ChronoSavior.Enemies
 
     /// <summary>
     /// **비행형**의 수직 이동. 구현체가 붙어 있으면 <see cref="EnemyMove"/>는 중력·발판 착지를
-    /// 통째로 건너뛰고 여기서 받은 Y를 그대로 쓴다(원본 도깨비불 분기 `:4042`~`:4057` — 지면을 무시하고
+    /// 통째로 건너뛰고 여기서 받은 Y를 그대로 쓴다(원본 박쥐 분기 `:4042`~`:4057` — 지면을 무시하고
     /// 플레이어 Y를 일정 속도로 쫓는다).
     /// </summary>
     public interface IEnemyVerticalMotion
@@ -32,7 +32,7 @@ namespace ChronoSavior.Enemies
     }
 
     /// <summary>
-    /// 상태에 따라 접촉 피해가 달라지는 몹. 원본은 돌진귀가 **질주 중일 때만** 접촉 피해 ×1.4다
+    /// 상태에 따라 접촉 피해가 달라지는 몹. 원본은 멧돼지가 **질주 중일 때만** 접촉 피해 ×1.4다
     /// (`chargeMul`, project_test.html:4147). <see cref="EnemyMove"/>가 접촉 피해를 줄 때 곱한다.
     /// </summary>
     public interface IEnemyContactDamageModifier

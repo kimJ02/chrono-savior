@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Charger
   m_EditorClassIdentifier: 
   type: 3
-  displayName: "\uB3CC\uC9C4\uADC0"
+  displayName: "\uBA67\uB3FC\uC9C0"
   maxHp: 50
   attackPower: 15
   moveSpeed: 0.58

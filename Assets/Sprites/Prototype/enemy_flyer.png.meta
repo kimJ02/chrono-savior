@@ -4,7 +4,7 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: -511006439048515654
-    second: enemy_wisp_0
+    second: enemy_flyer_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,7 +100,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: enemy_wisp_0
+      name: enemy_flyer_0
       rect:
         serializedVersion: 2
         x: 0
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      enemy_wisp_0: -511006439048515654
+      enemy_flyer_0: -511006439048515654
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

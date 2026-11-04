@@ -4,7 +4,7 @@ using ChronoSavior.Core;
 namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 도깨비불(wisp)의 비행 이동 — 원본 `updateEnemies()`의 wisp 분기
+    /// 박쥐(wisp)의 비행 이동 — 원본 `updateEnemies()`의 wisp 분기
     /// (project_test.html:4042~4057)와 `CONFIG.wispYSpeed`(`:700`) 그대로.
     ///
     /// **지면·발판을 완전히 무시하고 날아다닌다.** <see cref="IEnemyVerticalMotion"/>을 구현했으므로
@@ -15,7 +15,7 @@ namespace ChronoSavior.Enemies
     /// - Y축 추적은 **거리와 무관하게 일정한 저속**(46px/s)이다. 가까워도 안 느려지고 멀어도 안 빨라진다.
     /// </summary>
     [RequireComponent(typeof(EnemyMove))]
-    public class EnemyWispMotion : MonoBehaviour, IEnemyMotion, IEnemyVerticalMotion
+    public class EnemyFlyerMotion : MonoBehaviour, IEnemyMotion, IEnemyVerticalMotion
     {
         [Header("원본 wisp 분기 그대로 (거리는 100px=1유닛)")]
         [Tooltip("이 X거리 밖이면 추적하지 않고 제자리 부유. 원본 350.")]

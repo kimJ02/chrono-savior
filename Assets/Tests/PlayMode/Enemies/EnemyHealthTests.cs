@@ -16,7 +16,7 @@ namespace ChronoSavior.Tests.PlayMode
 ///
 /// 주의: `AddComponent`는 `Awake`를 동기 실행하므로 그 뒤에 `maxHp`를 바꿔도 이미 초기화된
 /// `CurrentHp`엔 반영되지 않는다(이 프로젝트에서 이미 두 번 겪은 함정). 그래서 테스트는
-/// 프리팹 기본값(오니 38)을 그대로 쓰고 기대값을 `MaxHp`에서 역산한다.
+/// 프리팹 기본값(고블린 38)을 그대로 쓰고 기대값을 `MaxHp`에서 역산한다.
 /// </summary>
 public class EnemyHealthTests
 {
@@ -77,7 +77,7 @@ public class EnemyHealthTests
         attacker.transform.position = Vector3.zero;
         var enemy = NewEnemy(new Vector3(2f, 0f, 0f));
         var health = enemy.GetComponent<EnemyHealth>();
-        Assert.AreEqual(38f, health.MaxHp, 0.01f, "오니 기본 체력이 원본(38)과 다르다");
+        Assert.AreEqual(38f, health.MaxHp, 0.01f, "고블린 기본 체력이 원본(38)과 다르다");
 
         health.TakeDamage(9f, attacker);
         Assert.Less(health.CurrentHp, health.MaxHp, "피해를 줬는데 체력이 안 깎였다");
@@ -166,7 +166,7 @@ public class EnemyHealthTests
 
     /// <summary>
     /// 관통 투사체가 실제로 체력을 깎는지(= `Destroy()` 직접 호출에서 `TakeDamage()`로 전환됐는지)
-    /// 통합 경로로 확인한다. 무차지 마법탄 한 발로는 오니가 죽지 않아야 한다.
+    /// 통합 경로로 확인한다. 무차지 마법탄 한 발로는 고블린이 죽지 않아야 한다.
     /// </summary>
     [UnityTest]
     public IEnumerator MageProjectile_DamagesInsteadOfInstantKill()

@@ -111,7 +111,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | 4 | `ChronoSavior.UI` | 0~3 | HUD·로비·결과 화면(`UiTheme`가 색/판/글자를 소유) |
 
 - **같은 층끼리는 서로 참조 금지.** 특히 `Characters` ↔ `Enemies`는 절대 직접 참조하지 않는다 — 서로 때리는 건 `Core`의 태그(`CompareTag("Enemy")`)와 `ISpawnProtectable`·`IDamageable` 같은 `Core` 인터페이스로만 한다. **공격 스크립트가 `Destroy()`를 직접 부르지 말 것** — 반드시 `IDamageable.TakeDamage()`를 거친다(지속 피해는 `TakeTickDamage()`).
-- **낮은 층이 높은 층의 기능을 "요청"해야 하는 경우(예: 몹이 죽을 때 새 몹을 스폰)는 직접 참조하지 않고 `Core`의 이벤트로 방향을 뒤집는다.** 이 상황이 실제로 곧 온다 — 원본은 분열귀(splitter) 타입이 죽으면 `spawnEnemyAt()`을 직접 호출해 새끼 2마리를 낳는다(`project_test.html:1840`). 지금 저장소에서 `Assets/Scripts/Systems/ChronoSavior.Systems.asmdef`를 실제로 열어보면 이미 `"ChronoSavior.Enemies"`를 참조하고 있다(3층→2층, 스포너가 몹 프리팹을 다뤄야 하니 당연함) — 그런데 `splitter` 같은 몹을 만들려고 `Enemies`가 거꾸로 `Systems`(스포너)를 참조하면 두 asmdef가 서로를 참조하는 순환참조가 되어 Unity가 "circular assembly definition reference"로 **컴파일 자체를 거부한다**(스타일 위반이 아니라 빌드가 깨짐).
+- **낮은 층이 높은 층의 기능을 "요청"해야 하는 경우(예: 몹이 죽을 때 새 몹을 스폰)는 직접 참조하지 않고 `Core`의 이벤트로 방향을 뒤집는다.** 이 상황이 실제로 곧 온다 — 원본은 슬라임(splitter) 타입이 죽으면 `spawnEnemyAt()`을 직접 호출해 꼬마 슬라임 2마리를 낳는다(`project_test.html:1840`). 지금 저장소에서 `Assets/Scripts/Systems/ChronoSavior.Systems.asmdef`를 실제로 열어보면 이미 `"ChronoSavior.Enemies"`를 참조하고 있다(3층→2층, 스포너가 몹 프리팹을 다뤄야 하니 당연함) — 그런데 `splitter` 같은 몹을 만들려고 `Enemies`가 거꾸로 `Systems`(스포너)를 참조하면 두 asmdef가 서로를 참조하는 순환참조가 되어 Unity가 "circular assembly definition reference"로 **컴파일 자체를 거부한다**(스타일 위반이 아니라 빌드가 깨짐).
 
   **확정된 해결 패턴 — 이 시그니처 그대로 쓸 것**(`Combat`/`Characters`가 `Enemies`를 몰라도 스폰 무적 상태를 물을 수 있게 만든 `ISpawnProtectable`, `Core/ISpawnProtectable.cs`와 정확히 같은 구조 — 구체 타입 대신 `Core`의 추상화만 아래층이 참조):
   ```csharp
@@ -130,7 +130,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 ### 데이터(밸런스 값) — ScriptableObject로
 - 무기·적 스탯 같은 튜닝 수치는 스크립트에 하드코딩하지 않고 ScriptableObject 데이터 에셋으로 관리한다(원본의 `CONFIG`/`WEAPONS`/`MONSTERS` 데이터 테이블 구조를 그대로 반영하는 것 — 원본 자체가 이미 데이터 우선 설계였다).
 - 예: `WeaponData`(쿨다운·데미지·차지 배율), `EnemyData`(체력·공격력·이동속도). 스크립트는 데이터를 읽기만 하고 로직만 담당.
-- **SO는 "수치"만 책임진다 — 타입마다 "행동"이 다르면 SO 하나로 안 끝난다.** 원본을 실제로 확인하면 몹 종류가 최소 6종(`wisp`/`oni`/`charger`/`shooter`/`splitter`/`bigOni`, `project_test.html:3933` `rollSpawnType`)이고 스탯만 다른 게 아니라 로직 자체가 다르다 — wisp는 날아다니고(`:3956`, y좌표를 지면이 아니라 `y-50`으로 스폰), charger는 돌진 상태머신(`:4061`), shooter는 투사체를 쏘고(`:4084`), splitter는 죽을 때 새끼를 낳는다(`:1840`, 위 "낮은 층이 높은 층을 요청" 항목 참고). `Enemies/`에 새 몹 종류를 추가할 때 `EnemyMove` 하나에 분기를 계속 늘리지 말고, `Characters/`가 무기마다 이미 하고 있는 패턴(별도 스크립트, `MageAttack`/`MageProjectile`) 그대로 **타입 전용 스크립트를 추가**하고 `EnemyData`는 그 스크립트들이 공통으로 읽는 수치만 담당하게 한다. 단순히 스탯만 다른 타입(예: `bigOni`는 `CONFIG.enemyBase`에 자기 stat row만 따로 있고(`:710`, hp/dmg/speed/w/h), 넉백 저항 배율 하나만 별도 분기(`:1678`)일 뿐 이동/AI 로직은 일반 오니와 완전히 같다 — `updateEnemies()`에 `e.type === 'bigOni'`로 갈리는 이동 로직이 전혀 없음, 색과 그리기 함수 분기(`:4797`)만 다름)은 기존 `EnemyMove` + 다른 `EnemyData` 값으로 충분 — 새 스크립트는 **행동 자체가 다를 때만** 만든다.
+- **SO는 "수치"만 책임진다 — 타입마다 "행동"이 다르면 SO 하나로 안 끝난다.** 원본을 실제로 확인하면 몹 종류가 최소 6종(`wisp`/`oni`/`charger`/`shooter`/`splitter`/`bigOni`, `project_test.html:3933` `rollSpawnType`)이고 스탯만 다른 게 아니라 로직 자체가 다르다 — wisp는 날아다니고(`:3956`, y좌표를 지면이 아니라 `y-50`으로 스폰), charger는 돌진 상태머신(`:4061`), shooter는 투사체를 쏘고(`:4084`), splitter는 죽을 때 꼬마 슬라임을 낳는다(`:1840`, 위 "낮은 층이 높은 층을 요청" 항목 참고). `Enemies/`에 새 몹 종류를 추가할 때 `EnemyMove` 하나에 분기를 계속 늘리지 말고, `Characters/`가 무기마다 이미 하고 있는 패턴(별도 스크립트, `MageAttack`/`MageProjectile`) 그대로 **타입 전용 스크립트를 추가**하고 `EnemyData`는 그 스크립트들이 공통으로 읽는 수치만 담당하게 한다. 단순히 스탯만 다른 타입(예: `bigOni`는 `CONFIG.enemyBase`에 자기 stat row만 따로 있고(`:710`, hp/dmg/speed/w/h), 넉백 저항 배율 하나만 별도 분기(`:1678`)일 뿐 이동/AI 로직은 일반 고블린과 완전히 같다 — `updateEnemies()`에 `e.type === 'bigOni'`로 갈리는 이동 로직이 전혀 없음, 색과 그리기 함수 분기(`:4797`)만 다름)은 기존 `EnemyMove` + 다른 `EnemyData` 값으로 충분 — 새 스크립트는 **행동 자체가 다를 때만** 만든다.
 - **여기서 지금 못박는 건 이 원칙 하나뿐이다**("SO엔 수치만, 행동이 다르면 스크립트를 분리한다"). `wisp`/`charger`/`shooter`/`splitter`를 정확히 몇 개의 클래스로, 어떤 이름으로 나눌지·공통 인터페이스가 필요한지는 **몹 종류를 실제로 추가하는 스프린트가 시작될 때 그 스프린트의 HANDOFF.md에서 확정한다.** 지금 미리 스크립트 이름까지 정하면 그 스프린트가 실제로 몇 종을 어떤 순서로 다룰지(사용자가 아직 안 정함, `PROGRESS.md` "다음 할 일" 참고)와 어긋날 수 있다 — "HANDOFF.md에 없는 시스템은 손대지 않는다" 규칙과 같은 이유로, 이름/개수까지는 지금 정하지 않는다.
 - 데이터 에셋 위치: `Assets/Data/Weapons/`, `Assets/Data/Enemies/`.
 - 지금(`MageAttack`이 무기 1종)은 필드 하드코딩 그대로 둔다. **2번째 무기/적 종류를 만들기 전에, SO 전환을 먼저 끝내고 병합한다** — 2종을 하드코딩으로 만든 뒤 전환하면 두 배로 뜯어고쳐야 하므로 순서가 중요하다.
@@ -154,8 +154,8 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 
 ### 용어 통일 — `Enemy`로 완료(2026-08-26)
 같은 대상을 `Monster`(클래스명)·`Enemy`(태그)·`Enemies`(폴더)로 따로 부르던 걸 **`Enemy`로 통일 완료**(원본 JS도 `enemies`를 씀).
-- 태그 `Enemy` · 폴더 `Enemies/` · 네임스페이스 `ChronoSavior.Enemies` · 클래스 `EnemySpawner`/`EnemyMove` · 프리팹 `Enemy_Oni.prefab` — 전부 적용 끝. 새 코드에서 `Monster`라는 이름을 다시 쓰지 말 것.
-- 에셋 파일명은 `<도메인>_<고유이름>` 형식: `Enemy_Oni.prefab`, `Weapon_Bow.asset`, `Region_Forest.asset`.
+- 태그 `Enemy` · 폴더 `Enemies/` · 네임스페이스 `ChronoSavior.Enemies` · 클래스 `EnemySpawner`/`EnemyMove` · 프리팹 `Enemy_Base.prefab` — 전부 적용 끝. 새 코드에서 `Monster`라는 이름을 다시 쓰지 말 것.
+- 에셋 파일명은 `<도메인>_<고유이름>` 형식: `Enemy_Base.prefab`, `Weapon_Bow.asset`, `Region_Forest.asset`.
 
 ### 번호/이름 예약표 (새로 추가하기 전에 여기 먼저 적고 커밋)
 인덱스로 관리되는 Unity 설정은 두 세션이 같은 슬롯을 서로 다른 용도로 잡으면 병합해도 조용히 깨진다. **표에 먼저 예약하는 커밋을 올린 뒤 구현한다.**
@@ -215,7 +215,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 ### 월드 스케일 — 원본 수치를 가져올 때 (실제 버그 발생 지점)
 - **원본(`project_test.html`)의 픽셀 단위 수치는 Unity로 옮길 때 반드시 ÷100 한다** (100px = 1유닛). 이동속도 270→2.7, 점프 960→9.6, 중력 2600→26, 몹 이동속도 76→0.76.
 - **원본 Y+는 화면 아래 방향, Unity Y+는 위 방향이라 세로 수치는 부호가 반대다.** 점프/중력 값을 옮길 때 주의.
-- 이 축척을 빼먹은 버그가 실제로 두 번 났다(몹 `moveSpeed`를 76 그대로 써서 26유닛 필드를 0.34초에 주파). **원본 수치를 코드에 넣을 땐 주석에 원본값과 환산식을 같이 남긴다** — 예: `public float moveSpeed = 0.76f; // 원본 오니 76px/s ÷100`.
+- 이 축척을 빼먹은 버그가 실제로 두 번 났다(몹 `moveSpeed`를 76 그대로 써서 26유닛 필드를 0.34초에 주파). **원본 수치를 코드에 넣을 땐 주석에 원본값과 환산식을 같이 남긴다** — 예: `public float moveSpeed = 0.76f; // 원본 고블린 76px/s ÷100`.
 
 ### 에셋 임포트 (PPU)
 - **스프라이트의 `pixelsPerUnit`은 "텍스처 픽셀 크기 ÷ 그 스프라이트가 차지해야 할 유닛 크기"로 정한다.** 무조건 100이 아니다.

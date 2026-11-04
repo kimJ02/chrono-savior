@@ -21,7 +21,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// </summary>
 public class RunProgressAndRewardsTests
 {
-    // 오니 기본 스탯(원본 CONFIG.enemyBase.oni, project_test.html:709).
+    // 고블린 기본 스탯(원본 CONFIG.enemyBase.oni, project_test.html:709).
     // 2026-09-09 SO 전환으로 `DifficultyScalingConfig`에서 `Core/EnemyData`(에셋)로 옮겨졌다.
     // 아래 테스트들은 `EnemyData`를 안 꽂고 **프리팹 기본값 폴백 경로**를 검증하므로 기대값을 여기 둔다.
     const float OniBaseHp = 38f;
@@ -168,7 +168,7 @@ public class RunProgressAndRewardsTests
 
     /// <summary>
     /// SO 전환 검증 — `EnemyData`를 꽂으면 프리팹 기본값 대신 **그 종류의 수치**가 적용되는지.
-    /// 대오니 값(체력 160·피해 26·넉백 0.4, 원본 `:710`·`:1678`)으로 확인한다.
+    /// 오우거 값(체력 160·피해 26·넉백 0.4, 원본 `:710`·`:1678`)으로 확인한다.
     /// </summary>
     [UnityTest]
     public IEnumerator SpawnWave_AppliesEnemyDataStats_InsteadOfPrefabDefaults()
@@ -178,7 +178,7 @@ public class RunProgressAndRewardsTests
         spawner.maxSpawnPerWave = 1;
 
         var bigOni = ScriptableObject.CreateInstance<EnemyData>();
-        bigOni.type = EnemyType.BigOni;
+        bigOni.type = EnemyType.Brute;
         bigOni.maxHp = 160f;
         bigOni.attackPower = 26f;
         bigOni.moveSpeed = 0.44f;
@@ -202,9 +202,9 @@ public class RunProgressAndRewardsTests
         // 원본 `speed: base.speed * rand(0.9, 1.1)`(:3960) — 마리마다 걸음이 다르므로 범위로 본다.
         Assert.GreaterOrEqual(move.moveSpeed, 0.44f * 0.9f - 0.001f, "EnemyData의 이동속도가 안 쓰였다");
         Assert.LessOrEqual(move.moveSpeed, 0.44f * 1.1f + 0.001f, "이동속도 편차가 원본 ±10%를 벗어났다");
-        Assert.AreEqual(0.4f, health.knockbackMultiplier, 0.01f, "대오니 넉백 저항(0.4, 원본 :1678)이 안 쓰였다");
+        Assert.AreEqual(0.4f, health.knockbackMultiplier, 0.01f, "오우거 넉백 저항(0.4, 원본 :1678)이 안 쓰였다");
         // 몸집은 콜라이더 반지름이 아니라 transform 스케일로 준다 — 그래야 스프라이트와 판정이 같이 커진다
-        // (반지름만 키우면 대오니가 "보이는 것보다 넓게 때리는" 몹이 된다). 실제 월드 반지름으로 확인한다.
+        // (반지름만 키우면 오우거가 "보이는 것보다 넓게 때리는" 몹이 된다). 실제 월드 반지름으로 확인한다.
         Assert.AreEqual(0.87f, move.WorldRadius, 0.01f, "EnemyData의 몸집이 안 쓰였다");
 
         Object.DestroyImmediate(bigOni);
@@ -232,7 +232,7 @@ public class RunProgressAndRewardsTests
 
         Assert.AreEqual(1, RunProgress.TotalKills, "죽였는데 누적 처치 수가 안 올랐다");
         int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1));
-        Assert.AreEqual(expectedExp, ProfileService.Current.exp, "1지역(sc=1) 오니 처치 EXP는 OniBaseExp 그대로여야 한다");
+        Assert.AreEqual(expectedExp, ProfileService.Current.exp, "1지역(sc=1) 고블린 처치 EXP는 OniBaseExp 그대로여야 한다");
     }
 
     /// <summary>
@@ -313,7 +313,7 @@ public class RunProgressAndRewardsTests
         spawner.eliteChanceOverride = 1f;
 
         var oni = ScriptableObject.CreateInstance<EnemyData>();
-        oni.type = EnemyType.Oni;
+        oni.type = EnemyType.Grunt;
         oni.maxHp = OniBaseHp;
         oni.attackPower = OniBaseDmg;
         oni.moveSpeed = 0.76f;
@@ -350,7 +350,7 @@ public class RunProgressAndRewardsTests
         spawner.eliteChanceOverride = 1f;
 
         var oni = ScriptableObject.CreateInstance<EnemyData>();
-        oni.type = EnemyType.Oni;
+        oni.type = EnemyType.Grunt;
         oni.maxHp = OniBaseHp;
         oni.attackPower = OniBaseDmg;
         oni.exp = OniBaseExp;

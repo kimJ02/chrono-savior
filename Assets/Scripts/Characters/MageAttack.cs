@@ -235,7 +235,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
 
         // 원본 `x: p.x + p.facing * 26, y: p.y - 36`(:1965) — 발에서 0.36 위, 좌우는 **바라보는 방향** 쪽. 위·아래로
         // 똑바로 쏠 때도 바라보는 쪽에서 나간다 — 예전엔 조준의 x 부호를 써서 수직 조준이면 늘 오른쪽에서 나갔다.
-        // 높이는 몸 중심에서 재면 키 0.5짜리 오니 머리 위로 지나간다(발 기준, PlayerBody).
+        // 높이는 몸 중심에서 재면 키 0.5짜리 고블린 머리 위로 지나간다(발 기준, PlayerBody).
         Vector3 spawnPos = new Vector3(feet.x + facing * 0.26f, feet.y + 0.36f, 0f);
         MageProjectile.Spawn(spawnPos, aim * spd, dmg, pierce, life, sizeMul, boltSprite, boltColor,
             inf, charged, explosive, explosionPower, gravityOrb, chargeK, tier, transform.position, facing);
