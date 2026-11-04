@@ -93,13 +93,27 @@
 | `RunTransient` | 등록·해제 = 생성물 자신 / `DestroyAll` = `CombatDirector`(런 경계) | 그대로 |
 | `CombatEvents`·`RunEvents` | 발행 = 사건을 일으킨 오브젝트 / 구독 = `CombatDirector` 등 처리부 | `Reset()`은 부팅·테스트에서만 |
 
-### UI ↔ 월드: `WorldView` 하나로
+### 연결 규칙 (2026-11-05 재검토 — 사용자 "정말 깔끔한 구조인지 다시 확인", Codex '재검토' 결론)
 
-- **UI는 월드를 찾지 않는다**(`FindFirstObjectByType`·`FindObjectsByType`·`FindGameObjectWithTag` 금지). 월드가 `Systems`의 읽기 전용 스냅샷
-  `WorldView`에 값을 채우고 UI는 읽기만 한다 — `CombatDirector`가 포털 상태·보스 체력·미니맵 위치, `LobbyWorld`가 건물 근접 상태.
-- 예외: 카메라 대상은 UI가 아니라서 지금의 `CameraFollow2D.Track/Untrack` 그대로. 캐릭터·스테이지 선택은 월드가 아니라 프로필·정의 데이터를 읽는다(1회차 합의).
-- **월드가 없을 때**(타이틀·씬 전환 중): 월드가 내려갈 때 스냅샷을 비우고, UI는 보스·미니맵·근접 표시를 숨긴다. 탐색으로 되돌아가는 예비 경로는 두지 않는다.
-- 검증: UI 소스에서 위 탐색 함수 금지(소스 훑기 테스트), 등록·해제 뒤 스냅샷 갱신·초기화, 월드 없을 때 UI가 안전한지.
+1. **같은 씬 안은 직렬화 참조**(씬이 원본 — 인스펙터에 보인다). 예: `StageVisuals`→`PlatformSet`·`BossPortal`, `BossPortal`→Player는 모두 `20_Combat` 안이라
+   `[SerializeField]`로 잇는다. 같은 씬 안에서 찾지 않는다.
+2. **UI ↔ 월드는 `WorldView` 하나로.** UI(`00_Persistent`)는 월드 컴포넌트(`Boss`·`EnemyHealth`·`BossPortal`·`PlayerRig`)를 직접 알지 않고,
+   `Systems`의 읽기 전용 값 묶음 `WorldView`만 읽는다. 값을 채우는 건 그 월드의 담당 — 전투는 `CombatDirector`(같은 씬 참조와 `EnemySpawner`가 이미
+   들고 있는 목록으로 — 탐색이 Director로 옮겨가지 않는다), 로비는 `LobbyWorld`. 상태가 바뀔 때나 HUD 갱신 주기(미니맵 0.15초)에만 채우고 매 프레임 복사하지 않는다.
+   - 왜 '등록 목록을 UI가 직접 읽기'가 아닌가: 그러면 UI가 전투 구현 타입에 묶인다(Claude 대안을 Codex가 반대, Claude도 동의).
+3. **월드 안의 정적 등록 목록은 소유자 내부용**(`GunnerDrone`·`GunnerTurret`·`GravityWellZone`·`RunTransient`·`PlatformSet`·`PxScreen`). 이름을 한꺼번에 바꾸지 않는다.
+   단 **밖에 공개된 가변 목록은 읽기 전용으로**(`GravityWellZone.Active`가 public 가변 `List`). 새로 만들거나 고치는 등록 API는 목록 `Active`(`IReadOnlyList`)·
+   하나 `Current`로 이름을 맞춘다.
+4. **카메라 대상**은 지금처럼 대상이 등록(`CameraFollow2D.Track`). 로비는 가운데 앵커가 등록하고 `CameraFollow2D`의 `GameState.Lobby` 특례를 없앤다.
+5. **월드가 없을 때**(타이틀·씬 전환 중): 월드가 내려갈 때 `WorldView`를 비우고 UI는 보스·미니맵·근접 표시를 숨긴다. 다시 찾는 예비 경로는 없다.
+6. **검증**: UI 소스의 `FindFirstObjectByType`·`FindObjectsByType`·`FindGameObjectWithTag` 금지(소스 훑기 테스트). 런타임 전체 금지는 과하다 —
+   씬 경계에서 한 번 찾는 곳(예: `PixelCanvas.EnsureEventSystem`)만 이유를 주석에 적고 허용. `WorldView` 채우기·비우기, 월드 없을 때 UI 안전성 테스트.
+
+### 경계 (재검토)
+
+- `GameBoot` = 처음 세이브 로드·월드 진입 / `GameFlow` = 게임 상태·시간(timeScale)·씬 흐름 / `CombatDirector` = 전투 틱·전투 이벤트·필드.
+  Director는 줄 수만 보고 더 쪼개지 않는다(타격감 처리도 전투 이벤트라 Director에 둔다).
+- 씬 3개(00/10/20)는 수명과 역할이 달라서 이 규모에서도 과하지 않다.
 
 ## 씬 분할 2차 — 할 일 (순서 = 커밋 단위, 2026-11-05 Codex와 합의)
 
@@ -107,7 +121,7 @@
    위 소유권 표의 쓰기 위치를 이때 맞춘다(`RunState.Tick`·`EnterBossField`, `CombatModifiers`, `RunTransient.DestroyAll`). 이벤트 구독·해제 대칭 테스트.
    `ProfileService.Current` 읽기 전용 + `GameFlow.StartNewExpedition()`도 여기서.
 2. **로비가 전투 월드에 기대는 것 끊기 — 코드·데이터.** 캐릭터 선택은 프로필만(`PlayerRig` 탐색 제거), 스테이지 선택 그림은 `EnemyData`·보스 정의로,
-   `CharacterArtSet` SO, `WorldView` 도입(보스·포털·미니맵·로비 근접). 로비 카메라는 플레이어 대신 **가운데 앵커를 등록**하고
+   `CharacterArtSet` SO, `WorldView` 도입(보스·포털·미니맵·로비 근접 — 위 연결 규칙 2), 같은 씬 탐색을 직렬화 참조로(규칙 1), `GravityWellZone.Active` 읽기 전용(규칙 3). 로비 카메라는 플레이어 대신 **가운데 앵커를 등록**하고
    `CameraFollow2D`의 `GameState.Lobby` 특례를 없앤다. `LobbyWorld`는 UI 기능(`Px`·`PxArt`)을 써서 World로 못 옮긴다 → `UI/Lobby/`로 자리만 분명히.
 3. **`10_Lobby` 분리 + 씬 전환** — 로비 아바타·StageVisuals 로비 배치·전환(잠금·실패 복구·이전 월드 정지·재도전 재로드)·
    에디터 Play에서 열려 있던 씬으로 진입(`SessionState`). StageVisuals 배경이 카메라·이전 씬에 남거나 겹치지 않는지 테스트.
