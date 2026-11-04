@@ -41,6 +41,12 @@ public class EnemySpawner : MonoBehaviour
     [Header("몬스터 프리팹")]
     public GameObject monsterPrefab;
 
+    [Tooltip("같은 씬(20_Combat)의 플레이어 — 만든 몹이 쫓을 대상(EnemyMove.Target)과 경험치 구슬이 끌려갈 곳으로 넣어 준다.")]
+    [SerializeField] Transform player;
+
+    /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다.</summary>
+    public Transform Player { get => player; set => player = value; }
+
     [Header("웨이브 설정 (docs/sprints/01-combat-core.md 2번)")]
     public float waveInterval = 3.6f;
     public int maxSpawnPerWave = 7;
@@ -184,7 +190,7 @@ public class EnemySpawner : MonoBehaviour
         if (monsterPrefab == null) return;
 
         var data = FindData(enemyType);
-        var monster = Instantiate(monsterPrefab, position, Quaternion.identity);
+        var monster = SpawnMonsterAt(position);
         // 원본 `noElite: true`(project_test.html:1842) — 꼬마 슬라임은 엘리트로 승격되지 않는다.
         ApplyEnemyData(monster, data, allowElite: false);
 
@@ -195,6 +201,18 @@ public class EnemySpawner : MonoBehaviour
     }
 
     EnemyData FindData(EnemyType enemyType) => catalog != null ? catalog.Find(enemyType) : null;
+
+    /// <summary>
+    /// 몬스터 프리팹 하나를 그 자리에 세우고 **쫓을 플레이어를 넣는다** — 잡몹·꼬마 슬라임·성소·보스가 모두 여기를 지난다(2026-11-05 2b —
+    /// 예전엔 몹이 스스로 Player 태그로 찾았다). 위치만 받고 나머지(데이터·보호·이름)는 부르는 쪽이 정한다.
+    /// </summary>
+    GameObject SpawnMonsterAt(Vector3 position)
+    {
+        var go = Instantiate(monsterPrefab, position, Quaternion.identity);
+        if (go.TryGetComponent(out EnemyMove move)) move.Target = player;
+        return go;
+    }
+
 
     void Update()
     {
@@ -259,9 +277,7 @@ public class EnemySpawner : MonoBehaviour
         float x = FieldLayout.GroundGridX[Random.Range(0, groundCount)];
 
         // 발을 지면에 붙인다 — 구조물이라 물리로 안 떨어지므로 세울 때 정확히 놓아야 한다.
-        var go = Instantiate(monsterPrefab,
-                             new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.ShrineHeight / 2f, 0f),
-                             Quaternion.identity);
+        var go = SpawnMonsterAt(new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.ShrineHeight / 2f, 0f));
         go.name = "Shrine";
         RunTransient.Mark(go);
 
@@ -309,9 +325,7 @@ public class EnemySpawner : MonoBehaviour
 
         int region = RunState.Region;
         float x = Mathf.Lerp(FieldBounds.MinX, FieldBounds.MaxX, 0.62f);
-        var go = Instantiate(monsterPrefab,
-                             new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.BossHeight / 2f, 0f),
-                             Quaternion.identity);
+        var go = SpawnMonsterAt(new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.BossHeight / 2f, 0f));
         HitFeel.Shake(8f, 0.5f); // 원본 spawnBoss(:4174)
         go.name = "Boss";
         RunTransient.Mark(go);
@@ -437,7 +451,7 @@ public class EnemySpawner : MonoBehaviour
 
             if (TryGetSpawnPosition(placedThisWave, out Vector2 spawnPos))
             {
-                GameObject monster = Instantiate(monsterPrefab, spawnPos, Quaternion.identity);
+                GameObject monster = SpawnMonsterAt(spawnPos);
                 ApplyEnemyData(monster, PickEnemyData(), allowElite: true);
                 aliveMonsters.Add(monster.transform);
                 placedThisWave.Add(spawnPos);
@@ -766,7 +780,7 @@ public class EnemySpawner : MonoBehaviour
         // 경험치 구슬 — 원본 `if (run.kills % CONFIG.orb.every === 0)`(:1860).
         // **이번 런 처치 수 기준**이라(누적이 아니다) 런마다 50마리째부터 다시 센다.
         if (RunState.Kills > 0 && RunState.Kills % ExpOrb.DropEveryKills == 0 && enemy != null)
-            ExpOrb.Spawn(enemy.transform.position, orbSprite);
+            ExpOrb.Spawn(enemy.transform.position, orbSprite, player);
 
         if (enemy != null) spawnedData.Remove(enemy.gameObject);
     }

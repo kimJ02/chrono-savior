@@ -45,7 +45,11 @@ public class PlatformLayoutTests
         bossSet = BuildSet("TestPlatforms_Boss", FieldLayout.BossPlatforms, boss: true, layer);
         bossSet.SetActive(false); // 씬처럼 보스 무대는 꺼진 채 시작
 
-        new GameObject("StageVisuals").AddComponent<StageVisuals>().Build();
+        var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+        // 실제 씬에선 직렬화 참조(2026-11-05 2b — 예전엔 이름·타입으로 씬을 뒤졌다)
+        visuals.Ground = ground.transform;
+        visuals.PlatformSets = new[] { normalSet.GetComponent<PlatformSet>(), bossSet.GetComponent<PlatformSet>() };
+        visuals.Build();
     }
 
     [TearDown]

@@ -41,8 +41,13 @@ namespace ChronoSavior.World
         /// <summary>해금된 포탈이 숨을 쉬듯 밝아지는 주기(초).</summary>
         const float PulsePeriod = 1.6f;
 
+        [Tooltip("같은 씬(20_Combat)의 플레이어 — 가까이 왔는지 본다.")]
+        [SerializeField] Transform player;
+
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다).</summary>
+        public Transform Player { get => player; set => player = value; }
+
         SpriteRenderer sr;
-        Transform player;
         float age;
 
         /// <summary>지금 이 포탈로 들어갈 수 있는지. HUD가 안내를 띄울지 결정할 때 읽는다.</summary>
@@ -125,12 +130,7 @@ namespace ChronoSavior.World
 
         bool IsPlayerInRange()
         {
-            if (player == null || !player.gameObject.activeInHierarchy)
-            {
-                var go = GameObject.FindGameObjectWithTag("Player");
-                if (go == null) return false;
-                player = go.transform;
-            }
+            if (player == null || !player.gameObject.activeInHierarchy) return false;
 
             // 세로로 긴 문이라 Y는 넉넉히 본다 — 발판에서 뛰어내리며 스쳐도 잡히게.
             Vector2 d = (Vector2)player.position - (Vector2)transform.position;

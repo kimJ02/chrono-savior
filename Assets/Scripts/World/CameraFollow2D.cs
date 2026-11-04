@@ -30,6 +30,19 @@ namespace ChronoSavior.World
 
         public static void Track(Transform t) => Target = t;
 
+        /// <summary>
+        /// 공용 카메라(`00_Persistent`) — 다른 씬(`20_Combat`)이 카메라 위치를 읽을 때 쓴다(배경 시차, `StageVisuals`). 카메라가 켜질 때 스스로 등록한다
+        /// (2026-11-05 2b — 예전엔 `Camera.main`으로 찾았다). 같은 씬은 직렬화 참조를 쓴다(`LobbyHud`).
+        /// </summary>
+        public static Camera CurrentCamera { get; private set; }
+
+        void OnEnable() => CurrentCamera = GetComponent<Camera>();
+
+        void OnDisable()
+        {
+            if (CurrentCamera == GetComponent<Camera>()) CurrentCamera = null;
+        }
+
         /// <summary>그 대상이 지금 등록된 대상일 때만 지운다 — 다른 대상이 이미 덮어썼으면 건드리지 않는다.</summary>
         public static void Untrack(Transform t)
         {

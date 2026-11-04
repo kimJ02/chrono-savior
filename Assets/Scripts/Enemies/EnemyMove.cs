@@ -77,6 +77,13 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     SpriteRenderer body;   // 스폰 보호 중 반투명으로 그릴 몸(원본 "반투명 유령 상태")
     float bodyAlpha = -1f; // 스포너가 칠한 원래 알파 — 보호 중 첫 Update에서 잡는다(Awake 땐 아직 안 칠했다)
     Transform target;
+
+    /// <summary>
+    /// 쫓고 때릴 플레이어 — **만드는 쪽(`Systems/EnemySpawner`)이 넣는다**(2026-11-05 씬 분할 2차 2b, `HANDOFF.md` "연결 규칙").
+    /// 예전엔 Player 태그로 씬을 뒤져 찾았다. 비어 있으면 배회만 하고 아무도 안 때린다.
+    /// </summary>
+    public Transform Target { get => target; set => target = value; }
+
     // 종류 전용 이동 스크립트(있으면 기본 보행 대신 이쪽에 물어본다). 원본 updateEnemies의 타입 분기.
     IEnemyMotion motion;
     IEnemyVerticalMotion verticalMotion;
@@ -168,9 +175,6 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
 
         // 원본은 스폰 보호를 깎은 **뒤에** 성소를 건너뛴다(:4024) — 순서가 뒤집히면 무적이 안 풀린다.
         if (isStructure) return;
-
-        if (target == null || !target.gameObject.activeInHierarchy)
-            target = FindNearestPlayer();
 
         // 기본 보행의 방향 판단(추적/배회)은 종류 전용 스크립트가 없을 때만 돈다 —
         // 멧돼지·해골 궁수는 자기 상태기계 안에서 방향을 직접 정한다(원본도 타입별 분기 안에서 e.dir을 정함).
@@ -325,25 +329,6 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         float targetRadius = targetCol != null ? targetCol.bounds.extents.x : 0.5f;
         float dist = Vector2.Distance(transform.position, target.position);
         return dist < WorldRadius + targetRadius;
-    }
-
-    Transform FindNearestPlayer()
-    {
-        var players = GameObject.FindGameObjectsWithTag("Player");
-        Transform nearest = null;
-        float bestSqrDist = float.MaxValue;
-
-        foreach (var player in players)
-        {
-            float sqrDist = ((Vector2)player.transform.position - (Vector2)transform.position).sqrMagnitude;
-            if (sqrDist < bestSqrDist)
-            {
-                bestSqrDist = sqrDist;
-                nearest = player.transform;
-            }
-        }
-
-        return nearest;
     }
 
     /// <summary>

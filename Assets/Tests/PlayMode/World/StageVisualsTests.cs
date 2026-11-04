@@ -135,6 +135,9 @@ public class StageVisualsTests
         boss.SetActive(false); // 실제 씬처럼 보스 무대는 꺼진 채 시작
 
         var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+        // 실제 씬에선 직렬화 참조(2026-11-05 2b — 예전엔 이름·타입으로 씬을 뒤졌다)
+        visuals.Ground = ground.transform;
+        visuals.PlatformSets = new[] { normal.GetComponent<PlatformSet>(), boss.GetComponent<PlatformSet>() };
         visuals.Build();
         visuals.Build(); // 두 번 불러도 한 번만 깔린다
 

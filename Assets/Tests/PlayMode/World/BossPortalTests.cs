@@ -146,6 +146,7 @@ public class BossPortalTests
         var portal = NewPortal();
 
         var player = NewPlayerAt(new Vector3(2.2f, FieldBounds.GroundY + 1f, 0f)); // 시작 지점
+        portal.Player = player.transform; // 실제 씬에선 직렬화 참조(2026-11-05 2b)
         yield return null;
         Assert.IsFalse(portal.PlayerInRange, "맵 반대쪽에 있는데 범위 안이라고 한다");
 

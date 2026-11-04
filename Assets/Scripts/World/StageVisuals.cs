@@ -34,8 +34,20 @@ namespace ChronoSavior.World
         const float RawCenterXLeft = 190f, RawCenterXRight = 450f;
         const float RawGrassY = 181.8f;
 
+        [Header("같은 씬(20_Combat)의 판정 상자 — 그 위에 그림을 깐다")]
+        [Tooltip("땅(LineRenderer가 그려진 판정 상자).")]
+        [SerializeField] Transform ground;
+        [Tooltip("발판 세트(일반·보스) — 그 아래 Platform_* 마다 타일을 깐다.")]
+        [SerializeField] PlatformSet[] platformSets;
+        [Tooltip("보스 포탈 — Figma 포탈 그림으로 바꾼다.")]
+        [SerializeField] BossPortal portal;
+
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 이름·타입으로 씬을 뒤졌다).</summary>
+        public Transform Ground { get => ground; set => ground = value; }
+        public PlatformSet[] PlatformSets { get => platformSets; set => platformSets = value; }
+        public BossPortal Portal { get => portal; set => portal = value; }
+
         Transform background;
-        Camera cam;
 
         void Start() => Build();
 
@@ -46,25 +58,24 @@ namespace ChronoSavior.World
             var dirt = Resources.Load<Sprite>(ArtFolder + "ground_dirt");
             var plat = Resources.Load<Sprite>(ArtFolder + "platform_tile");
             var bg = Resources.Load<Sprite>(ArtFolder + "bg_forest");
-            var portal = Resources.Load<Sprite>(ArtFolder + "portal");
+            var portalArt = Resources.Load<Sprite>(ArtFolder + "portal");
             if (top == null || dirt == null || plat == null || bg == null)
             {
                 Debug.LogWarning("[StageVisuals] 1스테이지 그림을 못 찾았다 — Resources/" + ArtFolder);
                 return;
             }
 
-            var ground = GameObject.Find("Ground");
-            if (ground != null) BuildGround(ground, top, dirt);
+            if (ground != null) BuildGround(ground.gameObject, top, dirt);
 
-            foreach (var set in FindObjectsByType<PlatformSet>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                foreach (Transform child in set.transform)
-                    BuildPlatform(child, plat);
+            if (platformSets != null)
+                foreach (var set in platformSets)
+                    if (set != null)
+                        foreach (Transform child in set.transform)
+                            BuildPlatform(child, plat);
 
             if (background == null) BuildBackground(bg);
 
-            if (portal != null)
-                foreach (var p in FindObjectsByType<BossPortal>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                    p.ApplyArt(portal);
+            if (portalArt != null && portal != null) portal.ApplyArt(portalArt);
         }
 
         void BuildGround(GameObject ground, Sprite top, Sprite dirt)
@@ -153,7 +164,7 @@ namespace ChronoSavior.World
         void LateUpdate()
         {
             if (background == null) return;
-            if (cam == null) cam = Camera.main;
+            var cam = CameraFollow2D.CurrentCamera; // 카메라는 다른 씬(00_Persistent)이라 등록으로 읽는다
             if (cam == null) return;
             Vector3 c = cam.transform.position;
             background.position = BackgroundPosition(c.x, c.y);

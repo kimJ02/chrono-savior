@@ -155,6 +155,7 @@ public class PlayerHealthTests
         enemy.AddComponent<EnemyHealth>();
         enemy.GetComponent<Rigidbody2D>().gravityScale = 0f;
         move.moveSpeed = 0f;
+        move.Target = player.transform; // 실제 게임에선 스포너가 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다)
 
         // 스폰 무적(2초)을 기다리는 대신 private 타이머를 직접 0으로 — 테스트를 빠르게.
         var timerField = typeof(EnemyMove).GetField("spawnProtectTimer",

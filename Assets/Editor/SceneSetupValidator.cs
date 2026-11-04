@@ -100,7 +100,9 @@ namespace ChronoSavior.Editor
             var cam = One<Camera>(persistent, problems);
             if (cam != null)
             {
-                if (!cam.CompareTag("MainCamera")) problems.Add("공용 카메라 태그가 MainCamera가 아니다(StageVisuals가 Camera.main으로 찾는다)");
+                if (!cam.CompareTag("MainCamera")) problems.Add("공용 카메라 태그가 MainCamera가 아니다(에디터 캡처 도구가 Camera.main으로 찾는다)");
+                var lobbyHud = persistent.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<LobbyHud>(true)).FirstOrDefault();
+                if (lobbyHud != null && lobbyHud.Camera != cam) problems.Add("로비 HUD(LobbyHud)의 카메라가 공용 카메라를 가리키지 않는다");
                 foreach (var need in new[] { typeof(CameraFollow2D), typeof(SkyBackground), typeof(AudioListener), typeof(PixelPerfectCamera) })
                     if (cam.GetComponent(need) == null) problems.Add($"공용 카메라에 {need.Name}이 없다");
                 CheckCamera(cam, problems);
@@ -125,9 +127,23 @@ namespace ChronoSavior.Editor
             var spawner = One<EnemySpawner>(combat, problems);
             if (spawner != null && spawner.monsterPrefab == null) problems.Add("EnemySpawner.monsterPrefab이 비어 있다");
             CheckMonsterCatalog(spawner, persistent, problems);
-            One<BossPortal>(combat, problems);
-            One<StageVisuals>(combat, problems);
-            One<LobbyWorld>(combat, problems);
+            // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
+            var playerTf = player != null ? player.transform : null;
+            if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
+            var portal = One<BossPortal>(combat, problems);
+            if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");
+            var visuals = One<StageVisuals>(combat, problems);
+            if (visuals != null)
+            {
+                var groundGo = combat.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");
+                if (visuals.Ground == null || groundGo == null || visuals.Ground != groundGo.transform) problems.Add("StageVisuals.Ground가 이 씬의 Ground가 아니다");
+                var allSets = All<PlatformSet>(combat);
+                if (visuals.PlatformSets == null || visuals.PlatformSets.Length != allSets.Count || allSets.Any(s => !visuals.PlatformSets.Contains(s)))
+                    problems.Add("StageVisuals.PlatformSets가 이 씬의 발판 세트 전부가 아니다");
+                if (visuals.Portal != portal) problems.Add("StageVisuals.Portal이 이 씬의 BossPortal이 아니다");
+            }
+            var lobbyWorld = One<LobbyWorld>(combat, problems);
+            if (lobbyWorld != null && lobbyWorld.Player != playerTf) problems.Add("LobbyWorld.Player가 이 씬의 Player가 아니다 — 로비에서 못 걷는다");
             var sets = All<PlatformSet>(combat);
             if (sets.Count != 2 || sets.Count(s => s.bossArena) != 1)
                 problems.Add($"발판 세트는 일반 하나·보스 하나여야 한다 — 지금 {sets.Count}개(보스 {sets.Count(s => s.bossArena)})");

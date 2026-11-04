@@ -12,6 +12,12 @@ namespace ChronoSavior.UI
     /// </summary>
     public class LobbyHud : PxScreen
     {
+        [Tooltip("같은 씬(00_Persistent)의 공용 카메라 — 건물 글씨를 화면 위치로 옮길 때 쓴다.")]
+        [SerializeField] Camera cam;
+
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 `Camera.main`).</summary>
+        public Camera Camera { get => cam; set => cam = value; }
+
         protected override PixelCanvas.Layer Layer => PixelCanvas.Layer.Hud;
         protected override bool WantsVisible => GameState.Current == GameScene.Lobby;
         protected override bool TakesKeys => false;
@@ -76,7 +82,6 @@ namespace ChronoSavior.UI
         /// </summary>
         void PlaceBuildingLabels()
         {
-            var cam = Camera.main;
             if (cam == null || buildingNames == null) return;
             Vector2 c = cam.transform.position;
             for (int i = 0; i < buildingNames.Length; i++)

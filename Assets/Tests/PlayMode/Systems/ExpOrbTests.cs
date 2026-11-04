@@ -58,7 +58,7 @@ public class ExpOrbTests
 
         // 플레이어를 구슬 바로 위에 둬서 첫 프레임에 획득되게 한다.
         var player = NewPlayer(new Vector3(5f, 0.6f - ExpOrb.PlayerCenterOffset, 0f));
-        ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null);
+        ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null, player.transform);
         yield return null;
         yield return null;
 
@@ -73,7 +73,7 @@ public class ExpOrbTests
     public IEnumerator Orb_DoesNotChasePlayerOutsideMagnetRange()
     {
         var player = NewPlayer(new Vector3(20f, 0.5f, 0f));
-        var orb = ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null);
+        var orb = ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null, player.transform);
         float startX = orb.transform.position.x;
 
         for (int i = 0; i < 10; i++) yield return null;
@@ -89,7 +89,7 @@ public class ExpOrbTests
     public IEnumerator Orb_MagnetsTowardPlayerInRange()
     {
         var player = NewPlayer(new Vector3(6f, 0.5f, 0f));
-        var orb = ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null); // 거리 약 1.0 — 자석 범위 안
+        var orb = ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null, player.transform); // 거리 약 1.0 — 자석 범위 안
         float startX = orb.transform.position.x;
 
         yield return null;
@@ -109,7 +109,7 @@ public class ExpOrbTests
     [Test]
     public void Orb_SpawnsAtOrAboveGround()
     {
-        var orb = ExpOrb.Spawn(new Vector3(5f, FieldBounds.GroundY - 3f, 0f), null);
+        var orb = ExpOrb.Spawn(new Vector3(5f, FieldBounds.GroundY - 3f, 0f), null, null);
         Assert.GreaterOrEqual(orb.transform.position.y, FieldBounds.GroundY);
     }
 
@@ -117,7 +117,7 @@ public class ExpOrbTests
     [Test]
     public void Orb_IsRunTransient()
     {
-        var orb = ExpOrb.Spawn(new Vector3(5f, 1f, 0f), null);
+        var orb = ExpOrb.Spawn(new Vector3(5f, 1f, 0f), null, null);
         Assert.IsNotNull(orb.GetComponent<RunTransient>(),
             "RunTransient가 없으면 로비로 나갔다 와도 구슬이 필드에 남는다");
     }

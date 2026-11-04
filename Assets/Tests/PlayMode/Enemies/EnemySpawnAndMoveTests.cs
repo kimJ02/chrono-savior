@@ -79,6 +79,40 @@ public class EnemySpawnAndMoveTests
     }
 
     /// <summary>
+    /// 스포너가 만든 몹은 쫓을 플레이어를 받아서 나온다(2026-11-05 2b — 예전엔 몹이 Player 태그로 스스로 찾았다). 잡몹 웨이브로 확인한다
+    /// (꼬마 슬라임·성소·보스도 같은 `SpawnMonsterAt`을 지난다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator SpawnedMonsters_AreGivenThePlayerToChase()
+    {
+        var player = new GameObject("TestPlayer").transform;
+        var prefab = new GameObject("TestMonsterPrefab");
+        prefab.tag = "Enemy";
+        prefab.AddComponent<CircleCollider2D>().radius = 0.3f;
+        prefab.AddComponent<EnemyMove>();
+        prefab.GetComponent<Rigidbody2D>().gravityScale = 0f;
+
+        var spawner = new GameObject("TestSpawner").AddComponent<EnemySpawner>();
+        spawner.monsterPrefab = prefab;
+        spawner.Player = player;
+        spawner.eliteChanceOverride = 0f;
+        typeof(EnemySpawner).GetMethod("SpawnWave", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(spawner, null);
+        yield return null;
+
+        var alive = (System.Collections.IList)typeof(EnemySpawner).GetField("aliveMonsters", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(spawner);
+        Assert.Greater(alive.Count, 0);
+        foreach (Transform t in alive)
+        {
+            Assert.AreSame(player, t.GetComponent<EnemyMove>().Target, "스포너가 만든 몹이 쫓을 플레이어를 못 받았다");
+            Object.Destroy(t.gameObject);
+        }
+        Object.Destroy(prefab);
+        Object.Destroy(spawner.gameObject);
+        Object.Destroy(player.gameObject);
+        yield return null;
+    }
+
+    /// <summary>
     /// 원본 고블린 AI: 플레이어가 추적범위(3유닛) 안이면 그 방향으로 dir을 맞춘다. 몹의 기본
     /// dir은 1(오른쪽)인데, 플레이어를 일부러 "왼쪽"에 둬서(추적범위 안) 실제로 방향이 반전되는지
     /// 확인한다 — 그냥 기본값이 우연히 맞아떨어지는 걸 통과로 착각하지 않기 위한 설계.
@@ -98,6 +132,7 @@ public class EnemySpawnAndMoveTests
         monsterGO.transform.position = new Vector3(2f, FieldBounds.GroundY, 0f); // 플레이어까지 거리 2 < 기본 추적범위(3)
         var move = monsterGO.AddComponent<EnemyMove>(); // RequireComponent로 Rigidbody2D도 같이 붙음
         move.moveSpeed = 5f; // 테스트를 빨리 끝내려고 크게
+        move.Target = playerGO.transform; // 실제 게임에선 스포너가 넣는다(2026-11-05 2b). 안 넣으면 배회 방향(무작위)이 우연히 맞아 통과할 수 있다
         monsterGO.GetComponent<Rigidbody2D>().gravityScale = 0f; // 이 테스트는 추적 판단만 봄, 낙하/착지는 별도 테스트
         // 스폰 보호(2초) 중엔 원본처럼 아예 안 움직이므로, 추적 판단을 보려면 무적을 먼저 풀어야 한다.
         typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance)

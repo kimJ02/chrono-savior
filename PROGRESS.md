@@ -227,6 +227,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (14)** — **[나] 2b-2: 같은 씬은 직렬화, 생성물엔 스포너가 플레이어를 넣는다 (`feature/world-links`, PlayMode 438/438, 씬 구성 검증 '문제 없음').**
+  씬 탐색을 걷어 냈다: `StageVisuals`(땅·발판 2·포탈 → 직렬화, 다른 씬 카메라는 `CameraFollow2D.CurrentCamera` 등록), `BossPortal`·`LobbyWorld`(Player 직렬화), `LobbyHud`(같은 씬 카메라 직렬화).
+  실행 중 생기는 몹·경험치 구슬은 **스포너가 만들 때 Player를 넣는다**(`EnemySpawner.SpawnMonsterAt` — 잡몹·꼬마 슬라임·성소·보스가 다 지남, `ExpOrb.Spawn(…, player)`) — 몹이 Player 태그로 찾던 것 삭제.
+  **테스트에서 발견**: 몹 추적 테스트가 대상 없이도 통과하고 있었다(배회 방향이 무작위라 50%로 플레이어 쪽) → 대상을 직접 넣게. 새 테스트 `SpawnedMonsters_AreGivenThePlayerToChase`.
+  검증기: 새 직렬화 참조 전부(Player·Ground·발판 세트·포탈·카메라). 월드 탐색 금지 검사 대상에 2b 변경 파일 5개 추가.
 - **2026-11-05 (13)** — **[나] 2b-1: 중력점 목록 읽기 전용 (`feature/world-links`, PlayMode 437/437).** `GravityWellZone.Active`(공개 가변 `List`) → `IReadOnlyList`,
   없애기는 `Vanish()`(목록에서 즉시 빼고 Destroy — 대붕괴가 목록을 직접 고치던 두 줄, 수명 끝, 개수 상한이 같이 씀). 이름을 `Collapse`로 하지 않은 건 스킬 '대붕괴'와 헷갈려서.
   `Combat/GravityWellZoneTests`(즉시 빠짐, 밖에 가변 List로 안 열림).

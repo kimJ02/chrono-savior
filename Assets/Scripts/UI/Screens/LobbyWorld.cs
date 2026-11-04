@@ -50,8 +50,13 @@ namespace ChronoSavior.UI
         public static LobbyWorld Instance { get; private set; }
         public int NearIndex { get; private set; } = -1;
 
+        [Tooltip("로비에서 걸어 다닐 캐릭터 — 지금은 같은 씬(20_Combat)의 Player(씬 분할 2차 3단계에서 로비 아바타로 바뀐다).")]
+        [SerializeField] Transform player;
+
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다).</summary>
+        public Transform Player { get => player; set => player = value; }
+
         GameObject root;
-        Transform player;
         float walkSpeed = 2.7f;
         bool wasLobby;
 
@@ -71,7 +76,6 @@ namespace ChronoSavior.UI
             wasLobby = lobby;
             if (!lobby) { NearIndex = -1; return; }
 
-            FindPlayer();
             if (player == null) return;
             bool windowOpen = UiModal.Open;
             if (!windowOpen)
@@ -102,14 +106,6 @@ namespace ChronoSavior.UI
             return best;
         }
 
-        void FindPlayer()
-        {
-            if (player != null) return;
-            var go = GameObject.FindGameObjectWithTag("Player");
-            if (go == null) return;
-            player = go.transform;
-            if (go.TryGetComponent(out ChronoSavior.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed;
-        }
 
         /// <summary>로비에 들어올 때 — 발판을 숨기고, 건물을 세우고, 캐릭터를 시작 자리 땅 위에.</summary>
         public void EnterLobby()
@@ -118,9 +114,9 @@ namespace ChronoSavior.UI
             PlatformSet.HideAll();
             if (root == null) Build();
             root.SetActive(true);
-            FindPlayer();
             if (player != null)
             {
+                if (player.TryGetComponent(out ChronoSavior.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed; // 사냥과 같은 걸음
                 var pos = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, player.position.z);
                 player.position = pos;
                 if (player.TryGetComponent(out Rigidbody2D rb)) { rb.position = pos; rb.linearVelocity = Vector2.zero; }

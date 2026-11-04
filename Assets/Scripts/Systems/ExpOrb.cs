@@ -49,7 +49,8 @@ namespace ChronoSavior.Systems
         /// 구슬 하나를 떨군다. 원본은 죽은 자리에서 살짝 위에 놓고, **지면 아래로는 안 내려간다**
         /// (`Math.min(e.y, groundY)` — 원본은 Y+가 아래라 min이지만 우리 좌표계에선 max다).
         /// </summary>
-        public static ExpOrb Spawn(Vector3 deathPosition, Sprite sprite)
+        /// <param name="player">끌려갈 플레이어 — 만드는 쪽(스포너)이 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다). 없으면 제자리에 떠 있기만 한다.</param>
+        public static ExpOrb Spawn(Vector3 deathPosition, Sprite sprite, Transform player)
         {
             float y = Mathf.Max(deathPosition.y, FieldBounds.GroundY) + DropHeight;
 
@@ -71,17 +72,13 @@ namespace ChronoSavior.Systems
 
             var orb = go.AddComponent<ExpOrb>();
             orb.baseY = y;
+            orb.player = player;
             return orb;
         }
 
         void Update()
         {
-            if (player == null)
-            {
-                var go = GameObject.FindGameObjectWithTag("Player");
-                if (go == null) return;
-                player = go.transform;
-            }
+            if (player == null) return;
 
             age += Time.deltaTime;
 

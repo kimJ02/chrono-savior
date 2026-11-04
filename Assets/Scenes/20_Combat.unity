@@ -189,6 +189,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed47ef84921e4652a5b8d85cf321c0eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ground: {fileID: 1668229411}
+  platformSets:
+  - {fileID: 1061869209}
+  - {fileID: 249017186}
+  portal: {fileID: 789030853}
 --- !u!4 &52205809
 Transform:
   m_ObjectHideFlags: 0
@@ -234,6 +239,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   monsterPrefab: {fileID: 4812569128568459250, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
+  player: {fileID: 1457870342}
   waveInterval: 3.6
   maxSpawnPerWave: 7
   maxAliveTotal: 22
@@ -1707,6 +1713,7 @@ MonoBehaviour:
   interactRadius: 0.9
   lockedColor: {r: 0.32, g: 0.3, b: 0.38, a: 0.75}
   unlockedColor: {r: 0.78, g: 0.42, b: 1, a: 1}
+  player: {fileID: 1457870342}
 --- !u!212 &789030854
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -4230,6 +4237,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3a856847a9f04d5abb79e45108eccfb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  player: {fileID: 1457870342}
 --- !u!4 &1662106746
 Transform:
   m_ObjectHideFlags: 0
