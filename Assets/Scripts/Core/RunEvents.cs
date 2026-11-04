@@ -1,6 +1,6 @@
 using System;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 런 진행 중에 일어나는 "장면 전환급" 사건을 전달하는 이벤트 버스.

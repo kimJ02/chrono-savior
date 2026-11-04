@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 적 종류. 원본 `CONFIG.enemyBase`(project_test.html:707~714)의 키 7종 그대로.
@@ -19,7 +19,7 @@ namespace YokaiFront.Core
     /// 에셋 위치는 `Assets/Data/Enemies/`(CLAUDE.md 규칙). 에셋은 손으로 만들지 말고
     /// `Assets/Editor/BuildEnemyData.cs`가 원본 수치대로 생성한다 — 원본과 어긋나면 그 파일을 고칠 것.
     /// </summary>
-    [CreateAssetMenu(menuName = "YokaiFront/Enemy Data", fileName = "EnemyData")]
+    [CreateAssetMenu(menuName = "ChronoSavior/Enemy Data", fileName = "EnemyData")]
     public class EnemyData : ScriptableObject
     {
         [Header("종류")]

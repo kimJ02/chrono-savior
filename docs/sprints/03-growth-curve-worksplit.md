@@ -23,7 +23,7 @@
 
 ### `Core/PlayerProfile.cs`
 ```csharp
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     public class PlayerProfile
     {
@@ -81,7 +81,7 @@ public event System.Action<EnemyHealth> Died; // Die() 안에서 Destroy 직전�
 // Core/DifficultyScalingConfig.cs — 트랙 B의 Core/GoldUpgrade.cs·PlayerStatCalculator.cs와 같은 패턴
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 난이도 스케일링 + 처치 보상 수치를 전부 여기 모았다. 나중에 밸런스를 조정할 때 이 파일
@@ -115,9 +115,9 @@ namespace YokaiFront.Core
 
 ### 1. `regionLv` 카운터 (`Systems/RunProgress.cs` 신규)
 ```csharp
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     public static class RunProgress
     {

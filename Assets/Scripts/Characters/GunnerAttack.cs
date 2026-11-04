@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 메카닉(원본 무기 "gunner") 키트 — Z 기본공격(총알 / 레이저 빔)과 X 스킬(레이저 드론 / 설치기),

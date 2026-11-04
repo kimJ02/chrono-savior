@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 누적 통계 — 원본 `meta.stats`(project_test.html:1151)와 `meta.totalKills`(`:1152`).
@@ -77,15 +77,15 @@ namespace YokaiFront.Core
         /// <summary>원본 `ACHIEVEMENTS` 순서 그대로.</summary>
         public static readonly Achievement[] All =
         {
-            A("kill1",     "첫 사냥",       "요괴 1마리 처치",        p => p.stats.totalKills >= 1),
-            A("kill500",   "요괴 사냥꾼",   "누적 500마리 처치",      p => p.stats.totalKills >= 500),
+            A("kill1",     "첫 사냥",       "몬스터 1마리 처치",       p => p.stats.totalKills >= 1),
+            A("kill500",   "몬스터 사냥꾼", "누적 500마리 처치",      p => p.stats.totalKills >= 500),
             A("kill5k",    "백귀 참살",     "누적 5,000마리 처치",    p => p.stats.totalKills >= 5000),
-            A("kill20k",   "요괴의 재앙",   "누적 20,000마리 처치",   p => p.stats.totalKills >= 20000),
+            A("kill20k",   "몬스터의 재앙", "누적 20,000마리 처치",   p => p.stats.totalKills >= 20000),
             A("combo50",   "연격의 미학",   "콤보 50 달성",           p => p.stats.maxCombo >= 50),
             A("combo200",  "무아의 경지",   "콤보 200 달성",          p => p.stats.maxCombo >= 200),
-            A("elite",     "강적 격파",     "엘리트 요괴 처치",       p => p.stats.elites >= 1),
+            A("elite",     "강적 격파",     "엘리트 몬스터 처치",      p => p.stats.elites >= 1),
             A("elite50",   "엘리트 사냥",   "엘리트 50마리 처치",     p => p.stats.elites >= 50),
-            A("shrine",    "성소 파괴자",   "요괴 성소 파괴",         p => p.stats.shrines >= 1),
+            A("shrine",    "성소 파괴자",   "몬스터 성소 파괴",        p => p.stats.shrines >= 1),
             A("reg1",      "숲의 수호자",   "1지역 보스 처치",        p => p.IsBossCleared(1)),
             A("reg3",      "골짜기 정벌",   "3지역 정복",             p => p.IsBossCleared(3)),
             A("reg5",      "성곽 함락",     "5지역 정복",             p => p.IsBossCleared(5)),

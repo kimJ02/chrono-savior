@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 플레이어 체력·무적시간·피격 반동. 원본 `damagePlayer()`(project_test.html:1879)를 옮긴 것이다.

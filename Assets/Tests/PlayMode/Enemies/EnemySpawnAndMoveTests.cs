@@ -3,13 +3,13 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Combat;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
-using YokaiFront.Systems;
-using YokaiFront.World;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
+using ChronoSavior.Systems;
+using ChronoSavior.World;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -287,7 +287,7 @@ public class EnemySpawnAndMoveTests
         enemyGO.AddComponent<CircleCollider2D>().radius = 0.3f;
         enemyGO.AddComponent<SpriteRenderer>();
         // 스프린트 2 개정: 즉사가 아니라 체력을 깎으므로 EnemyHealth가 있어야 피격 여부를 볼 수 있다.
-        var enemyHp = enemyGO.AddComponent<YokaiFront.Enemies.EnemyHealth>();
+        var enemyHp = enemyGO.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
         var move = enemyGO.AddComponent<EnemyMove>(); // AddComponent가 Awake를 동기 실행하므로
         // spawnProtectDuration 필드를 나중에 바꿔도 이미 실행된 Awake엔 반영 안 됨 — private
         // 타이머 자체를 리플렉션으로 직접 짧게 세팅한다(테스트를 빨리 끝내려고, 원본 값은 2초).

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 공용 팝업 — Figma "공용 팝업 업데이트"(53:32, 640×360): 창 틀(512×288) · 제목 · 내용 · 취소/확인 버튼(96×32).

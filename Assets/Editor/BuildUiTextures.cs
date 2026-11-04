@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// Figma에서 받은 UI 이미지의 임포트 설정을 잡는다(`Assets/Sprites/UI/`).
@@ -37,7 +37,7 @@ namespace YokaiFront.Editor
             "skill_slot_jump",   // 32×32 전투 HUD C 칸(틀+화살표)  (181:4)
         };
 
-        [MenuItem("YokaiFront/UI 텍스처 임포트 설정")]
+        [MenuItem("ChronoSavior/UI 텍스처 임포트 설정")]
         public static void Apply()
         {
             if (!Directory.Exists(Folder))

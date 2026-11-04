@@ -3,11 +3,11 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Combat;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -175,7 +175,7 @@ public class EnemyHealthTests
         enemy.GetComponent<Rigidbody2D>().gravityScale = 0f;
         var health = enemy.GetComponent<EnemyHealth>();
 
-        YokaiFront.Characters.MageProjectile.Spawn(
+        ChronoSavior.Characters.MageProjectile.Spawn(
             new Vector3(0.5f, 0.36f, 0f), new Vector2(6f, 0f),
             damage: 9f, pierce: 2, life: 1f, sizeMul: 1f, sprite: null, color: Color.white,
             infinitePierce: false, charged: false, explosive: false, explosionPower: 0f,

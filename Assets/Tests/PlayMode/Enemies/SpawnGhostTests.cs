@@ -2,9 +2,9 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Enemies;
+using ChronoSavior.Enemies;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>

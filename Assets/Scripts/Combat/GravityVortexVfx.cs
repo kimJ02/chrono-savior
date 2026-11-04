@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 중력장이 남아 있는 동안 계속 보이는 "끌어당기는" 소용돌이 — 2026-10-25 사용자 "중력장이 남아 있는데 이펙트가 끝난다, 블랙홀이

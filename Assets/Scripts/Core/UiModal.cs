@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 설정 창 같은 창이 떠 있는 동안 ESC를 창이 먼저 쓴다(2026-10-24, Figma UI). `RunController`의 일시정지 토글은

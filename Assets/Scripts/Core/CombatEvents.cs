@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 도메인을 가로지르는 전투 신호. asmdef 계층 규칙상 `Enemies`(2층)와 `Characters`(2층)는 서로를

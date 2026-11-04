@@ -1,14 +1,10 @@
 {
-    "name": "YokaiFront.UI",
+    "name": "ChronoSavior.Characters",
     "rootNamespace": "",
     "references": [
-        "YokaiFront.Core",
-        "YokaiFront.World",
-        "YokaiFront.Combat",
-        "YokaiFront.Characters",
-        "YokaiFront.Enemies",
-        "YokaiFront.Systems",
-        "UnityEngine.UI"
+        "ChronoSavior.Core",
+        "ChronoSavior.World",
+        "ChronoSavior.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

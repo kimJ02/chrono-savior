@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 플레이어 오브젝트에 붙은 캐릭터 키트들 중 **선택된 하나만** 켠다.

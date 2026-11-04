@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 지역(스테이지) 고정 수치 — 원본 `REGION_NAMES`(project_test.html:969),

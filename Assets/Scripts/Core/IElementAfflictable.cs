@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 원소 상태이상(화상)을 받을 수 있는 대상. 원본 `applyElement()`(project_test.html:1699)의

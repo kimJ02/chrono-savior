@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 잔상 — 원본 `player.afterimages`(project_test.html:1494·:3502~3504·:6192~6193). 지나간 자리에 캐릭터 그림을

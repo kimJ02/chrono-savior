@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 섬영 기본 공격(회전베기 Z)에 겹쳐 그리는 베기 효과 — 2026-10-25 사용자가 받은 "Pixel Art Animations - Slashes"의

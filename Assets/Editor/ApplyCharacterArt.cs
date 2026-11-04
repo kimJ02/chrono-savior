@@ -1,9 +1,9 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using YokaiFront.Characters;
+using ChronoSavior.Characters;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// 지금 열려 있는 씬의 <see cref="PlayerRig"/>에 `Assets/Sprites/Prototype/` 캐릭터 그림 4종을
@@ -16,7 +16,7 @@ namespace YokaiFront.Editor
     /// 통째로 새로 짜서 덮어쓰므로, 캐릭터 그림만 바꾸려고 그걸 쓰는 건 과하다 — 그래서 열려 있는 씬의
     /// Player만 건드리는 작은 메뉴를 따로 둔다.
     ///
-    /// 실행: `CombatCore.unity`를 열어둔 상태에서 메뉴 `YokaiFront/Apply Character Art (Player)`.
+    /// 실행: `CombatCore.unity`를 열어둔 상태에서 메뉴 `ChronoSavior/Apply Character Art (Player)`.
     /// 끝나면 **씬을 저장**해야 한다(Ctrl+S) — 안 하면 에디터를 닫을 때 날아간다.
     /// </summary>
     public static class ApplyCharacterArt
@@ -24,7 +24,7 @@ namespace YokaiFront.Editor
         // characterSprites 인덱스 순서 = Core.CharacterId 순서(마법사·메카닉·섬영·드루이드).
         static readonly string[] SpriteNames = { "char_mage", "char_gunner", "char_blade", "char_druid" };
 
-        [MenuItem("YokaiFront/Apply Character Art (Player)")]
+        [MenuItem("ChronoSavior/Apply Character Art (Player)")]
         public static void Apply()
         {
             var rig = Object.FindAnyObjectByType<PlayerRig>(FindObjectsInactive.Include);
@@ -47,7 +47,7 @@ namespace YokaiFront.Editor
                 {
                     missing = true;
                     Debug.LogWarning($"[ApplyCharacterArt] {SpriteNames[i]} 스프라이트를 못 찾았다 — " +
-                        "먼저 메뉴 YokaiFront/Import Prototype Sprites(또는 Build Enemy Data)를 실행했는지 확인할 것.");
+                        "먼저 메뉴 ChronoSavior/Import Prototype Sprites(또는 Build Enemy Data)를 실행했는지 확인할 것.");
                 }
             }
             if (missing) return; // 일부가 비면 네 칸을 섞어 반쪽만 바뀐 상태로 두지 않는다.

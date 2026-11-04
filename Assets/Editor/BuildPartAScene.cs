@@ -3,13 +3,13 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.Systems;
-using YokaiFront.UI;
-using YokaiFront.World;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
+using ChronoSavior.UI;
+using ChronoSavior.World;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
 
 /// <summary>
@@ -28,7 +28,7 @@ public static class BuildPartAScene
     // 발판 좌표/두께는 FieldLayout.cs로 옮겨서 EnemySpawner의 스폰 포인트 계산과 공유한다
     // (두 군데 따로 들고 있으면 나중에 발판 배치가 또 바뀔 때 하나만 고치는 실수가 남).
 
-    [MenuItem("Tools/YokaiFront/Build Part A Scene")]
+    [MenuItem("Tools/ChronoSavior/Build Part A Scene")]
     public static void Build()
     {
         EnsureCircleSprite();
@@ -412,8 +412,8 @@ public static class BuildPartAScene
 
         // 스프린트 2 — 체력. 원본 오니 hp 38(project_test.html:709).
         // 위 Rigidbody2D와 같은 이유로 "있는지 검사 후 건너뛰기"를 하지 않는다(RequireComponent 자동 보충 함정).
-        var health = contents.GetComponent<YokaiFront.Enemies.EnemyHealth>();
-        if (health == null) health = contents.AddComponent<YokaiFront.Enemies.EnemyHealth>();
+        var health = contents.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        if (health == null) health = contents.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
         health.maxHp = 38f;
 
         // "Enemy" 물리 레이어(7번) — Player(6번)와 충돌이 꺼져 있어야 겹쳐도 안 밀린다. 지금은 이

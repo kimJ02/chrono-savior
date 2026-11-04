@@ -1,9 +1,9 @@
 using UnityEngine;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 로비 — 원본 `#lobby`(project_test.html:512)와 `renderLobby()`(`:6378`)에 대응한다.
@@ -11,7 +11,7 @@ namespace YokaiFront.UI
     ///
     /// ## 왜 배경을 판으로 덮나
     /// 로비는 사냥터를 **가리지 않고 그 위에 뜬다**(원본도 캔버스는 계속 그리고 `#lobby`를 겹친다).
-    /// 그래서 판 없이 글자만 얹으면 요괴·발판 위에서 흰 글씨가 그대로 묻힌다. 원본은 읽어야 할
+    /// 그래서 판 없이 글자만 얹으면 몬스터·발판 위에서 흰 글씨가 그대로 묻힌다. 원본은 읽어야 할
     /// 본문을 `rgba(14,11,20,.92)` 판으로 덮고, 판 밖의 헤더에만 `text-shadow`를 준다 —
     /// 색과 치수는 전부 <see cref="UiTheme"/>에 옮겨 놨다.
     ///
@@ -75,7 +75,7 @@ namespace YokaiFront.UI
             DrawTabs();
 
             // ⚠️ 가독성의 핵심 — 원본 `#lobbyBody { background:rgba(14,11,20,.92) }`(`:180`).
-            // 로비는 사냥터 **위에** 뜬다. 이 판이 없으면 글자가 요괴·발판과 섞여서 안 읽힌다
+            // 로비는 사냥터 **위에** 뜬다. 이 판이 없으면 글자가 몬스터·발판과 섞여서 안 읽힌다
             // (원본도 헤더/탭만 배경 위에 얹고, 정작 읽어야 할 본문은 거의 불투명한 판으로 덮는다).
             var body = new Rect(Pad, BodyTop, UiTheme.DesignWidth - Pad * 2f,
                                 UiTheme.DesignHeight - BodyTop - BodyBottom);
@@ -106,7 +106,7 @@ namespace YokaiFront.UI
         /// </summary>
         void DrawHeader(PlayerProfile profile)
         {
-            UiTheme.ShadowLabel(new Rect(Pad, 10f, 240f, 38f), "요괴전선", UiTheme.Title);
+            UiTheme.ShadowLabel(new Rect(Pad, 10f, 240f, 38f), "Chrono Savior", UiTheme.Title);
 
             float x = Pad + 175f;
             // 레벨·SP는 지금 고른 캐릭터 것이다(캐릭터마다 따로, PlayerProfile.charProgress) — 누구 것인지 이름을 붙인다.
@@ -241,7 +241,7 @@ namespace YokaiFront.UI
         /// <summary>원본 `renderStageTab()`(project_test.html:6441).</summary>
         void DrawStageTab(PlayerProfile profile)
         {
-            GUILayout.Label($"제한시간 {RunState.NormalTime:0}초 동안 요괴를 잡아 재화를 모은다. " +
+            GUILayout.Label($"제한시간 {RunState.NormalTime:0}초 동안 몬스터를 잡아 재화를 모은다. " +
                             "지역이 높을수록 강한 종이 나오고 몹 체력·피해가 지수로 오른다.");
             GUILayout.Label("<b>보스는 로비에서 고르지 않는다</b> — 필드 우측 끝의 포탈로 들어간다. " +
                             $"포탈은 그 지역 누적 토벌 {RunState.RegionKillTarget}마리를 채우면 열린다.");

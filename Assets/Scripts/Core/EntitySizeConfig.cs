@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 화면에 보이는 **덩치**를 한곳에서 정한다 — 플레이어 · 몹 · 성소 · 보스.

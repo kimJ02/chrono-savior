@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 마왕성 길목 선택(스테이지 선택) — Figma "마왕성 길목 선택"(32:56)의 640×360판: 왼쪽 판 = 스테이지 목록, 오른쪽 판 = 고른 스테이지

@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// "붙잡기"류 판정(현재는 섬영 칼날폭풍 4층 "강제 연행"뿐)에서 제외돼야 하는 대상임을 표시하는

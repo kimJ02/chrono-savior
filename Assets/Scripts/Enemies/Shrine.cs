@@ -1,10 +1,10 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
-    /// 요괴들의 성소 — 원본 `spawnShrine()`(project_test.html:3996)과 파괴 처리(`killEnemy`의
+    /// 몬스터들의 성소 — 원본 `spawnShrine()`(project_test.html:3996)과 파괴 처리(`killEnemy`의
     /// 성소 분기, `:1797`).
     ///
     /// **움직이지도 때리지도 않는 구조물**이다(원본 `if (e.shrine) continue;` `:4024`).

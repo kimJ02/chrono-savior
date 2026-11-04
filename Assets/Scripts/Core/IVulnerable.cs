@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// **취약** 상태가 될 수 있는 대상. 원본 `e.vulnT`(project_test.html:1663·:1726·:3818)에 대응한다.

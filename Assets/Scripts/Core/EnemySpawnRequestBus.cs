@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// "몹이 몹을 낳는" 요청을 전달하는 이벤트 버스. 원본 분열귀가 죽을 때 `spawnEnemyAt()`을 직접

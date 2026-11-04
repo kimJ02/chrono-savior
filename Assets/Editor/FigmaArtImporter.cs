@@ -1,7 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// Figma에서 받은 도트 그림(`Assets/Resources/Art/Figma/`)의 가져오기 설정 — 2026-10-24 C안(1유닛 = 128px).

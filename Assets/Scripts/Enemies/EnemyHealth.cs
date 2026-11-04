@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.Combat;
+using ChronoSavior.Core;
+using ChronoSavior.Combat;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 적의 체력·피격 반응·사망. 원본 `dealDamage()`(project_test.html:1657)에서 **대상 쪽 처리**에 해당하는 부분

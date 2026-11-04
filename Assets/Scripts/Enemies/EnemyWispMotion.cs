@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 도깨비불(wisp)의 비행 이동 — 원본 `updateEnemies()`의 wisp 분기

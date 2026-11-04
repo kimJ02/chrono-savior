@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 레이저 드론(레이저 빌드 X 스킬) 하나. 원본 `summonLaserDrone`(project_test.html:2363)으로 생기고

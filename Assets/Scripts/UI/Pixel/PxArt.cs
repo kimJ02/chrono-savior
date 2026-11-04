@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma UI 그림(`Resources/Art/Figma/UI/`, 디자이너가 올린 원본 PNG 그대로)을 불러오고, 버튼 상태 그림을 만든다.

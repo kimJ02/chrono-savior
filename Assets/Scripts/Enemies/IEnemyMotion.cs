@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 몹 종류별 **수평 이동 결정**. 원본 `updateEnemies()`가 타입마다 `mvx`를 다르게 계산하는 분기

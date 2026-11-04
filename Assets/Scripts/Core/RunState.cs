@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>원본 `run.mode`(project_test.html:1471) — 일반 사냥 / 보스 스테이지.</summary>
     public enum RunMode { Normal, Boss }

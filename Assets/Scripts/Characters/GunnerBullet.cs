@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 메카닉이 쏘는 총알 하나. 원본 `projectiles`의 `kind:'bullet'`(project_test.html:2198 생성,

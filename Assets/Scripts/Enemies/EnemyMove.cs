@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
 /// <summary>
 /// Part B (feature/monster-combat) - 몬스터 이동 AI. docs/sprints/01-combat-core.md 2번 스탯 범위(몹 1종=오니 기준)를

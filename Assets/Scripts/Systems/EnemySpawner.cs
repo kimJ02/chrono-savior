@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
+using ChronoSavior.World;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
 /// <summary>
 /// Part B (feature/monster-combat) - 몬스터 스폰 알고리즘 (docs/sprints/01-combat-core.md 2번).
@@ -555,7 +555,7 @@ public class EnemySpawner : MonoBehaviour
 
         // 원본 `elite = !opts.noElite && Math.random() < CONFIG.elite.chance`(project_test.html:3948).
         // 엘리트는 별도 종류가 아니라 **아무 몹에게나 붙는 승격**이라, 종류를 정한 뒤에 굴린다.
-        // 요괴 유인향 — 엘리트 출현률을 올린다(원본 `chance * (1 + itemPow('eliteLure'))` :3948).
+        // 몬스터 유인향 — 엘리트 출현률을 올린다(원본 `chance * (1 + itemPow('eliteLure'))` :3948).
         bool elite = allowElite &&
                      Random.value < EliteChance * (1f + ProfileService.Current.items.Pow("eliteLure"));
         if (elite) monster.AddComponent<EnemyElite>();

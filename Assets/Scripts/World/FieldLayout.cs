@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// 필드의 정적 공간 데이터(발판 배치, 원본 스폰 포인트) — 씬 조립(BuildPartAScene)과

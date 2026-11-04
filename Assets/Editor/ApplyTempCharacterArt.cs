@@ -1,9 +1,9 @@
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using YokaiFront.Characters;
+using ChronoSavior.Characters;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// 2026-11-04 사용자가 올린 임시 캐릭터 그림(<c>Assets/Resources/Art/Characters/chara_temp_01.png</c>)을
@@ -12,7 +12,7 @@ namespace YokaiFront.Editor
     /// dirty 표시) — characterSprites는 BuildPartAScene이 씬에 박아 넣는 직렬화 필드라 코드만 고쳐서는
     /// 이미 저장된 씬에 반영되지 않기 때문에 에디터 메뉴로 둔다.
     ///
-    /// 실행: `CombatCore.unity`를 열어둔 상태에서 메뉴 `YokaiFront/Apply Temp Character Art (chara_temp_01)`.
+    /// 실행: `CombatCore.unity`를 열어둔 상태에서 메뉴 `ChronoSavior/Apply Temp Character Art (chara_temp_01)`.
     /// 끝나면 **씬을 저장**해야 한다(Ctrl+S) — 안 하면 에디터를 닫을 때 날아간다.
     ///
     /// 이 그림은 이미 색이 칠해진 그림이라 `characterColors`는 흰색(=덧칠 없음)으로 둔다
@@ -23,7 +23,7 @@ namespace YokaiFront.Editor
     {
         const string SpriteResourcePath = "Art/Characters/chara_temp_01";
 
-        [MenuItem("YokaiFront/Apply Temp Character Art (chara_temp_01)")]
+        [MenuItem("ChronoSavior/Apply Temp Character Art (chara_temp_01)")]
         public static void Apply()
         {
             var rig = Object.FindAnyObjectByType<PlayerRig>(FindObjectsInactive.Include);

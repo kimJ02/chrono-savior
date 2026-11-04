@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 걸어 다니는 로비 — Figma "Page 1"(로비 뼈대): 땅 위에 건물 넷(환생 · 가챠 · 훈련소 · 던전), 캐릭터가 걸어가서 들어간다
@@ -108,7 +108,7 @@ namespace YokaiFront.UI
             var go = GameObject.FindGameObjectWithTag("Player");
             if (go == null) return;
             player = go.transform;
-            if (go.TryGetComponent(out YokaiFront.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed;
+            if (go.TryGetComponent(out ChronoSavior.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed;
         }
 
         /// <summary>로비에 들어올 때 — 발판을 숨기고, 건물을 세우고, 캐릭터를 시작 자리 땅 위에.</summary>

@@ -69,7 +69,7 @@ X 스킬이 막히고(`tryMageSkill` `:2169`, `tryBladeSkill` `:2741`, `tryDruid
 
 ### `Core/CharacterId.cs` — 내가 소유
 ```csharp
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// 원본 CHARACTERS(:848) / WEAPONS(:841). 캐릭터 = 무기 1:1이라 하나로 합쳤다.
     public enum CharacterId { Mage, Gunner, Blade, Druid }

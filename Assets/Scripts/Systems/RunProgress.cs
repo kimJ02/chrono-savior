@@ -1,6 +1,6 @@
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 난이도 스케일링 대리 지표 "가상 지역 레벨"(`docs/sprints/03-growth-curve-worksplit.md` 트랙 A 1번,

@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma 버튼 — 그림 한 장(기본 상태)에 마우스 올림·눌림·비활성을 입힌다(<see cref="PxArt.Toned"/>).

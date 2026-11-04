@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 시간 회귀 확인창 — Figma "시간 회귀창"(파일 `9EpUO2k4i9en6cWAATGVa4`, 노드 31:4) 적용.

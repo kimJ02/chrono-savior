@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 지역 보스 — 원본 `spawnBoss()`(project_test.html:4155)와 `updateBoss()`(`:4176`) 그대로.

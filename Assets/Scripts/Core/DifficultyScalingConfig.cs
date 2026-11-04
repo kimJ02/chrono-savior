@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 난이도 스케일링("가상 지역 레벨") + 처치 보상 수치를 전부 여기 모았다(`docs/sprints/03-growth-curve-worksplit.md`

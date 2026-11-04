@@ -2,9 +2,9 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Combat;
+using ChronoSavior.Combat;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>블랙홀 마법사 착탄 폭발(2026-10-25) — 10프레임 15fps, 지름 = 반경 × 2, 끝나면 사라진다.</summary>

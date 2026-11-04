@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 캐릭터 선택 — Figma "캐릭터 선택창"(4:2)은 **뼈대(와이어프레임)만** 있어서, 뼈대 배치(설명 창 · 1계열/2계열 · 캐릭터 카드 4장 ·

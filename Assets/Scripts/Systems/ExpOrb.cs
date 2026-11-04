@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 경험치 구슬 — 원본 `pickups`의 `kind:'exporb'`(project_test.html:1557 정의,

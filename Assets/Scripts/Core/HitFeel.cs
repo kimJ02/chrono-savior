@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 타격감 — 원본 기준 **히트스톱 길이 · 화면 흔들림 · 플레이어 피격 시 화면 붉어짐**(2026-10-24 사용자 지시).

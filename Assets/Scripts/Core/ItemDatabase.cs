@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>아이템 등급. 원본 `ITEM_GRADES`(project_test.html:749).</summary>
     public enum ItemGrade { Common, Rare, Epic, Legend }
@@ -109,7 +109,7 @@ namespace YokaiFront.Core
 
             // ---- 특수 아이템: 고유 효과 ----
             Special("regen",       "재생의 구슬",   "💧", ItemGrade.Common, 0.005f, "초당 최대 체력 0.5% 회복"),
-            Special("eliteLure",   "요괴 유인향",   "🕯", ItemGrade.Common, 0.5f,   "엘리트 출현률 +50%"),
+            Special("eliteLure",   "몬스터 유인향", "🕯", ItemGrade.Common, 0.5f,   "엘리트 출현률 +50%"),
             Special("killSpeed",   "사신의 발걸음", "💨", ItemGrade.Common, 0.12f,  "처치 시 3초간 이동속도 +12%"),
             Special("knockback",   "파쇄의 망치",   "🔨", ItemGrade.Common, 0.5f,   "넉백 +50%"),
             Special("shrineBless", "성소의 은총",   "🎐", ItemGrade.Common, 1.0f,   "성소 가호 지속 +100%"),

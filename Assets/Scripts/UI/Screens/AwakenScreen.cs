@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 각성창 — Figma "각성창"(16:2)의 640×360판: 왼쪽 큰 캐릭터 그림, 오른쪽 위 스탯 창, 아래 [각성]·[스탯] 탭과 강화창.

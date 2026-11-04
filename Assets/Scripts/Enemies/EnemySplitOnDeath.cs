@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 분열귀(splitter)가 죽을 때 새끼 2마리를 남긴다 — 원본 `killEnemy()`의 splitter 분기

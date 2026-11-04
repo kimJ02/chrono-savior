@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 적이 타격을 받을 때 나는 소리 — 2026-10-25 사용자가 받은 Kenney Impact Sounds의 `footstep_carpet_002`.

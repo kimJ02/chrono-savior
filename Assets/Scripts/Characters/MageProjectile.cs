@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
 /// <summary>
 /// MageAttack이 쏘는 마법탄 하나. 원본 `projectiles` 배열의 화살 오브젝트(kind:'arrow',

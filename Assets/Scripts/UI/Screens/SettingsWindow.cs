@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 설정 창 — **Figma에 그림이 없는 화면**이라 Figma 공용 부품(창 틀 "창 프레임 1"·작은 버튼·↻ 닫기)으로 만들었다(2026-10-24).

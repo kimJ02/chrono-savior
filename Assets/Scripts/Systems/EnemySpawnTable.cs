@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 지역별 몬스터 해금표 — 원본 `rollSpawnType(region)`(project_test.html:3933~3939)과

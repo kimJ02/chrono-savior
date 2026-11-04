@@ -3,11 +3,11 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Characters;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -41,11 +41,11 @@ public class PlayerAttackTests
 
         // 스프린트 2 개정: 이제 즉사가 아니라 피해를 준다. 이 테스트가 원래 검증하던 것
         // (사거리 필터 + 태그 필터)은 그대로, "파괴됐나" 대신 "피해를 입었나"로 확인한다.
-        var nearHp = near.GetComponent<YokaiFront.Enemies.EnemyHealth>();
-        var farHp = far.GetComponent<YokaiFront.Enemies.EnemyHealth>();
+        var nearHp = near.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        var farHp = far.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
         Assert.Less(nearHp.CurrentHp, nearHp.MaxHp, "사거리 안의 Enemy가 피해를 안 입었다");
         Assert.AreEqual(farHp.MaxHp, farHp.CurrentHp, 0.001f, "사거리 밖의 Enemy가 피해를 입었다(오탐)");
-        var untaggedHp = untagged.GetComponent<YokaiFront.Enemies.EnemyHealth>();
+        var untaggedHp = untagged.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
         Assert.AreEqual(untaggedHp.MaxHp, untaggedHp.CurrentHp, 0.001f,
             "Enemy 태그가 아닌데 사거리 안이라고 피해를 입었다(태그 필터 실패)");
 
@@ -163,7 +163,7 @@ public class PlayerAttackTests
         if (withHealth)
         {
             go.AddComponent<SpriteRenderer>();
-            go.AddComponent<YokaiFront.Enemies.EnemyHealth>();
+            go.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
         }
         return go;
     }

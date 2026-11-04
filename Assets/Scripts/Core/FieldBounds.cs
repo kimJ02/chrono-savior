@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 전투 필드의 경계. 원본(project_test.html) mapW=2600px 기준, 100px=1유닛로 축척했다.

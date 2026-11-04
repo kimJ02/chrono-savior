@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 사수귀(shooter)의 거리 유지 + 사격 — 원본 `updateEnemies()`의 shooter 분기

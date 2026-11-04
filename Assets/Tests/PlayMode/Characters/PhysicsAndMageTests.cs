@@ -3,10 +3,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Characters;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -168,7 +168,7 @@ public class PhysicsAndMageTests
         // 스프린트 2부터 관통은 "죽인 수"가 아니라 "때린 수"로 소모된다(원본도 동일 — 체력이 남아도 pierce는 깎임).
         // 그래서 체력을 붙이고 "피해를 입었나"로 확인한다.
         var enemies = new GameObject[3];
-        var healths = new YokaiFront.Enemies.EnemyHealth[3];
+        var healths = new ChronoSavior.Enemies.EnemyHealth[3];
         for (int i = 0; i < enemies.Length; i++)
         {
             var e = new GameObject($"Enemy_{i}");
@@ -176,7 +176,7 @@ public class PhysicsAndMageTests
             e.transform.position = new Vector3(0.6f + i * 0.3f, 0.36f, 0f);
             e.AddComponent<CircleCollider2D>().radius = 0.3f;
             e.AddComponent<SpriteRenderer>();
-            healths[i] = e.AddComponent<YokaiFront.Enemies.EnemyHealth>();
+            healths[i] = e.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
             enemies[i] = e;
         }
 

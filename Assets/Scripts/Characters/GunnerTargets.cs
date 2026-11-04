@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 메카닉 스킬(빔·드론·설치기·장판)이 같이 쓰는 "맞힐 수 있는 적" 조회.

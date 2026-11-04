@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 섬영(閃影) — 관성 이동(가속) + 회전베기(기본공격, Z) + 흡혈 + 방향키 피격무적(0차) +

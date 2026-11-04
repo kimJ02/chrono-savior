@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Characters;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 로비 화면 위 표시 — Figma 로비 뼈대("Page 1")의 자리대로: 위 가운데 **멸망까지 남은 기간**(사용자 결정 7일)과 다음 원정 지역 이름,
@@ -91,8 +91,8 @@ namespace YokaiFront.UI
         static void Place(Text t, Vector2 world, Vector2 cam)
         {
             var rt = (RectTransform)t.transform;
-            float bx = 320f + (world.x - cam.x) * (320f / YokaiFront.World.StageArtConfig.ViewHalfWidth);
-            float by = 180f - (world.y - cam.y) * (180f / YokaiFront.World.StageArtConfig.ViewHalfHeight);
+            float bx = 320f + (world.x - cam.x) * (320f / ChronoSavior.World.StageArtConfig.ViewHalfWidth);
+            float by = 180f - (world.y - cam.y) * (180f / ChronoSavior.World.StageArtConfig.ViewHalfHeight);
             rt.anchoredPosition = new Vector2(Mathf.Round(bx - rt.sizeDelta.x / 2f), -Mathf.Round(by - rt.sizeDelta.y / 2f));
         }
 

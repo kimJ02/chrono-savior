@@ -1,9 +1,9 @@
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
 /// <summary>
 /// 마법사(원본 무기 "bow"="마법 지팡이") Z 공격 — 원본 `bowFire()`/`CONFIG.bow`(project_test.html:1932-1977)

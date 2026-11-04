@@ -1,10 +1,10 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 사냥이 끝난 뒤 — Figma "원정 기록창"(77:3, 시간 종료·보스 격파)과 "전투 패배창"(80:2, 쓰러짐)은 **뼈대만** 있어서,
@@ -119,11 +119,11 @@ namespace YokaiFront.UI
             return $"{t / 60:00}:{t % 60:00}";
         }
 
-        /// <summary>쓰러뜨린 것의 이름 — 보스면 Figma 예시대로 "수문장", 아니면 "요괴".</summary>
+        /// <summary>쓰러뜨린 것의 이름 — 보스면 Figma 예시대로 "수문장", 아니면 "몬스터".</summary>
         public static string CauseOf(GameObject source)
         {
             if (source != null && source.GetComponentInParent<Boss>() != null) return "수문장";
-            return "요괴";
+            return "몬스터";
         }
 
         void Retry() => StageSelectScreen.TryEnter(RunState.Region);

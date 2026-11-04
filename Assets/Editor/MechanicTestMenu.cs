@@ -1,12 +1,12 @@
 using UnityEditor;
 using UnityEngine;
-using YokaiFront.Characters;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
-    /// 메카닉 스킬트리 **수동 테스트용** 에디터 메뉴(`YokaiFront/메카닉 테스트/…`) — Play 중에만 동작한다.
+    /// 메카닉 스킬트리 **수동 테스트용** 에디터 메뉴(`ChronoSavior/메카닉 테스트/…`) — Play 중에만 동작한다.
     /// 로비에서 SP를 모아 1층부터 찍어 올리지 않아도 원하는 갈래·층을 바로 세팅해서 눈으로 확인할 수 있게 한다.
     ///
     /// 게임 코드·씬은 건드리지 않는다. CLAUDE.md의 "원본에 없던 임시 디버그 키를 되살리지 말 것"은 **게임 안 입력**
@@ -16,7 +16,7 @@ namespace YokaiFront.Editor
     /// </summary>
     public static class MechanicTestMenu
     {
-        const string Root = "YokaiFront/메카닉 테스트/";
+        const string Root = "ChronoSavior/메카닉 테스트/";
 
         [MenuItem(Root + "레이저 1층", priority = 1)] static void Laser1() => Set(GunnerBranch.Laser, 1);
         [MenuItem(Root + "레이저 2층", priority = 2)] static void Laser2() => Set(GunnerBranch.Laser, 2);

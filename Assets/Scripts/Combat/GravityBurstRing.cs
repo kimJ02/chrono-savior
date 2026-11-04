@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 원본 `gravityBurst` 그리기(project_test.html:5239~:5255) — 대붕괴가 터진 자리에 잠깐 보이는 보라색 원판과 고리.

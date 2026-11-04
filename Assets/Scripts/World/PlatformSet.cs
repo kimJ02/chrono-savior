@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// 이 발판 묶음이 **어느 무대의 것인지** 표시한다. 원본이 런을 시작할 때

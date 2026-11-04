@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 플레이어 캐릭터 4종. 원본 `CHARACTERS`(project_test.html:848)와 `WEAPONS`(`:841`)는 1:1로

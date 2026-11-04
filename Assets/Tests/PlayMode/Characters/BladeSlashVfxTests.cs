@@ -3,10 +3,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Characters;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>섬영 기본 공격 베기 효과(Slash 1 · color4, 2026-10-25) — 휘두르면 나오고, 0.2초 뒤 사라진다.</summary>

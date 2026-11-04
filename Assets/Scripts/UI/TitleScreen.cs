@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 타이틀 화면 — **원본에 없는 화면이다.** 원본은 로비에서 바로 시작한다(`state.scene` 초기값

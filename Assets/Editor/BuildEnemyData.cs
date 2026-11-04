@@ -2,17 +2,17 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// `Assets/Data/Enemies/`의 `EnemyData` 에셋 7종을 **원본 수치 그대로** 생성/갱신한다.
     /// 에셋을 손으로 만들지 않는 이유는 씬을 `BuildPartAScene`으로 만드는 것과 같다 — 에디터에서
     /// 손으로 찍은 값은 원본과 어긋나도 아무도 모르고, diff에도 근거가 안 남는다.
     ///
-    /// 실행: 메뉴 `YokaiFront/Build Enemy Data`, 또는 배치모드
-    /// `-executeMethod YokaiFront.Editor.BuildEnemyData.Build`
+    /// 실행: 메뉴 `ChronoSavior/Build Enemy Data`, 또는 배치모드
+    /// `-executeMethod ChronoSavior.Editor.BuildEnemyData.Build`
     ///
     /// 수치 출처는 전부 원본 `CONFIG.enemyBase`(project_test.html:707~714)와 넉백 배율(`:1678`).
     /// **값을 바꾸려면 여기를 고치고 다시 실행할 것** — 에셋을 직접 편집하면 다음 실행에 덮어써진다.
@@ -23,7 +23,7 @@ namespace YokaiFront.Editor
 
         /// <summary>
         /// 정식 아트가 들어온 종류만 여기 추가한다 — 나머지는 사용자 지시(2026-09-16)대로 도형+색을 쓴다.
-        /// 한 종류가 끝날 때마다 이 줄에 `EnemyType.___`만 추가하고 `YokaiFront/Build Enemy Data`를
+        /// 한 종류가 끝날 때마다 이 줄에 `EnemyType.___`만 추가하고 `ChronoSavior/Build Enemy Data`를
         /// 다시 실행하면 된다(그림 파일은 같은 이름으로 `Assets/Sprites/Prototype/`에 미리 덮어쓸 것).
         /// </summary>
         static readonly HashSet<EnemyType> SpriteEnabledTypes = new HashSet<EnemyType>
@@ -87,7 +87,7 @@ namespace YokaiFront.Editor
             _ => null,
         };
 
-        [MenuItem("YokaiFront/Build Enemy Data")]
+        [MenuItem("ChronoSavior/Build Enemy Data")]
         public static void Build()
         {
             Directory.CreateDirectory(DataFolder);

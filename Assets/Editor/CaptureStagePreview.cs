@@ -2,17 +2,17 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// 1스테이지 화면을 PNG로 찍는다 — 배치 테스트는 그래픽 없이(-nographics) 돌아 화면을 못 보니, 눈으로 확인할 그림을 만든다.
     /// 씬을 열기만 하고 저장하지 않는다. `PixelPerfectCamera`와 같은 결과가 되게 960×540으로 그린다(키우는 건 보는 쪽에서 2배).
     ///
     /// 배치 실행(그래픽 필요 — `-nographics` 빼고):
-    ///   Unity.exe -batchmode -projectPath . -executeMethod YokaiFront.Editor.CaptureStagePreview.Run -captureOut &lt;폴더&gt; -quit
+    ///   Unity.exe -batchmode -projectPath . -executeMethod ChronoSavior.Editor.CaptureStagePreview.Run -captureOut &lt;폴더&gt; -quit
     /// </summary>
     public static class CaptureStagePreview
     {
@@ -180,7 +180,7 @@ namespace YokaiFront.Editor
         {
             if (player == null) return;
             var sr = player.GetComponentInChildren<SpriteRenderer>();
-            var rig = player.GetComponent<YokaiFront.Characters.PlayerRig>();
+            var rig = player.GetComponent<ChronoSavior.Characters.PlayerRig>();
             if (sr != null && rig != null && rig.characterSprites != null && rig.characterSprites.Length > 0 && rig.characterSprites[0] != null)
             {
                 sr.sprite = rig.characterSprites[0]; // 실행 중엔 PlayerRig가 고른 캐릭터 그림으로 바꾼다

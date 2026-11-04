@@ -1,10 +1,8 @@
 {
-    "name": "YokaiFront.World",
+    "name": "ChronoSavior.Combat",
     "rootNamespace": "",
     "references": [
-        "YokaiFront.Core",
-        "Unity.RenderPipelines.Universal.Runtime",
-        "Unity.RenderPipelines.Universal.2D.Runtime"
+        "ChronoSavior.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

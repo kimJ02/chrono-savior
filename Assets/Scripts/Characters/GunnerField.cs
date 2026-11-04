@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 설치기 빌드의 **링크·내부 장판** — 설치기 2개 이상이 서로 연결되면, 연결선 위와 (닫힌 도형이면) 그 안쪽에

@@ -2,10 +2,10 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Core;
-using YokaiFront.UI;
+using ChronoSavior.Core;
+using ChronoSavior.UI;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>적 타격 소리(2026-10-25) — 직접 타격 이벤트마다 한 번, 너무 붙으면 건너뛴다, 효과음 0이면 안 난다.</summary>
@@ -55,7 +55,7 @@ public class HitSoundTests
         CombatEvents.EnemyTickDamaged += _ => ticks++;
         var enemy = new GameObject("TestHitSoundEnemy");
         enemy.AddComponent<CircleCollider2D>();
-        var health = enemy.AddComponent<YokaiFront.Enemies.EnemyHealth>();
+        var health = enemy.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
         health.TakeTickDamage(1f);
         Assert.AreEqual(1, ticks, "무기 틱 피해는 알린다");
         GameState.Set(GameScene.Run); // 화상은 사냥 중에만 탄다

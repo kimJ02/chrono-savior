@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     // 갈래 enum(`GunnerBranch`)은 세이브에 들어가야 해서 Core(`PlayerProfile.cs`)에 있다.
 

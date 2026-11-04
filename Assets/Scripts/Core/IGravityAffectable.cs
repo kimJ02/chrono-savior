@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 중력구슬 빌드의 중력점(gravityWell)에 끌려갈 수 있는 대상. 원본 `updateZones()`의

@@ -1,4 +1,4 @@
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 전문화(각성) 층 설명 — 원본 `SPEC.*.tiers[].desc`를 줄인 것. 예전 로비 전문화 탭과 Figma 각성창이 같이 쓴다(2026-10-24 분리).

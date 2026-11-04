@@ -2,11 +2,11 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.UI;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.UI;
+using ChronoSavior.World;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// Figma UI 화면을 PNG로 찍는다(2026-10-24) — 1스테이지 게임 화면 위에 UI를 겹쳐서 두 가지로:
@@ -15,7 +15,7 @@ namespace YokaiFront.Editor
     /// 씬을 열기만 하고 저장하지 않는다.
     ///
     /// 배치 실행(그래픽 필요 — `-nographics` 빼고):
-    ///   Unity.exe -batchmode -projectPath . -executeMethod YokaiFront.Editor.CaptureUiPreview.Run -captureOut &lt;폴더&gt; -quit
+    ///   Unity.exe -batchmode -projectPath . -executeMethod ChronoSavior.Editor.CaptureUiPreview.Run -captureOut &lt;폴더&gt; -quit
     /// </summary>
     public static class CaptureUiPreview
     {
@@ -44,7 +44,7 @@ namespace YokaiFront.Editor
             {
                 Hp = 72f, MaxHp = 100f, ExpRatio = 0.62f, TimeLeft = 47f, Combo = 32, Kills = 37,
                 Attack = default,
-                Skill = YokaiFront.Characters.SkillSlotState.Cooldown(1.2f, 3f),
+                Skill = ChronoSavior.Characters.SkillSlotState.Cooldown(1.2f, 3f),
                 Player = new Vector2(4f, FieldBounds.GroundY),
                 Enemies = new[] { new Vector2(7f, 0f), new Vector2(9.5f, 1.35f), new Vector2(15f, 0f), new Vector2(18.6f, 2.7f), new Vector2(22f, 4.05f) },
             };
@@ -60,7 +60,7 @@ namespace YokaiFront.Editor
             hud.Preview = new CombatHud.PreviewState
             {
                 Hp = 18f, MaxHp = 100f, ExpRatio = 0.9f, TimeLeft = 8f, Combo = 0, Kills = 100,
-                Skill = YokaiFront.Characters.SkillSlotState.Cooldown(0f, 3f, 0, 3, noStack: true),
+                Skill = ChronoSavior.Characters.SkillSlotState.Cooldown(0f, 3f, 0, 3, noStack: true),
                 Player = new Vector2(24.8f, FieldBounds.GroundY), PortalInRange = true, PortalUnlocked = true, BossRatio = 0.55f,
             };
             Shot(pc, cam, outDir, "전투HUD_보스바·포탈", sel => hud.ShowForCapture(sel));
@@ -84,7 +84,7 @@ namespace YokaiFront.Editor
             var relic = pc.GetComponent<RelicScreen>();
             var prof = ProfileService.Current;
             prof.shards = 400;
-            YokaiFront.Systems.GachaService.Pull(prof, 20); // 칸이 차 보이게(저장 안 함)
+            ChronoSavior.Systems.GachaService.Pull(prof, 20); // 칸이 차 보이게(저장 안 함)
             prof.shards = 130;
             Shot(pc, cam, outDir, "유물개방", sel => relic.ShowForCapture(sel));
 
@@ -121,7 +121,7 @@ namespace YokaiFront.Editor
             EditorApplication.Exit(0);
         }
 
-        /// <summary>블랙홀 마법사 착탄 폭발(`GravityImpactVfx`)을 시간대별로 찍는다 — `-executeMethod YokaiFront.Editor.CaptureUiPreview.RunGravityVfx`.</summary>
+        /// <summary>블랙홀 마법사 착탄 폭발(`GravityImpactVfx`)을 시간대별로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunGravityVfx`.</summary>
         public static void RunGravityVfx()
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
@@ -136,8 +136,8 @@ namespace YokaiFront.Editor
             PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
             var pc = PixelCanvas.Create(cam);
             foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
-            float r = YokaiFront.Combat.MageSpecConfig.GravityImpactRadius(2, 0.6f);
-            var vfx = YokaiFront.Combat.GravityImpactVfx.Spawn(new Vector2(9f, FieldBounds.GroundY + 0.5f), r);
+            float r = ChronoSavior.Combat.MageSpecConfig.GravityImpactRadius(2, 0.6f);
+            var vfx = ChronoSavior.Combat.GravityImpactVfx.Spawn(new Vector2(9f, FieldBounds.GroundY + 0.5f), r);
             foreach (float t in new[] { 0.0f, 0.14f, 0.27f, 0.40f, 0.55f })
             {
                 vfx.ShowAt(t);
@@ -145,8 +145,8 @@ namespace YokaiFront.Editor
             }
             // 중력장이 남아 있는 동안(착탄 폭발이 끝난 뒤) 소용돌이가 도는 모습
             Object.DestroyImmediate(vfx.gameObject);
-            var well = YokaiFront.Combat.GravityWellZone.SpawnOrMerge(new Vector2(9f, FieldBounds.GroundY + 0.5f), 2, 0.6f);
-            var vortex = well.GetComponentInChildren<YokaiFront.Combat.GravityVortexVfx>();
+            var well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(new Vector2(9f, FieldBounds.GroundY + 0.5f), 2, 0.6f);
+            var vortex = well.GetComponentInChildren<ChronoSavior.Combat.GravityVortexVfx>();
             foreach (float t in new[] { 0.8f, 0.93f, 1.07f, 1.2f, 1.33f, 1.47f })
             {
                 vortex.ApplyAt(t, 3f);
@@ -233,7 +233,7 @@ namespace YokaiFront.Editor
         {
             if (player == null) return;
             var sr = player.GetComponentInChildren<SpriteRenderer>();
-            var rig = player.GetComponent<YokaiFront.Characters.PlayerRig>();
+            var rig = player.GetComponent<ChronoSavior.Characters.PlayerRig>();
             if (sr != null && rig != null && rig.characterSprites != null && rig.characterSprites.Length > 0 && rig.characterSprites[0] != null)
             {
                 sr.sprite = rig.characterSprites[0];

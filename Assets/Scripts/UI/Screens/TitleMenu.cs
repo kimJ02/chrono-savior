@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 타이틀 — Figma "타이틀"(35:2)의 640×360판: 배경 그림 · "CHRONO SAVIOR" 로고 · 메뉴 넷(새 원정 · 불러오기 · 설정 · 나가기).

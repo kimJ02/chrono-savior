@@ -1,10 +1,10 @@
 {
-    "name": "YokaiFront.Systems",
+    "name": "ChronoSavior.Enemies",
     "rootNamespace": "",
     "references": [
-        "YokaiFront.Core",
-        "YokaiFront.World",
-        "YokaiFront.Enemies"
+        "ChronoSavior.Core",
+        "ChronoSavior.World",
+        "ChronoSavior.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

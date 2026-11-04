@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 현재 플레이어 프로필에 대한 정적 접근점 — `FieldBounds`와 같은 패턴. 씬에서 오브젝트를

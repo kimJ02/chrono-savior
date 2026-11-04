@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 중력 계열 마법사의 중력점. 원본 `spawnGravityWell`(생성/중첩, project_test.html:2044)과

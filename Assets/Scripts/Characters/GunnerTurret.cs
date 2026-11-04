@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 메카닉 설치기(설치기 빌드 X 스킬) 하나. 원본 `placeGunnerTurret`(project_test.html:2349)로 생기고

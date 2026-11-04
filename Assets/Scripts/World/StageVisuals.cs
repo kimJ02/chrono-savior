@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// 1스테이지 그림 — Figma "스테이지 HUD"(124:3)의 배경·땅·발판을 **원본 파일 그대로**(2026-10-24 C안).

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 전투 배수 체인 — 원본 `dmgMultAll()`(project_test.html:1296) · `goldMultAll()`(`:1304`) ·

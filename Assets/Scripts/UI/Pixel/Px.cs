@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma 좌표로 uGUI 요소를 만드는 도구(2026-10-24). Figma 레이어의 x·y·너비·높이를 **그대로** 넣는다 —

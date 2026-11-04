@@ -1,9 +1,9 @@
 using UnityEngine;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.World;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.World;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 사냥 중 HUD — 원본 `#hud`(project_test.html:487)와 `syncHUD()`(`:6255`)에 대응한다.
@@ -17,7 +17,7 @@ namespace YokaiFront.UI
     ///   2. 바 밖의 글자에는 전부 **그림자**를 준다 — `text-shadow:0 1px 2px #000`(`:35`~`:47`).
     ///
     /// 예전엔 IMGUI 기본 라벨을 그대로 썼는데, 그건 밝은 판에 검은 글씨를 전제로 한 스킨이라
-    /// 어두운 사냥터 위에서 요괴·발판과 섞였다.
+    /// 어두운 사냥터 위에서 몬스터·발판과 섞였다.
     ///
     /// ## 스킬 슬롯 (Z·X·C)
     /// 왼쪽 아래 세 칸 — **모양은 Figma**("보스 HUD" 124:3의 181:2~181:4, 640×360 그림을 정확히 2배로),
@@ -165,7 +165,7 @@ namespace YokaiFront.UI
             string s = "";
 
             // 원본 `:6288` — 성소가 살아 있으면 가장 먼저 경고한다.
-            if (CombatModifiers.ShrineActive) s += "⚠ 요괴들이 성소의 힘을 받는 중!   ";
+            if (CombatModifiers.ShrineActive) s += "⚠ 몬스터들이 성소의 힘을 받는 중!   ";
             if (CombatModifiers.ShrineBuffLeft > 0f)
                 s += $"⛩ 성소의 가호 {CombatModifiers.ShrineBuffLeft:0.0}초   ";
 

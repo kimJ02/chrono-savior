@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Combat;
-using YokaiFront.Core;
+using ChronoSavior.Combat;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 메카닉 레이저 빌드의 **Z 평타 광선** — 레이저 1층부터 Z를 누르고 있는 동안 총알 대신 전방으로 뻗는

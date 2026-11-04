@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 칸 위에 마우스를 올리거나 키보드로 고르면 뜨는 설명 상자(2026-10-24). Figma엔 없다 — 유물·스킬 칸이 그림만 있어서

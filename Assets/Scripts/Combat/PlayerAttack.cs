@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 반경 R 안의 Enemy 태그 대상에게 즉시 피해를 주는 범용 근접 공격.

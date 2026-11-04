@@ -1,12 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
-using YokaiFront.World;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
+using ChronoSavior.World;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 전투 HUD — Figma "스테이지 HUD"(124:3, 640×360). 2026-10-24 사용자 결정대로:

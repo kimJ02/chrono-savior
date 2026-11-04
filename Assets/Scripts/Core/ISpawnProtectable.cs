@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 스폰 직후 무적 상태를 노출하는 대상(원본 `spawnInvuln`). 공격 스크립트(`PlayerAttack`,

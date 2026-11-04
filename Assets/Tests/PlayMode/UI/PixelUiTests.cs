@@ -3,12 +3,12 @@ using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Core;
-using YokaiFront.Systems;
-using YokaiFront.UI;
-using YokaiFront.World;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
+using ChronoSavior.UI;
+using ChronoSavior.World;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>

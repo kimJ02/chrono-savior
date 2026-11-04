@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// **런 중에만 존재하는 오브젝트** 표식 — 적·투사체·장판처럼 사냥이 시작되거나 끝날 때

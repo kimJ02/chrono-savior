@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// 카메라 배경을 그 지역 하늘색으로 맞춘다 — 원본 `drawBackground()`가 캔버스에 먼저 깔는

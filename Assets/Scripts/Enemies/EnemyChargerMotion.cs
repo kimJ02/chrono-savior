@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 돌진귀(charger)의 이동 상태기계 — 원본 `updateEnemies()`의 charger 분기

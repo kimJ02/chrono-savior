@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 자동 저장/로드. 원본이 `saveMeta()`를 부르는 지점들(런 종료 `:4357`, 로비 복귀 `:4389`,

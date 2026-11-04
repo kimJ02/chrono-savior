@@ -2,11 +2,11 @@ using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Characters;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>

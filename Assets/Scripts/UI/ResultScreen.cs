@@ -1,8 +1,8 @@
 using UnityEngine;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 결과 화면과 일시정지 화면 — 원본은 이 둘이 **같은 `#result` 패널**이다(project_test.html:539).
@@ -79,7 +79,7 @@ namespace YokaiFront.UI
 
             float y = DrawRows(new[]
             {
-                ("처치한 요괴", $"{RunState.Kills}마리"),
+                ("처치한 몬스터", $"{RunState.Kills}마리"),
                 ("획득 골드", $"+{RunState.GoldEarned} G"),
                 ("획득 경험치", $"+{RunState.ExpEarned}"),
             });

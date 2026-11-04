@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// 카메라가 플레이어를 따라간다. 원본은 mapW 2600px(26유닛)짜리 옆으로 긴

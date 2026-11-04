@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>골드 강화 5종. 원본 `CONFIG.upgrades`의 키(`atk/hp/ms/as/crit`) — `as`는 C# 예약어라 `AtkSpeed`로 대체.</summary>
     public enum UpgradeStat { Atk, Hp, Ms, AtkSpeed, Crit }

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 마법사 완충 깜빡임 — 2026-10-25 사용자 "차지 단계마다 깜빡이게" → 같은 날 "두 번 말고 풀차징 되면 한 번만".

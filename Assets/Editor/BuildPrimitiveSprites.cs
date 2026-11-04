@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// 동그라미·네모·세모 스프라이트를 만든다 — **정식 아트가 들어오기 전의 임시 도형**이다.
@@ -15,7 +15,7 @@ namespace YokaiFront.Editor
     ///
     /// ## 도형에 뜻을 담는다
     /// 세 도형을 아무렇게나 배정하면 색만 다른 도형 더미가 된다. **플레이어가 다르게 대응해야 하는
-    /// 것끼리 도형을 갈랐다** — 자세한 배정은 <see cref="YokaiFront.Core.PrimitiveShape"/> 주석에 있다.
+    /// 것끼리 도형을 갈랐다** — 자세한 배정은 <see cref="ChronoSavior.Core.PrimitiveShape"/> 주석에 있다.
     ///
     /// ## 픽셀 크기와 PPU
     /// 128px에 PPU 128로 굽는다 → **한 장이 정확히 1 월드 유닛**이다. 크기 계산(`ApplySize`·
@@ -29,7 +29,7 @@ namespace YokaiFront.Editor
         /// <summary>한 변이 이 유닛 수만큼 된다(PPU를 픽셀 수와 같게 두므로 1.0).</summary>
         public const float WorldUnitsPerSprite = 1f;
 
-        [MenuItem("YokaiFront/원시 도형 스프라이트 생성")]
+        [MenuItem("ChronoSavior/원시 도형 스프라이트 생성")]
         public static void Build()
         {
             Directory.CreateDirectory(Folder);

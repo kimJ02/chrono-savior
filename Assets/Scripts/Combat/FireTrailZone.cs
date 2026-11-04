@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 불길 이동(X 스킬, 폭발 계열)이 지나간 자리에 남는 화염 장판. 원본 `spawnFlameTrail`

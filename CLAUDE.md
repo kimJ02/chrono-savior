@@ -1,4 +1,4 @@
-# 요괴전선 Unity 포팅 — 작업 규칙
+# Chrono Savior (Unity) — 작업 규칙
 
 이 파일은 이 레포에서 작업하는 모든 클로드 세션이 시작할 때 읽는 기본 수칙이다.
 
@@ -95,8 +95,8 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 - `Assets/Prefabs/`, `Assets/Sprites/`도 `Characters/`, `Enemies/`, `Items/` 등으로 나눈다 — 다만 그 종류가 실제로 2개 이상 생기는 시점에 폴더를 만들면 됨(지금 빈 폴더를 미리 만들 필요는 없음).
 
 ### 네임스페이스
-- 모든 런타임 스크립트는 `YokaiFront.<도메인>` 네임스페이스를 쓴다(예: `YokaiFront.Combat`, `YokaiFront.Enemies`, `YokaiFront.World`). 폴더 구조와 네임스페이스 이름을 일치시킨다.
-- Editor 스크립트는 `YokaiFront.Editor`, 테스트는 `YokaiFront.Tests.PlayMode`.
+- 모든 런타임 스크립트는 `ChronoSavior.<도메인>` 네임스페이스를 쓴다(예: `ChronoSavior.Combat`, `ChronoSavior.Enemies`, `ChronoSavior.World`). 폴더 구조와 네임스페이스 이름을 일치시킨다.
+- Editor 스크립트는 `ChronoSavior.Editor`, 테스트는 `ChronoSavior.Tests.PlayMode`.
 - 모든 스크립트가 이미 이 규칙대로 네임스페이스가 붙어 있다(2026-08-26 리팩터링으로 적용 완료).
 
 ### Assembly Definition 경계 — 계층 순서로 정의
@@ -104,18 +104,18 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 
 | 층 | asmdef | 참조 가능 대상 | 들어가는 것 |
 |---|---|---|---|
-| 0 | `YokaiFront.Core` | (없음) | `FieldBounds`, `ISpawnProtectable`, `GameInput`, `IDamageable`, 런 사이클 계약(`GameState`·`RunState`·`CombatEvents`·`IRunResettable`), `CombatModifiers`, `EntitySizeConfig`, 데이터 SO 기본 타입, `PlayerProfile` |
-| 1 | `YokaiFront.World` · `YokaiFront.Combat` | 0 | 필드/카메라/발판 · 투사체·피해판정 공용 인프라 |
-| 2 | `YokaiFront.Characters` · `YokaiFront.Enemies` | 0~1 | 플레이어 컨트롤러·무기별 공격 · 몬스터 AI |
-| 3 | `YokaiFront.Systems` | 0~2 | 스포너·가챠·세이브 등 오케스트레이션 |
-| 4 | `YokaiFront.UI` | 0~3 | HUD·로비·결과 화면(`UiTheme`가 색/판/글자를 소유) |
+| 0 | `ChronoSavior.Core` | (없음) | `FieldBounds`, `ISpawnProtectable`, `GameInput`, `IDamageable`, 런 사이클 계약(`GameState`·`RunState`·`CombatEvents`·`IRunResettable`), `CombatModifiers`, `EntitySizeConfig`, 데이터 SO 기본 타입, `PlayerProfile` |
+| 1 | `ChronoSavior.World` · `ChronoSavior.Combat` | 0 | 필드/카메라/발판 · 투사체·피해판정 공용 인프라 |
+| 2 | `ChronoSavior.Characters` · `ChronoSavior.Enemies` | 0~1 | 플레이어 컨트롤러·무기별 공격 · 몬스터 AI |
+| 3 | `ChronoSavior.Systems` | 0~2 | 스포너·가챠·세이브 등 오케스트레이션 |
+| 4 | `ChronoSavior.UI` | 0~3 | HUD·로비·결과 화면(`UiTheme`가 색/판/글자를 소유) |
 
 - **같은 층끼리는 서로 참조 금지.** 특히 `Characters` ↔ `Enemies`는 절대 직접 참조하지 않는다 — 서로 때리는 건 `Core`의 태그(`CompareTag("Enemy")`)와 `ISpawnProtectable`·`IDamageable` 같은 `Core` 인터페이스로만 한다. **공격 스크립트가 `Destroy()`를 직접 부르지 말 것** — 반드시 `IDamageable.TakeDamage()`를 거친다(지속 피해는 `TakeTickDamage()`).
-- **낮은 층이 높은 층의 기능을 "요청"해야 하는 경우(예: 몹이 죽을 때 새 몹을 스폰)는 직접 참조하지 않고 `Core`의 이벤트로 방향을 뒤집는다.** 이 상황이 실제로 곧 온다 — 원본은 분열귀(splitter) 타입이 죽으면 `spawnEnemyAt()`을 직접 호출해 새끼 2마리를 낳는다(`project_test.html:1840`). 지금 저장소에서 `Assets/Scripts/Systems/YokaiFront.Systems.asmdef`를 실제로 열어보면 이미 `"YokaiFront.Enemies"`를 참조하고 있다(3층→2층, 스포너가 몹 프리팹을 다뤄야 하니 당연함) — 그런데 `splitter` 같은 몹을 만들려고 `Enemies`가 거꾸로 `Systems`(스포너)를 참조하면 두 asmdef가 서로를 참조하는 순환참조가 되어 Unity가 "circular assembly definition reference"로 **컴파일 자체를 거부한다**(스타일 위반이 아니라 빌드가 깨짐).
+- **낮은 층이 높은 층의 기능을 "요청"해야 하는 경우(예: 몹이 죽을 때 새 몹을 스폰)는 직접 참조하지 않고 `Core`의 이벤트로 방향을 뒤집는다.** 이 상황이 실제로 곧 온다 — 원본은 분열귀(splitter) 타입이 죽으면 `spawnEnemyAt()`을 직접 호출해 새끼 2마리를 낳는다(`project_test.html:1840`). 지금 저장소에서 `Assets/Scripts/Systems/ChronoSavior.Systems.asmdef`를 실제로 열어보면 이미 `"ChronoSavior.Enemies"`를 참조하고 있다(3층→2층, 스포너가 몹 프리팹을 다뤄야 하니 당연함) — 그런데 `splitter` 같은 몹을 만들려고 `Enemies`가 거꾸로 `Systems`(스포너)를 참조하면 두 asmdef가 서로를 참조하는 순환참조가 되어 Unity가 "circular assembly definition reference"로 **컴파일 자체를 거부한다**(스타일 위반이 아니라 빌드가 깨짐).
 
   **확정된 해결 패턴 — 이 시그니처 그대로 쓸 것**(`Combat`/`Characters`가 `Enemies`를 몰라도 스폰 무적 상태를 물을 수 있게 만든 `ISpawnProtectable`, `Core/ISpawnProtectable.cs`와 정확히 같은 구조 — 구체 타입 대신 `Core`의 추상화만 아래층이 참조):
   ```csharp
-  // Core/EnemySpawnRequestBus.cs — namespace YokaiFront.Core
+  // Core/EnemySpawnRequestBus.cs — namespace ChronoSavior.Core
   public static class EnemySpawnRequestBus
   {
       public static event Action<Vector2, string> Requested; // (스폰 위치, 몹 타입 식별자 — 원본 'splitlet' 같은 문자열 키)
@@ -125,7 +125,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   - `Enemies`(예: 나중에 만들 `EnemySplitOnDeath.cs`)는 죽는 순간 `EnemySpawnRequestBus.Request(deathPos, "splitlet")`만 호출한다 — `Systems`를 몰라도 됨(`Core`만 참조, 이미 허용된 방향).
   - `Systems.EnemySpawner`는 `OnEnable()`에서 `EnemySpawnRequestBus.Requested += HandleSpawnRequest;`, **`OnDisable()`에서 반드시 `-=`로 구독 해제**(안 하면 오브젝트가 파괴된 뒤에도 정적 이벤트가 참조를 들고 있어 `MissingReferenceException`/메모리 누수로 이어진다). `HandleSpawnRequest(Vector2 pos, string enemyTypeId)`가 타입id→프리팹 매핑 후 실제 `Instantiate`를 담당한다(이미 `monsterPrefab` 필드로 프리팹을 들고 있는 클래스라 이 매핑을 갖기 자연스러운 위치).
   - **지금 이 파일을 만들지는 않는다** — splitter류 다종 몹은 HANDOFF.md 범위 밖이라 "HANDOFF.md에 없는 시스템은 손대지 않는다" 규칙대로, 실제로 몹 종류를 늘리는 스프린트가 시작될 때 위 시그니처 그대로 만든다(시그니처 자체는 이미 확정이니 그때 재설계하지 말 것).
-- **위 표는 실제 적용 완료 상태다(2026-08-26 리팩터링).** `Assets/Scripts/`가 여섯 asmdef로 분리돼 있고 `YokaiFront.Runtime`은 더 이상 없다.
+- **위 표는 실제 적용 완료 상태다(2026-08-26 리팩터링).** `Assets/Scripts/`가 여섯 asmdef로 분리돼 있고 `ChronoSavior.Runtime`은 더 이상 없다.
 
 ### 데이터(밸런스 값) — ScriptableObject로
 - 무기·적 스탯 같은 튜닝 수치는 스크립트에 하드코딩하지 않고 ScriptableObject 데이터 에셋으로 관리한다(원본의 `CONFIG`/`WEAPONS`/`MONSTERS` 데이터 테이블 구조를 그대로 반영하는 것 — 원본 자체가 이미 데이터 우선 설계였다).
@@ -154,7 +154,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 
 ### 용어 통일 — `Enemy`로 완료(2026-08-26)
 같은 대상을 `Monster`(클래스명)·`Enemy`(태그)·`Enemies`(폴더)로 따로 부르던 걸 **`Enemy`로 통일 완료**(원본 JS도 `enemies`를 씀).
-- 태그 `Enemy` · 폴더 `Enemies/` · 네임스페이스 `YokaiFront.Enemies` · 클래스 `EnemySpawner`/`EnemyMove` · 프리팹 `Enemy_Oni.prefab` — 전부 적용 끝. 새 코드에서 `Monster`라는 이름을 다시 쓰지 말 것.
+- 태그 `Enemy` · 폴더 `Enemies/` · 네임스페이스 `ChronoSavior.Enemies` · 클래스 `EnemySpawner`/`EnemyMove` · 프리팹 `Enemy_Oni.prefab` — 전부 적용 끝. 새 코드에서 `Monster`라는 이름을 다시 쓰지 말 것.
 - 에셋 파일명은 `<도메인>_<고유이름>` 형식: `Enemy_Oni.prefab`, `Weapon_Bow.asset`, `Region_Forest.asset`.
 
 ### 번호/이름 예약표 (새로 추가하기 전에 여기 먼저 적고 커밋)
@@ -226,7 +226,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 ## 지금 프로젝트 상태
 
 - Unity: 2D (URP) 템플릿. `Assets/Scripts/`는 `Core / World / Combat / Characters / Enemies / Systems / UI`
-  일곱 폴더 = 일곱 네임스페이스(`YokaiFront.*`) = 일곱 asmdef로 분리돼 있고, 계층 참조 규칙이 컴파일러로 강제된다.
+  일곱 폴더 = 일곱 네임스페이스(`ChronoSavior.*`) = 일곱 asmdef로 분리돼 있고, 계층 참조 규칙이 컴파일러로 강제된다.
 - **최종 목표(2026-09-30 변경)**: 원본을 기준으로 회의에서 정한 개선을 반영한다(위 "작업 규칙" 첫 항목). 원본과 다른
   점은 짚는다.
 - **진행 단계(2026-09-30)**: **게임 한 바퀴가 전부 돈다** — 로비 7탭 → 지역 선택 → 사냥 → 결과 → 로비,
@@ -237,7 +237,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   진행 중(`feature/blade-tier1`). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙은 `HANDOFF.md`.
 - **새 세션이 읽는 순서**: 이 파일 → `PROGRESS.md`(지금 상태·다음 할 일·배치 검증 명령) →
   `HANDOFF.md`(지금 스프린트) → `docs/worksplit.md`(분업). 원본 대조는 `docs/original-parity.md`.
-- **배치모드 `-executeMethod`는 전체 네임스페이스 경로가 필요하다**: `YokaiFront.Editor.BuildPartAScene.Build`
+- **배치모드 `-executeMethod`는 전체 네임스페이스 경로가 필요하다**: `ChronoSavior.Editor.BuildPartAScene.Build`
   (짧은 이름을 쓰면 "class could not be found"로 실패한다).
 - ⚠️ **원본에 없던 임시방편(R키 부활 · Tab 캐릭터 전환 · 숫자키 강화/빌드 선택)은 2026-09-10에 전부
   삭제됐다.** 정식 자리는 로비 탭이다(`project_test.html:6974`). **되살리지 말 것** — 죽으면 결과

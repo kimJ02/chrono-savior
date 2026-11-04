@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 엘리트 표식 — 원본 `spawnEnemyAt()`의 `elite` 플래그(project_test.html:3948)에 대응한다.

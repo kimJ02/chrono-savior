@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 피해를 받을 수 있는 대상(플레이어·적). 원본 `dealDamage()`(적)/`damagePlayer()`(플레이어)에 대응한다.

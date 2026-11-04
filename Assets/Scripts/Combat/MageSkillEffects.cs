@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 마법사 스킬트리의 1회성 광역 효과(폭발·중력 충돌·대붕괴) — 지속형 장판은

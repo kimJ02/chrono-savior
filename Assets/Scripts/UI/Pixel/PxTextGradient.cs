@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 글자 위아래 색 변화 — Figma HUD 숫자(남은 초·COMBO)는 위가 흰색, 아래가 연회색이다(2026-10-24 캡처 확대로 확인 —

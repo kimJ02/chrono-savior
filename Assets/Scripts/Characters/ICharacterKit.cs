@@ -1,6 +1,6 @@
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 캐릭터 하나의 "키트" — 그 캐릭터의 Z 기본공격과 (필요하면) X 스킬·자원을 담당하는 컴포넌트.

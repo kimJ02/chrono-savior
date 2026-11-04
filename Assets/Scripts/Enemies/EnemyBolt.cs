@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Enemies
+namespace ChronoSavior.Enemies
 {
     /// <summary>
     /// 사수귀가 쏘는 도깨비 화염탄. 원본 `projectiles`의 `kind:'ebolt'`(project_test.html:4098 생성,

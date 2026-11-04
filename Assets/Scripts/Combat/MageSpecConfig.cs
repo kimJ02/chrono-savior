@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 마법사 스킬트리(전문화) 수치 전부 — 원본 `SPEC.bow`(project_test.html:897-914)의 두 갈래

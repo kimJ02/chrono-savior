@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 설정 값(화면 모드·해상도·음량) — 기기마다 따로라 세이브(`profile.json`)가 아니라 PlayerPrefs에 둔다(2026-10-24).

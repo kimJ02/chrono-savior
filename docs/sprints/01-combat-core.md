@@ -112,7 +112,7 @@ WASD나 마우스 클릭 등 원본에 없는 키를 임의로 추가하지 않�
 
 ## 6. 저장소 / 환경
 
-- 레포: https://github.com/kimJ02/yokai_unity (Public)
+- 레포: https://github.com/kimJ02/chrono-savior (Public)
 - Unity: 2D (URP) 템플릿
 - 클론 후 Unity로 열면 `Library/`가 자동 재생성된다(처음 한 번 시간 걸림, 정상). `.meta` 파일은 전부 커밋돼 있으니 별도 조치 불필요.
 - 커밋 시 주의: `Library/ Temp/ Logs/ UserSettings/`는 `.gitignore`에 이미 걸려있어 커밋되지 않는다 — 그 폴더들을 강제로 add 하지 말 것.

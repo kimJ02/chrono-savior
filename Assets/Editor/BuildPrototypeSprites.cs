@@ -2,7 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace YokaiFront.Editor
+namespace ChronoSavior.Editor
 {
     /// <summary>
     /// `Assets/Sprites/Prototype/`의 PNG들을 **스프라이트로 import 설정**한다.
@@ -19,7 +19,7 @@ namespace YokaiFront.Editor
     /// 이 프로젝트의 월드 스케일이 **100px = 1유닛**(CLAUDE.md)이고 원본도 픽셀 좌표계라,
     /// PPU를 100으로 두면 구워낸 그림이 **원본과 정확히 같은 크기**로 들어온다.
     ///
-    /// 실행: 메뉴 `YokaiFront/Import Prototype Sprites`.
+    /// 실행: 메뉴 `ChronoSavior/Import Prototype Sprites`.
     /// </summary>
     public static class BuildPrototypeSprites
     {
@@ -29,7 +29,7 @@ namespace YokaiFront.Editor
         /// <summary>캐릭터 그림 피벗 높이 — 64px 그림에서 가운데(32)보다 3px 위 = 그림이 3px 아래에 그려진다.</summary>
         public const float CharacterPivotY = (32f + 3f) / 64f;
 
-        [MenuItem("YokaiFront/Import Prototype Sprites")]
+        [MenuItem("ChronoSavior/Import Prototype Sprites")]
         public static void Apply()
         {
             if (!Directory.Exists(Folder))

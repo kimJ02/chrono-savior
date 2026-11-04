@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 게임의 뼈대 — **로비 ↔ 사냥 ↔ 일시정지 ↔ 결과**를 오가게 하는 주체.
@@ -88,7 +88,7 @@ namespace YokaiFront.Systems
         /// </summary>
         public void EnterTitle()
         {
-            YokaiFront.World.PlatformSet.Activate(false);
+            ChronoSavior.World.PlatformSet.Activate(false);
             RunTransient.DestroyAll();
             bossDeadTimer = -1f;
             GameState.Set(GameScene.Title);
@@ -154,7 +154,7 @@ namespace YokaiFront.Systems
             // 무대를 먼저 바꾼다 — 발판 배치와 맵 폭(`FieldBounds.MaxX`)이 여기서 정해지고,
             // 아래의 플레이어 리셋·필드 정리가 그 값을 보고 좌표를 잡는다.
             // 원본도 `startRun`에서 `run.mapW`와 `platforms`를 먼저 갈아끼운다(:4313·:4316).
-            YokaiFront.World.PlatformSet.Activate(mode == RunMode.Boss);
+            ChronoSavior.World.PlatformSet.Activate(mode == RunMode.Boss);
 
             // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 지난 런의 잔해를 지운다.
             RunTransient.DestroyAll();
@@ -225,7 +225,7 @@ namespace YokaiFront.Systems
         {
             if (!RunState.EnterBossField()) return false;
 
-            YokaiFront.World.PlatformSet.Activate(true);
+            ChronoSavior.World.PlatformSet.Activate(true);
 
             // 일반 필드의 잡몹·투사체·장판을 지운다. 안 지우면 좁아진 보스 무대에 이전 필드의
             // 몹이 맵 밖 좌표로 남아, 플레이어가 닿을 수 없는 곳에서 계속 살아 있다.
@@ -247,7 +247,7 @@ namespace YokaiFront.Systems
         /// <summary>원본 `toLobby()`(:4382).</summary>
         public void EnterLobby()
         {
-            YokaiFront.World.PlatformSet.Activate(false); // 로비에선 일반 무대로 되돌린다
+            ChronoSavior.World.PlatformSet.Activate(false); // 로비에선 일반 무대로 되돌린다
             RunTransient.DestroyAll(); // 결과 화면을 거치지 않고 나가도 필드가 남지 않게
             bossDeadTimer = -1f;
             GameState.Set(GameScene.Lobby);
@@ -291,9 +291,9 @@ namespace YokaiFront.Systems
         void HandleEnemyKilled(GameObject enemy)
         {
             var (stop, shakeMag, shakeDur) = KillFeel(
-                enemy != null && enemy.GetComponent<YokaiFront.Enemies.Boss>() != null,
-                enemy != null && enemy.GetComponent<YokaiFront.Enemies.Shrine>() != null,
-                enemy != null && enemy.GetComponent<YokaiFront.Enemies.EnemyElite>() != null);
+                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Boss>() != null,
+                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Shrine>() != null,
+                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.EnemyElite>() != null);
             Hitstop(stop);
             if (shakeMag > 0f) HitFeel.Shake(shakeMag, shakeDur);
 

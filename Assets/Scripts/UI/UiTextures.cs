@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma에서 받은 UI 이미지를 **런타임에 들고 있는 유일한 지점**.

@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
 /// <summary>
 /// 이동 컨트롤러. 실제 Physics2D(Rigidbody2D 동적 바디 + 콜라이더 충돌 해석) 기반 — 전역 중력은

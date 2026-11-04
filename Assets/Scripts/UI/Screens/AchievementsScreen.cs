@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 업적 — **Figma에 화면이 없다**. 예전 로비 "업적" 탭(원본 업적 탭 :6888)을 공용 창 틀에 옮겼다(로비 왼쪽 아래 "업적" 버튼).

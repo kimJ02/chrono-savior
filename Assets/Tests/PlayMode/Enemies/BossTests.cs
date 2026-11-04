@@ -4,10 +4,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -142,7 +142,7 @@ public class BossTests
         // ⚠️ Rigidbody2D를 **먼저** 붙여야 한다 — PlayerHealth.Awake가 그걸 캐시하는데,
         // 나중에 붙이면 null로 남아 넉백에서 터진다(AddComponent는 Awake를 그 자리에서 실행한다).
         player.AddComponent<Rigidbody2D>().gravityScale = 0f;
-        var hp = player.AddComponent<YokaiFront.Characters.PlayerHealth>();
+        var hp = player.AddComponent<ChronoSavior.Characters.PlayerHealth>();
         yield return null;
         float before = hp.CurrentHp;
 

@@ -70,7 +70,7 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 2. **[나] 메카닉 5층 — 끝났다(2026-09-30 `main` 병합)** — 레이저 빔·드론, 설치기·링크·내부 장판, 충전
    스택·부품, X 쿨다운까지 원본대로. 빌드는 `PlayerProfile.gunnerBranch/gunnerTier`에 저장되고 로비 전문화 탭에서
    SP로 배운다. HUD 스킬 슬롯·충전/부품 표시도 붙었다(09-29 (1)). **남은 것**: "부품 필요" 같은 X 실패 안내
-   문구(원본 `showSkillMsg`). 수동 테스트: 에디터 메뉴 **`YokaiFront/메카닉 테스트/…`**(Play 중).
+   문구(원본 `showSkillMsg`). 수동 테스트: 에디터 메뉴 **`ChronoSavior/메카닉 테스트/…`**(Play 중).
 3. ✅ **[나] 전문화 탭 "SP +1" 테스트 버튼** — 에디터에서만 보인다. 누르면 지금 캐릭터 레벨 +1(= SP +1). ✅ 10/14 `main`.
 4. ✅ **섬영 + 내 브랜치 `main` 병합(2026-10-14)** — 팀원이 10/14 아침 섬영 1~5층·아트를 `main`에 올렸고, 내가
    `fix/mage-original-behavior`를 합쳤다(로그 10-14 (1)).
@@ -99,7 +99,7 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 ## 작업 재개 방법 (인수인계)
 
 ```bash
-git clone https://github.com/kimJ02/yokai_unity && cd yokai_unity
+git clone https://github.com/kimJ02/chrono-savior && cd chrono-savior
 git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병합됨
 ```
 
@@ -110,18 +110,18 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 ```bash
 # 컴파일 + 씬 재생성
 "/c/Program Files/Unity/Hub/Editor/6000.0.75f1/Editor/Unity.exe" -batchmode -quit -nographics \
-  -projectPath "C:\dev\yokai_unity" -executeMethod YokaiFront.Editor.BuildPartAScene.Build \
-  -logFile "C:\dev\yokai_unity\build.log"
+  -projectPath "C:\dev\chrono-savior" -executeMethod ChronoSavior.Editor.BuildPartAScene.Build \
+  -logFile "C:\dev\chrono-savior\build.log"
 ```
 
 ```bash
 # PlayMode 테스트 전체
 "/c/Program Files/Unity/Hub/Editor/6000.0.75f1/Editor/Unity.exe" -batchmode -nographics \
-  -projectPath "C:\dev\yokai_unity" -runTests -testPlatform PlayMode \
-  -testResults "C:\dev\yokai_unity\test_results.xml" -logFile "C:\dev\yokai_unity\test.log"
+  -projectPath "C:\dev\chrono-savior" -runTests -testPlatform PlayMode \
+  -testResults "C:\dev\chrono-savior\test_results.xml" -logFile "C:\dev\chrono-savior\test.log"
 ```
 
-`-executeMethod`는 **네임스페이스 전체 경로**가 필요하다(`YokaiFront.Editor.BuildPartAScene.Build`).
+`-executeMethod`는 **네임스페이스 전체 경로**가 필요하다(`ChronoSavior.Editor.BuildPartAScene.Build`).
 결과 파일명은 `.gitignore`에 걸리는 패턴(`*.log`, `*results*.xml`)을 쓸 것.
 
 ## 확인 필요 / 막힌 것
@@ -218,6 +218,13 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   연쇄 처치는 한 번만 걸리게" 하는 식으로 손볼 여지는 있다(원본에 없는 변경이라 디자인 판단 필요).
 
 ## 로그 (최신이 위)
+
+- **2026-11-04** — **[나] 게임 이름 변경: 요괴전선 → Chrono Savior (`chore/rename-chrono-savior`).** 사용자 "컨셉이 바뀌었으니 yokai 이름 전부 바꿔, 팀원 파일 포함 지금 바로".
+  네임스페이스·asmdef `YokaiFront.*` → `ChronoSavior.*`(asmdef 8개 파일 이름까지), 에디터 메뉴 `YokaiFront/` → `ChronoSavior/`, 셰이더 이름 `ChronoSavior/SpriteFlash`,
+  게임 문구 '요괴' → '몬스터'(업적·아이템 '몬스터 유인향'·결과 화면 등), 제품명 `My project` → `Chrono Savior`·회사명 `DefaultCompany` → `PigeonHelicopter`
+  (세이브 폴더가 `LocalLow/PigeonHelicopter/Chrono Savior/`로 바뀜 — 이 PC의 기존 세이브는 복사해 둠). 저장소 `kimJ02/yokai_unity` → `kimJ02/chrono-savior`.
+  **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(돌진귀 등)·업적 '백귀 참살'은 그대로(사용자 확인 필요).
+  **팀원 주의**: 내일 받을 때 `using YokaiFront…` 가 남은 작업 중 파일이 있으면 `ChronoSavior`로 바꿔야 컴파일된다.
 
 - **2026-10-28 (2)** — **[나] 로비 한 화면 (`feature/gravity-impact-vfx`, PlayMode 400/400).** 사용자 "맨 왼쪽에서 나와 던전까지 오래 걸린다, 캐릭터가 건물보다 너무 작다, 한눈에 들어오게".
   건물을 96×104도트(0.75×0.81유닛, 캐릭터의 약 1.6배 — 틀은 9-슬라이스)로 줄여 필드 가운데에 ±0.9·±2.7 간격으로 모음, 캐릭터는 가운데서 나오고
@@ -383,14 +390,14 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     `SpriteEnabledTypes`(HashSet) 조건부로 바꿔서, 정식 아트가 들어온 종류(지금은 오니·도깨비불)만
     `BuildPrototypeSprites.Load(...)`를 쓰고 나머지 5종(대오니·돌진귀·사수귀·분열귀·새끼)은 기존대로
     도형+색을 쓰게 했다. 한 종류 더 켜려면 그 HashSet에 `EnemyType.___` 한 줄만 추가하면 된다.
-    `Enemies/`는 `docs/worksplit.md`상 팀장 담당이라 — 동작 자체는 메뉴(`YokaiFront/Build Enemy
+    `Enemies/`는 `docs/worksplit.md`상 팀장 담당이라 — 동작 자체는 메뉴(`ChronoSavior/Build Enemy
     Data`) 재실행만 하면 되는 1줄짜리 조건 변경이지만, 병합 전 팀장이 봐 줘야 한다.
   - **새 파일 `Assets/Editor/ApplyCharacterArt.cs`**: `PlayerRig.characterSprites`는 씬
     (`CombatCore.unity`)에 직렬화된 값이라 스크립트만 고쳐선 못 채운다. `BuildPartAScene.Build()`를
     다시 돌리면 씬 전체(바닥·발판·카메라·스포너·RunController까지)를 통째로 새로 지어 덮어쓰므로
     과하다고 판단해서, 열려 있는 씬의 Player만 찾아 `characterSprites` 4칸(마법사·메카닉·섬영·
     드루이드)을 `Assets/Sprites/Prototype/`의 `char_*` 그림으로 채우는 전용 메뉴
-    `YokaiFront/Apply Character Art (Player)`를 새로 만들었다. 실행 후 씬 저장(Ctrl+S) 필요 —
+    `ChronoSavior/Apply Character Art (Player)`를 새로 만들었다. 실행 후 씬 저장(Ctrl+S) 필요 —
     `PlayerRig.Awake()`가 Play 시작마다 `characterSprites` 값으로 SpriteRenderer를 덮어쓰기 때문에,
     SpriteRenderer에 직접 드래그하는 방식은 Play를 누르는 순간 되돌아간다(실제로 사용자가 겪음).
   - **남은 것**: 대오니·돌진귀·사수귀·분열귀·새끼 5종은 아직 도형 그대로. 그림이 생기면
@@ -711,7 +718,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     **연결 검사 2개**(IMGUI·씬은 배치로 눈으로 못 보니 소스를 직접 본다): `GameHud`가 키트 슬롯 값·그림 3장을 실제로
     읽는지, 씬 `UiTextures`에 그림 3장의 guid가 꽂혀 있는지(빠지면 에러 없이 도형 대체 그림으로 조용히 바뀐다).
   - 마법사 차지 문구의 원본 앞 글자 '満'은 뺐다(한국어 윈도 기본 글꼴에 없는 일본 신자체 — HUD의 다른 줄도 '殺'·'⚔'를 뺀 상태).
-  - 검증: 에디터가 꺼져 있었지만 같은 방식으로 `C:\dev\yokai_unity_verify`(worktree)에서 배치 전체 실행.
+  - 검증: 에디터가 꺼져 있었지만 같은 방식으로 `C:\dev\chrono-savior_verify`(worktree)에서 배치 전체 실행.
 
 - **2026-09-28 (8)** — **[나] 보스를 잡은 다음 사냥이 입장 직후 "보스 격파"로 끝나던 버그 수정 + 메카닉 테스트 메뉴 (PlayMode 247/247).**
   - **원인**: 보스가 죽으면 `RunController`가 결과 화면을 **두 번** 예약했다 — `RunEvents.BossDefeated`(스포너 :422) →
@@ -722,10 +729,10 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - **수정**: 중복인 `Invoke` 경로(`EndRunAfterBoss`·`BossClearDelay`)를 없앴다. 보스 격파 → 런 종료는 타이머 한 곳뿐.
     회귀 테스트 `BossDefeatCarryOverTests` — 실제처럼 두 이벤트를 다 올리고, 결과 → 로비 → 다음 사냥이 2.5초 넘게 이어지는지.
   - **메카닉 테스트 메뉴**(`Assets/Editor/MechanicTestMenu.cs`, 사용자 요청 "테스트할 수 있게"): Play 중
-    `YokaiFront/메카닉 테스트/레이저 N층·설치기 N층·0차로 되돌리기·SP 넉넉히`. 진짜 세이브에 쓰고 SP 장부도 맞춘다
+    `ChronoSavior/메카닉 테스트/레이저 N층·설치기 N층·0차로 되돌리기·SP 넉넉히`. 진짜 세이브에 쓰고 SP 장부도 맞춘다
     (로비 전문화 탭에 그대로 보인다). 에디터 전용이라 빌드에 안 들어가고 게임 코드·씬은 무변경 — CLAUDE.md의 "임시
     디버그 키 금지"는 게임 안 입력 얘기라 해당하지 않는다.
-  - 검증: 사용자가 에디터를 켜 둔 상태라 `C:\dev\yokai_unity_verify`(worktree)에서 배치 전체 실행.
+  - 검증: 사용자가 에디터를 켜 둔 상태라 `C:\dev\chrono-savior_verify`(worktree)에서 배치 전체 실행.
 
 - **2026-09-28 (7)** — **[나] 전문화 탭 버그 수정 + 메카닉 빌드를 로비에서 배우게 (PlayMode 246/246).**
   - **사용자 발견**: 메카닉을 골랐는데 전문화 탭에 마법사 트리가 뜨고, 사냥에선 메카닉 공격이 나가고, 로비로
@@ -753,7 +760,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
     발 기준으로 바꿨다. 마법사 중력점은 "중심에서 0.34 **아래**"로 옮겨져 있던 걸 원본대로 "발에서 0.34 **위**"로.
     마법사 수정은 사용자 확인 후 진행("마법사도 고치고").
   - 테스트 +3: 메카닉·마법사가 같은 바닥의 오니 크기 적을 정면으로 맞히는지, `Feet` 계산.
-  - 검증: 사용자가 에디터를 켜 둔 상태라 `C:\dev\yokai_unity_verify`(git worktree, 분리된 HEAD)에 같은 변경을
+  - 검증: 사용자가 에디터를 켜 둔 상태라 `C:\dev\chrono-savior_verify`(git worktree, 분리된 HEAD)에 같은 변경을
     올려 배치로 전체 실행 — 241/241. (CLAUDE.md 협업 규칙 7 "다른 폴더에서 실행" 방식)
   - 아직 발 기준으로 안 바꾼 곳(영향 작음): 마법사 순간이동 궤적(원본 `p.y - 28`, 키 0.5에선 차이 0.03)·
     대붕괴 탐색 중심(원본 `p.y - 42`, 탐색 반높이 4.2라 영향 미미). **섬영 키트도 원본 `p.y - N`을 쓰면
@@ -797,7 +804,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - **`Assets/Scenes/CombatCore.unity`·`Assets/Editor/BuildPartAScene.cs`는 `docs/worksplit.md` 8절상
     팀장 전담 파일이다** — 소유권 밖이지만 사용자가 명시적으로 지시해서 진행했다. `main` 병합 전
     팀장 확인 필요.
-  - 사용자가 Unity 에디터에서 `Tools > YokaiFront > Build Part A Scene` 실행 + 씬 저장까지 마침 —
+  - 사용자가 Unity 에디터에서 `Tools > ChronoSavior > Build Part A Scene` 실행 + 씬 저장까지 마침 —
     **로비 캐릭터 선택에 섬영이 정상적으로 뜨고 고를 수 있는 것까지 확인됨("잘 나오네", 2026-09-28).**
     섬영 0차가 처음으로 실제 씬에서 눈으로 확인됐다 — 관성 이동/회전베기 실플레이 검증은 아직
     안 했으니 다음에 직접 움직여보고 이상 있으면 알려줄 것.
@@ -1045,7 +1052,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - `Systems/EnemySpawner.cs`에 스폰 직후 훅 2개 추가: `ApplyRegionScaling()`이 `EnemyHealth.SetMaxHp(38×2.15^(RegionLv-1))`(필드 직접 대입 대신 반드시 SetMaxHp 경유 — CurrentHp 미갱신 함정 회피) + `EnemyMove.attackPower = 13×1.4^(RegionLv-1)`을 계산해 적용하고 `EnemyHealth.Died += HandleEnemyDied` 구독. `HandleEnemyDied`가 `RunProgress.RegisterKill()` + `ProfileService.Current.AddExp(round(8×1.42^(RegionLv-1)))`(항상 지급) + 75% 확률로 `AddGold(round(randInt(5,10)×같은 배율))` 호출(원본 killEnemy(), project_test.html:1793).
   - **건드리지 않은 것(계약대로)**: `Core/PlayerProfile.cs`(메서드 호출만, 필드·이름 변경 없음), `Characters/` 전체, `Enemies/EnemyHealth.cs`·`Enemies/EnemyMove.cs`(0단계에서 이미 준비된 훅/필드를 호출만 함 — 소스 수정 없음).
   - **테스트 신규 4건**(`Assets/Tests/PlayMode/Systems/RunProgressAndRewardsTests.cs`): `RegionLv` 100마리 단위 증가 검증, 스폰 시 hp/dmg 스케일링 공식 검증, 처치 시 EXP 결정적 지급 검증, 40마리 연속 처치로 골드 확률 드랍 통계적 검증(0드랍 확률 0.25^40≈0).
-  - **컴파일 에러 1건 + 테스트 실패 1건 발견·수정**: 테스트 파일에 `using YokaiFront.Systems;` 누락으로 `EnemySpawner` 타입을 못 찾은 컴파일 에러(사용자가 Safe Mode 진입 후 에러 메시지 전달해 확인) → using 추가로 해결. `SpawnWave_ScalesEnemyStatsByRegionLevel` 테스트가 "1마리만 스폰" 기대했는데 2마리 나옴 → `EnemySpawner.waveTimer` 기본값이 0이라 수동 `SpawnWave()` 호출과 별개로 그 프레임의 자동 `Update()`가 웨이브를 한 번 더 터뜨린 것(프로덕션 버그 아님, 테스트가 스포너를 새로 만들 때 흔히 걸리는 함정) — 테스트 헬퍼에서 `waveTimer`를 리플렉션으로 크게 밀어 자동 웨이브만 차단(컴포넌트 자체를 끄면 `aliveMonsters.RemoveAll(null)` 같은 다른 Update 로직까지 죽어서 다른 테스트가 깨짐).
+  - **컴파일 에러 1건 + 테스트 실패 1건 발견·수정**: 테스트 파일에 `using ChronoSavior.Systems;` 누락으로 `EnemySpawner` 타입을 못 찾은 컴파일 에러(사용자가 Safe Mode 진입 후 에러 메시지 전달해 확인) → using 추가로 해결. `SpawnWave_ScalesEnemyStatsByRegionLevel` 테스트가 "1마리만 스폰" 기대했는데 2마리 나옴 → `EnemySpawner.waveTimer` 기본값이 0이라 수동 `SpawnWave()` 호출과 별개로 그 프레임의 자동 `Update()`가 웨이브를 한 번 더 터뜨린 것(프로덕션 버그 아님, 테스트가 스포너를 새로 만들 때 흔히 걸리는 함정) — 테스트 헬퍼에서 `waveTimer`를 리플렉션으로 크게 밀어 자동 웨이브만 차단(컴포넌트 자체를 끄면 `aliveMonsters.RemoveAll(null)` 같은 다른 Update 로직까지 죽어서 다른 테스트가 깨짐).
   - **아직 못 한 것 — 사용자 확인 필요**: 이 세션은 이 컴퓨터에서 git/Unity 배치모드를 직접 실행할 수 없어(파일 읽기/쓰기만 가능) 배치 컴파일·PlayMode 테스트 실행·커밋은 전부 사용자가 GitHub Desktop/에디터로 직접 해야 한다. **팀원이 `docs/sprint2-handoff-split.md`에 "0. 착수 전 필독"을 추가해 스케일링/보상 상수를 `Core/DifficultyScalingConfig.cs`로 분리하라고 지시 — 이 `main` 병합 끝나는 대로 반영 예정(값 자체는 변경 없음, 위치만 이동).**
 - **2026-09-08** — **트랙 B 완료: 레벨업 + 골드 강화 5종 + 파생 스탯 적용 (PlayMode 40/40).** `feature/level-gold-upgrades` 브랜치에서 작업, 착수 전 팀원(트랙 A) 커밋이 아직 없음을 `git fetch`로 확인.
   - **레벨업**: `PlayerProfile.AddExp()`가 원본 `gainExpMeta()`(`:1440`)를 그대로 옮김 — 초과분 이월, 한 번의 지급으로 여러 레벨 가능, 실제로 레벨이 오를 때만 `LeveledUp` 이벤트 발생.
@@ -1079,12 +1086,12 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   - 사용자가 Unity 에디터에서 직접 레이어·콜리전 매트릭스 설정 후 플레이로 재확인 완료. 코드 변경이 없어 컴파일/PlayMode 테스트에는 영향 없음(재실행 안 함 — 다음 코드 변경 시 같이 재검증).
   - `main`에서 바로 진행(팀원이 동시에 이 레포를 안 건드리고 있음을 확인함, CLAUDE.md 협업규칙 3번 예외 — 이미 병합된 기능의 소규모 후속 수정).
 - **2026-08-26** — **대규모 리팩터링 완료 — 폴더/네임스페이스/asmdef 분리 + `Monster`→`Enemy` 리네임.** 사용자가 "리펙터링 ㄱㄱㄱ"로 승인, CLAUDE.md "대규모 리팩터링 절차"(미병합 브랜치 0개 확인 → 진행 중 선언 → 단일 커밋 → 배치 검증 → 병합)를 그대로 따라 진행. 착수 전 미병합 브랜치 0개 확인(`feature/monster-combat`/`feature/player-field` 둘 다 `main` 대비 unique 커밋 없음).
-  - **폴더 = 네임스페이스 = asmdef 이름 일치**: `Assets/Scripts/`를 `Core/World/Combat/Characters/Enemies/Systems` 6개 폴더로 분리(전부 `git mv`로 이동해 히스토리 보존), 각각 `YokaiFront.<도메인>` 네임스페이스 + 같은 이름의 asmdef 신설. 계층(`Core`←`World`/`Combat`←`Characters`/`Enemies`←`Systems`)대로 `references` 설정, 같은 층(`Characters`↔`Enemies`)은 서로 참조 안 함. 기존 단일 `YokaiFront.Runtime.asmdef`는 삭제.
+  - **폴더 = 네임스페이스 = asmdef 이름 일치**: `Assets/Scripts/`를 `Core/World/Combat/Characters/Enemies/Systems` 6개 폴더로 분리(전부 `git mv`로 이동해 히스토리 보존), 각각 `ChronoSavior.<도메인>` 네임스페이스 + 같은 이름의 asmdef 신설. 계층(`Core`←`World`/`Combat`←`Characters`/`Enemies`←`Systems`)대로 `references` 설정, 같은 층(`Characters`↔`Enemies`)은 서로 참조 안 함. 기존 단일 `ChronoSavior.Runtime.asmdef`는 삭제.
   - **`Core/ISpawnProtectable.cs` 신설** — 리팩터 도중 실제 계층 위반을 발견: `MageProjectile`(`Characters`)·`PlayerAttack`(`Combat`)이 `MonsterMove`(`Enemies` 예정) 타입을 직접 `GetComponent`하고 있었다. `Enemies`를 모르는 도메인이 스폰 무적 상태만 물을 수 있게 `Core`에 인터페이스를 만들고 `EnemyMove`가 구현, 공격 스크립트는 `GetComponent<ISpawnProtectable>()`로 전환.
   - **`Monster`→`Enemy` 리네임**: `MonsterMove.cs`→`EnemyMove.cs`, `MonsterSpawner.cs`→`EnemySpawner.cs`(클래스명도 동일하게), `Monster.prefab`→`Enemy_Oni.prefab`(내부 `m_Name`도 갱신). `BuildPartAScene.cs`의 프리팹 경로 상수·타입 참조 전부 갱신.
-  - `Assets/Editor/BuildPartAScene.cs`도 `YokaiFront.Editor` 네임스페이스로 감쌈 — **배치모드 `-executeMethod`는 이제 `YokaiFront.Editor.BuildPartAScene.Build`처럼 전체 경로가 필요**(옛 짧은 이름은 "class could not be found"로 실패).
-  - `Assets/Tests/PlayMode/`도 도메인별 하위 폴더(`Combat/Characters/Enemies/`)로 재배치, `MonsterSpawnAndMoveTests.cs`→`Enemies/EnemySpawnAndMoveTests.cs`로 리네임하며 내부 타입 참조 갱신, 전부 `YokaiFront.Tests.PlayMode` 네임스페이스로 감쌈. `YokaiFront.PlayModeTests.asmdef`의 참조를 옛 `YokaiFront.Runtime` 대신 새 6개 asmdef로 교체.
-  - **1차 배치 검증에서 실제 컴파일 에러 발견**: `EnemySpawnAndMoveTests.cs`에 `using YokaiFront.Enemies;`를 빠뜨려서 `EnemyMove`를 못 찾음(CS0246) — 추가하고 재검증. 두 번째 시도에선 컴파일은 통과했지만 `-executeMethod BuildPartAScene.Build`(옛 이름)가 네임스페이스 이동 때문에 실패 — `YokaiFront.Editor.BuildPartAScene.Build`로 고쳐서 씬 재생성 성공.
+  - `Assets/Editor/BuildPartAScene.cs`도 `ChronoSavior.Editor` 네임스페이스로 감쌈 — **배치모드 `-executeMethod`는 이제 `ChronoSavior.Editor.BuildPartAScene.Build`처럼 전체 경로가 필요**(옛 짧은 이름은 "class could not be found"로 실패).
+  - `Assets/Tests/PlayMode/`도 도메인별 하위 폴더(`Combat/Characters/Enemies/`)로 재배치, `MonsterSpawnAndMoveTests.cs`→`Enemies/EnemySpawnAndMoveTests.cs`로 리네임하며 내부 타입 참조 갱신, 전부 `ChronoSavior.Tests.PlayMode` 네임스페이스로 감쌈. `ChronoSavior.PlayModeTests.asmdef`의 참조를 옛 `ChronoSavior.Runtime` 대신 새 6개 asmdef로 교체.
+  - **1차 배치 검증에서 실제 컴파일 에러 발견**: `EnemySpawnAndMoveTests.cs`에 `using ChronoSavior.Enemies;`를 빠뜨려서 `EnemyMove`를 못 찾음(CS0246) — 추가하고 재검증. 두 번째 시도에선 컴파일은 통과했지만 `-executeMethod BuildPartAScene.Build`(옛 이름)가 네임스페이스 이동 때문에 실패 — `ChronoSavior.Editor.BuildPartAScene.Build`로 고쳐서 씬 재생성 성공.
   - 최종 배치 컴파일 + PlayMode 테스트 전체 재실행 → **20/20 통과**(리팩터 전과 동일한 개수, 회귀 없음).
   - ScriptableObject 데이터 전환·`GameInput` 중앙화는 CLAUDE.md 규칙상 **이번 리팩터 범위 밖**(SO는 "2번째 무기/적 종류를 만들기 전" 시점으로, GameInput은 새 코드부터 — 둘 다 명시적으로 유보).
   - `CLAUDE.md`에 "문서 3종 동기화" 규칙 신설(사용자가 세 문서 갱신이 잘 안 지켜지는 것 같다고 지적) + "지금 프로젝트 상태"를 리팩터 완료 상태로 갱신.

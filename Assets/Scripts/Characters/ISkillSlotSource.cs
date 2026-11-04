@@ -1,7 +1,7 @@
 using System.Globalization;
 using UnityEngine;
 
-namespace YokaiFront.Characters
+namespace ChronoSavior.Characters
 {
     /// <summary>
     /// HUD 스킬 슬롯 한 칸(Z·X)의 상태 — 원본 `setSlotCooldown(sl, frac, remain)`(project_test.html:6248)의

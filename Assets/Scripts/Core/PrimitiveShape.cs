@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 정식 아트 전까지 쓰는 임시 도형 — 사용자 지시(2026-09-16)

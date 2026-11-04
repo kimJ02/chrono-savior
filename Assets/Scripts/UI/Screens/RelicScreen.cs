@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 시공 유물 소환(유물 개방) — Figma "시공 유물 소환"(32:17)의 640×360판: 왼쪽 5×5 유물 칸, 오른쪽 판(시간의 파편 + 버튼 둘).

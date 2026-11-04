@@ -1,9 +1,9 @@
 using UnityEngine;
 using UnityEngine.UI;
-using YokaiFront.Core;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// 시간 회귀 — Figma "시간 회귀창"(31:4, 640×360): "회귀 결과" 창에 네 칸(깃발·파편·별·해골 아이콘 + 이름 + 큰 숫자).

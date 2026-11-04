@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 블랙홀(중력) 마법사의 공격이 적중한 자리에 한 번 터지는 폭발 — 2026-10-25 사용자가 받은

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 모든 키 입력은 여기를 통해서만 읽는다. 원본 `KEYMAP`(project_test.html:1007)의 액션 이름을

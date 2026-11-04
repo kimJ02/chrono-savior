@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 시간 회귀(輪廻) — 원본 `doRebirth()`(project_test.html:6509)와 회귀 장벽(`:741`·`:973`~`:977`).

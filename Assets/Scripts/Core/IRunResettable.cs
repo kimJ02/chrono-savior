@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 새 사냥(런)이 시작될 때 초기 상태로 되돌아가야 하는 것. 원본 `resetPlayerForRun()`

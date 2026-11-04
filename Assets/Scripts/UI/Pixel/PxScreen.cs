@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma 화면 하나(2026-10-24) — 처음 한 번 그림·글자를 만들고(<see cref="Build"/>), 게임 상태를 보고 켜고 끄며

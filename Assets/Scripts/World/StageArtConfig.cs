@@ -1,4 +1,4 @@
-namespace YokaiFront.World
+namespace ChronoSavior.World
 {
     /// <summary>
     /// Figma 도트 그림을 선명하게 보이기 위한 화면 기준 — **2026-10-24 사용자 결정 "C안(절충)"**

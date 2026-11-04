@@ -1,4 +1,4 @@
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// 원본 `state.scene`(project_test.html:1466)은 로비/사냥/일시정지/결과 4종이다.

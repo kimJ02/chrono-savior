@@ -1,8 +1,8 @@
 using System.IO;
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Systems
+namespace ChronoSavior.Systems
 {
     /// <summary>
     /// 세이브/로드 — 원본 `saveMeta()`/`loadMeta()`(project_test.html:1213·:1216).

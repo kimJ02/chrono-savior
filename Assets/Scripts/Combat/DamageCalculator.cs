@@ -1,7 +1,7 @@
 using UnityEngine;
-using YokaiFront.Core;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Combat
+namespace ChronoSavior.Combat
 {
     /// <summary>
     /// 최종 피해량 계산. 원본 `dealDamage()`(`project_test.html:1664`)의 피해 계산식에서

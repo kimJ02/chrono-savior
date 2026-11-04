@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace YokaiFront.UI
+namespace ChronoSavior.UI
 {
     /// <summary>
     /// Figma UI(640×360 도트)를 그리는 판 — 2026-10-24 사용자 "Figma UI 13페이지 다 넣을 거야".

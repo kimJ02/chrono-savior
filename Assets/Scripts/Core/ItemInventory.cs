@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace YokaiFront.Core
+namespace ChronoSavior.Core
 {
     /// <summary>보유 아이템 한 종류. `JsonUtility`가 딕셔너리를 직렬화 못 해서 리스트로 둔다.</summary>
     [System.Serializable]

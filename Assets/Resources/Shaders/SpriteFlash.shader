@@ -1,7 +1,7 @@
 // 피격 플래시 — 스프라이트 모양(알파)만 살리고 색은 꼭짓점 색(흰색 × 세기)으로 칠한다(2026-10-24, `Enemies/EnemyHealth`).
 // 원본은 흰 타원을 덮지만(project_test.html:4799) 그림 몹에선 몸 모양이 자연스럽다. `SpriteRenderer.color`를 곱하는 방식은
 // 흰색 그림을 더 밝게 못 해서 그림 몹에선 플래시가 안 보였다. Resources에 둬야 빌드에도 들어간다(`Resources.Load<Shader>`).
-Shader "YokaiFront/SpriteFlash"
+Shader "ChronoSavior/SpriteFlash"
 {
     Properties
     {

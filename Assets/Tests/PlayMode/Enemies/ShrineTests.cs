@@ -3,15 +3,15 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Core;
-using YokaiFront.Enemies;
-using YokaiFront.Systems;
+using ChronoSavior.Core;
+using ChronoSavior.Enemies;
+using ChronoSavior.Systems;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
-/// 요괴들의 성소 — 원본 `spawnShrine()`(project_test.html:3996)과 파괴 처리(`:1797`).
+/// 몬스터들의 성소 — 원본 `spawnShrine()`(project_test.html:3996)과 파괴 처리(`:1797`).
 ///
 /// 성소의 핵심은 **버프의 방향이 둘**이라는 점이다: 살아 있는 동안은 적이 강해지고,
 /// 부수면 그 힘이 플레이어에게 넘어온다. 한쪽만 구현하면 "빨리 부술수록 이득"이라는

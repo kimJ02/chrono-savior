@@ -3,10 +3,10 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using YokaiFront.Characters;
-using YokaiFront.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Core;
 
-namespace YokaiFront.Tests.PlayMode
+namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
@@ -82,7 +82,7 @@ public class MageChargeFlashTests
     [Test]
     public void GravityX_WithoutBlackHole_DoesNothing_AndKeepsCooldown()
     {
-        YokaiFront.Combat.GravityWellZone.ClearAllForTests();
+        ChronoSavior.Combat.GravityWellZone.ClearAllForTests();
         ProfileService.Current.mageBranch = MageBranch.Gravity;
         ProfileService.Current.mageTier = 3;
         var mage = NewMage();
@@ -91,20 +91,20 @@ public class MageChargeFlashTests
 
         tryUse.Invoke(mage, new object[] { ProfileService.Current, MageBranch.Gravity, 3 });
         Assert.LessOrEqual((float)ultCd.GetValue(mage), 0f, "블랙홀이 없으면 X가 안 나가고 쿨다운도 안 쓴다");
-        Assert.AreEqual(0, Object.FindObjectsByType<YokaiFront.Combat.GravityBurstRing>(FindObjectsSortMode.None).Length, "아무 데서도 안 터진다");
+        Assert.AreEqual(0, Object.FindObjectsByType<ChronoSavior.Combat.GravityBurstRing>(FindObjectsSortMode.None).Length, "아무 데서도 안 터진다");
 
-        YokaiFront.Combat.GravityWellZone.SpawnOrMerge(mage.transform.position + Vector3.right, 3, 0.5f);
+        ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(mage.transform.position + Vector3.right, 3, 0.5f);
         tryUse.Invoke(mage, new object[] { ProfileService.Current, MageBranch.Gravity, 3 });
         Assert.Greater((float)ultCd.GetValue(mage), 0f, "깔아 둔 블랙홀이 있으면 터뜨리고 쿨다운이 돈다");
-        YokaiFront.Combat.GravityWellZone.ClearAllForTests();
-        foreach (var b in Object.FindObjectsByType<YokaiFront.Combat.GravityBurstRing>(FindObjectsSortMode.None)) Object.DestroyImmediate(b.gameObject);
+        ChronoSavior.Combat.GravityWellZone.ClearAllForTests();
+        foreach (var b in Object.FindObjectsByType<ChronoSavior.Combat.GravityBurstRing>(FindObjectsSortMode.None)) Object.DestroyImmediate(b.gameObject);
     }
 
     [Test]
     public void ChargeCircle_IsGone()
     {
         var mage = NewMage();
-        Assert.IsNull(System.Type.GetType("YokaiFront.Characters.MageChargeCircle, YokaiFront.Characters"), "마법진은 뺐다");
+        Assert.IsNull(System.Type.GetType("ChronoSavior.Characters.MageChargeCircle, ChronoSavior.Characters"), "마법진은 뺐다");
         Assert.IsNull(mage.transform.Find("MageChargeCircle"));
         Assert.IsNull(mage.transform.Find("ChargeIndicator"), "예전 하늘색 구체도 없다");
     }
