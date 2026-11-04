@@ -49,7 +49,7 @@ public class GameBootTests
     public IEnumerator Teardown()
     {
         // 경로·시간부터 되돌린다 — 아래 씬 내리기가 실패해도 다음 테스트가 테스트용 경로를 물려받지 않게
-        SaveService.PathOverride = null;
+        SaveService.PathOverride = TestSaveSandbox.Path; // 테스트 전체 임시 경로로 되돌린다(null이면 진짜 경로)
         Time.timeScale = 1f;
         try { if (File.Exists(tempSave)) File.Delete(tempSave); } catch (IOException) { }
         foreach (var name in new[] { GameBoot.WorldScene, PersistentScene })
@@ -145,6 +145,16 @@ public class GameBootTests
         Assert.AreEqual("UpscaleRenderTexture", t.GetProperty("gridSnapping").GetValue(ppc).ToString());
         Assert.AreEqual("StretchFill", t.GetProperty("cropFrame").GetValue(ppc).ToString(), "창 크기와 상관없이 보이는 범위가 같아야 한다");
         Assert.AreEqual(1, cam.GetComponents<Component>().Count(c => c != null && c.GetType() == ppc.GetType()), "PPC가 둘 붙지 않는다");
+    }
+
+    /// <summary>스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 같은 몬스터 목록 에셋을 본다 — 화면이 월드를 찾지 않는다(2026-11-05).</summary>
+    [Test]
+    public void Spawner_AndStageSelect_ShareOneMonsterCatalog()
+    {
+        var spawner = InScene<EnemySpawner>(GameBoot.WorldScene).Single();
+        var stage = InScene<StageSelectScreen>(PersistentScene).Single();
+        Assert.IsNotNull(spawner.Catalog);
+        Assert.AreSame(spawner.Catalog, stage.Catalog);
     }
 
     /// <summary>전투 담당은 전투 씬에 하나, 같은 씬의 Player를 직렬화로 가리킨다 — 흐름(상주 씬)은 등록(`Current`)으로 찾는다(2026-11-05).</summary>

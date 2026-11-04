@@ -31,13 +31,21 @@ public class SaveServiceTests
     [TearDown]
     public void Teardown()
     {
-        SaveService.PathOverride = null;
+        SaveService.PathOverride = TestSaveSandbox.Path;
         try { if (File.Exists(tempSave)) File.Delete(tempSave); } catch (IOException) { }
         ProfileService.Reset();
     }
 
     [Test]
     public void Tests_UseTheTestSavePath_NotTheRealOne() => Assert.AreEqual(tempSave, SaveService.SavePath);
+
+    /// <summary>테스트 전체 안전장치(`TestSaveSandbox`)가 켜져 있다 — 세이브 경로가 진짜 위치(persistentDataPath)가 아니다.</summary>
+    [Test]
+    public void Sandbox_KeepsEveryTestAwayFromTheRealSave()
+    {
+        Assert.IsNotNull(TestSaveSandbox.Path, "SetUpFixture가 안 돌았다");
+        StringAssert.DoesNotStartWith(Path.GetFullPath(Application.persistentDataPath), Path.GetFullPath(TestSaveSandbox.Path));
+    }
 
     /// <summary>
     /// 프로필을 통째로 바꾸는 건 세이브 시스템만 한다(`HANDOFF.md` "상태 소유권", 2026-11-05). `Core.ProfileService`는 `Systems`를 몰라

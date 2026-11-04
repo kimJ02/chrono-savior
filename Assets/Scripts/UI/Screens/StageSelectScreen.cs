@@ -16,6 +16,12 @@ namespace ChronoSavior.UI
     /// </summary>
     public class StageSelectScreen : PxScreen
     {
+        [Tooltip("몬스터 그림을 읽는 목록(Assets/Data/Enemies/MonsterCatalog.asset) — 전투 씬의 스포너와 같은 에셋. 화면은 월드를 찾지 않는다.")]
+        [SerializeField] MonsterCatalog catalog;
+
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다.</summary>
+        public MonsterCatalog Catalog { get => catalog; set => catalog = value; }
+
         static StageSelectScreen instance;
         bool open;
 
@@ -172,14 +178,13 @@ namespace ChronoSavior.UI
             infoLine.text = $"{RegionConfig.NameOf(s)} · 권장 Lv.{RegionConfig.RecommendedLevel(s)}+ · 멸망까지 {p.doomDays}일";
 
             var types = MonstersOf(s);
-            var spawner = Object.FindFirstObjectByType<EnemySpawner>();
             for (int i = 0; i < 5; i++)
             {
-                Sprite sp = i < types.Length ? SpriteOf(spawner, types[i]) : null;
+                Sprite sp = i < types.Length ? SpriteOf(types[i]) : null;
                 mobs[i].sprite = sp;
                 mobs[i].enabled = sp != null;
             }
-            var bs = spawner != null ? spawner.bossSprite : null;
+            var bs = catalog != null ? catalog.boss : null;
             boss.sprite = bs;
             boss.enabled = bs != null;
 
@@ -193,7 +198,11 @@ namespace ChronoSavior.UI
             enter.Interactable = p.IsRegionOpen(s);
         }
 
-        /// <summary>그 지역에 나오는 몹 종류 — 원본 `rollSpawnType` 순서(박쥐·고블린 → 멧돼지 → 해골 궁수 → 슬라임, 2지역부터 오우거).</summary>
+        /// <summary>
+        /// 그 지역 카드에 **보여 줄** 몹 종류(칸 5개) — 원본 `rollSpawnType` 순서(박쥐·고블린 → 멧돼지 → 해골 궁수 → 슬라임, 2지역부터 오우거).
+        /// 스폰 확률표(`Systems/EnemySpawnTable`)의 복사본이 아니라 **표시 정책**이다 — 4지역부터는 나오는 종류가 6가지라 칸이 모자라 오우거를 뺀다.
+        /// 표와 어긋나지 않게 `Tests/PlayMode/UI/StageSelectShowcaseTests`가 '보여 주는 종류는 그 지역에서 실제로 나온다'와 지역별 순서를 고정한다.
+        /// </summary>
         public static EnemyType[] MonstersOf(int region)
         {
             if (region <= 1) return new[] { EnemyType.Flyer, EnemyType.Grunt };
@@ -202,12 +211,10 @@ namespace ChronoSavior.UI
             return new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Shooter, EnemyType.Splitter };
         }
 
-        static Sprite SpriteOf(EnemySpawner spawner, EnemyType type)
+        Sprite SpriteOf(EnemyType type)
         {
-            if (spawner == null || spawner.enemyTypes == null) return null;
-            foreach (var d in spawner.enemyTypes)
-                if (d != null && d.type == type) return d.sprite;
-            return null;
+            var d = catalog != null ? catalog.Find(type) : null;
+            return d != null ? d.sprite : null;
         }
 
         void Enter()

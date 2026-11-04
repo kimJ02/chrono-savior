@@ -74,7 +74,7 @@ public class GameFlowTests
         }
         finally
         {
-            SaveService.PathOverride = null;
+            SaveService.PathOverride = TestSaveSandbox.Path;
             if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp);
         }
     }

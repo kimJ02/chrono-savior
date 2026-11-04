@@ -78,11 +78,6 @@ public class EnemySpawner : MonoBehaviour
     [Tooltip("구슬 스프라이트. 씬 빌더가 꽂아준다. 비어 있어도 동작은 하고 안 보이기만 한다.")]
     public Sprite orbSprite;
 
-    [Header("성소·보스 그림 (씬 빌더가 꽂아준다)")]
-    [Tooltip("성소 그림. 비어 있으면 프리팹의 기본 스프라이트를 색만 칠해서 쓴다.")]
-    public Sprite shrineSprite;
-    [Tooltip("보스 그림. 비어 있으면 프리팹의 기본 스프라이트를 색만 칠해서 쓴다.")]
-    public Sprite bossSprite;
 
     [Header("임시 도형 (정식 아트 전까지 — 씬 빌더가 꽂아준다)")]
     [Tooltip("동그라미. 근접 추적 몹과 경험치 구슬이 쓴다.")]
@@ -100,9 +95,12 @@ public class EnemySpawner : MonoBehaviour
         _ => circleSprite,
     };
 
-    [Header("몹 종류별 수치 (Assets/Data/Enemies/, BuildEnemyData가 생성)")]
-    [Tooltip("스폰할 몹 종류들. 비어 있으면 프리팹에 들어 있는 값을 그대로 쓴다. 지역별 해금표(원본 rollSpawnType :3933)는 몹 6종을 붙일 때 여기에 얹는다.")]
-    public EnemyData[] enemyTypes;
+    [Header("몬스터 목록 (Assets/Data/Enemies/MonsterCatalog.asset)")]
+    [Tooltip("잡몹 종류별 수치·그림과 보스·성소 그림. 스테이지 선택 화면(상주 씬)도 같은 에셋을 본다. 비어 있으면 프리팹에 들어 있는 값을 그대로 쓴다.")]
+    [SerializeField] MonsterCatalog catalog;
+
+    /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다.</summary>
+    public MonsterCatalog Catalog { get => catalog; set => catalog = value; }
 
     /// <summary>
     /// 웨이브 상한에 **세는 대상**. 원본 `enemies.filter(e => !e.boss && !e.shrine)`(`:3978`)와 같아야 한다 —
@@ -196,13 +194,7 @@ public class EnemySpawner : MonoBehaviour
         aliveMonsters.Add(monster.transform);
     }
 
-    EnemyData FindData(EnemyType enemyType)
-    {
-        if (enemyTypes == null) return null;
-        foreach (var d in enemyTypes)
-            if (d != null && d.type == enemyType) return d;
-        return null;
-    }
+    EnemyData FindData(EnemyType enemyType) => catalog != null ? catalog.Find(enemyType) : null;
 
     void Update()
     {
@@ -297,7 +289,7 @@ public class EnemySpawner : MonoBehaviour
         // 원본 w:64 h:96(`:698`) — 고블린(42×46)의 두 배 높이인 세로로 긴 구조물이다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(1f, 0.54f, 0.42f); // 원본 colors.soul '#ff8a6a'
-        FitToWorldSize(go, shrineSprite,
+        FitToWorldSize(go, catalog != null ? catalog.shrine : null,
                        EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight);
 
         go.AddComponent<Shrine>();
@@ -351,7 +343,7 @@ public class EnemySpawner : MonoBehaviour
         // 탄환 스프라이트는 **그림을 갈아끼우기 전**의 원형을 쓴다 — 보스 그림을 그대로 쓰면
         // 화면을 가리는 거대한 탄이 날아간다.
         Sprite bolt = sr != null ? sr.sprite : null;
-        FitToWorldSize(go, bossSprite, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
+        FitToWorldSize(go, catalog != null ? catalog.boss : null, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
 
         var boss = go.AddComponent<Boss>();
         boss.projectileSprite = bolt;
@@ -535,9 +527,10 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     EnemyData PickEnemyData()
     {
-        if (enemyTypes == null || enemyTypes.Length == 0) return null;
+        var types = catalog != null ? catalog.types : null;
+        if (types == null || types.Length == 0) return null;
         var rolled = FindData(EnemySpawnTable.Roll(RunProgress.RegionLv));
-        return rolled != null ? rolled : enemyTypes[Random.Range(0, enemyTypes.Length)];
+        return rolled != null ? rolled : types[Random.Range(0, types.Length)];
     }
 
     /// <summary>

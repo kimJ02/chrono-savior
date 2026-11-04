@@ -123,6 +123,7 @@ namespace ChronoSavior.Editor
                 problems.Add("CombatDirector.Player가 이 씬의 Player를 가리키지 않는다 — 사냥 시작·보스 필드 진입 때 플레이어가 안 되돌아간다");
             var spawner = One<EnemySpawner>(combat, problems);
             if (spawner != null && spawner.monsterPrefab == null) problems.Add("EnemySpawner.monsterPrefab이 비어 있다");
+            CheckMonsterCatalog(spawner, persistent, problems);
             One<BossPortal>(combat, problems);
             One<StageVisuals>(combat, problems);
             One<LobbyWorld>(combat, problems);
@@ -174,6 +175,7 @@ namespace ChronoSavior.Editor
         static void CheckCamera(Camera cam, List<string> problems)
         {
             if (!cam.orthographic) problems.Add("공용 카메라가 직교(Orthographic)가 아니다");
+            CheckSavedViewportRect(cam.gameObject.scene.path, problems);
             if (Mathf.Abs(cam.orthographicSize - StageArtConfig.ViewHalfHeight) > 1e-4f)
                 problems.Add($"공용 카메라 크기 {cam.orthographicSize} ≠ StageArtConfig.ViewHalfHeight {StageArtConfig.ViewHalfHeight}");
             var ppc = cam.GetComponent<PixelPerfectCamera>();
@@ -183,6 +185,38 @@ namespace ChronoSavior.Editor
                 problems.Add($"PixelPerfectCamera 기준 해상도 {ppc.refResolutionX}×{ppc.refResolutionY} ≠ {StageArtConfig.RefWidth}×{StageArtConfig.RefHeight}");
             if (ppc.gridSnapping != PixelPerfectCamera.GridSnapping.UpscaleRenderTexture) problems.Add("PixelPerfectCamera gridSnapping이 UpscaleRenderTexture가 아니다(정수배 확대)");
             if (ppc.cropFrame != PixelPerfectCamera.CropFrame.StretchFill) problems.Add("PixelPerfectCamera cropFrame이 StretchFill이 아니다(창 크기와 상관없이 같은 범위)");
+        }
+
+        /// <summary>
+        /// 몬스터 목록(`Core/MonsterCatalog`) — 스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 **같은 에셋**을 보고, 몹 종류마다 데이터가 하나씩 있다(2026-11-05).
+        /// 그림은 박쥐·고블린만 정식이고 나머지는 실행 중 도형이라 그림 유무는 보지 않는다.
+        /// </summary>
+        static void CheckMonsterCatalog(EnemySpawner spawner, Scene persistent, List<string> problems)
+        {
+            var catalog = spawner != null ? spawner.Catalog : null;
+            if (spawner != null && catalog == null) { problems.Add("EnemySpawner의 몬스터 목록(MonsterCatalog)이 비어 있다"); return; }
+            var stage = persistent.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<StageSelectScreen>(true)).FirstOrDefault();
+            if (stage == null) return; // 화면이 없는 건 위 화면 목록 검사가 잡는다
+            if (stage.Catalog == null) problems.Add("스테이지 선택 화면의 몬스터 목록(MonsterCatalog)이 비어 있다");
+            else if (catalog != null && stage.Catalog != catalog) problems.Add("스테이지 선택 화면과 스포너가 서로 다른 몬스터 목록을 본다");
+            if (catalog == null) return;
+            foreach (ChronoSavior.Core.EnemyType t in System.Enum.GetValues(typeof(ChronoSavior.Core.EnemyType)))
+                if (catalog.types.Count(d => d != null && d.type == t) != 1) problems.Add($"몬스터 목록에 {t} 데이터가 하나가 아니다");
+        }
+
+        /// <summary>
+        /// 공용 카메라 Viewport Rect가 **씬 파일에** 화면 전체(0,0,1,1)로 저장돼 있는지. PixelPerfectCamera는 편집기에서 씬을 여는 순간
+        /// 창 크기에 맞춰 위아래를 잘라 낸 값(예: y 0.125, 높이 0.75)을 메모리에 넣는다 — 그 상태로 씬을 저장하면 그 값이 파일에 박혀
+        /// 실제 게임 화면에 검은 띠가 생긴다(2026-11-05 배치 저장에서 실제로 섞여 들어옴). 메모리 값은 열 때마다 바뀌니 파일을 읽는다.
+        /// </summary>
+        static void CheckSavedViewportRect(string scenePath, List<string> problems)
+        {
+            if (string.IsNullOrEmpty(scenePath) || !System.IO.File.Exists(scenePath)) return;
+            var m = System.Text.RegularExpressions.Regex.Match(System.IO.File.ReadAllText(scenePath),
+                @"m_NormalizedViewPortRect:\s*serializedVersion: \d+\s*x: (\S+)\s*y: (\S+)\s*width: (\S+)\s*height: (\S+)");
+            if (!m.Success) { problems.Add("공용 카메라 Viewport Rect를 씬 파일에서 못 찾았다"); return; }
+            if (m.Groups[1].Value != "0" || m.Groups[2].Value != "0" || m.Groups[3].Value != "1" || m.Groups[4].Value != "1")
+                problems.Add($"공용 카메라 Viewport Rect가 씬 파일에 화면 전체로 저장돼 있지 않다(x {m.Groups[1].Value}, y {m.Groups[2].Value}, w {m.Groups[3].Value}, h {m.Groups[4].Value}) — 0,0,1,1로");
         }
 
         static T One<T>(Scene scene, List<string> problems) where T : Component

@@ -41,6 +41,14 @@ public class RunProgressAndRewardsTests
         ProfileService.Replace(new PlayerProfile());
     }
 
+    /// <summary>스포너가 읽을 몬스터 목록 — 메모리에만 만드는 인스턴스(2026-11-05, 예전엔 스포너 필드에 몹 데이터를 직접 넣었다).</summary>
+    static MonsterCatalog CatalogOf(params EnemyData[] types)
+    {
+        var c = ScriptableObject.CreateInstance<MonsterCatalog>();
+        c.types = types;
+        return c;
+    }
+
     [TearDown]
     public void Cleanup()
     {
@@ -184,7 +192,7 @@ public class RunProgressAndRewardsTests
         bigOni.moveSpeed = 0.44f;
         bigOni.knockbackMultiplier = 0.4f;
         bigOni.colliderRadius = 0.87f;
-        spawner.enemyTypes = new[] { bigOni };
+        spawner.Catalog = CatalogOf(bigOni);
 
         InvokeSpawnWave(spawner);
         yield return null;
@@ -318,7 +326,7 @@ public class RunProgressAndRewardsTests
         oni.attackPower = OniBaseDmg;
         oni.moveSpeed = 0.76f;
         oni.colliderRadius = 0.5f;
-        spawner.enemyTypes = new[] { oni };
+        spawner.Catalog = CatalogOf(oni);
 
         InvokeSpawnWave(spawner);
         yield return null;
@@ -357,7 +365,7 @@ public class RunProgressAndRewardsTests
         oni.goldMin = 5;
         oni.goldMax = 10;
         oni.colliderRadius = 0.5f;
-        spawner.enemyTypes = new[] { oni };
+        spawner.Catalog = CatalogOf(oni);
 
         // 한 마리로는 "항상 드랍"과 "75% 확률로 마침 드랍됨"을 구분할 수 없다 — 여러 마리로 본다.
         const int kills = 12;

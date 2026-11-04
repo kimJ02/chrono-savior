@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 628b24eac2886aa4fa556f52929d593e, type: 3}
+  m_Name: MonsterCatalog
+  m_EditorClassIdentifier: 
+  types:
+  - {fileID: 11400000, guid: 0de672eb48bbbea4eb9010912caae054, type: 2}
+  - {fileID: 11400000, guid: 2cd319b691c08844490e6568211802af, type: 2}
+  - {fileID: 11400000, guid: 30af49fe0849e71458740bc526488fe6, type: 2}
+  - {fileID: 11400000, guid: 4505d1fc927864345abbd23d1c69db47, type: 2}
+  - {fileID: 11400000, guid: c472eafd8bbf61342b94faf8c94d6560, type: 2}
+  - {fileID: 11400000, guid: eddf79ee8a67fcc488721c99b2a7f05d, type: 2}
+  - {fileID: 11400000, guid: c92429ff7bede6d409e895315a82fd1f, type: 2}
+  boss: {fileID: 21300000, guid: 692531654aefc5044a24f6e50e868b6b, type: 3}
+  shrine: {fileID: 21300000, guid: 8afb9b204a0f033499fb23fd273abdba, type: 3}

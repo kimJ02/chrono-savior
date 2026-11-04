@@ -18,15 +18,14 @@ namespace ChronoSavior.Tests.PlayMode
 public class PixelUiTests
 {
     PixelCanvas pc;
-    bool hadSave;
-    string saveBackup;
 
     [SetUp]
     public void Setup()
     {
-        // 화면 버튼이 저장까지 부른다 — 진짜 세이브(검증 폴더도 같은 경로)를 SaveServiceTests처럼 지켜 둔다
-        hadSave = File.Exists(SaveService.SavePath);
-        saveBackup = hadSave ? File.ReadAllText(SaveService.SavePath) : null;
+        // 화면 버튼이 저장까지 부른다 — 세이브는 테스트 전체 임시 경로(`TestSaveSandbox`)로 간다. 지난 테스트가 남긴 파일은 지운다.
+        // 안전장치가 안 켜졌으면 지우기 전에 멈춘다(진짜 세이브를 지우지 않게).
+        Assert.AreEqual(TestSaveSandbox.Path, SaveService.SavePath, "테스트 세이브 안전장치(TestSaveSandbox)가 꺼져 있다");
+        if (File.Exists(SaveService.SavePath)) File.Delete(SaveService.SavePath);
         ProfileService.Reset();
         UiModal.Reset();
         GameState.Set(GameScene.Run);
@@ -41,8 +40,7 @@ public class PixelUiTests
             Object.DestroyImmediate(go.gameObject);
         UiModal.Reset();
         GameState.Set(GameScene.Run);
-        if (hadSave) File.WriteAllText(SaveService.SavePath, saveBackup);
-        else if (File.Exists(SaveService.SavePath)) File.Delete(SaveService.SavePath);
+        if (SaveService.SavePath == TestSaveSandbox.Path && File.Exists(SaveService.SavePath)) File.Delete(SaveService.SavePath);
         ProfileService.Reset();
     }
 

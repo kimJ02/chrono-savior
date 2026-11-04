@@ -227,6 +227,15 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (8)** — **[나] 2차 단계 2a-1: 몬스터 목록 에셋 + 테스트 세이브 안전장치 (`feature/data-art`, PlayMode 429/429, 씬 구성 검증 '문제 없음').**
+  **몬스터 목록**: 스포너 씬 필드(`enemyTypes`·`bossSprite`·`shrineSprite`) → Core SO `MonsterCatalog`(`Assets/Data/Enemies/MonsterCatalog.asset`, 씬의 기존 값을 그대로 옮김 —
+  7종·보스·성소 그림). 스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 같은 에셋을 본다 → **스테이지 선택이 더 이상 스포너를 찾지 않는다.**
+  카드 목록(`MonstersOf`)은 스폰표 복사본이 아니라 표시 정책(칸 5개)으로 두고 `UI/StageSelectShowcaseTests`가 '보여 주는 건 실제로 나온다·칸이 남으면 다 보여 준다·순서'로 묶는다.
+  `UI/UiWorldLookupTests`(옮긴 화면의 월드 탐색 금지 — 4단계에서 UI 전체로). 검증기: 두 씬이 같은 카탈로그·종류마다 하나.
+  **테스트 세이브 안전장치**: `Tests/PlayMode/TestSaveSandbox`(NUnit `SetUpFixture`)가 테스트 전체 동안 세이브 경로를 임시 파일로 — `PixelUiTests`가 아직 진짜 세이브를
+  백업·복원하고 있었고 2a는 저장을 부르는 화면 테스트가 늘어서. 안전장치가 꺼져 있으면 지우기 전에 멈춘다.
+  **배치 저장 함정 발견**: 씬을 배치로 열어 저장하면 PixelPerfectCamera가 창 크기에 맞춰 잘라 낸 Viewport Rect(y 0.125·높이 0.75)가 같이 저장돼 실제 화면에 검은 띠가 생길
+  뻔했다 → 되돌리고, 검증기가 **씬 파일의** Viewport Rect가 0,0,1,1인지 본다(메모리 값은 열 때마다 바뀌어서 파일을 읽는다).
 - **2026-11-05 (7)** — **[나] 단계 1 자체 리뷰(사용자 "자세히 확인") — 코드 문제 없음, 문서 정리.** 확인한 것: `timeScale`·`GameState.Set` 대입은 `GameFlow`에만,
   히트스톱 요청 경로(0 이하 무시) 그대로, 시작 순서(날짜·`RunState.Begin` → 필드 → 사냥) 예전과 같음, 부팅 첫 프레임에 담당이 없어 타이틀 정리를 건너뛰는 건 정적 값이 새로 시작해
   무해, 일시정지·로비 복귀·재도전 경로, 새 파일 컴파일 경고 0. **고친 것**: `PROGRESS.md` "지금 상태"가 10/24에 멈춰 있었다(`CombatCore.unity`를 열면 로비부터 —
