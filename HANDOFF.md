@@ -13,7 +13,7 @@
 |---|---|---|
 | 0 | 규칙 정하기(아래) | ✅ 합의 |
 | 1 | 옛 IMGUI 화면 제거(`TitleScreen`·`LobbyScreen`·`GameHud`·`ResultScreen`·`RegressionWindow`·`UiTheme`·`UiTextures`·`Sprites/UI/`·`BuildUiTextures`) | ✅ 씬 분할 1차에 포함 |
-| 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 할 일 |
+| 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 씬 원본과 어긋나던 2곳 ✅(2차 전 보완) / 목록화 할 일 |
 | 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector) 할 일 | 진행 중 |
 | 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 117곳, UI의 월드 탐색) | 할 일 |
 | 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
@@ -73,11 +73,46 @@
 - 에디터 Play: `Editor/PlayFromPersistent`가 어느 씬을 열어 두든 `00_Persistent`부터 시작.
 - 테스트: `Systems/GameBootTests`(실제 씬 부팅·활성 씬·공용 오브젝트 하나씩·카메라 추적·보스 발판·타이틀→로비→사냥→결과).
 
-## 씬 분할 2차 — 할 일
+## 2차 전 보완 (2026-11-05, Codex 판정 '보완 후 착수')
 
-`10_Lobby` 분리(로비 아바타·`CharacterArtSet`·캐릭터 선택은 프로필로·스테이지 선택 그림은 데이터로·카메라 대상 넘기기·StageVisuals 로비 배치) ·
-`CombatDirector` 추출(위 분배표) · 씬 전환(잠금·실패 복구·이전 월드 정지·재도전 재로드) · 에디터 Play에서 열려 있던 씬으로 진입(`SessionState`) ·
-UI의 나머지 월드 탐색 · 로비 timeScale(0→1) 판단 · 테스트(왕복·재도전·중복 없음·히트스톱 만료 timeScale·로드 실패·연속 전환).
+1. ✅ **씬이 원본인데 실행 중에 붙이던 것 제거** — `CameraFollow2D.Awake`가 `PixelPerfectCamera`를 붙이고 값을 덮어써서 씬엔
+   기본값(100PPU·320×180)이 저장돼 있었다 → 씬에 128PPU·960×540·`UpscaleRenderTexture`·`StretchFill`·카메라 크기 2.109375를 저장하고
+   Awake를 지웠다. `PlayerRig.Awake`가 붙이던 `PlayerAfterimages`·`BladeSlashVfx`는 씬의 Player에 배치. 둘 다 `SceneSetupValidator`가 검사하고
+   `GameBootTests`가 실제 씬에서 확인한다. 투사체·이펙트처럼 실행 중에 생겼다 사라지는 것은 정당한 런타임 생성(순위 2에서 목록화).
+2. ✅ **상태 소유권·UI↔월드 데이터 계약(결정만, 구현은 2차 단계에서)** — Codex '보완 2 합의'. 아래 표.
+3. 팀원과 씬 편집 시점 — 사용자: 신경 쓰지 않는다(팀원이 git에서 받아 적용).
+
+### 상태 소유권 (static은 유지 — 쓰기 위치만 좁힌다)
+
+| 상태 | 쓰는 곳(여기서만) | 결정 |
+|---|---|---|
+| `GameState` | `GameFlow`만 `Set` | 그대로 |
+| `RunState` | `Begin`·`MarkOver` = `GameFlow` / `Tick`·`EnterBossField` = `CombatDirector` / 처치·보상 = 그 원인 오브젝트(적·성소·구슬) / 사망 원인 = `PlayerHealth` | 처치·보상을 한곳으로 모으지 않는다(원본도 처치 지점에서 바로 집계) |
+| `ProfileService` | 통째 교체·초기화는 `SaveService`만 | `Current`를 공개 필드 → **읽기 전용 프로퍼티**. '새 원정'은 `GameFlow.StartNewExpedition()`이 맡고 `TitleMenu`는 직접 `Reset()`하지 않는다. 프로필 안쪽 필드(111곳)는 지금 바꾸지 않는다 |
+| `CombatModifiers` | 전투 처리·버프·새 런 초기화 = `CombatDirector` | 그대로 |
+| `RunTransient` | 등록·해제 = 생성물 자신 / `DestroyAll` = `CombatDirector`(런 경계) | 그대로 |
+| `CombatEvents`·`RunEvents` | 발행 = 사건을 일으킨 오브젝트 / 구독 = `CombatDirector` 등 처리부 | `Reset()`은 부팅·테스트에서만 |
+
+### UI ↔ 월드: `WorldView` 하나로
+
+- **UI는 월드를 찾지 않는다**(`FindFirstObjectByType`·`FindObjectsByType`·`FindGameObjectWithTag` 금지). 월드가 `Systems`의 읽기 전용 스냅샷
+  `WorldView`에 값을 채우고 UI는 읽기만 한다 — `CombatDirector`가 포털 상태·보스 체력·미니맵 위치, `LobbyWorld`가 건물 근접 상태.
+- 예외: 카메라 대상은 UI가 아니라서 지금의 `CameraFollow2D.Track/Untrack` 그대로. 캐릭터·스테이지 선택은 월드가 아니라 프로필·정의 데이터를 읽는다(1회차 합의).
+- **월드가 없을 때**(타이틀·씬 전환 중): 월드가 내려갈 때 스냅샷을 비우고, UI는 보스·미니맵·근접 표시를 숨긴다. 탐색으로 되돌아가는 예비 경로는 두지 않는다.
+- 검증: UI 소스에서 위 탐색 함수 금지(소스 훑기 테스트), 등록·해제 뒤 스냅샷 갱신·초기화, 월드 없을 때 UI가 안전한지.
+
+## 씬 분할 2차 — 할 일 (순서 = 커밋 단위, 2026-11-05 Codex와 합의)
+
+1. **`CombatDirector` 추출 — 코드만, 씬은 `20_Combat`에 컴포넌트 하나 추가.** 1회차 분배표대로 GameFlow에서 전투 책임을 떼고, GameFlow 주석을 새 역할로.
+   위 소유권 표의 쓰기 위치를 이때 맞춘다(`RunState.Tick`·`EnterBossField`, `CombatModifiers`, `RunTransient.DestroyAll`). 이벤트 구독·해제 대칭 테스트.
+   `ProfileService.Current` 읽기 전용 + `GameFlow.StartNewExpedition()`도 여기서.
+2. **로비가 전투 월드에 기대는 것 끊기 — 코드·데이터.** 캐릭터 선택은 프로필만(`PlayerRig` 탐색 제거), 스테이지 선택 그림은 `EnemyData`·보스 정의로,
+   `CharacterArtSet` SO, `WorldView` 도입(보스·포털·미니맵·로비 근접). 로비 카메라는 플레이어 대신 **가운데 앵커를 등록**하고
+   `CameraFollow2D`의 `GameState.Lobby` 특례를 없앤다. `LobbyWorld`는 UI 기능(`Px`·`PxArt`)을 써서 World로 못 옮긴다 → `UI/Lobby/`로 자리만 분명히.
+3. **`10_Lobby` 분리 + 씬 전환** — 로비 아바타·StageVisuals 로비 배치·전환(잠금·실패 복구·이전 월드 정지·재도전 재로드)·
+   에디터 Play에서 열려 있던 씬으로 진입(`SessionState`). StageVisuals 배경이 카메라·이전 씬에 남거나 겹치지 않는지 테스트.
+4. **마감** — UI 월드 탐색 잔여분 전수(소스 훑기 테스트로 0곳), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만.
+   테스트: 왕복·재도전·중복 없음·히트스톱 만료 timeScale·로드 실패·연속 전환.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
 
