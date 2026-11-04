@@ -1,4 +1,6 @@
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -11,29 +13,46 @@ namespace ChronoSavior.Tests.PlayMode
 /// <summary>
 /// 세이브/로드 — 원본 `saveMeta`/`loadMeta`(project_test.html:1213·:1216).
 ///
-/// ⚠️ 이 테스트는 **실제 세이브 파일 경로를 쓴다.** 개발자가 플레이하며 쌓은 진행이 날아가지 않게
-/// 시작 시 원본을 백업하고 끝나면 되돌린다. (자동 저장 컴포넌트 `AutoSave`는 씬 빌더만 붙이므로
-/// 테스트가 붙이지 않는 한 실행되지 않는다.)
+/// 개발자의 진짜 세이브를 건드리지 않게 **테스트 전용 경로**(`SaveService.PathOverride`, 실행마다 다른 임시 파일)를 쓴다
+/// (2026-11-05 — 예전엔 진짜 세이브 경로에 쓰고 백업으로 되돌렸는데, 테스트가 중간에 죽으면 진행이 날아갈 수 있었다).
 /// </summary>
 public class SaveServiceTests
 {
-    string backup;
-    bool hadSave;
+    string tempSave;
 
     [SetUp]
     public void Setup()
     {
-        hadSave = SaveService.HasSave;
-        backup = hadSave ? File.ReadAllText(SaveService.SavePath) : null;
+        tempSave = Path.Combine(Path.GetTempPath(), $"ChronoSavior_SaveServiceTests_{System.Guid.NewGuid():N}.json");
+        SaveService.PathOverride = tempSave;
         ProfileService.Reset();
     }
 
     [TearDown]
     public void Teardown()
     {
-        if (hadSave) File.WriteAllText(SaveService.SavePath, backup);
-        else if (SaveService.HasSave) File.Delete(SaveService.SavePath);
+        SaveService.PathOverride = null;
+        try { if (File.Exists(tempSave)) File.Delete(tempSave); } catch (IOException) { }
         ProfileService.Reset();
+    }
+
+    [Test]
+    public void Tests_UseTheTestSavePath_NotTheRealOne() => Assert.AreEqual(tempSave, SaveService.SavePath);
+
+    /// <summary>
+    /// 프로필을 통째로 바꾸는 건 세이브 시스템만 한다(`HANDOFF.md` "상태 소유권", 2026-11-05). `Core.ProfileService`는 `Systems`를 몰라
+    /// 컴파일러로 막을 수 없으니 실행 코드(`Assets/Scripts`)를 훑어 `SaveService.cs` 밖에서 `Replace`·`Reset`을 부르지 않는지 본다.
+    /// **검사 범위**: `ProfileService.Replace(`·`ProfileService.Reset(` 형태의 직접 호출. 이걸 피해 가는 `using static`·별칭은 아예 금지해서 같이 잡는다.
+    /// </summary>
+    [Test]
+    public void OnlySaveService_ReplacesOrResetsTheProfile()
+    {
+        var call = new Regex(@"ProfileService\.(Replace|Reset)\s*\(|using\s+static\s+ChronoSavior\.Core\.ProfileService|=\s*ChronoSavior\.Core\.ProfileService\s*;");
+        var offenders = Directory.GetFiles(Path.Combine(Application.dataPath, "Scripts"), "*.cs", SearchOption.AllDirectories)
+            .Where(f => Path.GetFileName(f) != "SaveService.cs" && Path.GetFileName(f) != "ProfileService.cs")
+            .Where(f => call.IsMatch(File.ReadAllText(f)))
+            .Select(Path.GetFileName).ToArray();
+        CollectionAssert.IsEmpty(offenders, "세이브 시스템 밖에서 프로필을 통째로 바꾼다 — SaveService를 거칠 것");
     }
 
     /// <summary>

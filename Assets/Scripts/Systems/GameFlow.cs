@@ -244,6 +244,16 @@ namespace ChronoSavior.Systems
         /// </summary>
         void HandleBossDefeated() => bossDeadTimer = BossDeadEndDelay;
 
+        /// <summary>
+        /// 타이틀의 "새 원정" — 세이브를 지우고(새 프로필) 로비로. 프로필 교체는 `SaveService`가, 화면 이동은 여기서 한다
+        /// (2026-11-05 — 예전엔 `TitleMenu`가 직접 세이브를 지우고 프로필을 초기화했다).
+        /// </summary>
+        public void StartNewExpedition()
+        {
+            SaveService.DeleteSave();
+            EnterLobby();
+        }
+
         /// <summary>원본 `toLobby()`(:4382).</summary>
         public void EnterLobby()
         {

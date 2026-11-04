@@ -68,7 +68,7 @@ namespace ChronoSavior.Systems
                 JsonUtility.FromJsonOverwrite(json, profile);
                 MigrateLegacyRebirthFields(json, profile);
                 MigrateSharedProgress(json, profile);
-                ProfileService.Current = profile;
+                ProfileService.Replace(profile);
                 return true;
             }
             catch (System.Exception e)
@@ -139,7 +139,10 @@ namespace ChronoSavior.Systems
             public class LegacyStats { public int rpEarned; }
         }
 
-        /// <summary>전체 초기화(원본 로비의 "전체 초기화" 버튼, project_test.html:524).</summary>
+        /// <summary>
+        /// 세이브를 지우고 새 프로필로 — 원본 로비의 "전체 초기화" 버튼(project_test.html:524). 지금은 타이틀의 "새 원정"이
+        /// `GameFlow.StartNewExpedition`을 거쳐 부른다.
+        /// </summary>
         public static void DeleteSave()
         {
             try { if (HasSave) File.Delete(SavePath); }

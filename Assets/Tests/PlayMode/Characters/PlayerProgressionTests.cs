@@ -70,6 +70,30 @@ public class PlayerProgressionTests
         Assert.AreEqual(1, fired, "레벨업했는데 이벤트가 안 왔다");
     }
 
+    /// <summary>
+    /// 프로필이 통째로 바뀐 뒤(타이틀 '새 원정')에도 레벨업하면 최대 체력이 다시 계산된다 — 예전엔 `PlayerHealth`가 처음 프로필에만
+    /// 구독해서 새 프로필의 레벨업을 못 들었다(2026-11-05 발견, `ProfileService.Replaced`로 갈아탄다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator PlayerHealth_HearsLevelUps_AfterTheProfileIsReplaced()
+    {
+        var go = new GameObject("TestPlayerHealth");
+        go.AddComponent<Rigidbody2D>().gravityScale = 0f;
+        go.AddComponent<CircleCollider2D>();
+        var health = go.AddComponent<PlayerHealth>();
+        yield return null;
+
+        ProfileService.Reset(); // 새 원정 — 세이브 삭제와 같은 교체
+        var profile = ProfileService.Current;
+        profile.upgrades.hp = 2; // 최대 체력 = 100 + 2×25 = 150 — 레벨업 때 다시 계산돼야 반영된다(원본도 레벨업 때만, :1850)
+        float before = health.MaxHp;
+        profile.AddExp(PlayerProfile.RequiredExp(1));
+        Assert.AreEqual(PlayerStatCalculator.ComputeMaxHp(profile), health.MaxHp, 1e-4f, "새 프로필의 레벨업으로 최대 체력이 다시 계산된다");
+        Assert.AreNotEqual(before, health.MaxHp, "옛 프로필을 듣고 있으면 그대로다");
+        Assert.AreEqual(health.MaxHp, health.CurrentHp, 1e-4f, "레벨업하면 원본처럼 체력을 채운다(:1850)");
+        Object.Destroy(go);
+    }
+
     // ---- 순수 계산 (골드 강화 비용, project_test.html:731,:1268) ----
 
     [Test]

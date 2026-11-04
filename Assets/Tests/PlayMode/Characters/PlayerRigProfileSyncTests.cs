@@ -49,8 +49,8 @@ public class PlayerRigProfileSyncTests
         yield return null;
         Assert.AreEqual(CharacterId.Mage, rig.Current, "기본 프로필은 마법사다");
 
-        // 세이브를 불러와 프로필이 통째로 바뀐 상황(AutoSave.Load / 새 원정 / 전체 초기화).
-        ProfileService.Current = new PlayerProfile { character = CharacterId.Gunner };
+        // 세이브를 불러와 프로필이 통째로 바뀐 상황(SaveService.Load / 새 원정).
+        ProfileService.Replace(new PlayerProfile { character = CharacterId.Gunner });
         yield return null;
 
         Assert.AreEqual(CharacterId.Gunner, rig.Current, "프로필이 메카닉으로 바뀌었는데 키트가 안 따라갔다");

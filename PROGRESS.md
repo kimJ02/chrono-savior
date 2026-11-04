@@ -126,6 +126,10 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 확인 필요 / 막힌 것
 
+- **[간헐 실패] `BladeSkillTreeTests.Focus_Tier3_TrailHits_EnemyWithinBoostedRadius`**(2026-11-05) — 전체 실행 한 번에서 '3층 궤적 반경 안의 적이 안 맞았다'(체력 38 그대로)로
+  실패, 단독 2회·전체 재실행은 통과. 적을 경계 근처(0.89, 1층 0.84 / 3층 0.942)에 두고 한 프레임 물리 뒤 판정하는 테스트라 프레임 타이밍에 따라 흔들리는 것으로 보인다.
+  섬영 파일(팀원) 쪽 — 또 나면 원인 조사.
+
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
   조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
   조건부 변경, 나머지 5종은 그대로 도형. `Enemies/`는 팀장 담당 영역이라 동작엔 문제없지만 병합 전
@@ -219,6 +223,13 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (4)** — **[나] 씬 분할 2차 단계 0: 세이브 교체 경계 (`feature/profile-boundary`, PlayMode 415/415, Codex "단계 0 통과").** 사용자 "0단계 시작".
+  `ProfileService.Current`를 공개 필드 → 읽기 전용 프로퍼티, 통째 교체는 `Replace`(불러오기)·`Reset`(새 프로필)이고 실행 코드에선 `SaveService`만 부른다
+  (`SaveServiceTests.OnlySaveService_ReplacesOrResetsTheProfile`가 소스를 훑어 검사 — `using static`·별칭 우회도 금지). 타이틀 '새 원정'은
+  `GameFlow.StartNewExpedition()`(세이브 삭제 → 로비)으로 — 화면이 프로필을 직접 초기화하지 않는다.
+  **버그 수정(Codex 리뷰가 짚음)**: `PlayerHealth`가 처음 프로필의 레벨업에만 구독해서 '새 원정' 뒤 그 사냥 중 레벨업해도 최대 체력 재계산·회복이 안 됐다
+  (런을 새로 시작할 땐 `ResetForRun`이 다시 계산해 가려져 있었다) → `ProfileService.Replaced` 이벤트로 새 프로필에 갈아탄다.
+  **테스트 안전**: `SaveServiceTests`가 진짜 세이브 경로에 쓰고 백업으로 되돌리던 방식(테스트가 죽으면 진행 손실 위험) → 테스트 전용 임시 경로.
 - **2026-11-05 (3)** — **[나] 씬 분할 2차 실행 계획 합의(문서만).** 사용자 "2차를 어떻게 진행할지, 지금 방식이 맞는지 Codex와 상의". GameFlow 실제 코드를 읽고 짠
   구체안 → Codex '수정 후 착수'. 정한 것: 단계 0(세이브 교체 경계)을 앞에 떼기, GameFlow→Director는 명시 호출·Director→GameFlow는 `RunEvents.RunEndRequested`,
   보스 격파 지연은 Director, 2단계를 2a(데이터)/2b(연결)로, 타이틀에선 월드를 안 띄움. **지난 합의 수정**: `WorldView`는 값만이 아니라 체력·스킬 칸은 읽기 계약

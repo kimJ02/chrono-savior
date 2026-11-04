@@ -372,6 +372,7 @@ public class OriginalFidelityTests
             ("SpawnProtect",               "Shrine.cs"),
             ("DefaultSpawnProtect",        "EnemySpawnRequestBus.cs"),
             ("WallPlayerDamage",           "RegressionConfig.cs"),
+            ("StartNewExpedition",         "GameFlow.cs"),   // 타이틀 "새 원정"(TitleMenu)이 부른다 — 2026-11-05
         };
 
         var scriptFiles = Directory.GetFiles(

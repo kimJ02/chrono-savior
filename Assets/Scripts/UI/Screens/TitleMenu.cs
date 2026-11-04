@@ -94,12 +94,10 @@ namespace ChronoSavior.UI
             }
         }
 
-        /// <summary>세이브를 지우고 새 프로필로 로비에 들어간다(예전 타이틀과 같다).</summary>
+        /// <summary>세이브를 지우고 새 프로필로 로비에 들어간다 — 흐름은 `GameFlow.StartNewExpedition`이 맡는다(화면은 프로필을 직접 바꾸지 않는다).</summary>
         void StartFresh()
         {
-            SaveService.DeleteSave();
-            ProfileService.Reset();
-            Flow?.EnterLobby();
+            Flow?.StartNewExpedition();
             CharacterSelectScreen.Open(); // 새 원정은 캐릭터부터 고른다(캐릭터 선택창 뼈대의 뒤로가기/선택하기)
         }
 

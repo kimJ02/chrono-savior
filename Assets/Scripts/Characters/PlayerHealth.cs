@@ -55,15 +55,32 @@ namespace ChronoSavior.Characters
             sprite = GetComponent<SpriteRenderer>();
             // 원본은 레벨업 때만 최대체력을 다시 계산하고 풀피로 채운다(project_test.html:1850)
             // — 골드 강화(hp)를 사더라도 다음 레벨업 전까지는 즉시 반영되지 않는, 원본 그대로의
-            // 비직관적 동작이다(임의로 "매 프레임 갱신"으로 바꾸지 말 것).
-            ProfileService.Current.LeveledUp += HandleLeveledUp;
+            // 비직관적 동작이다(임의로 "매 프레임 갱신"으로 바꾸지 말 것). 구독은 아래 OnEnable에서.
         }
 
-        void OnDestroy()
+        /// <summary>지금 레벨업을 듣고 있는 프로필. 프로필이 통째로 바뀌면(새 원정) 새 쪽으로 갈아탄다(<see cref="ProfileService.Replaced"/>).</summary>
+        PlayerProfile listening;
+
+        void OnEnable()
         {
-            // 정적 싱글턴(ProfileService.Current) 구독이라 해제 안 하면 파괴된 오브젝트를 향한
-            // 호출이 남는다 — EnemyHealth 테스트 오염 때 겪은 것과 같은 함정.
-            ProfileService.Current.LeveledUp -= HandleLeveledUp;
+            ProfileService.Replaced += ListenToCurrentProfile;
+            ListenToCurrentProfile();
+        }
+
+        // 정적 이벤트·정적 프로필 구독이라 해제 안 하면 파괴된 오브젝트를 향한 호출이 남는다 — EnemyHealth 테스트 오염 때 겪은 것과 같은 함정.
+        void OnDisable()
+        {
+            ProfileService.Replaced -= ListenToCurrentProfile;
+            if (listening != null) listening.LeveledUp -= HandleLeveledUp;
+            listening = null;
+        }
+
+        void ListenToCurrentProfile()
+        {
+            if (listening == ProfileService.Current) return;
+            if (listening != null) listening.LeveledUp -= HandleLeveledUp;
+            listening = ProfileService.Current;
+            listening.LeveledUp += HandleLeveledUp;
         }
 
         void HandleLeveledUp()

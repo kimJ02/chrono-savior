@@ -38,7 +38,7 @@ public class RunProgressAndRewardsTests
         RunTransient.Reset();
         // 콤보·연쇄는 정적 상태다 — 안 지우면 앞 테스트의 콤보가 뒤 테스트의 골드를 부풀린다.
         CombatModifiers.Reset();
-        ProfileService.Current = new PlayerProfile();
+        ProfileService.Replace(new PlayerProfile());
     }
 
     [TearDown]

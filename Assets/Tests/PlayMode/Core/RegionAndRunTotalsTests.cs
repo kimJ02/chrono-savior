@@ -31,7 +31,7 @@ public class RegionAndRunTotalsTests
         RunProgress.Reset();
         RunTransient.Reset();
         CombatModifiers.Reset();
-        ProfileService.Current = new PlayerProfile();
+        ProfileService.Replace(new PlayerProfile());
     }
 
     // ────────────────────────── 지역 표 ──────────────────────────

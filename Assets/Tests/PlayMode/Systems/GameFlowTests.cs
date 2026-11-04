@@ -57,6 +57,31 @@ public class GameFlowTests
         return go;
     }
 
+    /// <summary>타이틀 "새 원정" — 세이브를 지우고 새 프로필로 로비에(2026-11-05, 예전엔 TitleMenu가 직접 했다). 진짜 세이브는 안 건드린다.</summary>
+    [Test]
+    public void StartNewExpedition_ClearsTheSave_AndEntersTheLobby()
+    {
+        string temp = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ChronoSavior_GameFlowTests_{System.Guid.NewGuid():N}.json");
+        SaveService.PathOverride = temp;
+        try
+        {
+            ProfileService.Current.gold = 777;
+            Assert.IsTrue(SaveService.Save());
+            var flow = NewController();
+
+            flow.StartNewExpedition();
+
+            Assert.IsFalse(SaveService.HasSave, "세이브가 지워진다");
+            Assert.AreEqual(0, ProfileService.Current.gold, "새 프로필");
+            Assert.AreEqual(GameScene.Lobby, GameState.Current);
+        }
+        finally
+        {
+            SaveService.PathOverride = null;
+            if (System.IO.File.Exists(temp)) System.IO.File.Delete(temp);
+        }
+    }
+
     // ────────────────────────── 시작 ──────────────────────────
 
     /// <summary>
