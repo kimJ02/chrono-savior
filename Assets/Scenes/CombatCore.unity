@@ -1208,8 +1208,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   defaultRegion: 1
-  hitstopOnHit: 0.045
-  hitstopOnKill: 0.085
 --- !u!114 &425462015
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3924,9 +3922,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   characterSprites:
-  - {fileID: 21300000, guid: 2053494037d9d4d4e859e01bb67eedbc, type: 3}
-  - {fileID: 21300000, guid: e5e0d1857542de44994f14ffdd92f737, type: 3}
-  - {fileID: 21300000, guid: 1cb25263493668746a9c1e2f282ecaa5, type: 3}
+  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
+  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
+  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
   - {fileID: 21300000, guid: 85c30a33e9abc8e4d8978e9de4be3d22, type: 3}
   characterColors:
   - {r: 1, g: 1, b: 1, a: 1}
