@@ -225,6 +225,10 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   (세이브 폴더가 `LocalLow/PigeonHelicopter/Chrono Savior/`로 바뀜 — 이 PC의 기존 세이브는 복사해 둠). 저장소 `kimJ02/yokai_unity` → `kimJ02/chrono-savior`.
   **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(멧돼지 등)·업적 '몬스터 학살'은 그대로(사용자 확인 필요).
   **팀원 주의**: 내일 받을 때 `using YokaiFront…` 가 남은 작업 중 파일이 있으면 `ChronoSavior`로 바꿔야 컴파일된다.
+- **2026-11-04 (5)** — **[나] 전투 HUD 버프 줄 (`feature/hud-buff-line`, PlayMode 408/408).** 사용자 "버프 표시줄 추가". 원본 `#buffs`(:495, 색 #8ef0c8)처럼
+  상태창 바로 아래(Figma엔 자리 없음 — 임시 위치 `CombatHud.BuffBox`). 문구는 원본 `buffTxt`(:6283~6318) 순서·조건 그대로(`CombatHud.BuffLine`) —
+  피해 배율(>1.01)·살기·성소 가호·성소 경고·회귀 부족·캐릭터별(마법사 차지율, 메카닉 충전·부품·설치기·링크). 원본 기호(⚔·殺·⛩·⚠)는 도트 글꼴에 없어 글자로.
+  **확인 필요(팀원)**: 섬영은 아직 `BuffText`가 없어 원본의 속도·피해 배율·집중·궤적·칼날폭풍 줄이 안 나온다(`BladeCombat`이 `ISkillSlotSource.BuffText`를 구현하면 자동으로 뜬다).
 - **2026-11-04 (4)** — **[나] 씬 분할 1차 (`main`, PlayMode 407/407).** 사용자 "처음부터 깔끔한 구조, 교수님이 보기에 완벽하게" — Codex와 4차례 검토·3차례 구현 리뷰 끝에 '통과'.
   씬 `CombatCore` 하나 → `00_Persistent`(GameBoot·GameFlow·AutoSave·UI 판 PixelUI·EventSystem·공용 카메라·Audio) + `20_Combat`(월드, 옛 CombatCore GUID 유지). `SampleScene` 삭제.
   `RunController` → `GameFlow`(이름만), `GameBoot` 신설(세이브 로드 → 월드 로드 → 활성 씬), 옛 IMGUI 7파일·`Sprites/UI`·`BuildUiTextures`·`BuildPartAScene` 삭제,
@@ -233,7 +237,6 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   **버그 2개 수정**: ① 보스 발판 세트가 꺼진 채 저장돼 보스 무대에 발판이 안 나왔다(9/10부터) → 켠 채 저장 + `PlatformSet.Awake`가 무대를 따름.
   ② 시간이 멈춘 화면에서 카메라가 목표에 정확히 서 있으면 `SmoothDamp`가 NaN → dt>0일 때만. 새 테스트 `GameBootTests`(실제 씬 부팅, 테스트 전용 세이브 경로).
   **팀원 주의**: `RunController`가 `GameFlow`로 바뀌었다. 씬은 이제 손으로 고치는 게 원본 — 고친 뒤 '씬 구성 검증'. 계획·2차 할 일은 `HANDOFF.md`.
-  **확인 필요**: 새 전투 HUD엔 버프 줄(`BuffText`)이 없다(옛 IMGUI HUD엔 있었지만 이미 안 그리던 화면) — 넣을지 결정.
 - **2026-11-04 (3)** — **[나] 지역 이름도 컨셉에 맞게 (`main`).** 사용자 "지역 이름도 바꾸자". 1 대나무 숲→푸른 초원, 2 버려진 신사→버려진 마을,
   4 홍등 거리→고블린 소굴, 8 저승 문턱→망자의 묘지, 9 백귀야행→마왕성(3·5·6·7 안개 골짜기·폐허 성곽·설산 고개·화염 동굴은 그대로).
   업적 '숲의 수호자'→'초원의 수호자', '백귀야행 종결'→'마왕 토벌'.

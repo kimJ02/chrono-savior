@@ -134,9 +134,10 @@ public class PixelUiTests
         Assert.IsFalse(hud.BossBarShown, "보스가 없으면 보스 체력바 없음");
         Assert.AreEqual(FieldLayout.Platforms.GetLength(0) + 1, hud.MinimapLineCount, "미니맵 = 발판마다 한 줄 + 땅");
 
-        hud.Preview = new CombatHud.PreviewState { Hp = 0f, MaxHp = 100f, Combo = 12, BossRatio = 0.3f };
+        hud.Preview = new CombatHud.PreviewState { Hp = 0f, MaxHp = 100f, Combo = 12, BossRatio = 0.3f, Buffs = "살기 x3  차지 50%" };
         yield return null;
         Assert.AreEqual(66f / 192f, hud.HpFillAmount, 1e-4f, "체력 0이면 빨간 칸이 하나도 안 남는다");
+        Assert.AreEqual("살기 x3  차지 50%", hud.BuffsLabel, "버프 줄(원본 #buffs)이 상태창 아래에 뜬다");
         Assert.IsTrue(hud.ComboShown);
         Assert.IsTrue(hud.BossBarShown);
 
@@ -240,6 +241,20 @@ public class PixelUiTests
             Assert.IsTrue(s.texture.isReadable, path + " — 버튼 상태 그림을 만들려면 읽을 수 있어야 한다");
         }
         Assert.AreEqual(new Vector2(640f, 128f), PxArt.Get("Pause/band").rect.size, "Figma 원본 크기 그대로");
+    }
+
+    /// <summary>버프 줄 문구 — 원본 `buffTxt`(:6283~)와 같은 조건: 아무 것도 안 걸려 있으면 빈 줄, 피해 배율은 1.01 넘을 때만.</summary>
+    [Test]
+    public void BuffLine_FollowsOriginalConditions()
+    {
+        CombatModifiers.Reset();
+        RunState.Reset();
+        Assert.AreEqual("", CombatHud.BuffLine(null), "걸린 게 없으면 빈 줄(원본도 빈 문자열)");
+        CombatModifiers.GrantShrineBuff(5f);
+        string line = CombatHud.BuffLine(null);
+        StringAssert.Contains("성소의 가호", line, "성소 버프가 걸리면 남은 초를 보여 준다");
+        StringAssert.Contains("피해 ×", line, "성소 버프는 피해 배율을 올리므로 배율도 뜬다");
+        CombatModifiers.Reset();
     }
 }
 

@@ -54,6 +54,8 @@ namespace ChronoSavior.UI
         static readonly Rect BossBar = new Rect(39f, 143f, 560f, 16f);   // 281:8 "보스 체력바 2"
         static readonly Rect BossFill = new Rect(4f, 4f, 552f, 8f);      // 막대 그림의 빈 안쪽(그림 픽셀)
         static readonly Rect PortalBox = new Rect(120f, 286f, 400f, 12f); // Figma에 없음(임시)
+        static readonly Rect BuffBox = new Rect(6f, 73f, 480f, 12f);     // Figma에 없음(임시) — 원본 `#buffs`처럼 상태창 바로 아래
+        static readonly Color BuffColor = new Color32(0x8e, 0xf0, 0xc8, 0xff); // 원본 `#buffs { color:#8ef0c8 }`(:38)
         static readonly Rect ExpBar = new Rect(0f, 356f, 640f, 4f);      // 124:5 1920×10 → 640판 4px(테두리 1 + 채움 2)
 
         // ── 색 ──
@@ -87,6 +89,7 @@ namespace ChronoSavior.UI
         public float HpFillAmount => hpFill != null ? hpFill.fillAmount : 0f;
         public string HpLabel => hpText != null ? hpText.text : "";
         public string TimerLabel => timer != null ? timer.text : "";
+        public string BuffsLabel => buffs != null ? buffs.text : "";
         public float ExpFillWidth => expFill != null ? ((RectTransform)expFill.transform).sizeDelta.x : 0f;
         public bool ComboShown => comboNum != null && comboNum.enabled;
         public bool BossBarShown => bossRoot != null && bossRoot.gameObject.activeSelf;
@@ -101,10 +104,12 @@ namespace ChronoSavior.UI
             public Vector2[] Enemies;
             public float? BossRatio;
             public bool PortalInRange, PortalUnlocked;
+            /// <summary>버프 줄(원본 `#buffs`) — null이면 빈 줄.</summary>
+            public string Buffs;
         }
 
         Image hpFill, flash;
-        Text hpText, timer, kills, comboLabel, comboNum, portal;
+        Text hpText, timer, kills, comboLabel, comboNum, portal, buffs;
         PxTextGradient timerGradient;
         Image portrait;
         RectTransform bossRoot;
@@ -177,6 +182,8 @@ namespace ChronoSavior.UI
             timerGradient = Number(timer);
             kills = Px.Text(Content, "Kills", "", KillsBox.x, KillsBox.y, KillsBox.width, KillsBox.height, 8, Color.white)
                       .WithOutline(Px.Ink);
+            buffs = Px.Text(Content, "Buffs", "", BuffBox.x, BuffBox.y, BuffBox.width, BuffBox.height, 8, BuffColor, TextAnchor.MiddleLeft)
+                      .WithOutline(Px.Ink); // 원본 `text-shadow:0 1px 2px #000`
             comboLabel = Px.Text(Content, "ComboLabel", "COMBO", ComboLabel.x, ComboLabel.y, ComboLabel.width,
                                  ComboLabel.height, 24, Color.white);
             Number(comboLabel);
@@ -262,6 +269,7 @@ namespace ChronoSavior.UI
             }
 
             kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : "보스전";
+            buffs.text = v.Buffs ?? "";
 
             bool combo = v.Combo > 0; // 원본: 0이면 숨김(:1633)
             comboLabel.enabled = comboNum.enabled = combo;
@@ -291,6 +299,27 @@ namespace ChronoSavior.UI
             if (flash.color != fc) flash.color = fc;
         }
 
+        /// <summary>
+        /// 버프 줄 — 원본 `buffTxt`(project_test.html:6283~6318)와 같은 순서·같은 조건. 원본 기호(⚔·殺·⛩·⚠)는 도트 글꼴에 없어
+        /// 글자로 바꿨다. 캐릭터별 몫(마법사 차지율, 메카닉 충전·부품 등)은 키트가 만든다(<see cref="ISkillSlotSource.BuffText"/>).
+        /// 2026-11-04 옛 IMGUI HUD를 지우면서 새 HUD에 다시 붙였다(사용자 "버프 표시줄 추가").
+        /// </summary>
+        public static string BuffLine(ISkillSlotSource kit)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            float dm = CombatModifiers.DamageMultiplier;
+            if (dm > 1.01f) parts.Add($"피해 ×{dm:0.00}");                                   // :6284
+            if (RunState.Fury > 0) parts.Add($"살기 x{RunState.Fury}");                       // :6285
+            if (CombatModifiers.ShrineBuffLeft > 0f)
+                parts.Add($"성소의 가호 {Mathf.CeilToInt(CombatModifiers.ShrineBuffLeft)}초");  // :6286
+            if (CombatModifiers.ShrineActive) parts.Add("! 몬스터들이 성소의 힘을 받는 중!");   // :6287
+            int gap = RegressionConfig.Gap(RunState.Region, ProfileService.Current.regressions);
+            if (gap > 0) parts.Add($"! 회귀 부족 {gap}회");                                   // :6288~6289
+            string own = kit?.BuffText;
+            if (!string.IsNullOrWhiteSpace(own)) parts.Add(own.Trim());                       // :6290~6317
+            return string.Join("  ", parts);
+        }
+
         PreviewState Live()
         {
             FindPlayer();
@@ -308,6 +337,7 @@ namespace ChronoSavior.UI
                 Attack = src != null ? src.AttackSlot : default,
                 Skill = src != null ? src.SkillSlot : default,
                 Player = player != null ? (Vector2)player.position : Vector2.zero,
+                Buffs = BuffLine(src),
             };
             if (RunState.Mode == RunMode.Normal)
             {
