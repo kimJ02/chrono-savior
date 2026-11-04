@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 using ChronoSavior.Combat;
 using ChronoSavior.Core;
@@ -65,7 +66,7 @@ namespace ChronoSavior.Characters
     /// **상시 적용**(티어 무관 — 그래서 0차에도 있다): 속도→피해 배수(`bladeDmgMult`)와 방향키
     /// 피격무적(`bladeDirInvuln`) — 원본이 조건절에 티어 체크를 안 넣은 것만 확인하고 그대로 옮겼다.
     /// </summary>
-    public class BladeCombat : MonoBehaviour, ICharacterKit, IRunResettable
+    public class BladeCombat : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSlotSource
     {
         [Header("원본 CONFIG.blade.spin 그대로 (거리는 100px=1유닛, project_test.html:624)")]
         [Tooltip("표시용 현재 쿨다운. 매 프레임 SpinCd ÷ 공격속도 배수로 다시 계산된다.")]
@@ -229,6 +230,43 @@ namespace ChronoSavior.Characters
         }
 
         public void OnDeselected() { }
+
+        // ---- HUD 스킬 슬롯·버프 줄 (원본 syncHUD :6293~:6301, :6322, :6341~:6345) ----
+
+        /// <summary>
+        /// Z 칸 — 원본 `clamp(p.atkCds.blade / CONFIG.blade.spin.cd, 0, 1)`(:6322). 원본은 분모가 공격속도로 줄어든
+        /// 쿨다운이 아니라 **기본 쿨다운(0.13초) 고정**이라, 그대로 옮긴다.
+        /// </summary>
+        public SkillSlotState AttackSlot => SkillSlotState.Cooldown(cdTimer, SpinCd);
+
+        /// <summary>
+        /// X 칸 — 원본은 갈래가 칼날폭풍(`conv`)이면 `p.stormCd / S.cd`, 아니면 `p.focusCd / F.cd`(:6341~:6345).
+        /// 갈래가 없을 때도 원본처럼 집중 쪽을 읽는다(그땐 0이라 빈 칸).
+        /// </summary>
+        public SkillSlotState SkillSlot => ProfileService.Current.bladeBranch == BladeBranch.Storm
+            ? SkillSlotState.Cooldown(stormCd, StormCd)
+            : SkillSlotState.Cooldown(focusCd, FocusCd);
+
+        /// <summary>
+        /// 원본 버프 줄의 섬영 몫(:6293~:6301) — 속도·피해 배수, 초과 이속, 최고 속도, 집중·궤적 남은 초, 칼날폭풍·연행 수.
+        /// 원본 앞 글자 '⚡'·'🕛'·'✂️'·'🌪️'는 뺐다 — 픽셀 글꼴(DNF Bit Bit)에 없어 네모로 뜬다(마법사·HUD 공용 줄과 같은 관례).
+        /// '×'·'·'·'→'·'【】'는 글꼴에 있어서 원본 그대로 쓴다.
+        /// </summary>
+        public string BuffText
+        {
+            get
+            {
+                var ci = CultureInfo.InvariantCulture;
+                float ratio = CurrentSpeedRatio();
+                string s = "속도 " + Mathf.RoundToInt(ratio * 100f) + "% · 피해 ×" + SpeedDamageMultiplier(ratio).ToString("0.00", ci);
+                if (msSurplus > 0.005f) s += " (초과 이속 +" + Mathf.RoundToInt(msSurplus * 100f) + "% → 화력)";
+                if (ratio >= TopAtRatio) s += " 【최고 속도】";
+                if (focusT > 0f) s += "  집중 " + focusT.ToString("0.0", ci) + "초";
+                if (trailT > 0f) s += "  궤적 " + trailT.ToString("0.0", ci) + "초";
+                if (storming) s += "  칼날폭풍" + (stormGrab.Count > 0 ? " · 연행 " + stormGrab.Count : "");
+                return s;
+            }
+        }
 
         /// <summary>새 사냥 시작 시 쿨다운/스킬 상태 초기화 — 원본 `resetPlayerForRun()`의 `p.atkCds`·
         /// `p.focusT`·`p.storm` 등(:1516 언저리, 런 전환 시 전부 비운다).</summary>

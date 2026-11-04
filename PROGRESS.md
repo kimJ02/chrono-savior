@@ -219,6 +219,11 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-04 (6)** — **[나] 섬영 HUD 칸·버프 줄 (`feature/blade-hud`, PlayMode 409/409).** 사용자 "섬영도 내가 작업할 때는 고쳐줘, 지금해" — 팀원 파일 `BladeCombat`에
+  `ISkillSlotSource`를 붙였다(지금까지 섬영만 Z·X 칸이 비고 버프 줄 캐릭터 몫이 없었다). Z = `cdTimer / spin.cd(0.13)` — 원본 분모는 공격속도로 줄어든 값이
+  아니라 기본 쿨다운 고정(:6322). X = 칼날폭풍 갈래면 `stormCd/8`, 아니면 `focusCd/11`(:6341~6345, 갈래 없음도 원본처럼 집중 쪽 = 빈 칸).
+  버프 줄 = 원본 :6293~6301 순서·조건 그대로(속도 %·피해 ×·초과 이속 → 화력·【최고 속도】·집중/궤적 남은 초·칼날폭풍·연행 수). 원본 기호 ⚡🕛✂️🌪️는
+  도트 글꼴에 없어 뺐고 ×·→·【】는 글꼴에 있어 그대로. 테스트 `SkillSlotTests.Blade_SlotsAndBuffLine_FollowOriginal`, HUD 사용처 검사에 `.BuffText` 추가.
 - **2026-11-04** — **[나] 게임 이름 변경: 요괴전선 → Chrono Savior (`chore/rename-chrono-savior`).** 사용자 "컨셉이 바뀌었으니 yokai 이름 전부 바꿔, 팀원 파일 포함 지금 바로".
   네임스페이스·asmdef `YokaiFront.*` → `ChronoSavior.*`(asmdef 8개 파일 이름까지), 에디터 메뉴 `YokaiFront/` → `ChronoSavior/`, 셰이더 이름 `ChronoSavior/SpriteFlash`,
   게임 문구 '요괴' → '몬스터'(업적·아이템 '몬스터 유인향'·결과 화면 등), 제품명 `My project` → `Chrono Savior`·회사명 `DefaultCompany` → `PigeonHelicopter`
@@ -228,7 +233,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 - **2026-11-04 (5)** — **[나] 전투 HUD 버프 줄 (`feature/hud-buff-line`, PlayMode 408/408).** 사용자 "버프 표시줄 추가". 원본 `#buffs`(:495, 색 #8ef0c8)처럼
   상태창 바로 아래(Figma엔 자리 없음 — 임시 위치 `CombatHud.BuffBox`). 문구는 원본 `buffTxt`(:6283~6318) 순서·조건 그대로(`CombatHud.BuffLine`) —
   피해 배율(>1.01)·살기·성소 가호·성소 경고·회귀 부족·캐릭터별(마법사 차지율, 메카닉 충전·부품·설치기·링크). 원본 기호(⚔·殺·⛩·⚠)는 도트 글꼴에 없어 글자로.
-  **확인 필요(팀원)**: 섬영은 아직 `BuffText`가 없어 원본의 속도·피해 배율·집중·궤적·칼날폭풍 줄이 안 나온다(`BladeCombat`이 `ISkillSlotSource.BuffText`를 구현하면 자동으로 뜬다).
+  ~~확인 필요(팀원): 섬영은 아직 `BuffText`가 없다~~ → ✅ 로그 11-04 (6)에서 붙임.
 - **2026-11-04 (4)** — **[나] 씬 분할 1차 (`main`, PlayMode 407/407).** 사용자 "처음부터 깔끔한 구조, 교수님이 보기에 완벽하게" — Codex와 4차례 검토·3차례 구현 리뷰 끝에 '통과'.
   씬 `CombatCore` 하나 → `00_Persistent`(GameBoot·GameFlow·AutoSave·UI 판 PixelUI·EventSystem·공용 카메라·Audio) + `20_Combat`(월드, 옛 CombatCore GUID 유지). `SampleScene` 삭제.
   `RunController` → `GameFlow`(이름만), `GameBoot` 신설(세이브 로드 → 월드 로드 → 활성 씬), 옛 IMGUI 7파일·`Sprites/UI`·`BuildUiTextures`·`BuildPartAScene` 삭제,

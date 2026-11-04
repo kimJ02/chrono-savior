@@ -23,7 +23,7 @@ public class SkillSlotTests
     static readonly string[] SpawnedNames =
     {
         "TestGunner", "TestMage", "TestPlayer", "GunnerBullet", "GunnerDrone", "GunnerTurret", "GunnerBeam",
-        "GunnerFieldLinks",
+        "GunnerFieldLinks", "TestBlade",
     };
 
     [SetUp]
@@ -210,6 +210,57 @@ public class SkillSlotTests
         Assert.AreEqual("폭발탄 · 불길 이동", mage.BuffText, "원본 버프 줄 — 폭발 빌드 표시(:6292)");
     }
 
+    // ───────────────────────── 섬영 ─────────────────────────
+
+    static void SetField(object obj, string name, object value)
+    {
+        var f = obj.GetType().GetField(name, BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.IsNotNull(f, name + " 필드가 없다");
+        f.SetValue(obj, value);
+    }
+
+    /// <summary>
+    /// 섬영 Z·X 칸과 버프 줄 — 원본 syncHUD(:6293~:6301, :6322, :6341~:6345). 프레임을 넘기지 않고 같은 프레임에 읽는다
+    /// (Update가 타이머를 깎고 초과 이속을 다시 계산하므로).
+    /// </summary>
+    [Test]
+    public void Blade_SlotsAndBuffLine_FollowOriginal()
+    {
+        var go = new GameObject("TestBlade");
+        go.AddComponent<CircleCollider2D>().radius = 0.5f;
+        go.AddComponent<Rigidbody2D>().gravityScale = 0f;
+        go.AddComponent<CharacterMover2D>();
+        var blade = go.AddComponent<BladeCombat>();
+        Assert.IsTrue(blade is ISkillSlotSource, "섬영 키트가 슬롯 상태를 안 내준다 — HUD 칸·버프 줄이 빈다");
+
+        // Z — 원본 분모는 기본 쿨다운 CONFIG.blade.spin.cd(0.13) 고정(:6322).
+        SetField(blade, "cdTimer", 0.065f);
+        Assert.AreEqual(0.5f, blade.AttackSlot.Fraction, 1e-4f);
+        Assert.AreEqual(0.065f, blade.AttackSlot.Remaining, 1e-4f);
+
+        // X — 갈래가 없거나 집중이면 focusCd/11, 칼날폭풍이면 stormCd/8(:6341~:6345).
+        SetField(blade, "focusCd", 5.5f);
+        SetField(blade, "stormCd", 2f);
+        Assert.AreEqual(0.5f, blade.SkillSlot.Fraction, 1e-4f, "갈래 없음 — 원본처럼 집중 쿨다운을 읽는다");
+        ProfileService.Current.bladeBranch = BladeBranch.Focus;
+        Assert.AreEqual(5.5f, blade.SkillSlot.Remaining, 1e-4f);
+        ProfileService.Current.bladeBranch = BladeBranch.Storm;
+        Assert.AreEqual(0.25f, blade.SkillSlot.Fraction, 1e-4f, "칼날폭풍 갈래는 stormCd / S.cd(8)");
+        Assert.IsFalse(blade.SkillSlot.HasStack, "섬영 X 칸엔 스택 글자가 없다");
+
+        // 버프 줄 — 멈춰 있으면 속도 0%·피해 ×1.00만.
+        Assert.AreEqual("속도 0% · 피해 ×1.00", blade.BuffText);
+
+        // 칼날폭풍 중 최고 속도 + 초과 이속 + 집중·궤적 — 피해 = 1 + 1×(1.4 + 0.2×1.4) = 2.68(bladeDmgMult :2439).
+        SetField(blade, "storming", true);
+        SetField(blade, "stormSpeedRatio", 1f);
+        SetField(blade, "msSurplus", 0.2f);
+        SetField(blade, "focusT", 1.5f);
+        SetField(blade, "trailT", 2f);
+        Assert.AreEqual("속도 100% · 피해 ×2.68 (초과 이속 +20% → 화력) 【최고 속도】  집중 1.5초  궤적 2.0초  칼날폭풍",
+                        blade.BuffText);
+    }
+
     // ───────────────────────── HUD가 읽는 경로 ─────────────────────────
 
     /// <summary>HUD는 <see cref="PlayerRig.CurrentKit"/>에서 슬롯을 읽는다 — 캐릭터를 바꾸면 그 키트로 따라가야 한다.</summary>
@@ -239,13 +290,13 @@ public class SkillSlotTests
     /// 전투 HUD(`UI/Screens/CombatHud`, Figma)가 이 값들을 **실제로 읽는지** — `docs/worksplit.md` "단골 함정 2"
     /// (정의만 하고 호출부를 안 만드는 실수)를 `OriginalFidelityTests.DefinedApis_AreActuallyCalledSomewhere`와 같은
     /// 방식(소스를 직접 훑기)으로 막는다. 예전엔 옛 IMGUI HUD(`GameHud`)를 검사했는데 2026-11-04 그 화면을 지웠다
-    /// (새 HUD가 그리고 있어 이미 아무것도 안 그리던 코드). 버프 줄(`BuffText`)은 새 HUD에 아직 없다 — PROGRESS.md 확인 필요.
+    /// (새 HUD가 그리고 있어 이미 아무것도 안 그리던 코드). 버프 줄(`BuffText`)도 같이 본다(2026-11-04 추가).
     /// </summary>
     [Test]
     public void CombatHud_DrawsSlotsFromTheCurrentKit()
     {
         string hud = File.ReadAllText(Path.Combine(Application.dataPath, "Scripts", "UI", "Screens", "CombatHud.cs"));
-        foreach (var use in new[] { @"CurrentKit as ISkillSlotSource\b", @"\.AttackSlot\b", @"\.SkillSlot\b" })
+        foreach (var use in new[] { @"CurrentKit as ISkillSlotSource\b", @"\.AttackSlot\b", @"\.SkillSlot\b", @"\.BuffText\b" })
             Assert.IsTrue(Regex.IsMatch(hud, use), $"CombatHud가 `{use}`를 안 쓴다 — 슬롯이 화면에 안 뜬다");
     }
 }
