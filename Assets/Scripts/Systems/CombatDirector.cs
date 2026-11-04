@@ -158,6 +158,8 @@ namespace ChronoSavior.Systems
 
         /// <summary>
         /// 보스 격파. 원본은 **1.6초 뒤에** 런을 끝낸다(`:4289`) — 즉사 연출과 보상 표시를 볼 시간을 준다.
+        /// **의도적 편차(사용자 2026-11-05 "지금대로")**: 원본은 실제 시간으로 재서(`setTimeout`) 그 순간 일시정지 중이면 런을 아예 안 끝내고,
+        /// 대기 중에도 런 시간이 흘러 시간 초과가 먼저 날 수 있다. 우리는 사냥 중일 때만 재고(일시정지 동안 멈췄다 이어 감) 대기 중엔 런 시간을 안 흘린다.
         /// **보스 격파 → 런 종료 예약은 이 한 곳뿐이다**(<see cref="HandleEnemyKilled"/> 주석 참고).
         /// </summary>
         void HandleBossDefeated() => bossDeadTimer = BossDeadEndDelay;

@@ -126,6 +126,12 @@
 0. **세이브 교체 경계** — `ProfileService.Current`를 읽기 전용 프로퍼티로, 통째 교체 `Replace(PlayerProfile)`는 `SaveService`만. '새 원정'은
    `GameFlow.StartNewExpedition()`이 흐름을 맡고 `SaveService`의 새 프로필 기능을 부른다(`TitleMenu`의 직접 `Reset()` 제거). 프로필 안쪽 필드 111곳은 손대지 않는다.
 1. ✅ **`CombatDirector` 추출(코드 + `20_Combat`에 오브젝트 하나)** — 2026-11-05, 로그 11-05 (6)
+
+   > **의도적 편차 — 보스 격파 뒤 1.6초 대기(사용자 2026-11-05 "지금대로").** 원본(:4289 `setTimeout(() => { if (state.scene === 'run') endRun('bossdead'); }, 1600)`)은
+   > 실제 시간으로 재서 ① 그 순간 일시정지 중이면 런을 아예 안 끝내고 ② 대기 중에도 런 시간이 흘러 시간 초과가 먼저 날 수 있다. 우리는 ① 사냥 중일 때만 재고
+   > (일시정지 동안 멈췄다 이어 감) ② 대기 중엔 런 시간을 안 흘린다 — 보스를 잡았는데 시간 초과나 '안 끝남'으로 뒤집히지 않게.
+   > 반대로 **처치 멈춤(0.25초)이 대기 중에 풀리는 건 원본대로**(단계 1에서 바로잡음 — 예전엔 결과 화면까지 1.6초 내내 멈춰 있었다).
+
    - 연결: **`GameFlow` → Director는 명시 호출**(Director가 `CombatDirector.Current`로 등록, `BeginField(mode)`·`ClearField()`), **Director → `GameFlow`는 이벤트**
      (`RunEvents.RunEndRequested(RunEndReason)` 추가 — 새 버스를 만들지 않는다. 히트스톱은 기존 `CombatEvents.RequestHitstop`). 한 방향만 직접 안다.
    - Director: `RunState.Tick`·`CombatModifiers.Tick`·`HitFeel.TickRedFlash`, 보스 격파 지연(멈춘 시간 1.6초, 그동안 Tick 안 함)→종료 요청, 사망·타임아웃→종료 요청,
