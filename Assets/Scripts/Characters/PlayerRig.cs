@@ -10,6 +10,10 @@ namespace ChronoSavior.Characters
     /// 대응한다 — 원본은 함수 분기지만 Unity는 컴포넌트마다 `Update()`가 따로 도니, 안 쓰는 키트를
     /// 꺼주지 않으면 네 캐릭터가 동시에 공격하게 된다.
     ///
+    /// **캐릭터를 바꾸는 길은 하나 — 세이브의 `PlayerProfile.character`다**(2026-11-05 2a). 로비 캐릭터 선택은 그 값만 바꾸고 저장하며,
+    /// 이 컴포넌트가 <see cref="Update"/>에서 따라간다. 예전엔 로비 화면이 씬에서 이 컴포넌트를 찾아 직접 `Select`했다 — 로비가 전투 씬과
+    /// 떨어지면 못 찾고, 길이 둘이라 프로필과 키트가 어긋날 수 있었다.
+    ///
     /// 전환 시 하는 일:
     /// 1. 이전 키트 `OnDeselected()` → 비활성화
     /// 2. `PlayerProfile.character` 갱신(파생 스탯의 캐릭터 배수가 이 값을 본다)
@@ -25,14 +29,6 @@ namespace ChronoSavior.Characters
         /// <summary>지금 선택된 캐릭터. 초기값은 원본 `defaultMeta().character`(:1134)와 같은 마법사.</summary>
         public CharacterId Current { get; private set; } = CharacterId.Mage;
 
-        /// <summary>이 오브젝트에 실제로 붙어 있는 키트들. 없는 캐릭터는 전환이 거부된다.</summary>
-        public IEnumerable<CharacterId> AvailableCharacters
-        {
-            get
-            {
-                foreach (var kit in kits) yield return kit.Character;
-            }
-        }
 
         [Header("캐릭터 그림")]
         [Tooltip("캐릭터별 그림·덧칠 색(Assets/Data/Characters/CharacterArtSet.asset). 로비 아바타·에디터 도구도 같은 에셋을 본다. " +
@@ -84,7 +80,7 @@ namespace ChronoSavior.Characters
             }
         }
 
-        public bool HasKit(CharacterId id)
+        bool HasKit(CharacterId id)
         {
             foreach (var kit in kits)
                 if (kit.Character == id) return true;
@@ -92,26 +88,8 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>
-        /// 캐릭터를 바꾼다. 해당 키트가 이 오브젝트에 없으면 아무것도 안 하고 false를 돌려준다
-        /// (아직 구현 안 된 캐릭터로 전환을 시도하는 경우 — 0차 단계에선 정상 상황이다).
-        /// </summary>
-        public bool Select(CharacterId id)
-        {
-            if (!HasKit(id)) return false;
-            if (id == Current && Application.isPlaying)
-            {
-                // 키트는 이미 이 캐릭터지만 **프로필이 다른 캐릭터를 가리킬 수 있다**(세이브를 새로 불러오거나
-                // "새 원정"으로 프로필이 통째로 바뀐 직후) — 그러면 로비는 마법사, 사냥은 메카닉처럼 어긋난다.
-                ProfileService.Current.character = id;
-                return true;
-            }
-            ApplySelection(id, notifyPrevious: true);
-            return true;
-        }
-
-        /// <summary>
-        /// **키트는 항상 프로필의 캐릭터를 따라간다.** 선택 캐릭터의 출처는 세이브(`PlayerProfile.character`)인데,
-        /// 프로필은 게임 도중에 통째로 바뀔 수 있다 — 타이틀의 "새 원정"(`GameFlow.StartNewExpedition` → `SaveService.DeleteSave`).
+        /// **키트는 항상 프로필의 캐릭터를 따라간다.** 선택 캐릭터의 출처는 세이브(`PlayerProfile.character`)이고, 그 값은 로비 캐릭터 선택이
+        /// 바꾸거나 프로필이 통째로 바뀌며(타이틀의 "새 원정" — `GameFlow.StartNewExpedition` → `SaveService.DeleteSave`) 달라진다.
         /// 처음 불러오기는 `GameBoot`가 이 컴포넌트의 Awake보다 먼저 한다. 그래도 바뀌는 순간 키트를 다시 맞추지 않으면
         /// 전문화·캐릭터 탭(프로필을 본다)과 실제 공격(키트)이 서로 다른 캐릭터가 된다(2026-09-28 사용자 발견:
         /// 메카닉을 골랐는데 전문화 탭엔 마법사 트리, 사냥에선 메카닉 공격).
@@ -122,19 +100,6 @@ namespace ChronoSavior.Characters
             if (profile.character == Current) return;
             if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
             else profile.character = Current; // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
-        }
-
-        /// <summary>구현된 다음 캐릭터로 순환 전환(디버그 조작용).</summary>
-        public bool SelectNext()
-        {
-            var order = new[] { CharacterId.Mage, CharacterId.Gunner, CharacterId.Blade, CharacterId.Druid };
-            int start = System.Array.IndexOf(order, Current);
-            for (int step = 1; step <= order.Length; step++)
-            {
-                var candidate = order[(start + step) % order.Length];
-                if (HasKit(candidate)) return Select(candidate);
-            }
-            return false;
         }
 
         /// <summary>

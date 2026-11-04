@@ -17,7 +17,8 @@ public class UiWorldLookupTests
     /// <summary>월드 탐색을 걷어 낸 화면(`Assets/Scripts/UI/` 기준 경로).</summary>
     static readonly string[] Migrated =
     {
-        "Screens/StageSelectScreen.cs", // 2a — 몬스터 그림은 MonsterCatalog 에셋에서
+        "Screens/StageSelectScreen.cs",     // 2a — 몬스터 그림은 MonsterCatalog 에셋에서
+        "Screens/CharacterSelectScreen.cs", // 2a — 고르기는 프로필만(PlayerRig는 그 값을 따라간다)
     };
 
     static readonly Regex WorldLookup = new Regex(@"\b(FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag)\b|GameObject\.Find\s*\(");

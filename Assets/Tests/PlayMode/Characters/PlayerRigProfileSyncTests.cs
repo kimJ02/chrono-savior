@@ -58,19 +58,18 @@ public class PlayerRigProfileSyncTests
         Assert.IsFalse(mage.enabled, "마법사 키트가 그대로 켜져 있다");
     }
 
+    /// <summary>로비 캐릭터 선택처럼 프로필의 캐릭터만 바꿔도 다음 프레임에 키트가 따라간다(2026-11-05 2a — 예전엔 화면이 `Select`를 직접 불렀다).</summary>
     [UnityTest]
-    public IEnumerator SelectingCurrentKitAgain_RewritesProfile()
+    public IEnumerator Rig_FollowsProfile_WhenOnlyTheCharacterChanges()
     {
-        var (rig, _, _) = NewPlayer();
-        yield return null;
-        Assert.IsTrue(rig.Select(CharacterId.Gunner));
+        var (rig, mage, gunner) = NewPlayer();
         yield return null;
 
-        // 같은 프레임 안에서 프로필만 어긋난 상태를 만든 뒤 지금 키트를 다시 고른다.
-        ProfileService.Current.character = CharacterId.Mage;
-        Assert.IsTrue(rig.Select(CharacterId.Gunner));
-        Assert.AreEqual(CharacterId.Gunner, ProfileService.Current.character,
-            "이미 켜진 키트를 다시 골랐을 때 프로필이 안 고쳐졌다 — 로비는 마법사, 사냥은 메카닉이 된다");
+        ProfileService.Current.character = CharacterId.Gunner;
+        yield return null;
+        Assert.AreEqual(CharacterId.Gunner, rig.Current);
+        Assert.IsTrue(gunner.enabled);
+        Assert.IsFalse(mage.enabled);
     }
 
     [UnityTest]

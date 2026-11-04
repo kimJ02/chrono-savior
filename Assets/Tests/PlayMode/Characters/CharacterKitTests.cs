@@ -90,29 +90,18 @@ public class CharacterKitTests
             "마법사인데 이동 방식이 즉시 이동이 아니다");
     }
 
+    /// <summary>키트가 없는 캐릭터를 가리키면 전환이 안 되고 지금 키트가 그대로 켜져 있다(캐릭터를 바꾸는 길은 프로필 하나 — 2026-11-05 2a).</summary>
     [UnityTest]
-    public IEnumerator PlayerRig_RefusesCharacterWithoutKit()
+    public IEnumerator PlayerRig_KeepsCurrentKit_WhenProfilePointsAtMissingKit()
     {
         var go = NewPlayer();
         yield return null;
         var rig = go.GetComponent<PlayerRig>();
 
-        // 섬영·드루이드 키트는 아직 없다(팀원 작업) — 전환이 거부되고 상태가 그대로여야 한다
-        Assert.IsFalse(rig.Select(CharacterId.Blade), "키트가 없는 캐릭터로 전환이 됐다");
+        ProfileService.Current.character = CharacterId.Blade; // 이 테스트 오브젝트엔 섬영 키트가 없다
+        yield return null;
         Assert.AreEqual(CharacterId.Mage, rig.Current);
         Assert.IsTrue(go.GetComponent<MageAttack>().enabled, "실패한 전환이 기존 키트를 꺼버렸다");
-    }
-
-    [UnityTest]
-    public IEnumerator PlayerRig_SelectNext_CyclesOnlyAmongAvailableKits()
-    {
-        var go = NewPlayer();
-        yield return null;
-        var rig = go.GetComponent<PlayerRig>();
-
-        // 지금은 마법사 키트 하나뿐이라 순환해도 마법사에 머문다(구현 안 된 캐릭터는 건너뛴다)
-        rig.SelectNext();
-        Assert.AreEqual(CharacterId.Mage, rig.Current);
     }
 
     // ---- 관성 이동 (원본 bladeMove, project_test.html:2454) ----

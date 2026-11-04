@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using ChronoSavior.Characters;
 using ChronoSavior.Core;
 using ChronoSavior.Systems;
 
@@ -10,7 +10,10 @@ namespace ChronoSavior.UI
     /// 캐릭터 선택 — Figma "캐릭터 선택창"(4:2)은 **뼈대(와이어프레임)만** 있어서, 뼈대 배치(설명 창 · 1계열/2계열 · 캐릭터 카드 4장 ·
     /// 뒤로가기/선택하기)를 Figma 공용 부품(창 틀·아이콘 칸·버튼)으로 640판에 옮겼다(사용자 "다 넣을거야"). 카드 아이콘은 Figma 새 도트
     /// (모자 = 마법사, 스패너 = 메카닉, 쌍검 = 섬영, 망치 = 4번째 — 아직 없는 캐릭터라 잠김). 고르는 동작은 예전 로비 "캐릭터 선택" 탭과 같다
-    /// (`PlayerRig.Select` — 레벨·경험치·SP는 캐릭터마다 따로). 로비에서 연다.
+    /// — 레벨·경험치·SP는 캐릭터마다 따로. 로비에서 연다.
+    /// **고르기 = 세이브의 `PlayerProfile.character`를 바꾸고 저장**이다(2026-11-05 2a). 전투의 플레이어(`Characters/PlayerRig`)가 그 값을 따라간다 —
+    /// 화면은 월드를 찾지 않는다(예전엔 씬에서 PlayerRig를 찾아 직접 바꿨다). 카드 표(`Entries`)에서 고를 수 있는 캐릭터(<see cref="Selectable"/>)는
+    /// 전투 씬 Player에 키트가 있어야 한다 — 씬 검증(`Editor/SceneSetupValidator`)이 확인한다(없는 캐릭터를 가리키면 PlayerRig가 프로필을 되돌린다).
     /// </summary>
     public class CharacterSelectScreen : PxScreen
     {
@@ -41,9 +44,18 @@ namespace ChronoSavior.UI
             new Entry { Id = null, Name = "???", Icon = "Icons/weapon_hammer", Hint = "아직 준비 중인 캐릭터." },
         };
 
+        /// <summary>카드에서 고를 수 있는 캐릭터 — 씬 검증이 전투 씬 Player의 키트와 맞춰 본다.</summary>
+        public static IEnumerable<CharacterId> Selectable
+        {
+            get
+            {
+                foreach (var e in Entries)
+                    if (e.Id.HasValue) yield return e.Id.Value;
+            }
+        }
+
         Text nameText, levelText, hintText, branch1, branch1Desc, branch2, branch2Desc;
         readonly Text[] cardNames = new Text[4];
-        PlayerRig rig;
 
         protected override void Awake()
         {
@@ -115,15 +127,13 @@ namespace ChronoSavior.UI
             if (index < Entries.Length) shownCard = index;
         }
 
-        PlayerRig Rig => rig != null ? rig : rig = Object.FindFirstObjectByType<PlayerRig>();
-
         protected override void Refresh()
         {
             var p = ProfileService.Current;
             var e = Entries[shownCard];
             nameText.text = e.Name;
             hintText.text = e.Hint;
-            bool available = e.Id.HasValue && (Rig == null || Rig.HasKit(e.Id.Value));
+            bool available = e.Id.HasValue;
             if (e.Id.HasValue)
             {
                 var cp = p.ProgressOf(e.Id.Value);
@@ -137,7 +147,7 @@ namespace ChronoSavior.UI
 
             for (int i = 0; i < Entries.Length; i++)
             {
-                bool ok = Entries[i].Id.HasValue && (Rig == null || Rig.HasKit(Entries[i].Id.Value));
+                bool ok = Entries[i].Id.HasValue;
                 Nav[i].Interactable = ok || i == shownCard; // 잠긴 카드도 골라 볼 수는 있게
                 cardNames[i].color = p.character == Entries[i].Id ? Gold : ok ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             }
@@ -156,8 +166,9 @@ namespace ChronoSavior.UI
         {
             var e = Entries[i];
             shownCard = i;
-            if (!e.Id.HasValue || Rig == null || !Rig.HasKit(e.Id.Value)) return;
-            if (Rig.Select(e.Id.Value)) SaveService.Save();
+            if (!e.Id.HasValue) return;
+            ProfileService.Current.character = e.Id.Value; // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
+            SaveService.Save();
             Close();
         }
     }

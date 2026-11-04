@@ -281,7 +281,8 @@ public class SkillSlotTests
         Assert.AreSame(mage, rig.CurrentKit as MageAttack);
         Assert.IsTrue(rig.CurrentKit is ISkillSlotSource, "마법사 키트가 슬롯 상태를 안 내준다");
 
-        Assert.IsTrue(rig.Select(CharacterId.Gunner));
+        ProfileService.Current.character = CharacterId.Gunner; // 캐릭터를 바꾸는 길은 프로필 하나(PlayerRig가 따라간다)
+        yield return null;
         Assert.AreSame(gunner, rig.CurrentKit as GunnerAttack, "캐릭터를 바꿨는데 HUD가 읽는 키트가 안 바뀌었다");
         Assert.IsTrue(rig.CurrentKit is ISkillSlotSource, "메카닉 키트가 슬롯 상태를 안 내준다");
     }

@@ -227,6 +227,10 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (10)** — **[나] 2차 단계 2a-3: 캐릭터 선택 = 프로필만 (`feature/data-art`, PlayMode 434/434, 씬 구성 검증 '문제 없음').** 로비 캐릭터 선택이 씬에서 `PlayerRig`를
+  찾아 `Select`하던 것 → **세이브의 `character` 값만 바꾸고 저장**, 플레이어는 이미 있던 경로(`PlayerRig.Update`가 프로필을 따라감)로 바뀐다. 캐릭터를 바꾸는 길이 하나가 돼서
+  `PlayerRig.Select`·`SelectNext`·`AvailableCharacters`를 지우고 `HasKit`은 내부로. 검증기: 캐릭터 선택에서 고를 수 있는 캐릭터(`CharacterSelectScreen.Selectable`)마다 Player에 키트.
+  테스트: `UI/CharacterSelectTests`(고르면 프로필·저장·다음 프레임 키트 전환, 잠긴 카드 무시), 지운 API를 쓰던 테스트 3개는 프로필 경로로, 월드 탐색 금지 목록에 캐릭터 선택 추가.
 - **2026-11-05 (9)** — **[나] 2차 단계 2a-2: 캐릭터 그림 에셋 (`feature/data-art`, PlayMode 432/432, 씬 구성 검증 '문제 없음').** `PlayerRig.characterSprites/characterColors`(씬 배열)
   → Core SO `CharacterArtSet`(`Assets/Data/Characters/CharacterArtSet.asset`, 씬의 지금 값 그대로 — 마법사·메카닉·섬영 `chara_temp_01`, 드루이드 `char_druid`, 색 흰색).
   로비 아바타(3단계)도 같은 에셋을 읽는다. 그림 적용 메뉴 두 개(`ApplyCharacterArt`·`ApplyTempCharacterArt`)는 **열린 씬 대신 에셋을 고치고 바로 저장**(`Editor/CharacterArtAsset`),

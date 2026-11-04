@@ -229,6 +229,10 @@ namespace ChronoSavior.Editor
                 problems.Add($"캐릭터 그림 배열 길이가 캐릭터 수({ChronoSavior.Core.CharacterArtSet.Count})와 다르다");
             foreach (var kit in player.GetComponents<ICharacterKit>())
                 if (art.SpriteOf(kit.Character) == null) problems.Add($"캐릭터 그림에 {kit.Character} 그림이 없다(키트는 있다)");
+            // 로비 캐릭터 선택은 프로필만 바꾸고 Player가 따라간다 — 고를 수 있는 캐릭터는 키트가 있어야 한다(없으면 PlayerRig가 프로필을 되돌려 고른 게 무시된다).
+            var kits = player.GetComponents<ICharacterKit>().Select(k => k.Character).ToHashSet();
+            foreach (var id in CharacterSelectScreen.Selectable)
+                if (!kits.Contains(id)) problems.Add($"캐릭터 선택에서 {id}를 고를 수 있는데 Player에 그 키트가 없다");
         }
 
         static T One<T>(Scene scene, List<string> problems) where T : Component
