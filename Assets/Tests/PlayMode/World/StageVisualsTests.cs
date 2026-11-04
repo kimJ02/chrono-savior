@@ -39,26 +39,12 @@ public class StageVisualsTests
 
     // ---------------- 카메라 ----------------
 
-    [UnityTest]
-    public IEnumerator Camera_RendersWorldAt960x540_ScaledByWholeNumbers()
-    {
-        var go = new GameObject("TestCamera");
-        go.AddComponent<Camera>().orthographic = true;
-        go.AddComponent<CameraFollow2D>();
-        yield return null;
+    // 카메라의 PixelPerfectCamera 값(128PPU·960×540)은 씬에 저장된 값이라 실제 씬을 부팅하는
+    // `Systems/GameBootTests.SharedCamera_IsPixelPerfect960x540_AsSavedInTheScene`이 본다(2026-11-05).
 
-        // 테스트 어셈블리가 URP를 참조하지 않아서 이름으로 찾는다 — 같은 이름의 옛 2D 패키지 컴포넌트(UnityEngine.U2D)가
-        // 따로 있어서 짧은 이름으로는 엉뚱한 쪽을 찾는다. 전체 이름으로 고른다.
-        Component ppc = null;
-        foreach (var c in go.GetComponents<Component>())
-            if (c != null && c.GetType().FullName == "UnityEngine.Rendering.Universal.PixelPerfectCamera") ppc = c;
-        Assert.IsNotNull(ppc, "픽셀 퍼펙트 카메라가 안 붙었다 — 도트가 정수배로 안 커진다");
-        var t = ppc.GetType();
-        Assert.AreEqual(128, (int)t.GetProperty("assetsPPU").GetValue(ppc), "1유닛 = 128px");
-        Assert.AreEqual(960, (int)t.GetProperty("refResolutionX").GetValue(ppc));
-        Assert.AreEqual(540, (int)t.GetProperty("refResolutionY").GetValue(ppc));
-        Assert.AreEqual("UpscaleRenderTexture", t.GetProperty("gridSnapping").GetValue(ppc).ToString());
-        Assert.AreEqual("StretchFill", t.GetProperty("cropFrame").GetValue(ppc).ToString(), "창 크기와 상관없이 보이는 범위가 같아야 한다");
+    [Test]
+    public void ViewSize_Is960x540px_At128PixelsPerUnit()
+    {
         Assert.AreEqual(2.109375f, StageArtConfig.ViewHalfHeight, 1e-6f);
         Assert.AreEqual(3.75f, StageArtConfig.ViewHalfWidth, 1e-6f);
     }

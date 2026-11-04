@@ -219,6 +219,14 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (1)** — **[나] 2차 전 보완 1: 씬이 원본인데 실행 중에 붙이던 것 제거 (`fix/scene-owned-components`, PlayMode 411/411, 씬 구성 검증 '문제 없음').**
+  사용자 "보완 먼저 하자". Codex 판정 '보완 후 착수'의 1번. **찾은 문제**: `00_Persistent`의 `PixelPerfectCamera`에 기본값(100PPU·320×180·자르기 없음)이
+  저장돼 있었고 진짜 값(128PPU·960×540)은 `CameraFollow2D.Awake`가 실행 중에 덮어쓰고 있었다 — 씬이 원본이라는 규칙과 정반대. → 씬에 진짜 값과 카메라 크기
+  2.109375를 저장하고 Awake를 지웠다. `PlayerRig.Awake`가 붙이던 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)도 씬의 Player에 배치하고 코드를 지웠다.
+  `SceneSetupValidator`가 카메라 값·Player 효과를 검사하고, 카메라 테스트는 빈 오브젝트 대신 **실제 씬을 부팅하는** `GameBootTests`로 옮겼다
+  (`SharedCamera_IsPixelPerfect960x540_AsSavedInTheScene`·`Player_HasItsEffects_FromTheScene`). 씬 값은 일회용 에디터 스크립트로 한 번 맞추고 그 스크립트는 지웠다.
+  보완 2(상태 소유권·UI↔월드 `WorldView`)는 Codex '보완 2 합의' — 결정만 `HANDOFF.md` "2차 전 보완"에, 구현은 2차 단계에서.
+  **팀원 주의**: 씬을 받으면 Player에 컴포넌트 2개가 늘고 카메라 값이 바뀐다(게임 화면은 그대로 — 원래 실행 중에 같은 값으로 덮어쓰던 것).
 - **2026-11-04 (6)** — **[나] 섬영 HUD 칸·버프 줄 (`feature/blade-hud`, PlayMode 409/409).** 사용자 "섬영도 내가 작업할 때는 고쳐줘, 지금해" — 팀원 파일 `BladeCombat`에
   `ISkillSlotSource`를 붙였다(지금까지 섬영만 Z·X 칸이 비고 버프 줄 캐릭터 몫이 없었다). Z = `cdTimer / spin.cd(0.13)` — 원본 분모는 공격속도로 줄어든 값이
   아니라 기본 쿨다운 고정(:6322). X = 칼날폭풍 갈래면 `stormCd/8`, 아니면 `focusCd/11`(:6341~6345, 갈래 없음도 원본처럼 집중 쪽 = 빈 칸).

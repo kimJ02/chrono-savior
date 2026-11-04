@@ -54,10 +54,8 @@ namespace ChronoSavior.Characters
         {
             mover = GetComponent<CharacterMover2D>();
             sr = GetComponent<SpriteRenderer>();
-            // 잔상(원본 `player.afterimages`) — 섬영 고속 이동·칼날폭풍·마법사 순간이동이 남긴다. 씬을 다시 굽지 않게 여기서 붙인다.
-            if (!TryGetComponent(out PlayerAfterimages _)) gameObject.AddComponent<PlayerAfterimages>();
-            // 섬영 기본 공격 베기 효과(Slash 1 · color4) — 섬영일 때만 그린다. BladeCombat은 안 건드리고 밖에서 읽는다.
-            if (!TryGetComponent(out BladeSlashVfx _)) gameObject.AddComponent<BladeSlashVfx>();
+            // 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)는 씬의 Player에 붙어 있다(2026-11-05 — 예전엔 씬을 다시
+            // 굽지 않으려고 여기서 붙였다). 씬 검사(`Editor/SceneSetupValidator`)가 빠졌는지 본다.
             // 덩치의 단일 출처는 Core.EntitySizeConfig다 — 씬에는 컴포넌트를 붙인 시점의 값(예: 1.0)이
             // 직렬화돼 남아 있어서, 상수만 바꾸면 씬을 다시 굽기 전까지 실제 게임에 반영되지 않았다.
             spriteHeight = EntitySizeConfig.PlayerHeight;

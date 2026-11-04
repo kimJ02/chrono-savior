@@ -125,6 +125,37 @@ public class GameBootTests
         Assert.AreSame(player.transform, CameraFollow2D.Target, "플레이어(20_Combat)가 카메라(00_Persistent)에 스스로 등록한다");
     }
 
+    /// <summary>
+    /// 공용 카메라의 화면 크기 설정은 **씬에 저장된 값**이다(2026-11-05) — 예전엔 `CameraFollow2D.Awake`가 실행 중에 덮어써서 씬엔
+    /// 기본값(100PPU·320×180)이 남아 있었다. 실행 중에 고치는 코드가 없으니, 지금 보이는 값이 곧 씬 파일의 값이다.
+    /// 테스트 어셈블리가 URP를 참조하지 않아 전체 이름으로 찾는다(같은 이름의 옛 2D 패키지 컴포넌트가 따로 있다).
+    /// </summary>
+    [Test]
+    public void SharedCamera_IsPixelPerfect960x540_AsSavedInTheScene()
+    {
+        var cam = InScene<Camera>(PersistentScene).Single();
+        Assert.IsTrue(cam.orthographic);
+        Component ppc = cam.GetComponents<Component>()
+            .SingleOrDefault(c => c != null && c.GetType().FullName == "UnityEngine.Rendering.Universal.PixelPerfectCamera");
+        Assert.IsNotNull(ppc, "픽셀 퍼펙트 카메라가 씬에 없다 — 도트가 정수배로 안 커진다");
+        var t = ppc.GetType();
+        Assert.AreEqual(StageArtConfig.PixelsPerUnit, (int)t.GetProperty("assetsPPU").GetValue(ppc), "1유닛 = 128px");
+        Assert.AreEqual(StageArtConfig.RefWidth, (int)t.GetProperty("refResolutionX").GetValue(ppc));
+        Assert.AreEqual(StageArtConfig.RefHeight, (int)t.GetProperty("refResolutionY").GetValue(ppc));
+        Assert.AreEqual("UpscaleRenderTexture", t.GetProperty("gridSnapping").GetValue(ppc).ToString());
+        Assert.AreEqual("StretchFill", t.GetProperty("cropFrame").GetValue(ppc).ToString(), "창 크기와 상관없이 보이는 범위가 같아야 한다");
+        Assert.AreEqual(1, cam.GetComponents<Component>().Count(c => c != null && c.GetType() == ppc.GetType()), "PPC가 둘 붙지 않는다");
+    }
+
+    /// <summary>잔상·섬영 베기 효과는 씬의 Player에 하나씩 붙어 있다(2026-11-05 — 예전엔 `PlayerRig.Awake`가 붙였다).</summary>
+    [Test]
+    public void Player_HasItsEffects_FromTheScene()
+    {
+        var player = InScene<PlayerRig>(GameBoot.WorldScene).Single();
+        Assert.AreEqual(1, player.GetComponents<PlayerAfterimages>().Length, "잔상(마법사 순간이동·섬영 고속 이동)");
+        Assert.AreEqual(1, player.GetComponents<BladeSlashVfx>().Length, "섬영 회전베기 효과");
+    }
+
     [Test]
     public void BothPlatformSets_AreRegistered_SoTheBossArenaShowsItsPlatforms()
     {

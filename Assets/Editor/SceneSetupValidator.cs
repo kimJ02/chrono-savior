@@ -103,6 +103,7 @@ namespace ChronoSavior.Editor
                 if (!cam.CompareTag("MainCamera")) problems.Add("공용 카메라 태그가 MainCamera가 아니다(StageVisuals가 Camera.main으로 찾는다)");
                 foreach (var need in new[] { typeof(CameraFollow2D), typeof(SkyBackground), typeof(AudioListener), typeof(PixelPerfectCamera) })
                     if (cam.GetComponent(need) == null) problems.Add($"공용 카메라에 {need.Name}이 없다");
+                CheckCamera(cam, problems);
             }
             None<PlayerRig>(persistent, problems);
             None<PlatformSet>(persistent, problems);
@@ -112,7 +113,8 @@ namespace ChronoSavior.Editor
             if (player != null)
             {
                 if (!player.CompareTag("Player")) problems.Add("Player 태그가 아니다");
-                foreach (var need in new[] { typeof(CharacterMover2D), typeof(PlayerHealth), typeof(MageAttack), typeof(GunnerAttack), typeof(BladeCombat), typeof(Rigidbody2D) })
+                foreach (var need in new[] { typeof(CharacterMover2D), typeof(PlayerHealth), typeof(MageAttack), typeof(GunnerAttack), typeof(BladeCombat), typeof(Rigidbody2D),
+                                          typeof(PlayerAfterimages), typeof(BladeSlashVfx) })
                     if (player.GetComponent(need) == null) problems.Add($"Player에 {need.Name}이 없다");
             }
             var spawner = One<EnemySpawner>(combat, problems);
@@ -159,6 +161,24 @@ namespace ChronoSavior.Editor
                 }
             }
             return problems;
+        }
+
+        /// <summary>
+        /// 공용 카메라의 화면 크기 설정 — 씬이 원본이고 실행 중에 고치는 코드는 없다(2026-11-05). 값의 기준은 `World/StageArtConfig`
+        /// (월드 960×540px, 1유닛 = 128px, 정수배 확대, 어떤 창 크기에서도 보이는 범위가 같게).
+        /// </summary>
+        static void CheckCamera(Camera cam, List<string> problems)
+        {
+            if (!cam.orthographic) problems.Add("공용 카메라가 직교(Orthographic)가 아니다");
+            if (Mathf.Abs(cam.orthographicSize - StageArtConfig.ViewHalfHeight) > 1e-4f)
+                problems.Add($"공용 카메라 크기 {cam.orthographicSize} ≠ StageArtConfig.ViewHalfHeight {StageArtConfig.ViewHalfHeight}");
+            var ppc = cam.GetComponent<PixelPerfectCamera>();
+            if (ppc == null) return;
+            if (ppc.assetsPPU != StageArtConfig.PixelsPerUnit) problems.Add($"PixelPerfectCamera assetsPPU {ppc.assetsPPU} ≠ {StageArtConfig.PixelsPerUnit}");
+            if (ppc.refResolutionX != StageArtConfig.RefWidth || ppc.refResolutionY != StageArtConfig.RefHeight)
+                problems.Add($"PixelPerfectCamera 기준 해상도 {ppc.refResolutionX}×{ppc.refResolutionY} ≠ {StageArtConfig.RefWidth}×{StageArtConfig.RefHeight}");
+            if (ppc.gridSnapping != PixelPerfectCamera.GridSnapping.UpscaleRenderTexture) problems.Add("PixelPerfectCamera gridSnapping이 UpscaleRenderTexture가 아니다(정수배 확대)");
+            if (ppc.cropFrame != PixelPerfectCamera.CropFrame.StretchFill) problems.Add("PixelPerfectCamera cropFrame이 StretchFill이 아니다(창 크기와 상관없이 같은 범위)");
         }
 
         static T One<T>(Scene scene, List<string> problems) where T : Component

@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering.Universal;
 using ChronoSavior.Core;
 
 namespace ChronoSavior.World
@@ -14,6 +13,10 @@ namespace ChronoSavior.World
     /// 그려서 정수배로 키운다(`PixelPerfectCamera`). 한 화면에 발판이 두 층 정도만 들어와서 **Y도 따라간다** —
     /// 예전엔 모든 발판이 세로로 한 화면에 들어와서 X만 따라갔다.
     /// Y는 서 있을 때만 그 높이로 맞추고, 공중에선 화면 밖으로 나가려 할 때만 움직인다(점프마다 화면이 출렁이지 않게).
+    ///
+    /// **화면 크기 설정(`PixelPerfectCamera` 128PPU·960×540·`UpscaleRenderTexture`·`StretchFill`, 카메라 크기)은 씬(`00_Persistent`)이 원본이다**
+    /// (2026-11-05). 예전엔 이 컴포넌트의 Awake가 PPC를 붙이고 값을 덮어써서, 씬에는 기본값(100PPU·320×180)이 저장돼 있었다.
+    /// 지금은 따라가기만 하고, 씬 값은 `Editor/SceneSetupValidator`가 <see cref="StageArtConfig"/>와 맞는지 검사한다.
     /// </summary>
     [RequireComponent(typeof(Camera))]
     public class CameraFollow2D : MonoBehaviour
@@ -48,19 +51,6 @@ namespace ChronoSavior.World
         public const float ShakePxToUnits = StageArtConfig.ViewHalfHeight * 2f / HitFeel.OriginalViewHeightPx;
         Rigidbody2D targetBody;
         Transform bodyOwner;
-
-        void Awake()
-        {
-            var cam = GetComponent<Camera>();
-            var ppc = GetComponent<PixelPerfectCamera>();
-            if (ppc == null) ppc = gameObject.AddComponent<PixelPerfectCamera>();
-            ppc.assetsPPU = StageArtConfig.PixelsPerUnit;
-            ppc.refResolutionX = StageArtConfig.RefWidth;
-            ppc.refResolutionY = StageArtConfig.RefHeight;
-            ppc.gridSnapping = PixelPerfectCamera.GridSnapping.UpscaleRenderTexture;
-            ppc.cropFrame = PixelPerfectCamera.CropFrame.StretchFill; // 어떤 창 크기에서도 보이는 범위는 960×540px 그대로
-            cam.orthographicSize = StageArtConfig.ViewHalfHeight;     // 첫 프레임용 — 이후엔 PPC가 같은 값으로 맞춘다
-        }
 
         void LateUpdate()
         {
