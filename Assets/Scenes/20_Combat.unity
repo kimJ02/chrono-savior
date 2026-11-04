@@ -245,19 +245,9 @@ MonoBehaviour:
   eliteChanceOverride: -1
   spawnShrines: 1
   orbSprite: {fileID: 21300000, guid: b7429cf9bd758cc4cbe217c9294b83e5, type: 3}
-  shrineSprite: {fileID: 21300000, guid: 8afb9b204a0f033499fb23fd273abdba, type: 3}
-  bossSprite: {fileID: 21300000, guid: 692531654aefc5044a24f6e50e868b6b, type: 3}
   circleSprite: {fileID: 21300000, guid: b7429cf9bd758cc4cbe217c9294b83e5, type: 3}
   squareSprite: {fileID: 21300000, guid: 8afb9b204a0f033499fb23fd273abdba, type: 3}
   triangleSprite: {fileID: 21300000, guid: 692531654aefc5044a24f6e50e868b6b, type: 3}
-  enemyTypes:
-  - {fileID: 11400000, guid: 0de672eb48bbbea4eb9010912caae054, type: 2}
-  - {fileID: 11400000, guid: 2cd319b691c08844490e6568211802af, type: 2}
-  - {fileID: 11400000, guid: 30af49fe0849e71458740bc526488fe6, type: 2}
-  - {fileID: 11400000, guid: 4505d1fc927864345abbd23d1c69db47, type: 2}
-  - {fileID: 11400000, guid: c472eafd8bbf61342b94faf8c94d6560, type: 2}
-  - {fileID: 11400000, guid: eddf79ee8a67fcc488721c99b2a7f05d, type: 2}
-  - {fileID: 11400000, guid: c92429ff7bede6d409e895315a82fd1f, type: 2}
   catalog: {fileID: 11400000, guid: b232827cccb645349b32c899578fd496, type: 2}
 --- !u!4 &53762231
 Transform:
@@ -3672,16 +3662,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3de03d98352bf3940aa28a8bc772f34b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  characterSprites:
-  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
-  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
-  - {fileID: 21300000, guid: 3e1d94c7cf1a48ce881b8d4624312d88, type: 3}
-  - {fileID: 21300000, guid: 85c30a33e9abc8e4d8978e9de4be3d22, type: 3}
-  characterColors:
-  - {r: 1, g: 1, b: 1, a: 1}
-  - {r: 1, g: 1, b: 1, a: 1}
-  - {r: 1, g: 1, b: 1, a: 1}
-  - {r: 1, g: 1, b: 1, a: 1}
+  art: {fileID: 11400000, guid: efd84d4629dc29a45a32f2fdf1d2ef94, type: 2}
   spriteHeight: 1
 --- !u!114 &1457870344
 MonoBehaviour:

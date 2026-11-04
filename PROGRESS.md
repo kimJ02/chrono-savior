@@ -227,6 +227,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (9)** — **[나] 2차 단계 2a-2: 캐릭터 그림 에셋 (`feature/data-art`, PlayMode 432/432, 씬 구성 검증 '문제 없음').** `PlayerRig.characterSprites/characterColors`(씬 배열)
+  → Core SO `CharacterArtSet`(`Assets/Data/Characters/CharacterArtSet.asset`, 씬의 지금 값 그대로 — 마법사·메카닉·섬영 `chara_temp_01`, 드루이드 `char_druid`, 색 흰색).
+  로비 아바타(3단계)도 같은 에셋을 읽는다. 그림 적용 메뉴 두 개(`ApplyCharacterArt`·`ApplyTempCharacterArt`)는 **열린 씬 대신 에셋을 고치고 바로 저장**(`Editor/CharacterArtAsset`),
+  캡처 도구 둘도 에셋을 읽는다. 검증기: 연결·배열 길이·키트 있는 캐릭터의 그림. 씬은 다시 저장해 코드에서 지운 옛 필드 값(스포너 3개·PlayerRig 2개)을 떨궜다.
+  테스트: `Characters/CharacterArtTests`(읽기 규칙·갈아입기·그림 높이 = 콜라이더 지름), `GameBootTests`(실제 씬에서 저장된 캐릭터 그림으로 시작).
 - **2026-11-05 (8)** — **[나] 2차 단계 2a-1: 몬스터 목록 에셋 + 테스트 세이브 안전장치 (`feature/data-art`, PlayMode 429/429, 씬 구성 검증 '문제 없음').**
   **몬스터 목록**: 스포너 씬 필드(`enemyTypes`·`bossSprite`·`shrineSprite`) → Core SO `MonsterCatalog`(`Assets/Data/Enemies/MonsterCatalog.asset`, 씬의 기존 값을 그대로 옮김 —
   7종·보스·성소 그림). 스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 같은 에셋을 본다 → **스테이지 선택이 더 이상 스포너를 찾지 않는다.**

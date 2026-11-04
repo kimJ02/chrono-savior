@@ -185,10 +185,11 @@ namespace ChronoSavior.Editor
             if (player == null) return;
             var sr = player.GetComponentInChildren<SpriteRenderer>();
             var rig = player.GetComponent<ChronoSavior.Characters.PlayerRig>();
-            if (sr != null && rig != null && rig.characterSprites != null && rig.characterSprites.Length > 0 && rig.characterSprites[0] != null)
+            var art = rig != null ? rig.Art : null;
+            if (sr != null && art != null && art.SpriteOf(CharacterId.Mage) != null)
             {
-                sr.sprite = rig.characterSprites[0]; // 실행 중엔 PlayerRig가 고른 캐릭터 그림으로 바꾼다
-                sr.color = Color.white;               // 정식 그림이라 덧칠 없음(PlayerRig.characterColors가 흰색)
+                sr.sprite = art.SpriteOf(CharacterId.Mage); // 실행 중엔 PlayerRig가 고른 캐릭터 그림으로 바꾼다
+                sr.color = art.TintOf(CharacterId.Mage);
             }
             if (sr == null || sr.sprite == null) return;
             float h = sr.sprite.bounds.size.y;

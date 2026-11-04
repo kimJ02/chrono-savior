@@ -147,6 +147,17 @@ public class GameBootTests
         Assert.AreEqual(1, cam.GetComponents<Component>().Count(c => c != null && c.GetType() == ppc.GetType()), "PPC가 둘 붙지 않는다");
     }
 
+    /// <summary>플레이어는 캐릭터 그림 에셋에서 저장된 캐릭터(메카닉)의 그림·색을 입고 시작한다(2026-11-05 — 예전엔 씬의 PlayerRig 배열).</summary>
+    [Test]
+    public void Player_WearsTheSavedCharactersArt_FromTheArtAsset()
+    {
+        var rig = InScene<PlayerRig>(GameBoot.WorldScene).Single();
+        Assert.IsNotNull(rig.Art, "Player에 캐릭터 그림 에셋이 연결돼 있다");
+        var sr = rig.GetComponent<SpriteRenderer>();
+        Assert.AreSame(rig.Art.SpriteOf(SavedCharacter), sr.sprite);
+        Assert.AreEqual(rig.Art.TintOf(SavedCharacter), sr.color);
+    }
+
     /// <summary>스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 같은 몬스터 목록 에셋을 본다 — 화면이 월드를 찾지 않는다(2026-11-05).</summary>
     [Test]
     public void Spawner_AndStageSelect_ShareOneMonsterCatalog()

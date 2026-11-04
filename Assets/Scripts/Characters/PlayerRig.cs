@@ -34,15 +34,13 @@ namespace ChronoSavior.Characters
             }
         }
 
-        [Header("캐릭터 그림 (임시 도형 — 정식 아트 전까지)")]
-        [Tooltip("CharacterId 순서(마법사·메카닉·섬영·드루이드)대로. 비어 있으면 기본 스프라이트를 그대로 쓴다. " +
-                 "지금은 넷 다 네모다 — 사용자 지시(2026-09-16)로 스킨을 끈 상태이고, " +
-                 "각진 도형이라 둥근 몹 무리 속에서 내 캐릭터가 즉시 눈에 띈다(Core.PrimitiveShape 참고).")]
-        public Sprite[] characterSprites = new Sprite[4];
+        [Header("캐릭터 그림")]
+        [Tooltip("캐릭터별 그림·덧칠 색(Assets/Data/Characters/CharacterArtSet.asset). 로비 아바타·에디터 도구도 같은 에셋을 본다. " +
+                 "비어 있으면 기본 스프라이트를 그대로 쓴다.")]
+        [SerializeField] CharacterArtSet art;
 
-        [Tooltip("캐릭터별 색. 넷이 같은 도형(네모)이라 색이 유일한 구분 수단이다. " +
-                 "비어 있거나 길이가 모자라면 흰색으로 둔다.")]
-        public Color[] characterColors = new Color[4];
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)·캡처 도구·테스트가 읽고 넣는다.</summary>
+        public CharacterArtSet Art { get => art; set => art = value; }
         [Tooltip("그림 높이(월드 유닛). 콜라이더 지름도 이 값에 맞춰진다 — 기본값은 Core.EntitySizeConfig.")]
         public float spriteHeight = EntitySizeConfig.PlayerHeight;
 
@@ -148,18 +146,14 @@ namespace ChronoSavior.Characters
         /// </summary>
         void ApplySprite(CharacterId id)
         {
-            if (sr == null || characterSprites == null) return;
-            int i = (int)id;
-            if (i < 0 || i >= characterSprites.Length) return;
-            var sprite = characterSprites[i];
+            if (sr == null || art == null) return;
+            var sprite = art.SpriteOf(id);
             if (sprite == null) return;
 
             sr.sprite = sprite;
             // 임시 도형은 색이 없는 흰 도형이라 **여기서 칠해야** 캐릭터가 구분된다.
-            // 정식 아트(색이 이미 칠해진 그림)로 바꾸면 characterColors를 흰색으로 두면 된다.
-            sr.color = (characterColors != null && i < characterColors.Length && characterColors[i].a > 0f)
-                ? characterColors[i]
-                : Color.white;
+            // 정식 아트(색이 이미 칠해진 그림)로 바꾸면 그 캐릭터 색을 흰색으로 두면 된다(`CharacterArtSet.tints`).
+            sr.color = art.TintOf(id);
 
             float h = sprite.bounds.size.y;
             if (h <= 0.0001f) return;

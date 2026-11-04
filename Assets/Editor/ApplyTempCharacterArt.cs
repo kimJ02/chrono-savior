@@ -1,22 +1,14 @@
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using ChronoSavior.Characters;
 
 namespace ChronoSavior.Editor
 {
     /// <summary>
-    /// 2026-11-04 사용자가 올린 임시 캐릭터 그림(<c>Assets/Resources/Art/Characters/chara_temp_01.png</c>)을
-    /// 열린 씬의 <see cref="PlayerRig"/>에 마법사·건너·섬영 세 칸(드루이드는 키트가 아직 없어 제외) 전부
-    /// 같은 그림으로 채운다. <see cref="ApplyCharacterArt"/>와 같은 패턴(씬을 직접 찾아 필드를 채우고
-    /// dirty 표시) — characterSprites는 BuildPartAScene이 씬에 박아 넣는 직렬화 필드라 코드만 고쳐서는
-    /// 이미 저장된 씬에 반영되지 않기 때문에 에디터 메뉴로 둔다.
+    /// 2026-11-04 사용자가 올린 임시 캐릭터 그림(<c>Assets/Resources/Art/Characters/chara_temp_01.png</c>)으로 캐릭터 그림 에셋의
+    /// 마법사·메카닉·섬영 세 칸(드루이드는 키트가 없어 그대로)을 채운다. 메뉴 `ChronoSavior/Apply Temp Character Art (chara_temp_01)` —
+    /// 씬을 열 필요 없고 에셋을 바로 저장한다(2026-11-05, <see cref="CharacterArtAsset"/>).
     ///
-    /// 실행: `20_Combat.unity`를 열어둔 상태에서 메뉴 `ChronoSavior/Apply Temp Character Art (chara_temp_01)`.
-    /// 끝나면 **씬을 저장**해야 한다(Ctrl+S) — 안 하면 에디터를 닫을 때 날아간다.
-    ///
-    /// 이 그림은 이미 색이 칠해진 그림이라 `characterColors`는 흰색(=덧칠 없음)으로 둔다
-    /// (<see cref="PlayerRig.ApplySprite"/> 주석 참고). 세 캐릭터가 전부 같은 그림을 쓰게 되므로
+    /// 이 그림은 이미 색이 칠해진 그림이라 덧칠 색은 흰색(덧칠 없음)으로 둔다. 세 캐릭터가 전부 같은 그림을 쓰게 되므로
     /// 화면에서 서로 구분이 안 된다 — 의도된 동작이다(사용자 확인, 2026-11-04).
     /// </summary>
     public static class ApplyTempCharacterArt
@@ -26,12 +18,8 @@ namespace ChronoSavior.Editor
         [MenuItem("ChronoSavior/Apply Temp Character Art (chara_temp_01)")]
         public static void Apply()
         {
-            var rig = Object.FindAnyObjectByType<PlayerRig>(FindObjectsInactive.Include);
-            if (rig == null)
-            {
-                Debug.LogWarning("[ApplyTempCharacterArt] 열린 씬에서 PlayerRig를 못 찾았다. 20_Combat.unity를 열고 다시 실행할 것.");
-                return;
-            }
+            var art = CharacterArtAsset.Load();
+            if (art == null) return;
 
             var sprite = Resources.Load<Sprite>(SpriteResourcePath);
             if (sprite == null)
@@ -41,23 +29,16 @@ namespace ChronoSavior.Editor
                 return;
             }
 
-            var sprites = rig.characterSprites != null && rig.characterSprites.Length == 4
-                ? (Sprite[])rig.characterSprites.Clone() : new Sprite[4];
-            var colors = rig.characterColors != null && rig.characterColors.Length == 4
-                ? (Color[])rig.characterColors.Clone() : new Color[4];
-
-            // CharacterId 순서: 0=마법사, 1=건너, 2=섬영, 3=드루이드(키트 없음 — 안 건드린다).
+            var (sprites, tints) = CharacterArtAsset.Copy(art);
+            // CharacterId 순서: 0=마법사, 1=메카닉, 2=섬영, 3=드루이드(키트 없음 — 안 건드린다).
             for (int i = 0; i < 3; i++)
             {
                 sprites[i] = sprite;
-                colors[i] = Color.white; // 이미 색칠된 그림이라 덧칠 없음(흰색).
+                tints[i] = Color.white; // 이미 색칠된 그림이라 덧칠 없음(흰색).
             }
 
-            rig.characterSprites = sprites;
-            rig.characterColors = colors;
-            EditorUtility.SetDirty(rig);
-            EditorSceneManager.MarkSceneDirty(rig.gameObject.scene);
-            Debug.Log("[ApplyTempCharacterArt] 마법사·건너·섬영 세 칸을 chara_temp_01로 채웠다. 씬을 저장할 것(Ctrl+S).");
+            CharacterArtAsset.Write(art, sprites, tints, "Apply Temp Character Art");
+            Debug.Log("[ApplyTempCharacterArt] 마법사·메카닉·섬영 세 칸을 chara_temp_01로 채우고 에셋을 저장했다.");
         }
     }
 }

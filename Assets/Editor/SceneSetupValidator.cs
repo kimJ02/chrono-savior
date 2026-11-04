@@ -117,6 +117,7 @@ namespace ChronoSavior.Editor
                 foreach (var need in new[] { typeof(CharacterMover2D), typeof(PlayerHealth), typeof(MageAttack), typeof(GunnerAttack), typeof(BladeCombat), typeof(Rigidbody2D),
                                           typeof(PlayerAfterimages), typeof(BladeSlashVfx) })
                     if (player.GetComponent(need) == null) problems.Add($"Player에 {need.Name}이 없다");
+                CheckCharacterArt(player, problems);
             }
             var director = One<CombatDirector>(combat, problems);
             if (director != null && (player == null || director.Player != player.gameObject))
@@ -217,6 +218,17 @@ namespace ChronoSavior.Editor
             if (!m.Success) { problems.Add("공용 카메라 Viewport Rect를 씬 파일에서 못 찾았다"); return; }
             if (m.Groups[1].Value != "0" || m.Groups[2].Value != "0" || m.Groups[3].Value != "1" || m.Groups[4].Value != "1")
                 problems.Add($"공용 카메라 Viewport Rect가 씬 파일에 화면 전체로 저장돼 있지 않다(x {m.Groups[1].Value}, y {m.Groups[2].Value}, w {m.Groups[3].Value}, h {m.Groups[4].Value}) — 0,0,1,1로");
+        }
+
+        /// <summary>캐릭터 그림 에셋(`Core/CharacterArtSet`) — Player에 연결돼 있고, 배열이 캐릭터 수만큼이고, 키트가 있는 캐릭터는 그림이 있다(2026-11-05).</summary>
+        static void CheckCharacterArt(PlayerRig player, List<string> problems)
+        {
+            var art = player.Art;
+            if (art == null) { problems.Add("Player의 캐릭터 그림(CharacterArtSet)이 비어 있다"); return; }
+            if (art.sprites == null || art.sprites.Length != ChronoSavior.Core.CharacterArtSet.Count || art.tints == null || art.tints.Length != ChronoSavior.Core.CharacterArtSet.Count)
+                problems.Add($"캐릭터 그림 배열 길이가 캐릭터 수({ChronoSavior.Core.CharacterArtSet.Count})와 다르다");
+            foreach (var kit in player.GetComponents<ICharacterKit>())
+                if (art.SpriteOf(kit.Character) == null) problems.Add($"캐릭터 그림에 {kit.Character} 그림이 없다(키트는 있다)");
         }
 
         static T One<T>(Scene scene, List<string> problems) where T : Component
