@@ -8,7 +8,7 @@ namespace ChronoSavior.UI
     /// 일시정지 — Figma "일시정지 메뉴"(32:119, 640×360). 띠 위에 "일시정지" 판, 아이콘 버튼 셋: ▶ 계속 · ⚙ 설정 · ↩ 로비로.
     ///
     /// 원본(`#pause`)은 지역·처치 수·남은 시간을 같이 보여 줬지만 Figma엔 없다 — Figma대로 뺐다(사용자 "Figma에 나온 대로").
-    /// 동작은 원본과 같다: ESC로 열고 닫고(`RunController`), "로비로"는 바로 나간다(원본 `:1027`~`:1028`).
+    /// 동작은 원본과 같다: ESC로 열고 닫고(`GameFlow`), "로비로"는 바로 나간다(원본 `:1027`~`:1028`).
     /// 키보드: ←/→로 고르고 Enter·Space·Z로 누른다.
     /// </summary>
     public class PauseMenu : PxScreen
@@ -20,7 +20,6 @@ namespace ChronoSavior.UI
         const float FrameY = 142f, FrameSize = 64f, IconInset = 16f, IconSize = 32f;
         static readonly float[] FrameX = { 148f, 288f, 428f };          // 155:5 · 155:6 · 155:4
 
-        RunController run;
 
         protected override void Build()
         {
@@ -40,11 +39,10 @@ namespace ChronoSavior.UI
 
         protected override bool WantsVisible => GameState.Current == GameScene.Pause;
 
-        RunController Run => run != null ? run : run = Object.FindFirstObjectByType<RunController>();
 
-        void Resume() => Run?.Resume();
+        void Resume() => Flow?.Resume();
 
-        void ToLobby() => Run?.EnterLobby();
+        void ToLobby() => Flow?.EnterLobby();
 
         static Color WithAlpha(Color c, float a)
         {

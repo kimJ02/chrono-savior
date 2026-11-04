@@ -202,7 +202,7 @@ public class PlayerProgressionTests
 
     /// <summary>
     /// 체력이 0이 되면 `Core.CombatEvents.PlayerDied`가 발행된다 — 원본이 그 자리에서 바로
-    /// `endRun('dead')`를 부르는 것(project_test.html:1927)에 대응한다. `Systems/RunController`가
+    /// `endRun('dead')`를 부르는 것(project_test.html:1927)에 대응한다. `Systems/GameFlow`가
     /// 이 신호로 런을 끝내므로, 여기가 끊기면 죽어도 게임이 안 끝난다.
     ///
     /// (이전엔 이 자리에 R키 부활 테스트가 있었다 — 원본에 없는 임시방편이라

@@ -35,7 +35,7 @@ namespace ChronoSavior.Core
         /// 플레이어가 죽었을 때. 원본 `damagePlayer`가 체력이 0이 되면 바로 `endRun('dead')`를 부르는
         /// 자리(project_test.html:1927)에 대응한다.
         ///
-        /// `Systems`(3층)가 `Characters`(2층)를 직접 참조할 수 없어서(계층 규칙) `RunController`는
+        /// `Systems`(3층)가 `Characters`(2층)를 직접 참조할 수 없어서(계층 규칙) `GameFlow`는
         /// `PlayerHealth.Died`를 직접 구독하지 못한다 — 그래서 이 이벤트를 거친다.
         /// </summary>
         public static event System.Action PlayerDied;
@@ -53,7 +53,7 @@ namespace ChronoSavior.Core
         public static event System.Action<GameObject> EnemyTickDamaged;
 
         /// <summary>
-        /// 히트스톱 요청(초). `Systems/RunController.Hitstop`이 구독한다 — 피격(공격마다 다른 길이, `Core/HitFeel`)·연쇄 처치 등.
+        /// 히트스톱 요청(초). `Systems/GameFlow.Hitstop`이 구독한다 — 피격(공격마다 다른 길이, `Core/HitFeel`)·연쇄 처치 등.
         /// 처치 멈춤은 `EnemyKilled`에서 따로 건다. 0 이하는 무시한다(원본 `noHitstop`).
         /// </summary>
         public static event System.Action<float> HitstopRequested;

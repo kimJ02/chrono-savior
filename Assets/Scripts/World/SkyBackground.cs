@@ -48,10 +48,15 @@ namespace ChronoSavior.World
 
         void Apply()
         {
-            int region = RunState.Region;
-            if (region == appliedRegion || cam == null) return;
+            if (cam == null) return;
+            // 타이틀엔 월드가 없다(2026-11-04 씬 분할) — 하늘색 대신 검은 화면. 카메라를 끄지 않는 이유: 카메라가 하나도 없으면
+            // 화면이 안 지워진다(에디터엔 'No cameras rendering'). 타이틀 그림(UI)이 이 위를 전부 덮는다.
+            int region = GameState.Current == GameScene.Title ? TitleSky : RunState.Region;
+            if (region == appliedRegion) return;
             appliedRegion = region;
-            cam.backgroundColor = RegionConfig.SkyColor(region);
+            cam.backgroundColor = region == TitleSky ? Color.black : RegionConfig.SkyColor(region);
         }
+
+        const int TitleSky = 0; // 지역 번호는 1부터 — 0을 '타이틀'로 쓴다
     }
 }

@@ -6,8 +6,10 @@ namespace ChronoSavior.World
     /// <summary>
     /// 1스테이지 그림 — Figma "스테이지 HUD"(124:3)의 배경·땅·발판을 **원본 파일 그대로**(2026-10-24 C안).
     ///
-    /// 씬 파일은 그대로 둔다(팀 작업과 충돌 방지, `BuildPartAScene`을 다시 돌리지 않는다). 대신 씬을 열 때
-    /// <see cref="Install"/>이 이 오브젝트를 하나 만들고, 시작할 때 씬에 이미 있는 판정 상자 위에 그림만 깐다:
+    /// 이 컴포넌트는 `20_Combat` 씬에 놓여 있다(2026-11-04 씬 분할 — 예전엔 씬을 열 때 스스로 생겼다). 시작할 때 씬에 이미 있는
+    /// 판정 상자 위에 그림만 깐다. **기록된 런타임 생성 예외**: 타일은 지역 그림(`StageArtConfig`)과 판정 상자 크기로 계산해 깔기 때문에
+    /// 씬에 구워 넣지 않는다(지역마다 씬 그림이 중복되고, 판정 상자를 바꿀 때마다 다시 구워야 한다). 생성물은 전부 이 오브젝트나
+    /// 발판의 자식이라 `20_Combat`에 남는다:
     /// - **땅**(`Ground`): 선(LineRenderer)을 끄고 64px 타일(원본 32px을 Figma처럼 2배) 세 줄 — 맨 위가 풀, 아래는 흙.
     ///   타일은 한 장씩 놓는다(<see cref="TileStrip"/>).
     /// - **발판**(`PlatformSet` 아래 `Platform_*`): 선을 끄고 16px 풀 타일(Figma가 32px을 반으로 줄인 그림).
@@ -34,15 +36,6 @@ namespace ChronoSavior.World
 
         Transform background;
         Camera cam;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void Install()
-        {
-            var ground = GameObject.Find("Ground");
-            if (ground == null || ground.GetComponent<BoxCollider2D>() == null) return; // 테스트 씬 등 — 할 일 없음
-            if (FindFirstObjectByType<StageVisuals>() != null) return;
-            new GameObject("StageVisuals").AddComponent<StageVisuals>();
-        }
 
         void Start() => Build();
 

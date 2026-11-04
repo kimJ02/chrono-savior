@@ -26,7 +26,7 @@ public class BossDefeatCarryOverTests
     [TearDown]
     public void Teardown()
     {
-        Time.timeScale = 1f; // RunController가 0으로 두고 끝나면 뒤 테스트의 대기가 안 끝난다
+        Time.timeScale = 1f; // GameFlow가 0으로 두고 끝나면 뒤 테스트의 대기가 안 끝난다
         foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
             if (go != null && go.name.StartsWith("Test")) Object.DestroyImmediate(go);
         ResetStatics();
@@ -46,7 +46,7 @@ public class BossDefeatCarryOverTests
     [UnityTest]
     public IEnumerator BossKill_DoesNotEndTheNextRun()
     {
-        var run = new GameObject("TestRunController").AddComponent<RunController>();
+        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -60,7 +60,7 @@ public class BossDefeatCarryOverTests
         RunEvents.RaiseBossDefeated();
         CombatEvents.RaiseEnemyKilled(boss);
 
-        yield return new WaitForSecondsRealtime(RunController.BossDeadEndDelay + 0.3f);
+        yield return new WaitForSecondsRealtime(GameFlow.BossDeadEndDelay + 0.3f);
         Assert.AreEqual(GameScene.Result, GameState.Current, "보스를 잡았는데 런이 안 끝났다");
         Assert.AreEqual(RunEndReason.BossDead, run.LastEndReason);
 

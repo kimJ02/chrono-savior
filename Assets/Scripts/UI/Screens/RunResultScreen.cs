@@ -38,7 +38,6 @@ namespace ChronoSavior.UI
         readonly Text[] boxValues = new Text[3];
         Image syncFill;
         Vector2Int barSpan;
-        RunController run;
 
         protected override void Build()
         {
@@ -76,14 +75,13 @@ namespace ChronoSavior.UI
             okLabel = ok.Inner.GetComponentInChildren<Text>();
         }
 
-        RunController Run => run != null ? run : run = Object.FindFirstObjectByType<RunController>();
 
         /// <summary>캡처·테스트용 — 실제 끝난 이유 대신.</summary>
         public RunEndReason? PreviewReason;
 
         protected override void Refresh()
         {
-            var reason = PreviewReason ?? (Run != null ? Run.LastEndReason : RunEndReason.Timeout);
+            var reason = PreviewReason ?? (Flow != null ? Flow.LastEndReason : RunEndReason.Timeout);
             bool dead = reason == RunEndReason.Dead;
             var p = ProfileService.Current;
             int s = RunState.Region;
@@ -126,8 +124,8 @@ namespace ChronoSavior.UI
             return "몬스터";
         }
 
-        void Retry() => StageSelectScreen.TryEnter(RunState.Region);
+        void Retry() => StageSelectScreen.TryEnter(Flow, RunState.Region);
 
-        void ToLobby() => Run?.EnterLobby();
+        void ToLobby() => Flow?.EnterLobby();
     }
 }

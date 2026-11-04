@@ -21,7 +21,8 @@ namespace ChronoSavior.Editor
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "StageCapture");
             Directory.CreateDirectory(outDir);
 
-            EditorSceneManager.OpenScene("Assets/Scenes/CombatCore.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single); // 카메라는 상주 씬, 월드는 전투 씬(2026-11-04 씬 분할)
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
             FieldLayout.SetBossArena(false);
             var cam = Camera.main;
             var player = GameObject.Find("Player");
@@ -46,7 +47,8 @@ namespace ChronoSavior.Editor
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "StageCapture");
             Directory.CreateDirectory(outDir);
-            EditorSceneManager.OpenScene("Assets/Scenes/CombatCore.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single); // 카메라는 상주 씬, 월드는 전투 씬(2026-11-04 씬 분할)
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
             FieldLayout.SetBossArena(false);
             var cam = Camera.main;
             var player = GameObject.Find("Player");
@@ -88,7 +90,8 @@ namespace ChronoSavior.Editor
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "StageCapture");
             Directory.CreateDirectory(outDir);
-            EditorSceneManager.OpenScene("Assets/Scenes/CombatCore.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single); // 카메라는 상주 씬, 월드는 전투 씬(2026-11-04 씬 분할)
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
             FieldLayout.SetBossArena(false);
             var cam = Camera.main;
             var player = GameObject.Find("Player");
@@ -124,7 +127,8 @@ namespace ChronoSavior.Editor
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "StageCapture");
             Directory.CreateDirectory(outDir);
-            EditorSceneManager.OpenScene("Assets/Scenes/CombatCore.unity", OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single); // 카메라는 상주 씬, 월드는 전투 씬(2026-11-04 씬 분할)
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
             FieldLayout.SetBossArena(false);
             var cam = Camera.main;
             var player = GameObject.Find("Player");

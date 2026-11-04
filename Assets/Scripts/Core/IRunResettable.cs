@@ -6,7 +6,7 @@ namespace ChronoSavior.Core
     ///
     /// `Systems`(3층)가 `Characters`(2층)의 구체 타입을 몰라도 리셋을 시킬 수 있게 Core에 둔다
     /// — `IDamageable`/`ISpawnProtectable`과 같은 이유(CLAUDE.md asmdef 계층표).
-    /// 런 시작 시 `RunController`가 플레이어 오브젝트의 모든 구현체를 찾아 호출한다.
+    /// 런 시작 시 `GameFlow`가 플레이어 오브젝트의 모든 구현체를 찾아 호출한다.
     /// </summary>
     public interface IRunResettable
     {

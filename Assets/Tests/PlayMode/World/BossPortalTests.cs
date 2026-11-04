@@ -27,7 +27,7 @@ public class BossPortalTests
     [TearDown]
     public void Teardown()
     {
-        Time.timeScale = 1f; // RunController가 0으로 두고 끝나면 뒤 테스트의 대기가 안 끝난다
+        Time.timeScale = 1f; // GameFlow가 0으로 두고 끝나면 뒤 테스트의 대기가 안 끝난다
         foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
         {
             if (go != null && go.name.StartsWith("Test")) Object.DestroyImmediate(go);
@@ -212,14 +212,14 @@ public class BossPortalTests
     // ────────────────────────── 컨트롤러 연동 ──────────────────────────
 
     /// <summary>
-    /// 잠긴 포탈의 요청은 <see cref="RunController"/>가 무시한다.
+    /// 잠긴 포탈의 요청은 <see cref="GameFlow"/>가 무시한다.
     /// **판단은 컨트롤러 한 곳에서만** 한다(포탈은 요청만 던진다) — 두 곳에서 검사하면 한쪽만
     /// 고쳤을 때 조용히 갈린다.
     /// </summary>
     [UnityTest]
     public IEnumerator Controller_IgnoresPortalRequestWhenLocked()
     {
-        var run = new GameObject("TestRunController").AddComponent<RunController>();
+        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -237,7 +237,7 @@ public class BossPortalTests
     {
         FillRegionKills(1);
 
-        var run = new GameObject("TestRunController").AddComponent<RunController>();
+        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -259,7 +259,7 @@ public class BossPortalTests
     [UnityTest]
     public IEnumerator BossDefeated_EndsRunAfterDelay()
     {
-        var run = new GameObject("TestRunController").AddComponent<RunController>();
+        var run = new GameObject("TestGameFlow").AddComponent<GameFlow>();
         yield return null;
 
         run.StartRun(1, RunMode.Normal);
@@ -270,7 +270,7 @@ public class BossPortalTests
         yield return null;
         Assert.AreEqual(GameScene.Run, GameState.Current, "지연 없이 즉시 결과 화면이 떴다");
 
-        yield return new WaitForSecondsRealtime(RunController.BossDeadEndDelay + 0.2f);
+        yield return new WaitForSecondsRealtime(GameFlow.BossDeadEndDelay + 0.2f);
 
         Assert.AreEqual(GameScene.Result, GameState.Current, "보스를 잡았는데 런이 안 끝났다");
         Assert.AreEqual(RunEndReason.BossDead, run.LastEndReason);

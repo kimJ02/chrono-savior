@@ -31,7 +31,13 @@ namespace ChronoSavior.Systems
         /// (에디터/윈도우는 `%USERPROFILE%/AppData/LocalLow/<회사>/<제품>`).
         /// 프로젝트 폴더에 쓰면 git에 섞이고 빌드본에선 쓰기 권한이 없을 수 있다.
         /// </summary>
-        public static string SavePath => Path.Combine(Application.persistentDataPath, FileName);
+        public static string SavePath => PathOverride ?? Path.Combine(Application.persistentDataPath, FileName);
+
+        /// <summary>
+        /// 테스트 전용 저장 위치. 실제 게임 씬을 띄우는 통합 테스트(`GameBootTests`)가 개발자의 진짜 세이브를 건드리지 않게
+        /// 임시 파일을 가리킨다. 게임 코드에선 쓰지 않는다(null = 기본 위치).
+        /// </summary>
+        public static string PathOverride;
 
         public static bool HasSave => File.Exists(SavePath);
 

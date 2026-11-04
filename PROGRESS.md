@@ -3,9 +3,6 @@
 > 새 세션은 이 파일부터 읽고 이어서 작업할 것. 작업할 때마다 여기를 갱신한다.
 
 
-> ⚠️ **리팩터 진행 중 — 다른 세션은 커밋 금지 (2026-11-04, 팀장 세션).** 씬 분할 1차(`refactor/scene-split-1`):
-> 옛 IMGUI 화면 제거 + `00_Persistent` 씬 신설 + `CombatCore` → `20_Combat`. 끝나면 이 줄을 지운다.
-
 ## 지금 상태 (2026-10-24)
 
 > **최종 목표가 바뀌었다(2026-09-30)**: 원본을 그대로 옮기는 게 아니라, **원본을 기준으로 팀 회의에서 정한 개선을 반영한다.**
@@ -111,9 +108,9 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
 **배치 검증 명령** (Unity 에디터를 반드시 닫고 실행 — 열려 있으면 프로젝트가 잠겨 크래시한다):
 
 ```bash
-# 컴파일 + 씬 재생성
-"/c/Program Files/Unity/Hub/Editor/6000.0.75f1/Editor/Unity.exe" -batchmode -quit -nographics \
-  -projectPath "C:\dev\chrono-savior" -executeMethod ChronoSavior.Editor.BuildPartAScene.Build \
+# 컴파일 + 씬 구성 검사(씬은 고치지 않는다 — 문제가 있으면 종료 코드 1)
+"/c/Program Files/Unity/Hub/Editor/6000.0.75f1/Editor/Unity.exe" -batchmode -nographics \
+  -projectPath "C:\dev\chrono-savior" -executeMethod ChronoSavior.Editor.SceneSetupValidator.RunBatch \
   -logFile "C:\dev\chrono-savior\build.log"
 ```
 
@@ -124,7 +121,7 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   -testResults "C:\dev\chrono-savior\test_results.xml" -logFile "C:\dev\chrono-savior\test.log"
 ```
 
-`-executeMethod`는 **네임스페이스 전체 경로**가 필요하다(`ChronoSavior.Editor.BuildPartAScene.Build`).
+`-executeMethod`는 **네임스페이스 전체 경로**가 필요하다(`ChronoSavior.Editor.SceneSetupValidator.RunBatch`).
 결과 파일명은 `.gitignore`에 걸리는 패턴(`*.log`, `*results*.xml`)을 쓸 것.
 
 ## 확인 필요 / 막힌 것
@@ -228,6 +225,15 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   (세이브 폴더가 `LocalLow/PigeonHelicopter/Chrono Savior/`로 바뀜 — 이 PC의 기존 세이브는 복사해 둠). 저장소 `kimJ02/yokai_unity` → `kimJ02/chrono-savior`.
   **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(멧돼지 등)·업적 '몬스터 학살'은 그대로(사용자 확인 필요).
   **팀원 주의**: 내일 받을 때 `using YokaiFront…` 가 남은 작업 중 파일이 있으면 `ChronoSavior`로 바꿔야 컴파일된다.
+- **2026-11-04 (4)** — **[나] 씬 분할 1차 (`main`, PlayMode 407/407).** 사용자 "처음부터 깔끔한 구조, 교수님이 보기에 완벽하게" — Codex와 4차례 검토·3차례 구현 리뷰 끝에 '통과'.
+  씬 `CombatCore` 하나 → `00_Persistent`(GameBoot·GameFlow·AutoSave·UI 판 PixelUI·EventSystem·공용 카메라·Audio) + `20_Combat`(월드, 옛 CombatCore GUID 유지). `SampleScene` 삭제.
+  `RunController` → `GameFlow`(이름만), `GameBoot` 신설(세이브 로드 → 월드 로드 → 활성 씬), 옛 IMGUI 7파일·`Sprites/UI`·`BuildUiTextures`·`BuildPartAScene` 삭제,
+  씬 검사 `Editor/SceneSetupValidator`(메뉴 `ChronoSavior/씬 구성 검증`), 에디터 Play는 `00_Persistent`부터(`Editor/PlayFromPersistent`, 테스트 실행엔 안 걸림).
+  화면은 판에 연결된 GameFlow만(`PxScreen.Flow`), 카메라 대상은 플레이어가 등록(`CameraFollow2D.Track`).
+  **버그 2개 수정**: ① 보스 발판 세트가 꺼진 채 저장돼 보스 무대에 발판이 안 나왔다(9/10부터) → 켠 채 저장 + `PlatformSet.Awake`가 무대를 따름.
+  ② 시간이 멈춘 화면에서 카메라가 목표에 정확히 서 있으면 `SmoothDamp`가 NaN → dt>0일 때만. 새 테스트 `GameBootTests`(실제 씬 부팅, 테스트 전용 세이브 경로).
+  **팀원 주의**: `RunController`가 `GameFlow`로 바뀌었다. 씬은 이제 손으로 고치는 게 원본 — 고친 뒤 '씬 구성 검증'. 계획·2차 할 일은 `HANDOFF.md`.
+  **확인 필요**: 새 전투 HUD엔 버프 줄(`BuffText`)이 없다(옛 IMGUI HUD엔 있었지만 이미 안 그리던 화면) — 넣을지 결정.
 - **2026-11-04 (3)** — **[나] 지역 이름도 컨셉에 맞게 (`main`).** 사용자 "지역 이름도 바꾸자". 1 대나무 숲→푸른 초원, 2 버려진 신사→버려진 마을,
   4 홍등 거리→고블린 소굴, 8 저승 문턱→망자의 묘지, 9 백귀야행→마왕성(3·5·6·7 안개 골짜기·폐허 성곽·설산 고개·화염 동굴은 그대로).
   업적 '숲의 수호자'→'초원의 수호자', '백귀야행 종결'→'마왕 토벌'.

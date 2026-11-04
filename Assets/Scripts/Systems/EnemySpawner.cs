@@ -162,7 +162,7 @@ public class EnemySpawner : MonoBehaviour
     /// 원본은 보스전이 별개의 런이라 `startRun`에서 한 번만 보스를 세우면 됐지만, 이제는
     /// **런 도중에** 무대가 바뀌므로 그 시점에 보스를 세우고 잡몹 타이머를 보스전 간격으로 돌린다.
     ///
-    /// `RunController`가 이미 `RunTransient.DestroyAll()`로 필드를 비운 뒤에 이 이벤트를 쏘므로
+    /// `GameFlow`가 이미 `RunTransient.DestroyAll()`로 필드를 비운 뒤에 이 이벤트를 쏘므로
     /// 여기서 다시 지우지 않는다 — 두 번 지우면 이 프레임에 세운 보스까지 날아간다.
     /// </summary>
     void HandleBossFieldEntered()
@@ -418,7 +418,7 @@ public class EnemySpawner : MonoBehaviour
         Achievements.CheckNew(ProfileService.Current);
 
         // 원본은 격파 1.6초 뒤에 `endRun('bossdead')`을 부른다(:4289). 지연을 주는 주체가
-        // `RunController`라 이벤트로 넘긴다 — 예전엔 이 호출이 아예 없어서 **보스를 잡아도 런이
+        // `GameFlow`라 이벤트로 넘긴다 — 예전엔 이 호출이 아예 없어서 **보스를 잡아도 런이
         // 안 끝나고 제한시간까지 빈 무대에 남아 있었다.**
         RunEvents.RaiseBossDefeated();
     }

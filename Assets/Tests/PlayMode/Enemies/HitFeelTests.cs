@@ -105,10 +105,10 @@ public class HitFeelTests
     [Test]
     public void KillFeel_MatchesOriginal()
     {
-        Assert.AreEqual((0.085f, 0f, 0f), RunController.KillFeel(boss: false, shrine: false, elite: false));
-        Assert.AreEqual((0.085f, 6f, 0.22f), RunController.KillFeel(false, false, elite: true));
-        Assert.AreEqual((0.25f, 14f, 0.5f), RunController.KillFeel(boss: true, false, false), "보스 처치는 0.25(예전엔 0.085)");
-        Assert.AreEqual((0.12f, 9f, 0.35f), RunController.KillFeel(false, shrine: true, false), "성소 파괴는 0.12");
+        Assert.AreEqual((0.085f, 0f, 0f), GameFlow.KillFeel(boss: false, shrine: false, elite: false));
+        Assert.AreEqual((0.085f, 6f, 0.22f), GameFlow.KillFeel(false, false, elite: true));
+        Assert.AreEqual((0.25f, 14f, 0.5f), GameFlow.KillFeel(boss: true, false, false), "보스 처치는 0.25(예전엔 0.085)");
+        Assert.AreEqual((0.12f, 9f, 0.35f), GameFlow.KillFeel(false, shrine: true, false), "성소 파괴는 0.12");
     }
 
     [Test]
@@ -197,7 +197,7 @@ public class HitFeelTests
         var cam = new GameObject("TestCamera");
         cam.AddComponent<Camera>().orthographic = true;
         var follow = cam.AddComponent<CameraFollow2D>();
-        follow.target = target;
+        CameraFollow2D.Track(target);
         yield return null;
 
         HitFeel.Shake(10f, 0.18f);
@@ -209,6 +209,36 @@ public class HitFeelTests
         yield return new WaitForSecondsRealtime(0.3f);
         yield return null;
         Assert.AreEqual(Vector3.zero, follow.LastShakeOffset, "흔들림이 끝났는데 카메라가 제자리로 안 돌아왔다");
+    }
+
+    /// <summary>
+    /// 시간이 멈춘 화면(타이틀·일시정지·결과·히트스톱 — timeScale 0)에서 카메라가 목표에 정확히 서 있으면 `Mathf.SmoothDamp`가
+    /// 속도를 0/0으로 계산해 NaN을 만들고, 그 뒤 카메라 위치가 영영 NaN이 됐다(2026-11-04 씬 부팅 테스트가 잡음).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Camera_WhileTimeIsFrozen_StaysPut_NoNaN()
+    {
+        var target = new GameObject("TestTarget").transform;
+        target.position = new Vector3((FieldBounds.MinX + FieldBounds.MaxX) * 0.5f, FieldBounds.GroundY, 0f); // 필드 가운데(가장자리 고정에 안 걸리게)
+        var cam = new GameObject("TestCamera");
+        cam.AddComponent<Camera>().orthographic = true;
+        cam.AddComponent<CameraFollow2D>();
+        CameraFollow2D.Track(target);
+        yield return null; // 첫 프레임에 목표 위치로 붙는다
+        var settled = cam.transform.position;
+
+        Time.timeScale = 0f;
+        try
+        {
+            for (int i = 0; i < 5; i++) yield return null;
+            Assert.IsFalse(float.IsNaN(cam.transform.position.x) || float.IsNaN(cam.transform.position.y), "멈춘 시간에 카메라가 NaN이 됐다");
+            Assert.AreEqual(settled, cam.transform.position, "멈춘 동안엔 따라가지 않는다");
+        }
+        finally { Time.timeScale = 1f; }
+
+        target.position += Vector3.right * 2f;
+        yield return new WaitForSeconds(0.3f);
+        Assert.Greater(cam.transform.position.x, settled.x, "시간이 다시 흐르면 정상적으로 따라간다");
     }
 
     // ---------------- 플레이어가 맞을 때 ----------------

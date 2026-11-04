@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
 namespace ChronoSavior.UI
 {
@@ -44,6 +45,12 @@ namespace ChronoSavior.UI
         protected virtual int NavColumns => 1;
         /// <summary>화면이 켜질 때 고를 버튼.</summary>
         protected virtual int DefaultNav => 0;
+
+        /// <summary>
+        /// 게임 흐름(사냥 시작·로비·일시정지). 화면은 같은 오브젝트의 판(<see cref="PixelCanvas"/>)에 씬에서 연결된 GameFlow만 쓴다 —
+        /// 씬을 뒤져 찾지 않는다(2026-11-04 씬 분할). 테스트처럼 판에 GameFlow가 없으면 null.
+        /// </summary>
+        protected GameFlow Flow => TryGetComponent(out PixelCanvas canvas) ? canvas.Flow : null;
 
         protected readonly List<PxButton> Nav = new List<PxButton>();
         public int NavIndex { get; private set; } = -1;

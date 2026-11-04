@@ -22,7 +22,7 @@ namespace ChronoSavior.Systems
     /// 계속 돌기 때문에 여기서 ESC를 읽는 건 문제없다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class RunController : MonoBehaviour
+    public class GameFlow : MonoBehaviour
     {
         [Header("시작 설정")]
         [Tooltip("로비에서 '사냥 시작'을 눌렀을 때 들어갈 지역. 정식 지역 선택은 로비 스테이지 탭이 맡는다.")]

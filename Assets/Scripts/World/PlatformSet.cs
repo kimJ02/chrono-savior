@@ -19,7 +19,17 @@ namespace ChronoSavior.World
         [Tooltip("체크하면 보스전 무대. 해제하면 일반 사냥 무대.")]
         public bool bossArena;
 
-        void Awake() => All.Add(this);
+        /// <summary>
+        /// 목록에 등록하고 **지금 무대에 맞춰 스스로 켜고 끈다.** 그래서 두 세트 모두 씬에 켜진 채로 저장돼 있어야 한다 —
+        /// 꺼진 채 저장된 오브젝트는 Awake가 안 불려 목록에 안 들어가고, 그러면 <see cref="Activate"/>가 영영 켜지 못한다
+        /// (2026-11-04 발견: 보스 세트가 꺼진 채 저장돼 보스 무대에 발판이 안 나왔다). 씬이 게임 흐름보다 늦게 로드돼도(씬 분할)
+        /// 마지막으로 정한 무대(<see cref="FieldLayout.IsBossArena"/>)를 따른다. 씬 검증(`Editor/SceneSetupValidator`)이 저장 상태를 확인한다.
+        /// </summary>
+        void Awake()
+        {
+            All.Add(this);
+            gameObject.SetActive(bossArena == FieldLayout.IsBossArena);
+        }
         void OnDestroy() => All.Remove(this);
 
         /// <summary>

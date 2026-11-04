@@ -13,11 +13,11 @@ namespace ChronoSavior.Tests.PlayMode
 /// 게임 뼈대(로비↔사냥↔일시정지↔결과) 검증 — 원본 `startRun`/`pauseRun`/`resumeRun`/`endRun`/`toLobby`
 /// (project_test.html:4293·:4332·:4346·:4354·:4382).
 ///
-/// ⚠️ **`Time.timeScale`을 반드시 되돌려야 한다.** `RunController`는 사냥이 아닐 때 `timeScale = 0`으로
+/// ⚠️ **`Time.timeScale`을 반드시 되돌려야 한다.** `GameFlow`는 사냥이 아닐 때 `timeScale = 0`으로
 /// 게임을 멈추는데(확정 설계), 테스트가 0인 채로 끝나면 **그 뒤에 도는 다른 테스트의
 /// `WaitForSeconds`가 영원히 안 끝난다** — 스위트 전체가 멈춘다. TearDown에서 1로 복구한다.
 /// </summary>
-public class RunControllerTests
+public class GameFlowTests
 {
     [SetUp]
     public void Setup() => ResetStatics();
@@ -43,10 +43,10 @@ public class RunControllerTests
         ProfileService.Reset();
     }
 
-    static RunController NewController()
+    static GameFlow NewController()
     {
-        var go = new GameObject("TestRunController");
-        return go.AddComponent<RunController>();
+        var go = new GameObject("TestGameFlow");
+        return go.AddComponent<GameFlow>();
     }
 
     /// <summary>런 오브젝트 흉내 — 표식만 있으면 `RunTransient.DestroyAll()`이 지워야 한다.</summary>
@@ -214,7 +214,7 @@ public class RunControllerTests
 
         // 90초를 실제로 기다릴 순 없으니 남은 시간을 직접 태운다(RunState.Tick은 순수 계산이다).
         RunState.Tick(RunState.NormalTime + 1f);
-        yield return null; // RunController.Update가 0이 된 걸 보고 끝낸다
+        yield return null; // GameFlow.Update가 0이 된 걸 보고 끝낸다
 
         Assert.AreEqual(GameScene.Result, GameState.Current);
         Assert.AreEqual(RunEndReason.Timeout, rc.LastEndReason);

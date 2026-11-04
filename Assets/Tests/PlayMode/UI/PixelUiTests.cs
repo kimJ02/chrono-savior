@@ -73,12 +73,11 @@ public class PixelUiTests
     }
 
     [UnityTest]
-    public IEnumerator PauseMenu_ShowsOnlyWhilePaused_AndReplacesOldPause()
+    public IEnumerator PauseMenu_ShowsOnlyWhilePaused()
     {
         var pause = pc.GetComponent<PauseMenu>();
         yield return null;
         Assert.IsFalse(pause.IsShown, "사냥 중엔 안 보인다");
-        Assert.IsTrue(PxScreens.Has<PauseMenu>(), "예전 IMGUI 일시정지는 이걸 보고 안 그린다");
 
         GameState.Set(GameScene.Pause);
         yield return null;
@@ -98,7 +97,7 @@ public class PixelUiTests
         SettingsWindow.Open();
         yield return null;
         Assert.IsTrue(settings.IsShown);
-        Assert.IsTrue(UiModal.OwnsEscape, "설정 창이 떠 있으면 ESC는 창 몫(RunController가 일시정지를 안 푼다)");
+        Assert.IsTrue(UiModal.OwnsEscape, "설정 창이 떠 있으면 ESC는 창 몫(GameFlow가 일시정지를 안 푼다)");
 
         SettingsWindow.Close(); // ESC로 닫을 때처럼 — 창은 이 프레임 끝(LateUpdate)까지 남아 있다
         Assert.IsTrue(UiModal.OwnsEscape, "닫는 그 프레임의 ESC는 아직 창 몫");
@@ -134,7 +133,6 @@ public class PixelUiTests
         Assert.IsFalse(hud.ComboShown, "콤보 0이면 숨김(원본)");
         Assert.IsFalse(hud.BossBarShown, "보스가 없으면 보스 체력바 없음");
         Assert.AreEqual(FieldLayout.Platforms.GetLength(0) + 1, hud.MinimapLineCount, "미니맵 = 발판마다 한 줄 + 땅");
-        Assert.IsTrue(PxScreens.Has<CombatHud>(), "예전 IMGUI HUD는 이걸 보고 안 그린다");
 
         hud.Preview = new CombatHud.PreviewState { Hp = 0f, MaxHp = 100f, Combo = 12, BossRatio = 0.3f };
         yield return null;

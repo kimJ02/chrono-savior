@@ -130,6 +130,7 @@ namespace ChronoSavior.UI
         void Build()
         {
             root = new GameObject("LobbyBuildings");
+            root.transform.SetParent(transform, false); // 이 오브젝트(월드 씬)의 자식 — 씬을 내리면 같이 사라진다
             for (int i = 0; i < Buildings.Length; i++) BuildBuilding(Buildings[i], XOf(i));
             root.SetActive(false);
         }

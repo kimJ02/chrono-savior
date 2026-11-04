@@ -70,6 +70,10 @@ namespace ChronoSavior.Characters
             ApplySelection(Current, notifyPrevious: false);
         }
 
+        // 카메라(`00_Persistent`)는 씬이 달라 이 플레이어를 직렬화로 못 가리킨다 — 플레이어가 스스로 추적 대상으로 등록한다(2026-11-04 씬 분할).
+        void OnEnable() => ChronoSavior.World.CameraFollow2D.Track(transform);
+        void OnDisable() => ChronoSavior.World.CameraFollow2D.Untrack(transform);
+
         /// <summary>
         /// 지금 켜져 있는 키트(<see cref="Current"/>의 것). HUD가 여기서 스킬 슬롯 상태(<see cref="ISkillSlotSource"/>)를
         /// 읽는다 — 키트가 없는 캐릭터를 가리키는 순간은 없지만(<see cref="Update"/>가 되돌린다) 방어로 null을 준다.

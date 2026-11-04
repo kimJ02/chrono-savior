@@ -236,44 +236,17 @@ public class SkillSlotTests
     }
 
     /// <summary>
-    /// HUD가 이 값들을 **실제로 읽는지** — 그리는 쪽은 IMGUI라 배치로 못 돌리므로, `docs/worksplit.md` "단골 함정 2"
+    /// 전투 HUD(`UI/Screens/CombatHud`, Figma)가 이 값들을 **실제로 읽는지** — `docs/worksplit.md` "단골 함정 2"
     /// (정의만 하고 호출부를 안 만드는 실수)를 `OriginalFidelityTests.DefinedApis_AreActuallyCalledSomewhere`와 같은
-    /// 방식(소스를 직접 훑기)으로 막는다. 그 목록은 공용 파일이라 병렬 작업 중 충돌을 피해 여기 따로 뒀다.
+    /// 방식(소스를 직접 훑기)으로 막는다. 예전엔 옛 IMGUI HUD(`GameHud`)를 검사했는데 2026-11-04 그 화면을 지웠다
+    /// (새 HUD가 그리고 있어 이미 아무것도 안 그리던 코드). 버프 줄(`BuffText`)은 새 HUD에 아직 없다 — PROGRESS.md 확인 필요.
     /// </summary>
     [Test]
-    public void GameHud_DrawsSlotsFromTheCurrentKit()
+    public void CombatHud_DrawsSlotsFromTheCurrentKit()
     {
-        string hud = File.ReadAllText(Path.Combine(Application.dataPath, "Scripts", "UI", "GameHud.cs"));
-        // 단어 경계(\b)를 둔다 — `.SkillSlot`만 찾으면 `UiTheme.SkillSlotAttack`에도 걸려 검사가 헛돈다.
-        foreach (var use in new[]
-                 {
-                     @"DrawSkillSlots\(\);", @"CurrentKit as ISkillSlotSource\b",
-                     @"\.AttackSlot\b", @"\.SkillSlot\b", @"\.BuffText\b",
-                     @"UiTheme\.SkillSlotAttack\b", @"UiTheme\.SkillSlotSkill\b", @"UiTheme\.SkillSlotJump\b",
-                 })
-            Assert.IsTrue(Regex.IsMatch(hud, use), $"GameHud가 `{use}`를 안 쓴다 — 슬롯이나 버프 줄이 화면에 안 뜬다");
-    }
-
-    /// <summary>
-    /// 씬의 `UiTextures`에 Figma 슬롯 그림 3장이 꽂혀 있는지 — 빠지면 에러 없이 **도형 대체 그림**으로 조용히 바뀐다
-    /// (눈으로만 잡히는 종류). 씬은 `BuildPartAScene`을 다시 돌리지 않고 참조 3줄을 직접 넣었다.
-    /// </summary>
-    [Test]
-    public void Scene_WiresTheFigmaSlotArt()
-    {
-        string scene = File.ReadAllText(Path.Combine(Application.dataPath, "Scenes", "CombatCore.unity"));
-        foreach (var (field, file) in new[]
-                 {
-                     ("skillSlotAttack", "skill_slot_attack"), ("skillSlotSkill", "skill_slot_skill"),
-                     ("skillSlotJump", "skill_slot_jump"),
-                 })
-        {
-            string meta = File.ReadAllText(Path.Combine(Application.dataPath, "Sprites", "UI", file + ".png.meta"));
-            string guid = Regex.Match(meta, @"^guid: ([0-9a-f]{32})", RegexOptions.Multiline).Groups[1].Value;
-            Assert.IsNotEmpty(guid, file + ".png.meta에 guid가 없다");
-            StringAssert.Contains($"{field}: {{fileID: 2800000, guid: {guid}, type: 3}}", scene,
-                $"씬의 UiTextures.{field}에 {file}.png가 안 꽂혀 있다 — 슬롯이 Figma 그림 대신 도형으로 그려진다");
-        }
+        string hud = File.ReadAllText(Path.Combine(Application.dataPath, "Scripts", "UI", "Screens", "CombatHud.cs"));
+        foreach (var use in new[] { @"CurrentKit as ISkillSlotSource\b", @"\.AttackSlot\b", @"\.SkillSlot\b" })
+            Assert.IsTrue(Regex.IsMatch(hud, use), $"CombatHud가 `{use}`를 안 쓴다 — 슬롯이 화면에 안 뜬다");
     }
 }
 }

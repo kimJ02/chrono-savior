@@ -18,7 +18,21 @@ namespace ChronoSavior.World
     [RequireComponent(typeof(Camera))]
     public class CameraFollow2D : MonoBehaviour
     {
-        public Transform target;
+        /// <summary>
+        /// 따라갈 대상. 카메라는 `00_Persistent`, 플레이어는 `20_Combat`에 있어 씬끼리는 직렬화로 이을 수 없다(2026-11-04 씬 분할) —
+        /// **대상 쪽이 스스로 등록한다**(<see cref="Track"/>/<see cref="Untrack"/>). 카메라는 매 프레임 이 값을 읽으므로
+        /// 카메라와 대상 중 무엇이 먼저 켜져도 연결된다.
+        /// </summary>
+        public static Transform Target { get; private set; }
+
+        public static void Track(Transform t) => Target = t;
+
+        /// <summary>그 대상이 지금 등록된 대상일 때만 지운다 — 다른 대상이 이미 덮어썼으면 건드리지 않는다.</summary>
+        public static void Untrack(Transform t)
+        {
+            if (Target == t) Target = null;
+        }
+
         public float smoothTime = 0.15f;
 
         float velocityX;
@@ -33,6 +47,7 @@ namespace ChronoSavior.World
         /// <summary>원본 흔들림 px → 우리 월드 유닛. 화면 높이 대비 같은 비율(원본 720px ↔ 우리 4.22유닛).</summary>
         public const float ShakePxToUnits = StageArtConfig.ViewHalfHeight * 2f / HitFeel.OriginalViewHeightPx;
         Rigidbody2D targetBody;
+        Transform bodyOwner;
 
         void Awake()
         {
@@ -49,8 +64,9 @@ namespace ChronoSavior.World
 
         void LateUpdate()
         {
+            var target = Target;
             if (target == null) return;
-            if (targetBody == null) targetBody = target.GetComponent<Rigidbody2D>();
+            if (bodyOwner != target) { bodyOwner = target; targetBody = target.GetComponent<Rigidbody2D>(); }
 
             float halfWidth = StageArtConfig.ViewHalfWidth;
             float min = FieldBounds.MinX + halfWidth;
@@ -74,8 +90,13 @@ namespace ChronoSavior.World
                 // 로비는 시간이 멈춘 채(timeScale 0) 캐릭터만 걷는다(`UI/Screens/LobbyWorld`) — 카메라도 실제 시간으로 따라간다.
                 // 사냥 중엔 원본처럼 게임 시간(히트스톱·일시정지에 멈춤).
                 float dt = GameState.Current == GameScene.Lobby ? Time.unscaledDeltaTime : Time.deltaTime;
-                basePos.x = Mathf.SmoothDamp(basePos.x, desiredX, ref velocityX, smoothTime, Mathf.Infinity, dt);
-                basePos.y = Mathf.SmoothDamp(basePos.y, followY, ref velocityY, StageArtConfig.CameraSmoothTimeY, Mathf.Infinity, dt);
+                // 시간이 멈춰 있으면(타이틀·일시정지·결과·히트스톱, dt = 0) 따라가지 않는다. `Mathf.SmoothDamp`는 dt가 0이고 이미 목표에 서 있으면
+                // 속도를 0/0으로 계산해 NaN을 만들고, 그 뒤로 카메라 위치가 영영 NaN이 된다(2026-11-04 씬 부팅 테스트가 잡음).
+                if (dt > 0f)
+                {
+                    basePos.x = Mathf.SmoothDamp(basePos.x, desiredX, ref velocityX, smoothTime, Mathf.Infinity, dt);
+                    basePos.y = Mathf.SmoothDamp(basePos.y, followY, ref velocityY, StageArtConfig.CameraSmoothTimeY, Mathf.Infinity, dt);
+                }
             }
 
             // 원본 `updateShake(rawDt)` — 히트스톱 중에도 흔들린다(실제 시간).

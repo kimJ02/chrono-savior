@@ -212,14 +212,14 @@ namespace ChronoSavior.UI
 
         void Enter()
         {
-            if (TryEnter(selected)) open = false;
+            if (TryEnter(Flow, selected)) open = false;
         }
 
         /// <summary>
         /// 스테이지에 들어간다 — 잠김·멸망(0일)을 확인하고(안 되면 공용 팝업으로 알림) 사냥을 시작한다. 입장료는 없다(사용자 2026-10-25).
-        /// 스테이지 선택의 "원정 떠나기"와 결과 화면의 "다시 원정"이 같이 쓴다. 들어가면 멸망까지 하루가 준다(`RunController.StartRun`).
+        /// 스테이지 선택의 "원정 떠나기"와 결과 화면의 "다시 원정"이 같이 쓴다. 들어가면 멸망까지 하루가 준다(`GameFlow.StartRun`).
         /// </summary>
-        public static bool TryEnter(int s)
+        public static bool TryEnter(GameFlow flow, int s)
         {
             var p = ProfileService.Current;
             if (!p.IsRegionOpen(s)) { CommonPopup.Alert($"stage {s}", "이전 스테이지의 보스를 잡아야 열린다."); return false; }
@@ -228,9 +228,8 @@ namespace ChronoSavior.UI
                 CommonPopup.Alert("멸망", "멸망까지 남은 기간이 다했다.\n시간 회귀(환생)로 되돌아가야 한다.");
                 return false;
             }
-            var run = Object.FindFirstObjectByType<RunController>();
-            if (run == null) return false;
-            run.StartRun(s, RunMode.Normal);
+            if (flow == null) return false;
+            flow.StartRun(s, RunMode.Normal);
             return true;
         }
     }

@@ -1,83 +1,113 @@
-# 현재 스프린트 — 프로토타입 ① 직업별 스킬 구현 (2026-09-23 ~ 10-02, 드루이드 제외)
+# 현재 스프린트 — 구조 정리 (씬·코드) (2026-11-04 ~)
 
-> **최종 목표(2026-09-30 변경): `reference/project_test.html` 원본을 기준으로, 팀 회의에서 정한 개선점을 반영한다.**
-> 기본값은 여전히 원본 동작이다. 원본과 다르게 가는 건 회의 결정뿐이고, 원본과 다른 점을 발견하면 짚는다.
-> **순서·날짜의 정본은 노션 일정표(2026-09-23)** — 옮겨 적은 표는 `docs/worksplit.md` 1절.
-> 직전 스프린트(모든 캐릭터 0차 + 모든 몬스터)는 `docs/sprints/05-all-characters-tier0.md`(완료 기록, 현재 스펙 아님).
+> **목표(2026-11-04 사용자): 성능이 아니라 '처음부터 깔끔한 코드·씬 구조'.** 교수님 리뷰 기준으로 파일·코드·씬 구조가 깔끔해야 한다.
+> 게임 동작·수치는 원본(`reference/project_test.html`) 기준 그대로다 — 구조 정리로 동작이 바뀌면 안 된다(바뀌면 짚는다).
+> **협업**: Claude = 조사·구현·PlayMode 테스트·커밋 / Codex = 설계 비판·리뷰(`AGENTS.md`, 읽기 전용). 합의는 Codex가 '합의'라고 답할 때까지 반복했다.
+> 직전 스프린트(직업별 스킬)는 `docs/sprints/08-class-skills.md`(완료 기록). 팀원 제안 `docs/sprints/06-scene-split.md`는 이 문서로 **대체됨**.
 >
-> | 문서 | 소유하는 것 |
-> |---|---|
-> | **이 파일** | 지금 스프린트의 범위·수치·완료 기준 |
-> | `docs/worksplit.md` | **전체 일정표** + 분업(나 = 뼈대·메카닉·몹·시스템 / 팀원 = 섬영) + **공유 계약** |
-> | `docs/original-parity.md` | 원본↔Unity 전수 대조표 + 원본 위치 색인 |
-> | `PROGRESS.md` | 지금 상태·다음 할 일·작업 재개 방법 |
+> 기준: 깔끔한 코드 = 패턴이 많은 코드가 아니라 **읽는 사람이 바로 따라갈 수 있는 코드.** 작은 프로젝트에 과한 계층·추상화 금지.
 
-## 이번 스프린트에서 하는 것 — 캐릭터마다 전문화(스킬트리) 두 갈래 × 1~5층
+## 정리 순서와 상태
 
-원본 `SPEC[무기]`(project_test.html:897~)를 캐릭터마다 원본대로 옮긴다. 0차(기본공격만)는 직전 스프린트에서
-끝났다. X 스킬은 1층부터 열린다 — 원본은 `tier < 1`이면 막고 메시지만 띄운다(`tryMageSkill` `:2169` 등).
-빌드는 로비 전문화 탭에서 SP로 배운다(원본 `learnSkill` `:7011` — 갈래는 처음 고를 때 고정, 1층부터 순서대로).
+| 순위 | 작업 | 상태 |
+|---|---|---|
+| 0 | 규칙 정하기(아래) | ✅ 합의 |
+| 1 | 옛 IMGUI 화면 제거(`TitleScreen`·`LobbyScreen`·`GameHud`·`ResultScreen`·`RegressionWindow`·`UiTheme`·`UiTextures`·`Sprites/UI/`·`BuildUiTextures`) | ✅ 씬 분할 1차에 포함 |
+| 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 할 일 |
+| 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector) 할 일 | 진행 중 |
+| 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 117곳, UI의 월드 탐색) | 할 일 |
+| 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
 
-| 캐릭터 | 갈래 | 담당 | 상태 |
-|---|---|---|---|
-| 마법사 | 폭발 · 중력 | 나 | ✅ 5층 완료(`main`) — 10/03 원본 대조로 동작 버그 5건 바로잡음(`fix/mage-original-behavior`) |
-| 메카닉 | 레이저 · 설치기 | 나 | ✅ 5층 완료(`main`, 2026-09-30 병합) |
-| 섬영 | 집중 · 칼날폭풍 | 팀원 | ✅ 5층 완료(`main`, 10/14 병합) — 로비 섬영 탭·섬영 업적은 병합 때 나 |
+회차 계획(Codex와 영역별 검토): **1 씬·부팅 ✅** / 2 전역 상태·결합 / 3 UI / 4 Systems·Enemies / 5 Characters·Combat·World
 
-드루이드는 기획에서 제외됐다(2026-09-28).
+## 0단계 규칙(결정 사항)
 
-### 메카닉 — 완료 (수치는 전부 `Characters/GunnerSpecConfig`, 원본 줄과 함께)
+1. **씬 파일이 유일한 원본.** 씬을 코드로 통째로 만들던 `BuildPartAScene`은 지웠고, `Editor/SceneSetupValidator`(메뉴 `ChronoSavior/씬 구성 검증`)가 검사만 한다.
+2. 씬 이름·폴더·화면별 책임, 상주 오브젝트 소유권, 로드·언로드 순서를 정한다(아래 1회차).
+3. 재사용 구성이 있는 오브젝트는 프리팹, 조정할 공유 설정은 ScriptableObject를 **우선** — 일회성 효과·정당한 런타임 추가는 예외로 두고 담당 위치·이유를 기록. 세이브는 별도 흐름(`ProfileService` 구조는 4단계에서).
+4. 씬 배치와 코드 생성을 나누고, `AddComponent`를 허용하는 위치와 이유를 기록(2단계에서 목록화).
+5. 코드·네임스페이스·Assets 폴더 규칙. `Resources`, `Sprites/`↔`Resources/Art` 중복은 참조 확인 후 정리(`SampleScene`은 1차에서 삭제).
+6. 기능 제거·씬 분할마다 '그대로 동작해야 할 것'과 확인 방법을 먼저 정한다. asmdef 계층은 순환이 없으니 유지.
 
-- **레이저 빌드**(`move`): Z를 누르는 동안 관통 광선(`updateGunnerBeam` `:2224`) — 적중마다 충전 스택 +1.
-  3층 원뿔 유도, 5층 휘는 광선. X = 충전 스택을 전부 써서 레이저 드론(`summonLaserDrone` `:2363`, 5층 2기).
-- **설치기 빌드**(`conv`): Z는 총알, 적중 10회마다 부품 1개(런 시작 때 1개). X = 부품 1개로 설치기
-  (`placeGunnerTurret` `:2349`, 한도 3~5, 넘치면 가장 오래된 것 교체). 설치기 2개 이상이면 연결선·닫힌 도형 안
-  장판 피해(`updateZones` `:3766`).
-- HUD 스킬 슬롯(Z·X 쿨다운, 충전 스택·부품 `n/최대`) — 원본 `setSlotCooldown`(`:6248`).
-- 수동 테스트: 에디터 메뉴 **`ChronoSavior/메카닉 테스트/…`**(Play 중) — 레이저·설치기 1~5층을 바로 세팅한다.
+## 1회차 합의 — 씬·부팅 구조 (2026-11-04 세 차례 검토, Codex '1회차 최종 합의')
 
-### 섬영 — 팀원 진행 중
+> 처음 합의안을 실제 코드와 세 번 대조해 구멍 23개(Claude 19 + Codex 4)를 찾아 고쳤다. 아래가 최종이다.
 
-- 원본 `SPEC.blade`, 집중(X) `bladeFocusStart` `:2521`, 칼날폭풍 `storm` `:636`.
-- 갈래·층 저장은 `Core/PlayerProfile`(9/28 팀원 연락: 섬영 필드를 추가한다). 메카닉이 먼저 `main`에 들어가서
-  (2026-09-30) 같은 파일이 충돌한다 — 푸는 법은 `docs/worksplit.md` 8절.
-- HUD 쿨다운을 붙이려면 `BladeCombat`에 `ISkillSlotSource`만 구현하면 된다(`docs/worksplit.md` 3절 표 아래 메모).
+| 항목 | 결정 |
+|---|---|
+| 씬 | **3개**: `00_Persistent`(빌드 첫 씬) / `10_Lobby` / `20_Combat`. 번호는 폴더 정렬용, 진입 순서는 Build Settings에 명시. **Title 씬은 두지 않는다** — 타이틀은 UI가 화면 전체를 덮어(`TitleMenu.cs:38~39`) 월드 씬이 비게 되므로 `00_Persistent`의 전체 화면 UI로 |
+| 00_Persistent | GameFlow·UI 캔버스(모든 화면·일시정지·결과 오버레이)·EventSystem·AutoSave·HitSound·**공용 카메라 하나**(PixelPerfectCamera·AudioListener·CameraFollow2D). 월드 씬은 카메라 대신 '추적 대상·경계'만 제공, 타이틀에선 카메라 끔, 언로드 때 대상 참조를 비움. 상주 오브젝트가 두 번 로드되지 않게 부팅 규칙을 둔다 |
+| 10_Lobby | 로비 월드(건물·땅) + **로비 아바타**(걷기·그림만, Player 태그 없음). 전투를 끝낸 뒤의 독립 모드(진입은 전부 `EnterLobby()`가 필드를 지움). timeScale 0·unscaled 걷기 유지 |
+| 20_Combat | 필드·발판 두 벌·보스 포털·스포너·StageVisuals·플레이어·CombatDirector. 보스 필드 진입은 같은 씬 안에서(발판 전환) |
+| RunController 분리 | **GameFlow(상주)**: `Start`·`EnterLobby`·`Pause`·`Resume`·`EndRun`·`StartRun`(날짜 차감·`RunState.Begin`·전투 씬 진입), `defaultRegion`·`LastEndReason`. `GameState.Set`과 **timeScale 대입은 여기서만**. **CombatDirector(전투 씬)**: 필드 초기화·`RunState.Tick`·보스 종료 타이머·`EnterBossField`·`ResetPlayer`·처치·사망·피격 연출·전투 이벤트 구독. 히트스톱은 `RequestHitstop(duration)`으로 요청만, 런 종료는 원인만 전달. 정적 이벤트는 `OnEnable`/`OnDisable` 대칭 구독·해제 |
+| timeScale | GameFlow가 unscaled 시간으로 히트스톱 만료 관리. 만료 시 `GameState.Run`일 때만 1로. Pause·Lobby·Title·Result 진입 때 히트스톱 취소 |
+| 전환 | GameFlow에 '전환 중' 상태 하나 — 입력·중복 전환 잠금. 순서: 새 씬 로드 → 준비 확인 → 활성 씬 지정 → `GameState.Set` → 이전 씬 언로드. 실패 시 잠금·상태 복구 |
+| 재도전 | 결과 화면 '다시 원정'(`RunResultScreen.cs:129`)은 `20_Combat`을 언로드 후 다시 로드(깨끗한 상태) |
+| 에디터 Play | 에디터 전용(`#if UNITY_EDITOR`): `playModeStartScene = 00_Persistent`, Play 직전 열려 있던 씬 경로를 `SessionState`에 남기고 GameFlow가 에디터에서만 그 씬으로 바로 진입(값은 쓰고 지움). 빌드 동작은 안 바뀜. 평소처럼 `20_Combat`을 열고 Play해도 동작 |
+| 캐릭터 그림 | `PlayerRig.characterSprites`를 ScriptableObject `CharacterArtSet` 하나로 빼고 PlayerRig·로비 아바타·에디터 도구가 같이 참조 |
+| 자동 설치 제거 | `PixelCanvas.Install()`·`StageVisuals.Install()` 삭제 → 씬 배치. `PixelCanvas.Init()/Create()`는 '씬 배치용 초기화'와 '테스트용 생성'으로 경계를 나눔. StageVisuals의 런타임 그림 생성은 생성 책임·입력 데이터를 기록 |
+| UI 연결 | UI 11곳의 `FindFirstObjectByType<RunController>`는 분할과 **같은 단계에서** GameFlow 참조로(정적 전역 조회로 만들지 않고 연결 경계 명시) |
+| AutoSave | 상주 씬. Result 상태 변경(저장)이 전투 씬 언로드보다 먼저 일어나는지 보장 |
+| BuildPartAScene | 생성하지 않고 씬 필수 구성 검증만 |
+| 로비 캐릭터 선택 | 지금은 로비 창이 전투 `PlayerRig`를 찾아 고른다(`CharacterSelectScreen.cs:118,126,140,159~160`) → 로비 씬엔 없음. **로비는 프로필 값만 바꾸고 저장**, `PlayerRig`는 전투 씬 로드 때 프로필을 읽어 키트를 켠다(이미 `PlayerRig.cs:68,122` 구조). 데이터는 셋으로 나눈다: 그림(`CharacterArtSet`) / 캐릭터 정의·해금 조건(별도 데이터) / 보유 상태(`ProfileService`) |
+| 스테이지 선택 그림 | 지금은 스포너에서 몬스터·보스 그림을 가져온다(`StageSelectScreen.cs:175~184`) → 로비엔 없음. 그림을 `EnemyData`(기존 SO 확장)와 보스 정의 데이터로 옮겨 스포너·스테이지 선택이 같이 읽음 |
+| 활성 씬·소유 | Unity는 새 오브젝트를 **활성 씬**에 만든다(월드 쪽 런타임 생성 18파일). 월드 씬 로드 직후 그 씬을 활성으로, Persistent 생성물은 Persistent 부모 아래로. 테스트: 전투→로비 후 Persistent에 월드 잔존물 없음 |
+| 전환 중 월드 겹침 | 겹쳐 로드하는 동안 이전·새 월드가 동시에 돌면(특히 재도전 전투→전투) 몹·물리가 같은 좌표에서 섞인다 → 전환 시작 때 이전 월드를 멈추고(비활성), 새 월드 준비가 끝난 뒤 켠다. 테스트 포함 |
+| UI 월드 탐색 | Persistent UI가 월드를 찾는 곳은 **24곳**(RunController·EnemySpawner 11 + Boss·BossPortal·PlayerRig·EnemyHealth·Player 태그). 원칙: UI는 월드를 직접 찾지 않는다. 24곳을 일괄 치환하지 말고 UI별 필요한 정보만 월드 쪽 등록·이벤트로 받음. 전투 씬이 없을 때도 안전 |
+| 카메라 대상 | `CameraFollow2D`의 Player 태그 탐색 → 활성 월드가 추적 대상(전투=플레이어, 로비=아바타)·경계를 명시적으로 넘김 |
+| 부팅 순서 | 세이브 로드가 지금은 '씬 빌더가 AutoSave를 먼저 만든다'는 생성 순서에 기댄다(`AutoSave.cs:18~24`). → GameFlow 부팅 단계가 **세이브 로드 → 타이틀(또는 에디터 지정 씬)** 을 명시적으로, 모든 소비자(UI·PlayerRig)의 `Awake` 전에 프로필 준비를 보장. AutoSave는 저장만. 테스트 포함 |
+| 문서 | 착수 때 이 계획을 `HANDOFF.md`(현재 스프린트)로 옮긴다(`docs/sprints/`는 아카이브라는 CLAUDE.md 규칙). 팀원 제안 `06-scene-split.md` 맨 위엔 '대체됨' 배너 + 뒤집힌 결정표(4분할→3분할, 이유), 팀원에게 인수인계 때 알림 |
+| 착수 조건 | CLAUDE.md '대규모 리팩터링 절차': 팀원 미병합 작업 전부 병합(원격엔 없음 확인, **팀원 로컬 미푸시 작업 확인 전엔 시작 안 함**) → `PROGRESS.md`에 '리팩터 진행 중 — 다른 세션 커밋 금지' 선언 → 한 세션 단독·`git mv` → 배치 컴파일 + PlayMode 전체 통과 → 즉시 main 병합·선언 해제 |
+| 고칠 도구 | ApplyCharacterArt·ApplyTempCharacterArt(**팀원 확인 필요**)·CaptureStagePreview·CaptureUiPreview·MechanicTestMenu → 새 씬/프리팹/SO 대상으로 |
+| 테스트 | RunController 직접 생성 4파일 이전. 새로: 씬 왕복(타이틀→로비→전투→결과→로비)·재도전·UI/EventSystem 중복 없음·일시정지 중 히트스톱 만료 시 timeScale 0 유지·씬 로드 실패·연속 전환. `SkillSlotTests.cs:264` 씬 경로, Build Settings 갱신 |
 
-### ⚠️ 키트 작성자가 알아야 할 것 (전부 "에러가 안 나는" 함정이다)
 
-1. **런 중 생성물에 `Core/RunTransient`를 반드시 붙일 것** — 참격 판정체, 투사체, 장판, 드론 전부.
-   안 붙이면 로비로 나갔다 와도 필드에 남는다. `RunTransient.Mark(go)` 한 줄이다.
-2. **`Instantiate`/`AddComponent` 직후에 필드만 바꾸면 이미 끝난 `Awake()`에는 반영이 안 된다.**
-   적 체력은 반드시 `EnemyHealth.SetMaxHp()`로.
-3. **공속·피해 배수는 신경 쓸 게 없다.** 쿨다운을 `기본값 / statAs`로 계산하면 살기 공속이 자동으로 붙고
-   (`PlayerStatCalculator.ComputeAttackSpeedMultiplier`), 콤보·레벨 페널티는 `DamageCalculator`가 처리한다.
-4. **쿨다운에는 `PlayerStatCalculator.ComputeCooldownMultiplier`도 곱할 것** — 아이템 '시간의 조각'이다.
-   원본은 기본공격·스킬 쿨타임 **전부**에 곱한다(`:1942`·`:2177`·`:2196`).
-5. **`Time.timeScale = 0`을 전제로 짜지 말 것** — 로비·일시정지에선 `Time.deltaTime`이 0이라 쿨다운도 안 돈다.
-6. **정의만 하고 호출부를 안 만드는 실수를 조심할 것** — 정의와 사용처가 다른 파일인 공개 API를 만들면
-   `OriginalFidelityTests.DefinedApis_AreActuallyCalledSomewhere`의 목록에 추가할 것.
-7. **덩치는 `Core/EntitySizeConfig`에서 온다** — `PlayerRig.spriteHeight`를 직접 만지지 말 것.
-8. **원본의 `p.y - N` 꼴 높이(총구·판정 중심)는 발 기준이다** — `Characters/PlayerBody.Feet`에서 잴 것.
-   몸 중심에서 재면 키 0.5짜리 고블린 머리 위로 지나간다(2026-09-28 메카닉·마법사에서 실제로 났다).
-9. **X 스킬 쿨다운을 HUD에 보이려면 `ISkillSlotSource`** — 덮개 비율의 분모는 쿨다운을 **건 순간**의 값
-   (원본 `p.ultCdMax`)이어야 한다. 매 프레임 다시 계산하는 값을 쓰면 도중에 스탯이 바뀔 때 튄다.
+## 씬 분할 1차 — 결과 (2026-11-04)
 
-## 완료 기준 (DoD) — 10/2(금)
+- 씬: `Assets/Scenes/00_Persistent.unity`(빌드 0번) + `20_Combat.unity`(빌드 1번, 옛 `CombatCore` — GUID 유지). 로비는 아직 `20_Combat` 안.
+- `RunController` → **`GameFlow`**(이름만, 기능은 2차에서 CombatDirector로 나눈다). **`GameBoot`** 신설(세이브 로드 → 월드 씬 로드 → 활성 씬 지정).
+- UI 판은 씬에 놓인 `PixelUI`(화면 13개, `PxScreens.All`)이고 `Flow`로 GameFlow에 연결. 화면은 씬을 뒤지지 않는다.
+- 카메라(`PixelPerfectCamera` 포함)는 `00_Persistent`, 플레이어가 `CameraFollow2D.Track`으로 스스로 등록.
+- `PixelCanvas.Install`·`StageVisuals.Install` 삭제. `LobbyWorld`·`StageVisuals`는 `20_Combat`, `HitSound`는 `00_Persistent/Audio`.
+- **버그 수정**: 보스 발판 세트가 꺼진 채 저장돼 Awake가 안 불려 보스 무대에 발판이 안 나왔다 → 두 세트를 켠 채 저장, `PlatformSet.Awake`가 현재 무대를 따른다.
+- 에디터 Play: `Editor/PlayFromPersistent`가 어느 씬을 열어 두든 `00_Persistent`부터 시작.
+- 테스트: `Systems/GameBootTests`(실제 씬 부팅·활성 씬·공용 오브젝트 하나씩·카메라 추적·보스 발판·타이틀→로비→사냥→결과).
 
-- [x] 마법사 두 갈래 1~5층이 원본대로 동작한다
-- [x] 메카닉 두 갈래 1~5층이 원본대로 동작하고, 로비에서 SP로 배우고, X 쿨다운이 HUD에 보인다 *(2026-09-30 `main`)*
-- [x] 섬영 두 갈래 1~5층이 원본대로 동작한다 *(팀원, 2026-10-07)*
-- [x] 섬영 브랜치(`feature/blade-tier1`)가 `main`에 병합돼 있다 *(2026-10-14)* — 메카닉은 ✅ 2026-09-30. 푸는 법 `docs/worksplit.md` 8절
+## 씬 분할 2차 — 할 일
 
-## 범위 밖 / 아직 안 정한 것
+`10_Lobby` 분리(로비 아바타·`CharacterArtSet`·캐릭터 선택은 프로필로·스테이지 선택 그림은 데이터로·카메라 대상 넘기기·StageVisuals 로비 배치) ·
+`CombatDirector` 추출(위 분배표) · 씬 전환(잠금·실패 복구·이전 월드 정지·재도전 재로드) · 에디터 Play에서 열려 있던 씬으로 진입(`SessionState`) ·
+UI의 나머지 월드 탐색 · 로비 timeScale(0→1) 판단 · 테스트(왕복·재도전·중복 없음·히트스톱 만료 timeScale·로드 실패·연속 전환).
 
-- ~~캐릭터별 레벨·경험치·SP 분리~~ → ✅ 2026-09-30 **원본대로**(`feature/char-progress`, 미병합) — 레벨·경험치·SP만
-  캐릭터마다 따로, 골드·골드 강화·시간의 파편·유물은 같이 쓴다. 자세한 규칙은 `docs/worksplit.md` 7절.
-- 조건부 특수 아이템 11종 · 보스 체력바 · 연쇄 처치 슬로모 — 미완(`docs/worksplit.md` 9절 미완 목록).
-- 사운드·파티클·화면 흔들림·데미지 숫자 팝업. 원본 렌더링 코드(`:4482`~`:6215`) 자체의 이식.
+## 성능(나중에) — 구조 정리 뒤에 본다
 
-> **의도적 편차 — 플레이어 높이 0.5**(고블린과 1대1, 사용자 지정 2026-09-28). 원본 비율은 고블린의 1.22배다.
-> 되돌리려면 `EntitySizeConfig.PlayerHeight` 하나만 만지면 된다.
+### 측정 (할 일)
 
-> **의도적 편차 — HUD 스킬 슬롯은 모양만 Figma**("보스 HUD" 124:3의 181:2~181:4 그림). 키 글자(Z·X·C)는 칸
-> 밑에 두고, 아이콘은 캐릭터 구분 없이 Figma 기본 3종을 쓴다. 쿨다운 동작은 원본 그대로.
+- [ ] 개발 빌드 + Profiler로 최악 장면 측정(최대 몬스터 + 폭발형 스킬 동시)
+- [ ] 기록: 프레임 시간, 프레임당 GC 할당, Draw Call, 웨이브 시작·보스 등장 순간 스파이크
+
+| 항목 | 측정값(전) | 측정값(후) |
+|---|---|---|
+| 평균 프레임 시간 | | |
+| 최대 프레임 시간(스파이크) | | |
+| 프레임당 GC 할당 | | |
+| Draw Call / Batches | | |
+
+### 후보 (코드에서 확인된 것)
+
+| # | 후보 | 위치 | 고칠 방향 | 난이도 | 담당 |
+|---|---|---|---|---|---|
+| 1 | 생성·파괴 반복 | `Destroy` 60곳, `new GameObject`/`Instantiate` 42곳 | 자주 나오는 것만 `ObjectPool` | 중 | 설계 Codex → 구현 Claude |
+| 2 | 물리 질의 GC | `OverlapCircleAll` 18곳(그중 `BladeCombat.cs` 6곳은 팀원 담당) | 버퍼 재사용 `OverlapCircle(ContactFilter2D, buffer)` | 하 | Claude |
+| 3 | UI 매 프레임 탐색 | `CombatHud.cs:323`(보스), `:401`(미니맵 0.15초마다 전체 탐색) | 캐시 / 등록 목록 | 하 | Claude |
+| 4 | 매 프레임 GetComponent | `EnemyMove.OverlapsTarget()` | 대상 바뀔 때만 캐시 | 하 | Claude |
+| 5 | Draw Call | 이펙트 팩 텍스처가 제각각 | Sprite Atlas | 하~중 | Claude |
+| 6 | UI 캔버스 재구성 | HUD가 한 캔버스 | 자주 바뀌는 HUD 분리 | 중 | 설계 Codex |
+
+### 빌드 설정
+
+- [ ] Incremental GC
+- [ ] IL2CPP
+- [ ] targetFrameRate / VSync
+- [ ] 텍스처 Mipmap 끄기, 오디오 로드 방식
+

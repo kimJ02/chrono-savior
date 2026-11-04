@@ -108,7 +108,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | 1 | `ChronoSavior.World` · `ChronoSavior.Combat` | 0 | 필드/카메라/발판 · 투사체·피해판정 공용 인프라 |
 | 2 | `ChronoSavior.Characters` · `ChronoSavior.Enemies` | 0~1 | 플레이어 컨트롤러·무기별 공격 · 몬스터 AI |
 | 3 | `ChronoSavior.Systems` | 0~2 | 스포너·가챠·세이브 등 오케스트레이션 |
-| 4 | `ChronoSavior.UI` | 0~3 | HUD·로비·결과 화면(`UiTheme`가 색/판/글자를 소유) |
+| 4 | `ChronoSavior.UI` | 0~3 | HUD·로비·결과 화면(Figma 640×360 판 `UI/Pixel/PixelCanvas` 위에 `PxScreen` 화면들) |
 
 - **같은 층끼리는 서로 참조 금지.** 특히 `Characters` ↔ `Enemies`는 절대 직접 참조하지 않는다 — 서로 때리는 건 `Core`의 태그(`CompareTag("Enemy")`)와 `ISpawnProtectable`·`IDamageable` 같은 `Core` 인터페이스로만 한다. **공격 스크립트가 `Destroy()`를 직접 부르지 말 것** — 반드시 `IDamageable.TakeDamage()`를 거친다(지속 피해는 `TakeTickDamage()`).
 - **낮은 층이 높은 층의 기능을 "요청"해야 하는 경우(예: 몹이 죽을 때 새 몹을 스폰)는 직접 참조하지 않고 `Core`의 이벤트로 방향을 뒤집는다.** 이 상황이 실제로 곧 온다 — 원본은 슬라임(splitter) 타입이 죽으면 `spawnEnemyAt()`을 직접 호출해 꼬마 슬라임 2마리를 낳는다(`project_test.html:1840`). 지금 저장소에서 `Assets/Scripts/Systems/ChronoSavior.Systems.asmdef`를 실제로 열어보면 이미 `"ChronoSavior.Enemies"`를 참조하고 있다(3층→2층, 스포너가 몹 프리팹을 다뤄야 하니 당연함) — 그런데 `splitter` 같은 몹을 만들려고 `Enemies`가 거꾸로 `Systems`(스포너)를 참조하면 두 asmdef가 서로를 참조하는 순환참조가 되어 Unity가 "circular assembly definition reference"로 **컴파일 자체를 거부한다**(스타일 위반이 아니라 빌드가 깨짐).
@@ -220,7 +220,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 ### 에셋 임포트 (PPU)
 - **스프라이트의 `pixelsPerUnit`은 "텍스처 픽셀 크기 ÷ 그 스프라이트가 차지해야 할 유닛 크기"로 정한다.** 무조건 100이 아니다.
   - 일반 아트 리소스: 100px = 1유닛 규칙에 맞춰 그렸다면 `100`.
-  - 절차 생성 프리미티브: 의도한 유닛 크기에 맞춘 값. 예) `Circle.png`는 128px 텍스처로 "스케일 1 = 지름 1유닛"을 의도했으므로 PPU = **128**(`BuildPartAScene.EnsureCircleSprite` 참고).
+  - 절차 생성 프리미티브: 의도한 유닛 크기에 맞춘 값. 예) `Circle.png`는 128px 텍스처로 "스케일 1 = 지름 1유닛"을 의도했으므로 PPU = **128**(`Assets/Sprites/Circle.png.meta`).
 - **"전부 100" 같은 일괄 규칙으로 바꾸지 말 것** — Circle.png를 100으로 바꾸면 지름이 1.28유닛이 되어 `CircleCollider2D.radius = 0.5`(=1유닛)와 시각/물리 크기가 어긋난다. 기준은 PPU 숫자가 아니라 **"보이는 크기 == 콜라이더 크기"**다.
 
 ## 지금 프로젝트 상태
@@ -233,11 +233,16 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   그리고 사냥 → 지역 토벌 → 보스 → 다음 지역 → 시간 회귀 → 뽑기까지 성장 고리가 닫혔다.
   **순서·날짜는 노션 일정표(2026-09-23)를 따른다** — 옮겨 적은 표는 `docs/worksplit.md` 1절. 옛 "단계 1/2/3"
   (9/9 회의)은 더 쓰지 않는다 — 단계 1(모든 캐릭터 0차)은 2026-09-28에 끝났고 드루이드는 기획에서 빠졌다.
-  **지금은 프로토타입 ① 직업별 스킬 구현(~10/2)** — 마법사·메카닉 5층 완료(둘 다 `main`), 섬영은 팀원
-  진행 중(`feature/blade-tier1`). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙은 `HANDOFF.md`.
+  **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
+  씬 분할 1차가 끝났다. 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+- **씬 구성(2026-11-04)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번 — `GameBoot`·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
+  EventSystem·공용 카메라·`Audio`) + `20_Combat.unity`(빌드 1번 — 월드: 플레이어·발판·포털·스포너·스테이지 그림·로비 건물).
+  **씬 파일이 유일한 원본이다** — 씬을 코드로 다시 만드는 도구는 없다(옛 `BuildPartAScene`은 삭제). 씬을 고친 뒤엔
+  메뉴 `ChronoSavior/씬 구성 검증`(`Editor/SceneSetupValidator`)으로 검사한다. 에디터 Play는 어느 씬을 열어 두든 `00_Persistent`부터
+  시작한다(`Editor/PlayFromPersistent`). **씬끼리는 직렬화 참조를 걸 수 없다** — 씬을 넘는 연결은 등록(예: `CameraFollow2D.Track`)으로.
 - **새 세션이 읽는 순서**: 이 파일 → `PROGRESS.md`(지금 상태·다음 할 일·배치 검증 명령) →
   `HANDOFF.md`(지금 스프린트) → `docs/worksplit.md`(분업). 원본 대조는 `docs/original-parity.md`.
-- **배치모드 `-executeMethod`는 전체 네임스페이스 경로가 필요하다**: `ChronoSavior.Editor.BuildPartAScene.Build`
+- **배치모드 `-executeMethod`는 전체 네임스페이스 경로가 필요하다**: `ChronoSavior.Editor.SceneSetupValidator.RunBatch`
   (짧은 이름을 쓰면 "class could not be found"로 실패한다).
 - ⚠️ **원본에 없던 임시방편(R키 부활 · Tab 캐릭터 전환 · 숫자키 강화/빌드 선택)은 2026-09-10에 전부
   삭제됐다.** 정식 자리는 로비 탭이다(`project_test.html:6974`). **되살리지 말 것** — 죽으면 결과

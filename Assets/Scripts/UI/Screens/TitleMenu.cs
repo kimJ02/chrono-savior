@@ -30,7 +30,6 @@ namespace ChronoSavior.UI
 
         readonly Text[] labels = new Text[4];
         Image cursor;
-        RunController run;
 
         protected override void Build()
         {
@@ -73,7 +72,6 @@ namespace ChronoSavior.UI
             ((RectTransform)cursor.transform).anchoredPosition = new Vector2(Mathf.Round(x), -Mathf.Round(y));
         }
 
-        RunController Run => run != null ? run : run = Object.FindFirstObjectByType<RunController>();
 
         void Choose(int i)
         {
@@ -85,7 +83,7 @@ namespace ChronoSavior.UI
                     else StartFresh();
                     break;
                 case 1:
-                    if (SaveService.HasSave) Run?.EnterLobby();
+                    if (SaveService.HasSave) Flow?.EnterLobby();
                     break;
                 case 2:
                     SettingsWindow.Open();
@@ -101,7 +99,7 @@ namespace ChronoSavior.UI
         {
             SaveService.DeleteSave();
             ProfileService.Reset();
-            Run?.EnterLobby();
+            Flow?.EnterLobby();
             CharacterSelectScreen.Open(); // 새 원정은 캐릭터부터 고른다(캐릭터 선택창 뼈대의 뒤로가기/선택하기)
         }
 

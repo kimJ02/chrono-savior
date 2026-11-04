@@ -12,7 +12,7 @@ namespace ChronoSavior.Editor
     /// dirty 표시) — characterSprites는 BuildPartAScene이 씬에 박아 넣는 직렬화 필드라 코드만 고쳐서는
     /// 이미 저장된 씬에 반영되지 않기 때문에 에디터 메뉴로 둔다.
     ///
-    /// 실행: `CombatCore.unity`를 열어둔 상태에서 메뉴 `ChronoSavior/Apply Temp Character Art (chara_temp_01)`.
+    /// 실행: `20_Combat.unity`를 열어둔 상태에서 메뉴 `ChronoSavior/Apply Temp Character Art (chara_temp_01)`.
     /// 끝나면 **씬을 저장**해야 한다(Ctrl+S) — 안 하면 에디터를 닫을 때 날아간다.
     ///
     /// 이 그림은 이미 색이 칠해진 그림이라 `characterColors`는 흰색(=덧칠 없음)으로 둔다
@@ -29,7 +29,7 @@ namespace ChronoSavior.Editor
             var rig = Object.FindAnyObjectByType<PlayerRig>(FindObjectsInactive.Include);
             if (rig == null)
             {
-                Debug.LogWarning("[ApplyTempCharacterArt] 열린 씬에서 PlayerRig를 못 찾았다. CombatCore.unity를 열고 다시 실행할 것.");
+                Debug.LogWarning("[ApplyTempCharacterArt] 열린 씬에서 PlayerRig를 못 찾았다. 20_Combat.unity를 열고 다시 실행할 것.");
                 return;
             }
 

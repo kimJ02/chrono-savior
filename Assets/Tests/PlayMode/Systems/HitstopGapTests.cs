@@ -10,8 +10,8 @@ namespace ChronoSavior.Tests.PlayMode
 
 /// <summary>
 /// 히트스톱 쉬는 시간(2026-10-25 사용자 "모든 히트마다 걸지 말고 어느 정도 시간을 두고") — 한 번 멈췄다 풀리면
-/// `RunController.HitstopGap` 동안은 새로 안 멈춘다. 성소·보스 처치처럼 긴 멈춤은 예외. 원본은 맞힐 때마다 멈췄다(:1683).
-/// ⚠️ `Time.timeScale`을 TearDown에서 꼭 1로 되돌린다(RunControllerTests 주석 참고).
+/// `GameFlow.HitstopGap` 동안은 새로 안 멈춘다. 성소·보스 처치처럼 긴 멈춤은 예외. 원본은 맞힐 때마다 멈췄다(:1683).
+/// ⚠️ `Time.timeScale`을 TearDown에서 꼭 1로 되돌린다(GameFlowTests 주석 참고).
 /// </summary>
 public class HitstopGapTests
 {
@@ -37,12 +37,12 @@ public class HitstopGapTests
         ProfileService.Reset();
     }
 
-    RunController rc;
+    GameFlow rc;
 
-    // RunController는 첫 프레임 Start()에서 타이틀로 가며 시간을 멈춘다 — 그 뒤에 사냥을 시작해야 한다(RunControllerTests와 같은 순서).
+    // GameFlow는 첫 프레임 Start()에서 타이틀로 가며 시간을 멈춘다 — 그 뒤에 사냥을 시작해야 한다(GameFlowTests와 같은 순서).
     IEnumerator StartRun()
     {
-        rc = new GameObject("TestRunController").AddComponent<RunController>();
+        rc = new GameObject("TestGameFlow").AddComponent<GameFlow>();
         yield return null;
         rc.StartRun(1, RunMode.Normal);
         Assert.AreEqual(GameScene.Run, GameState.Current);
@@ -69,7 +69,7 @@ public class HitstopGapTests
         rc.Hitstop(HitFeel.HitstopHit);
         Assert.AreEqual(1f, Time.timeScale, "풀리자마자 들어온 타격은 쉬는 시간이라 안 멈춘다");
 
-        yield return new WaitForSecondsRealtime(RunController.HitstopGap + 0.05f);
+        yield return new WaitForSecondsRealtime(GameFlow.HitstopGap + 0.05f);
         rc.Hitstop(HitFeel.HitstopHit);
         Assert.AreEqual(0f, Time.timeScale, "쉬는 시간이 지나면 다시 멈춘다");
     }
