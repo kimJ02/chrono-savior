@@ -225,12 +225,14 @@ git checkout main            # 10/14: 섬영·내 브랜치 전부 main에 병�
   (세이브 폴더가 `LocalLow/PigeonHelicopter/Chrono Savior/`로 바뀜 — 이 PC의 기존 세이브는 복사해 둠). 저장소 `kimJ02/yokai_unity` → `kimJ02/chrono-savior`.
   **안 바꾼 것**: `reference/project_test.html`(원본 — 수정 금지, 원본 이름 '요괴전선'은 원본을 가리킬 때만 남김), 몬스터 고유 이름(멧돼지 등)·업적 '몬스터 학살'은 그대로(사용자 확인 필요).
   **팀원 주의**: 내일 받을 때 `using YokaiFront…` 가 남은 작업 중 파일이 있으면 `ChronoSavior`로 바꿔야 컴파일된다.
+- **2026-11-04 (3)** — **[나] 지역 이름도 컨셉에 맞게 (`main`).** 사용자 "지역 이름도 바꾸자". 1 대나무 숲→푸른 초원, 2 버려진 신사→버려진 마을,
+  4 홍등 거리→고블린 소굴, 8 저승 문턱→망자의 묘지, 9 백귀야행→마왕성(3·5·6·7 안개 골짜기·폐허 성곽·설산 고개·화염 동굴은 그대로).
+  업적 '숲의 수호자'→'초원의 수호자', '백귀야행 종결'→'마왕 토벌'.
 - **2026-11-04 (2)** — **[나] 몬스터 이름도 컨셉에 맞게 (`chore/rename-chrono-savior`).** 사용자 "몬스터 고유 이름도 직관적인 이름으로".
   화면 이름: 도깨비불→박쥐, 오니→고블린, 대오니→오우거, 돌진귀→멧돼지, 사수귀→해골 궁수, 분열귀→슬라임, 새끼→꼬마 슬라임(업적 '백귀 참살'→'몬스터 학살', '백귀 토벌자'→'보스 토벌자').
   코드는 행동 기준 이름: `EnemyType.Wisp/Oni/BigOni` → `Flyer/Grunt/Brute`(나머지 Charger·Shooter·Splitter·Splitlet 그대로, enum 순서 유지 → 직렬화 값 안 바뀜),
   `EnemyWispMotion` → `EnemyFlyerMotion`, 데이터 `Wisp/Oni/BigOni.asset` → `Flyer/Grunt/Brute.asset`, 스프라이트 `enemy_wisp/oni/bigoni` → `enemy_flyer/grunt/brute`,
   기본 몹 프리팹 `Enemy_Oni.prefab` → `Enemy_Base.prefab`(.meta 같이 옮겨 GUID 유지). 원본 키 대응표는 `docs/original-parity.md` 맨 위.
-  **확인 필요**: 지역 이름(버려진 신사·홍등 거리·저승 문턱·백귀야행 등)과 업적 '백귀야행 종결'은 옛 컨셉이 남아 있다 — 바꿀지 사용자 결정.
 
 - **2026-10-28 (2)** — **[나] 로비 한 화면 (`feature/gravity-impact-vfx`, PlayMode 400/400).** 사용자 "맨 왼쪽에서 나와 던전까지 오래 걸린다, 캐릭터가 건물보다 너무 작다, 한눈에 들어오게".
   건물을 96×104도트(0.75×0.81유닛, 캐릭터의 약 1.6배 — 틀은 9-슬라이스)로 줄여 필드 가운데에 ±0.9·±2.7 간격으로 모음, 캐릭터는 가운데서 나오고

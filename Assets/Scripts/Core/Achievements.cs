@@ -86,11 +86,11 @@ namespace ChronoSavior.Core
             A("elite",     "강적 격파",     "엘리트 몬스터 처치",      p => p.stats.elites >= 1),
             A("elite50",   "엘리트 사냥",   "엘리트 50마리 처치",     p => p.stats.elites >= 50),
             A("shrine",    "성소 파괴자",   "몬스터 성소 파괴",        p => p.stats.shrines >= 1),
-            A("reg1",      "숲의 수호자",   "1지역 보스 처치",        p => p.IsBossCleared(1)),
+            A("reg1",      "초원의 수호자", "1지역 보스 처치",        p => p.IsBossCleared(1)),
             A("reg3",      "골짜기 정벌",   "3지역 정복",             p => p.IsBossCleared(3)),
             A("reg5",      "성곽 함락",     "5지역 정복",             p => p.IsBossCleared(5)),
             A("reg7",      "지옥의 문",     "7지역 정복",             p => p.IsBossCleared(7)),
-            A("reg9",      "백귀야행 종결", "9지역 정복 — 완주!",     p => p.IsBossCleared(9)),
+            A("reg9",      "마왕 토벌",     "9지역 정복 — 완주!",     p => p.IsBossCleared(9)),
             A("boss5",     "보스 헌터",     "보스 5종 처치",          p => p.stats.bosses >= 5),
             A("boss9",     "보스 토벌자",   "보스 9종 처치",          p => p.stats.bosses >= 9),
             // 원본 :819~:823 — spec1/specAll은 "어느 캐릭터든"이다(섬영 항은 트리가 생기면 추가).
