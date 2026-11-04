@@ -143,8 +143,20 @@
 2. ✅ **2a 데이터**(2026-11-05, 로그 11-05 (8)~(11)) — 캐릭터 선택은 프로필만(`PlayerRig` 탐색·`Select`/`SelectNext` 삭제), 몬스터 그림은 `Core/MonsterCatalog` 에셋
    (스포너·스테이지 선택이 같이 봄), 캐릭터 그림은 `Core/CharacterArtSet` 에셋(그림·색만). **정한 것**: 스테이지 선택 카드 목록은 스폰표 복사본이 아니라 표시 정책(칸 5개)으로 두고
    테스트로 묶는다 / 캐릭터 정의 SO(이름·해금)는 해금 조건이 생길 때 / 보스 정의 SO는 안 만든다(그림 하나뿐) / 그림 도구 둘은 같은 에셋을 고친다.
-   **2b 연결** — `WorldView`(위 연결 규칙 2), 같은 씬 탐색 → 직렬화 참조(`StageVisuals`·`BossPortal`·`ExpOrb`의 Player 찾기 등), `GravityWellZone.Active` 읽기 전용,
-   로비 카메라는 가운데 앵커가 등록하고 `CameraFollow2D`의 `GameState.Lobby` 특례 제거. `LobbyWorld`는 `UI/Lobby/`로.
+   **2b 연결**(2026-11-05 Codex와 계획 합의 — 커밋 순서대로):
+   1. `GravityWellZone.Active` → `IReadOnlyList`, 대붕괴로 즉시 없애기는 `Collapse()`(지금 `MageSkillEffects`가 목록을 직접 지운다).
+   2. **같은 씬은 직렬화, 실행 중 생기는 것은 만드는 쪽이 넘긴다**: `StageVisuals`(Ground·발판 2·포털)·`BossPortal`(Player)·`LobbyWorld`(Player)·`LobbyHud`(같은 씬 카메라)
+      → `[SerializeField]`. 경험치 구슬·몹(`EnemyMove`)은 **스포너가 생성 때 Player를 넣는다**(태그 탐색 제거 — 예외를 두면 같은 규칙이 두 갈래가 된다, 테스트 13파일은 대상을 직접 넣게).
+      다른 씬의 카메라(`StageVisuals`의 `Camera.main`)는 `CameraFollow2D`가 자기 카메라를 등록해 `CurrentCamera`로.
+   3. **`WorldView` = 읽기 계약 창구**(위 연결 규칙 2를 이렇게 구체화 — 값을 복사해 넣는 루프 대신 물을 때 계산): `Systems/WorldView`에 `ICombatView Combat`(구현 `CombatDirector`)·
+      `ILobbyView Lobby`(구현 `LobbyWorld`), `Attach`는 중복이면 오류·`Detach`는 자기일 때만. `ICombatView` = 플레이어 체력·위치·`ISkillSlotSource` 키트, 포털(struct), 보스 체력 비율,
+      `CopyEnemyPositions(list)`(먼저 비움). 미니맵은 지금처럼 **살아 있는 적 전부**(잡몹·소환·성소·보스) — `EnemyHealth`가 활성 목록에 등록하고 Director가 HUD 주기(0.15초)에 복사.
+      `ILobbyView` = 근접 건물·아바타 위치. `CombatHud`·`LobbyHud`는 이것만 읽고 없으면 숨긴다.
+   4. 로비 카메라: `LobbyWorld`의 가운데 앵커를 로비 진입 때 `Track(anchor, snap)`(즉시), 사냥 시작 때 `CombatDirector.BeginField`가 `Track(player)`(지금처럼 부드럽게).
+      `CameraFollow2D`의 `GameState.Lobby` 분기 2곳 삭제 — 로비 대상은 움직이지 않는 앵커라 멈춘 시간에도 따라갈 게 없다(3단계 로비 아바타도 카메라는 앵커).
+      `LobbyWorld`는 `git mv` → `UI/Lobby/`(네임스페이스·meta 유지).
+   검증: 런타임 코드 전체의 월드 탐색 금지(소스 훑기 — 남는 예외는 `PixelCanvas.EnsureEventSystem` 하나, 이유 기록), 미니맵 점 수·포털·보스 표시·카메라 전환이 예전과 같은지,
+   `WorldView` 붙이기·떼기·월드 없을 때 HUD 안전, 검증기는 새 직렬화 참조 전부.
 3. **`10_Lobby` + 씬 전환** — `GameBoot`는 세이브 로드와 처음 부팅만, **타이틀에선 월드를 띄우지 않는다**(지금은 GameBoot가 20_Combat를 곧바로 로드). 이후 씬 흐름은 `GameFlow`:
    `StartRun`이 20_Combat를 겹쳐 로드 → 활성 씬 → Director 등록 확인 → BeginField → Run, `EnterLobby`는 10_Lobby 로드 → 활성 → Lobby → 20_Combat 언로드, 재도전은 언로드 후 재로드.
    '전환 중' 잠금·실패 복구·이전 월드 비활성. **전투 씬 로드가 성공한 뒤에만 날짜 차감·`RunState.Begin`을 한다**(지금 `StartRun`은 담당이 없으면 오류만 남기고 멈추는데, 비동기 로드에선 로드 실패 시 날짜만 줄어드는 일이 없게 — 1단계 Codex 리뷰). 에디터에서 열어 둔 씬으로 진입(`SessionState`)은 `GameFlow`가 소비하고, 20_Combat로 바로 들어올 때의 초기 상태를 명시한다.
