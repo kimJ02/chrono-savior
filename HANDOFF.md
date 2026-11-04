@@ -140,7 +140,9 @@
    - `GameFlow`에 남음: ESC, `GameState.Set`, timeScale, 히트스톱 만료·쉬는 시간, `StartRun`(날짜 차감·`RunState.Begin` → Director.BeginField → Run → timeScale 1)·
      `Pause`·`Resume`·`EndRun`(`MarkOver`·`LastEndReason`)·`EnterLobby`·`EnterTitle`(Director.ClearField — 3단계 뒤엔 전투 씬이 내려가 필요 없어짐)·`StartNewExpedition`. 옛 주석 갱신.
    - 테스트: GameFlow를 만들던 9파일은 Director도 만드는 공용 헬퍼로. 테스트는 공개 API를 넓히지 말고 `CombatEvents` 경로로. 새로: 구독·해제 대칭, Director 없을 때 GameFlow 안전, 보스 격파 지연 중 타임아웃 안 됨.
-2. **2a 데이터** — 캐릭터 선택은 프로필만(`PlayerRig` 탐색 제거), 스테이지 선택 그림은 `EnemyData`·보스 정의로, `CharacterArtSet` SO.
+2. ✅ **2a 데이터**(2026-11-05, 로그 11-05 (8)~(11)) — 캐릭터 선택은 프로필만(`PlayerRig` 탐색·`Select`/`SelectNext` 삭제), 몬스터 그림은 `Core/MonsterCatalog` 에셋
+   (스포너·스테이지 선택이 같이 봄), 캐릭터 그림은 `Core/CharacterArtSet` 에셋(그림·색만). **정한 것**: 스테이지 선택 카드 목록은 스폰표 복사본이 아니라 표시 정책(칸 5개)으로 두고
+   테스트로 묶는다 / 캐릭터 정의 SO(이름·해금)는 해금 조건이 생길 때 / 보스 정의 SO는 안 만든다(그림 하나뿐) / 그림 도구 둘은 같은 에셋을 고친다.
    **2b 연결** — `WorldView`(위 연결 규칙 2), 같은 씬 탐색 → 직렬화 참조(`StageVisuals`·`BossPortal`·`ExpOrb`의 Player 찾기 등), `GravityWellZone.Active` 읽기 전용,
    로비 카메라는 가운데 앵커가 등록하고 `CameraFollow2D`의 `GameState.Lobby` 특례 제거. `LobbyWorld`는 `UI/Lobby/`로.
 3. **`10_Lobby` + 씬 전환** — `GameBoot`는 세이브 로드와 처음 부팅만, **타이틀에선 월드를 띄우지 않는다**(지금은 GameBoot가 20_Combat를 곧바로 로드). 이후 씬 흐름은 `GameFlow`:

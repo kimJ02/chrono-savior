@@ -187,6 +187,10 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 ### 테스트
 - `Rigidbody2D`/`Collider2D`가 얽힌 로직(이동·공격 판정·발판 등)은 PlayMode 테스트 필수.
 - 순수 계산/데이터 클래스는 EditMode 테스트로 충분하거나 생략 가능.
+- **테스트는 진짜 세이브를 못 건드린다**(2026-11-05): `Tests/PlayMode/TestSaveSandbox`(NUnit `SetUpFixture`)가 테스트 전체 동안 세이브 경로를 임시 파일로 돌린다.
+  자기 임시 경로가 필요한 테스트는 끝날 때 **`SaveService.PathOverride = TestSaveSandbox.Path`**로 되돌린다(null이면 진짜 경로 — `TestSaveSandboxTests`가 소스를 훑어 막는다).
+- **배치로 씬을 열어 저장할 때 주의**(2026-11-05): `PixelPerfectCamera`가 열 때 창 크기에 맞춰 잘라 낸 카메라 Viewport Rect가 같이 저장된다(실제 화면에 검은 띠).
+  저장 뒤 씬 diff가 의도한 줄뿐인지 확인하고, 씬 구성 검증이 씬 파일의 Viewport Rect(0,0,1,1)를 본다.
 - **`main`에 병합하기 전에 전체 테스트를 돌려 통과를 확인한다.** 자기가 추가한 테스트만 보고 병합하지 말 것 — 다른 도메인 테스트가 깨졌는지는 전체 실행으로만 알 수 있다.
 - 실행: `Unity.exe -batchmode -nographics -projectPath <경로> -runTests -testPlatform PlayMode -testResults <경로>\test_results.xml -logFile <경로>\test.log` (결과 xml/로그 파일명은 `.gitignore`에 걸리는 패턴을 쓸 것)
 

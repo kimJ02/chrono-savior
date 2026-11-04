@@ -39,14 +39,6 @@ public class SaveServiceTests
     [Test]
     public void Tests_UseTheTestSavePath_NotTheRealOne() => Assert.AreEqual(tempSave, SaveService.SavePath);
 
-    /// <summary>테스트 전체 안전장치(`TestSaveSandbox`)가 켜져 있다 — 세이브 경로가 진짜 위치(persistentDataPath)가 아니다.</summary>
-    [Test]
-    public void Sandbox_KeepsEveryTestAwayFromTheRealSave()
-    {
-        Assert.IsNotNull(TestSaveSandbox.Path, "SetUpFixture가 안 돌았다");
-        StringAssert.DoesNotStartWith(Path.GetFullPath(Application.persistentDataPath), Path.GetFullPath(TestSaveSandbox.Path));
-    }
-
     /// <summary>
     /// 프로필을 통째로 바꾸는 건 세이브 시스템만 한다(`HANDOFF.md` "상태 소유권", 2026-11-05). `Core.ProfileService`는 `Systems`를 몰라
     /// 컴파일러로 막을 수 없으니 실행 코드(`Assets/Scripts`)를 훑어 `SaveService.cs` 밖에서 `Replace`·`Reset`을 부르지 않는지 본다.

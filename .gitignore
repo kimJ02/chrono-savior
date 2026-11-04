@@ -53,3 +53,7 @@ crashlytics-build.properties
 /[Aa]ssets/[Aa]ddressableAssetsData/*/*.bin*
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Unity 테스트 실행기가 남기는 임시 씬(실행이 중간에 끊기면 남는다)
+/[Aa]ssets/InitTestScene*.unity
+/[Aa]ssets/InitTestScene*.unity.meta

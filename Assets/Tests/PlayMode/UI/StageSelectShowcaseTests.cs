@@ -22,11 +22,14 @@ public class StageSelectShowcaseTests
 {
     const int Slots = 5;
 
-    /// <summary>그 지역에서 실제로 스폰될 수 있는 종류 — 기본 확률표를 촘촘히 훑고, 2지역부터 오우거(10% 예외, 원본 :3944).</summary>
+    /// <summary>
+    /// 그 지역에서 실제로 스폰될 수 있는 종류 — 기본 확률표를 0.0001 간격으로 훑고, 2지역부터 오우거(10% 예외, 원본 :3944).
+    /// 원본 확률표의 가장 좁은 구간은 0.04(:3933~3939)라 이 간격이면 어느 종도 놓치지 않는다.
+    /// </summary>
     static HashSet<EnemyType> Spawnable(int region)
     {
         var set = new HashSet<EnemyType>();
-        for (int i = 0; i < 1000; i++) set.Add(EnemySpawnTable.RollBase(region, i / 1000f));
+        for (int i = 0; i < 10000; i++) set.Add(EnemySpawnTable.RollBase(region, i / 10000f));
         if (region >= EnemySpawnTable.BigOniMinRegion) set.Add(EnemyType.Brute);
         return set;
     }
