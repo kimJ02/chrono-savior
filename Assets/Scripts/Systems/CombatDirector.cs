@@ -127,6 +127,7 @@ namespace ChronoSavior.Systems
         /// <summary>
         /// 일반 필드 → 보스 필드. 무대·타이머·필드 정리·플레이어 위치를 한 번에 바꾼다. <see cref="BeginField"/>와 같은 순서다
         /// (무대를 먼저 바꿔야 `FieldBounds.MaxX`가 갱신되고 그 뒤 좌표 계산이 맞는다). **원본에 없는 전환**(사용자 지시 2026-09-16).
+        /// 실행 코드에선 포털 요청(<see cref="HandleBossPortalRequested"/>, 해금 확인 뒤)만 부른다 — 공개인 건 테스트가 해금 없이 보스 필드를 세우려고.
         /// </summary>
         /// <returns>실제로 전환됐으면 true.</returns>
         public bool EnterBossField()

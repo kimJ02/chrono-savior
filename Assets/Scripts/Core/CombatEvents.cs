@@ -54,7 +54,7 @@ namespace ChronoSavior.Core
 
         /// <summary>
         /// 히트스톱 요청(초). `Systems/GameFlow.Hitstop`이 구독한다 — 피격(공격마다 다른 길이, `Core/HitFeel`)·연쇄 처치 등.
-        /// 처치 멈춤은 `EnemyKilled`에서 따로 건다. 0 이하는 무시한다(원본 `noHitstop`).
+        /// 처치 멈춤도 이 경로다 — `Systems/CombatDirector`가 `EnemyKilled`를 받아 처치 종류별 길이(`KillFeel`)로 요청한다. 0 이하는 무시한다(원본 `noHitstop`).
         /// </summary>
         public static event System.Action<float> HitstopRequested;
 

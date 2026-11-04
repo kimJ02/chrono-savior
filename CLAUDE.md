@@ -234,7 +234,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   **순서·날짜는 노션 일정표(2026-09-23)를 따른다** — 옮겨 적은 표는 `docs/worksplit.md` 1절. 옛 "단계 1/2/3"
   (9/9 회의)은 더 쓰지 않는다 — 단계 1(모든 캐릭터 0차)은 2026-09-28에 끝났고 드루이드는 기획에서 빠졌다.
   **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
-  씬 분할 1차가 끝났다. 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+  씬 분할 1차가 끝났고 2차가 진행 중이다(단계 0 세이브 교체 경계·단계 1 `CombatDirector` ✅). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
 - **씬 구성(2026-11-04)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번 — `GameBoot`·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
   EventSystem·공용 카메라·`Audio`) + `20_Combat.unity`(빌드 1번 — 월드: 전투 담당 `CombatDirector`·플레이어·발판·포털·스포너·스테이지 그림·로비 건물). 흐름(`GameFlow`)은 담당을 `CombatDirector.Current`로 부르고, 담당은 이벤트로만 알린다.
   **씬 파일이 유일한 원본이다** — 씬을 코드로 다시 만드는 도구는 없다(옛 `BuildPartAScene`은 삭제). 씬을 고친 뒤엔
