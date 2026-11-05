@@ -119,11 +119,24 @@ public class GameBootTests
         Assert.AreEqual(Color.black, Camera.main.backgroundColor, "타이틀엔 월드가 없으니 카메라는 검게 지운다(카메라를 끄지 않는다)");
     }
 
-    [Test]
-    public void Camera_TracksThePlayer_AcrossScenes()
+    /// <summary>
+    /// 카메라(00_Persistent)의 대상은 지금 화면의 담당이 정한다(2026-11-05 2b) — 로비는 로비 월드의 가운데 기준점에 **바로** 붙고(시간이 멈춘 화면),
+    /// 사냥은 전투 담당이 플레이어를 넘긴다. 카메라 쪽엔 '지금 로비인지' 분기가 없다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Camera_FollowsTheLobbyAnchor_ThenThePlayer()
     {
+        var flow = PixelCanvas.Instance.Flow;
+        var cam = Camera.main.transform; // 테스트는 실행 코드가 아니라 찾아도 된다
+        flow.EnterLobby();
+        yield return null;
+        yield return null;
+        Assert.AreEqual("CameraAnchor", CameraFollow2D.Target.name, "로비에선 가운데 기준점");
+        Assert.AreEqual(LobbyWorld.CenterX, cam.position.x, 0.01f, "로비 카메라는 필드 가운데에 바로 선다(멈춘 시간이라 부드럽게 옮길 수 없다)");
+
+        flow.StartRun(1, RunMode.Normal);
         var player = InScene<PlayerRig>(GameBoot.WorldScene).Single();
-        Assert.AreSame(player.transform, CameraFollow2D.Target, "플레이어(20_Combat)가 카메라(00_Persistent)에 스스로 등록한다");
+        Assert.AreSame(player.transform, CameraFollow2D.Target, "사냥에선 전투 담당이 플레이어를 넘긴다");
     }
 
     /// <summary>

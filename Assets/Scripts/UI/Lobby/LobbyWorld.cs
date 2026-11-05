@@ -66,7 +66,29 @@ namespace ChronoSavior.UI
         bool wasLobby;
 
         void OnEnable() => WorldView.Attach(this);
-        void OnDisable() => WorldView.Detach(this);
+
+        void OnDisable()
+        {
+            WorldView.Detach(this);
+            if (cameraAnchor != null) CameraFollow2D.Untrack(cameraAnchor);
+        }
+
+        /// <summary>
+        /// 로비 카메라가 붙는 자리 — 필드 가운데, 캐릭터가 땅에 섰을 때 높이. 로비는 한 화면이라(건물 넷이 다 보인다, 사용자 2026-10-28) 카메라가 캐릭터를
+        /// 따라가지 않고 여기 서 있다(2026-11-05 2b — 예전엔 카메라가 '지금 로비인지'를 직접 보고 가운데에 섰다). 씬 분할 3단계의 로비 아바타도 같은 기준점을 쓴다.
+        /// </summary>
+        Transform cameraAnchor;
+
+        Transform CameraAnchor()
+        {
+            if (cameraAnchor == null)
+            {
+                cameraAnchor = new GameObject("CameraAnchor").transform;
+                cameraAnchor.SetParent(transform, false); // 이 오브젝트(월드 씬)의 자식 — 씬을 내리면 같이 사라진다
+            }
+            cameraAnchor.position = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, 0f); // 지금 무대(일반) 기준
+            return cameraAnchor;
+        }
 
         void OnDestroy()
         {
@@ -119,6 +141,7 @@ namespace ChronoSavior.UI
             PlatformSet.HideAll();
             if (root == null) Build();
             root.SetActive(true);
+            CameraFollow2D.Track(CameraAnchor(), snap: true); // 시간이 멈춘 로비라 바로 붙는다
             if (player != null)
             {
                 if (player.TryGetComponent(out ChronoSavior.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed; // 사냥과 같은 걸음

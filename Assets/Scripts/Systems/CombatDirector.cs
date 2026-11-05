@@ -74,6 +74,7 @@ namespace ChronoSavior.Systems
         {
             if (Current == this) Current = null;
             WorldView.Detach(this);
+            if (player != null) CameraFollow2D.Untrack(player.transform);
             CombatEvents.PlayerDied -= HandlePlayerDied;
             CombatEvents.EnemyKilled -= HandleEnemyKilled;
             CombatEvents.EnemyDamaged -= HandleEnemyHit;
@@ -167,6 +168,8 @@ namespace ChronoSavior.Systems
             HitFeel.Reset();
             bossDeadTimer = -1f;
             ResetPlayer();
+            // 사냥 화면의 카메라 대상 = 플레이어(로비에선 로비 기준점이었다). 부드럽게 따라간다(예전처럼).
+            if (player != null) CameraFollow2D.Track(player.transform);
         }
 
         /// <summary>

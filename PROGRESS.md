@@ -227,6 +227,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (16)** — **[나] 2b-4: 로비 카메라 기준점 + 런타임 전체 씬 찾기 금지 (`feature/world-links`, PlayMode 444/444, 씬 구성 검증 '문제 없음').**
+  카메라 대상은 **지금 화면의 담당이 정한다** — 로비는 `LobbyWorld`의 가운데 기준점(`CameraAnchor`)에 바로 붙고(`Track(anchor, snap: true)`, 시간이 멈춘 화면이라),
+  사냥은 `CombatDirector.BeginField`가 플레이어를 넘긴다(예전처럼 부드럽게). `CameraFollow2D`의 '지금 로비인지' 분기 2곳과 `PlayerRig`의 자기 등록을 지웠다.
+  `LobbyWorld` → `UI/Lobby/`(`git mv`). 소스 검사를 `WorldLookupTests`로 바꿔 **`Assets/Scripts` 전체**에서 씬 찾기 금지 — 예외는 `PixelCanvas.EnsureEventSystem` 하나(이유 기록).
+  **2b-3 Codex 리뷰 반영**: 전투 씬이 사라지면 HUD에 지난 포탈 점·적 점이 남던 것 비움, 로비 창구 붙이기·떼기와 로비 월드 없을 때 로비 HUD 안전 테스트.
 - **2026-11-05 (15)** — **[나] 2b-3: 화면 창구 `WorldView` (`feature/world-links`, PlayMode 442/442, 씬 구성 검증 '문제 없음').** `Systems/WorldView` — 전투 씬 담당(`CombatDirector`)이
   `ICombatView`를, 로비 월드가 `ILobbyView`를 OnEnable/OnDisable로 꽂고 뺀다(중복이면 오류). 화면은 계약으로 **물을 때** 읽는다(복사 루프 없음):
   플레이어 체력·위치·키트, 포탈(일반 필드에서만), 보스 체력(`EnemyHealth.isBoss`), 살아 있는 적 위치(새 `EnemyHealth.Active` 등록 목록, 0.15초마다), 로비 근접 건물·캐릭터 위치.

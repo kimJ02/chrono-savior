@@ -22,13 +22,21 @@ namespace ChronoSavior.World
     public class CameraFollow2D : MonoBehaviour
     {
         /// <summary>
-        /// 따라갈 대상. 카메라는 `00_Persistent`, 플레이어는 `20_Combat`에 있어 씬끼리는 직렬화로 이을 수 없다(2026-11-04 씬 분할) —
-        /// **대상 쪽이 스스로 등록한다**(<see cref="Track"/>/<see cref="Untrack"/>). 카메라는 매 프레임 이 값을 읽으므로
-        /// 카메라와 대상 중 무엇이 먼저 켜져도 연결된다.
+        /// 따라갈 대상. 카메라는 `00_Persistent`, 대상은 월드 씬에 있어 씬끼리는 직렬화로 이을 수 없다(2026-11-04 씬 분할) — **지금 화면의 담당이 정한다**
+        /// (<see cref="Track"/>/<see cref="Untrack"/>): 사냥은 `Systems/CombatDirector`가 플레이어를, 로비는 `UI/LobbyWorld`가 가운데 기준점을(2026-11-05 2b).
+        /// 카메라는 매 프레임 이 값을 읽으므로 카메라와 대상 중 무엇이 먼저 켜져도 연결된다. 카메라는 화면 종류를 모른다 — 대상만 따라간다.
         /// </summary>
         public static Transform Target { get; private set; }
 
-        public static void Track(Transform t) => Target = t;
+        static bool snapRequested;
+
+        /// <summary>그 대상을 따라간다. <paramref name="snap"/>이면 다음 프레임에 부드럽게 옮기지 않고 바로 붙는다 — 로비처럼 시간이 멈춘 화면(timeScale 0)은
+        /// 부드럽게 옮길 시간이 흐르지 않는다.</summary>
+        public static void Track(Transform t, bool snap = false)
+        {
+            Target = t;
+            if (snap) snapRequested = true;
+        }
 
         /// <summary>
         /// 공용 카메라(`00_Persistent`) — 다른 씬(`20_Combat`)이 카메라 위치를 읽을 때 쓴다(배경 시차, `StageVisuals`). 카메라가 켜질 때 스스로 등록한다
@@ -70,13 +78,12 @@ namespace ChronoSavior.World
             var target = Target;
             if (target == null) return;
             if (bodyOwner != target) { bodyOwner = target; targetBody = target.GetComponent<Rigidbody2D>(); }
+            if (snapRequested) { snapRequested = false; snapped = false; velocityX = velocityY = 0f; }
 
             float halfWidth = StageArtConfig.ViewHalfWidth;
             float min = FieldBounds.MinX + halfWidth;
             float max = FieldBounds.MaxX - halfWidth;
             float desiredX = (min <= max) ? Mathf.Clamp(target.position.x, min, max) : (FieldBounds.MinX + FieldBounds.MaxX) * 0.5f;
-            // 로비는 한 화면 — 카메라가 필드 가운데에 서 있고 건물 넷이 다 보인다(사용자 2026-10-28, `UI/Screens/LobbyWorld`).
-            if (GameState.Current == GameScene.Lobby) desiredX = (FieldBounds.MinX + FieldBounds.MaxX) * 0.5f;
 
             float feetY = target.position.y - EntitySizeConfig.PlayerRadius;
             bool standing = targetBody == null || Mathf.Abs(targetBody.linearVelocity.y) < 0.05f;
@@ -90,9 +97,8 @@ namespace ChronoSavior.World
             }
             else
             {
-                // 로비는 시간이 멈춘 채(timeScale 0) 캐릭터만 걷는다(`UI/Screens/LobbyWorld`) — 카메라도 실제 시간으로 따라간다.
-                // 사냥 중엔 원본처럼 게임 시간(히트스톱·일시정지에 멈춤).
-                float dt = GameState.Current == GameScene.Lobby ? Time.unscaledDeltaTime : Time.deltaTime;
+                // 원본처럼 게임 시간(히트스톱·일시정지에 멈춤). 로비(시간 멈춤)는 움직이지 않는 기준점에 바로 붙으므로(snap) 따라갈 게 없다.
+                float dt = Time.deltaTime;
                 // 시간이 멈춰 있으면(타이틀·일시정지·결과·히트스톱, dt = 0) 따라가지 않는다. `Mathf.SmoothDamp`는 dt가 0이고 이미 목표에 서 있으면
                 // 속도를 0/0으로 계산해 NaN을 만들고, 그 뒤로 카메라 위치가 영영 NaN이 된다(2026-11-04 씬 부팅 테스트가 잡음).
                 if (dt > 0f)
