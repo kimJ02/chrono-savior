@@ -33,7 +33,7 @@ namespace ChronoSavior.Editor
             var cam = Camera.main;
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
             PlaceWorld(cam, visuals, player, 4f, FieldBounds.GroundY);
 
@@ -107,13 +107,19 @@ namespace ChronoSavior.Editor
             result.PreviewReason = RunEndReason.Dead;
             Shot(pc, cam, outDir, "전투패배", sel => result.ShowForCapture(sel));
 
-            // 걸어 다니는 로비 — 건물을 세우고 가챠 건물 앞에서
-            var lobbyWorld = pc.GetComponent<LobbyWorld>();
+            // 걸어 다니는 로비(10_Lobby, 2026-11-05 씬 분할 2차) — 사냥 월드를 숨기고 로비 씬을 겹쳐 열어, 건물을 세우고 아바타를 가챠 건물 앞에
+            foreach (var root in UnityEngine.SceneManagement.SceneManager.GetSceneByPath(SceneSetupValidator.CombatPath).GetRootGameObjects()) root.SetActive(false);
+            var lobbyScene = EditorSceneManager.OpenScene(SceneSetupValidator.LobbyPath, OpenSceneMode.Additive);
+            var lobbyWorld = System.Linq.Enumerable.First(System.Linq.Enumerable.SelectMany(lobbyScene.GetRootGameObjects(), r => r.GetComponentsInChildren<LobbyWorld>(true)));
+            var lobbyVisuals = System.Linq.Enumerable.First(System.Linq.Enumerable.SelectMany(lobbyScene.GetRootGameObjects(), r => r.GetComponentsInChildren<StageVisuals>(true)));
             var lobbyHud = pc.GetComponent<LobbyHud>();
+            lobbyHud.Camera = cam;
             lobbyWorld.EnterLobby();
-            // 로비 카메라는 가운데에 서 있다(CameraFollow2D) — 캐릭터는 가챠 건물 앞에
-            PlaceWorld(cam, visuals, player, LobbyWorld.CenterX, FieldBounds.GroundY);
-            if (player != null) player.transform.position = new Vector3(LobbyWorld.XOf(1), player.transform.position.y, 0f);
+            lobbyVisuals.Build();
+            var avatar = lobbyWorld.Player != null ? lobbyWorld.Player.gameObject : null;
+            // 로비 카메라는 가운데에 서 있다(가운데 기준점) — 캐릭터는 가챠 건물 앞에
+            PlaceWorld(cam, lobbyVisuals, avatar, LobbyWorld.CenterX, FieldBounds.GroundY);
+            if (avatar != null) avatar.transform.position = new Vector3(LobbyWorld.XOf(1), avatar.transform.position.y, 0f);
             Shot(pc, cam, outDir, "로비", sel => lobbyHud.ShowForCapture(sel));
             var achieve = pc.GetComponent<AchievementsScreen>();
             Shot(pc, cam, outDir, "업적", sel => { lobbyHud.ShowForCapture(false); achieve.ShowForCapture(sel); });
@@ -133,7 +139,7 @@ namespace ChronoSavior.Editor
             var cam = Camera.main;
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
             PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
             var pc = PixelCanvas.Create(cam);

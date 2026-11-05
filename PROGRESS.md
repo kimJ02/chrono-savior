@@ -227,6 +227,10 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (22)** — **[나] 3-2: `10_Lobby` 씬 만들기·검증 (`feature/lobby-scene`, PlayMode 451/451, 씬 구성 검증 '문제 없음').** 로비 월드·땅(판정 꺼 둠 — 땅 그림 크기 입력용)·스테이지 그림(땅·배경만)·
+  그림만 있는 아바타. 빌드 목록 `[00_Persistent, 10_Lobby, 20_Combat]`. **아직 게임 흐름엔 안 이었다**(GameBoot는 여전히 20_Combat만 — 거기 로비 월드도 3-4까지 남는다).
+  검증기: 세 씬·빌드 순서·로비 필수/금지 오브젝트. **캡처 도구 수리**: 2b 이후 새로 만든 빈 StageVisuals로 그리고 있었고(연결이 없어 땅·발판 그림이 안 깔림) 로비 캡처는 1차 분할 때부터
+  판에서 LobbyWorld를 찾고 있었다(없음) → 씬에 놓인 StageVisuals, 로비는 10_Lobby에서. `UI/LobbySceneTests`(실제 씬 파일 불러와 구성·창구·내리면 비워짐).
 - **2026-11-05 (21)** — **[나] 3-1: 로비 아바타 (`feature/lobby-scene`, PlayMode 447/447).** `UI/Lobby/LobbyAvatar` — 그림만 있는 로비 캐릭터(키트·체력·물리·Player 태그 없음), 세이브의 지금 캐릭터를 따라
   `CharacterArtSet`에서 그림·색을 입는다(캐릭터 선택 다음 프레임). 높이 맞추기는 `EntitySizeConfig.ScaleToHeight`로 빼서 `PlayerRig`와 같이 쓰고, 기본 이동 속도는 `Core/PlayerMoveConfig.BaseSpeed`
   하나로(원본 270÷100) — `CharacterMover2D.moveSpeed` 필드와 로비가 그걸 찾아 읽던 것 삭제. 아직 씬에 안 놓는다(3-2). `UI/LobbyAvatarTests`.

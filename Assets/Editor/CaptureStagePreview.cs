@@ -28,7 +28,7 @@ namespace ChronoSavior.Editor
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
 
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
 
             // (이름, 플레이어 x, 발 높이) — 땅 / 1층 발판 / 필드 오른쪽 끝
@@ -53,7 +53,7 @@ namespace ChronoSavior.Editor
             var cam = Camera.main;
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
 
             float l1 = FieldLayout.PlatformTopY(0), l2 = FieldLayout.PlatformTopY(4);
@@ -96,7 +96,7 @@ namespace ChronoSavior.Editor
             var cam = Camera.main;
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
             var oni = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Sprites/Prototype/enemy_grunt.png");
             var mat = new Material(Resources.Load<Shader>("Shaders/SpriteFlash"));
@@ -133,7 +133,7 @@ namespace ChronoSavior.Editor
             var cam = Camera.main;
             var player = GameObject.Find("Player");
             FitPlayerSprite(player);
-            var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
             visuals.Build();
             var portal = Object.FindFirstObjectByType<BossPortal>();
             var sr = portal.GetComponent<SpriteRenderer>();

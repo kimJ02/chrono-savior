@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/00_Persistent.unity
     guid: 6b8b3a642e5356049aaa27477dc75cdd
   - enabled: 1
+    path: Assets/Scenes/10_Lobby.unity
+    guid: f09aea081cef50e4aa98bcc8fc1968b5
+  - enabled: 1
     path: Assets/Scenes/20_Combat.unity
     guid: c39efae8f31ace44ea1fecacac9eafd3
   m_configObjects:

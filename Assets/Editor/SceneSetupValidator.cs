@@ -28,6 +28,7 @@ namespace ChronoSavior.Editor
     public static class SceneSetupValidator
     {
         public const string PersistentPath = "Assets/Scenes/00_Persistent.unity";
+        public const string LobbyPath = "Assets/Scenes/10_Lobby.unity";
         public const string CombatPath = "Assets/Scenes/20_Combat.unity";
 
         [MenuItem("ChronoSavior/씬 구성 검증")]
@@ -48,26 +49,29 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(problems.Count == 0 ? 0 : 1);
         }
 
-        /// <summary>두 씬을 디스크에서 열어 검사한다. 문제 목록을 콘솔에도 남긴다.</summary>
+        /// <summary>세 씬을 디스크에서 열어 검사한다. 문제 목록을 콘솔에도 남긴다.</summary>
         public static List<string> ValidateFromDisk()
         {
             var persistent = EditorSceneManager.OpenScene(PersistentPath, OpenSceneMode.Single);
+            var lobby = EditorSceneManager.OpenScene(LobbyPath, OpenSceneMode.Additive);
             var combat = EditorSceneManager.OpenScene(CombatPath, OpenSceneMode.Additive);
-            var problems = Validate(persistent, combat);
+            var problems = Validate(persistent, lobby, combat);
             foreach (var p in problems) Debug.LogError("[SceneSetupValidator] " + p);
             Debug.Log(problems.Count == 0 ? "[SceneSetupValidator] 문제 없음" : $"[SceneSetupValidator] 문제 {problems.Count}개");
             return problems;
         }
 
-        public static List<string> Validate(Scene persistent, Scene combat)
+        public static List<string> Validate(Scene persistent, Scene lobby, Scene combat)
         {
             var problems = new List<string>();
 
-            // ── Build Settings: 0번 = 상주 씬(첫 씬), 1번 = 월드 ──
+            // ── Build Settings: 0번 = 상주 씬(첫 씬), 1번 = 로비, 2번 = 전투 ──
             var build = EditorBuildSettings.scenes;
-            if (build.Length != 2 || build[0].path != PersistentPath || build[1].path != CombatPath || !build.All(s => s.enabled))
-                problems.Add($"Build Settings는 [{PersistentPath}, {CombatPath}] 순서로 둘 다 켜져 있어야 한다 — 지금: " +
+            if (build.Length != 3 || build[0].path != PersistentPath || build[1].path != LobbyPath || build[2].path != CombatPath || !build.All(s => s.enabled))
+                problems.Add($"Build Settings는 [{PersistentPath}, {LobbyPath}, {CombatPath}] 순서로 다 켜져 있어야 한다 — 지금: " +
                              string.Join(", ", build.Select(s => s.path + (s.enabled ? "" : "(꺼짐)"))));
+
+            CheckLobby(lobby, problems);
 
             // ── 00_Persistent ──
             One<GameBoot>(persistent, problems);
@@ -164,8 +168,8 @@ namespace ChronoSavior.Editor
             None<PixelCanvas>(combat, problems);
             None<GameFlow>(combat, problems);
 
-            // ── 두 씬 공통: 없어진 스크립트, 씬끼리 걸친 참조 ──
-            foreach (var scene in new[] { persistent, combat })
+            // ── 세 씬 공통: 없어진 스크립트, 씬끼리 걸친 참조 ──
+            foreach (var scene in new[] { persistent, lobby, combat })
             {
                 foreach (var go in AllGameObjects(scene))
                 {
@@ -254,6 +258,38 @@ namespace ChronoSavior.Editor
             var kits = player.GetComponents<ICharacterKit>().Select(k => k.Character).ToHashSet();
             foreach (var id in CharacterSelectScreen.Selectable)
                 if (!kits.Contains(id)) problems.Add($"캐릭터 선택에서 {id}를 고를 수 있는데 Player에 그 키트가 없다");
+        }
+
+        /// <summary>
+        /// `10_Lobby`(2026-11-05 씬 분할 2차 3-2) — 로비 월드(건물·카메라 기준점)·그림만 있는 아바타·땅(그림 크기 입력용 — 판정은 꺼 둠)·스테이지 그림(땅·배경만).
+        /// 전투 것(플레이어·스포너·전투 담당·발판·포탈)과 상주 것(카메라·판·흐름)은 없어야 한다.
+        /// </summary>
+        static void CheckLobby(Scene lobby, List<string> problems)
+        {
+            var world = One<LobbyWorld>(lobby, problems);
+            var avatar = One<LobbyAvatar>(lobby, problems);
+            if (avatar != null && avatar.Art == null) problems.Add("10_Lobby LobbyAvatar의 캐릭터 그림(CharacterArtSet)이 비어 있다");
+            if (world != null && (avatar == null || world.Player != avatar.transform)) problems.Add("10_Lobby LobbyWorld.Player가 이 씬의 LobbyAvatar가 아니다");
+            var ground = lobby.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");
+            if (ground == null || ground.GetComponent<BoxCollider2D>() == null) problems.Add("10_Lobby에 Ground(BoxCollider2D — 땅 그림 크기 입력)가 없다");
+            var visuals = One<StageVisuals>(lobby, problems);
+            if (visuals != null)
+            {
+                if (ground == null || visuals.Ground != ground.transform) problems.Add("10_Lobby StageVisuals.Ground가 이 씬의 Ground가 아니다");
+                if (visuals.PlatformSets != null && visuals.PlatformSets.Length > 0) problems.Add("10_Lobby StageVisuals에 발판 세트가 있다(로비엔 발판이 없다)");
+                if (visuals.Portal != null) problems.Add("10_Lobby StageVisuals에 포탈이 있다(로비엔 포탈이 없다)");
+            }
+            None<PlayerRig>(lobby, problems);
+            None<EnemySpawner>(lobby, problems);
+            None<CombatDirector>(lobby, problems);
+            None<PlatformSet>(lobby, problems);
+            None<BossPortal>(lobby, problems);
+            None<Camera>(lobby, problems);
+            None<AudioListener>(lobby, problems);
+            None<EventSystem>(lobby, problems);
+            None<PixelCanvas>(lobby, problems);
+            None<GameFlow>(lobby, problems);
+            None<GameBoot>(lobby, problems);
         }
 
         static T One<T>(Scene scene, List<string> problems) where T : Component
