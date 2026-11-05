@@ -170,7 +170,10 @@ namespace ChronoSavior.Systems
             {
                 beforeLobby?.Invoke();
                 GameState.Set(GameScene.Lobby);
-                Time.timeScale = 0f; // 로비는 시간이 멈춘 채(로비 걷기는 실제 시간) — 3단계에선 그대로(4단계에서 판단)
+                // 로비는 시간이 멈춘 채(로비 걷기·화면은 실제 시간) — 원본도 사냥이 아니면 dt = 0(:7169). 2026-11-05 4단계에서 확인하고 그대로 두기로 했다(Codex 합의):
+                // 로비 씬엔 게임 시간을 쓰는 것이 없고(물리 물체 없음, 카메라는 움직이지 않는 기준점), 1로 바꿔 얻는 게 없다.
+                // 로비에 게임 시간(Time.deltaTime·물리)을 쓰는 것을 넣게 되면 그때 다시 정한다 — 지금 그런 것을 넣으면 로비에선 멈춰 있다.
+                Time.timeScale = 0f;
                 return true;
             }, done);
 

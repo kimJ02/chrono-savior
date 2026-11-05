@@ -197,6 +197,14 @@
    - 전투 씬이 다시 켜지면(`CombatDirector.OnEnable`) 카메라가 플레이어를 다시 잡는다. 화면 쪽 실패 알림은 `CommonPopup.AlertIfTransitionFails` 하나로(타이틀 불러오기·새 원정·'로비로'·스테이지 입장).
    - **4단계로 미룸**: 전환 중 화면 버튼 입력 전체 잠금(지금은 흐름 요청·ESC·로비 걷기만 막는다), 로비 timeScale. UI 캡처 도구의 첫 장(전투 HUD 1080)만 UI가 가장자리로 밀려 찍힘 — 게임 동작과 무관, 4단계에서 확인.
 4. **마감** — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
+   **진행 계획(2026-11-05 Codex 합의, 커밋 순서대로)**:
+   0. ✅ 전환 중 화면 입력 잠금 — `PixelCanvas.AcceptsInput` 하나를 키(`PxScreen.HandleKeys`)·마우스(판의 `GraphicRaycaster`)가 같이 본다. EventSystem 전체는 끄지 않는다(포인터 상태까지 건드림).
+   1. ✅ **로비 timeScale = 0 유지(결정)** — 조사: 게임 시간을 쓰는 실행 코드는 전투 씬 것(`CombatDirector`·스포너·구슬·보스 포털)과 흐름·카메라 보간뿐, 로비 씬엔 물리 물체가 없고
+      카메라는 움직이지 않는 기준점, 로비 걷기·화면은 실제 시간. 원본도 사냥이 아니면 dt = 0(:7169) — 바꿔 얻는 게 없다. 로비에 게임 시간을 쓰는 것을 넣을 때 다시 정한다(근거는 `GameFlow.EnterLobbyThen` 주석).
+      'UI 월드 탐색 0곳'은 `WorldLookupTests`가 이미 `Assets/Scripts` 전체를 막고 있어 따로 안 만든다. 대신 **상태 소유권**(`GameState.Set`·`SetTransitioning`·`timeScale` 대입은 `GameFlow`만)을 `StateOwnershipTests`가 소스로 막는다.
+   2. 정리 — 호출부 없는 `GameFlow.StartRun()`(인자 없음) 삭제, `UI/README.md`·주석의 옛 이름(`RunController`), `LobbyWorld.OnDestroy`의 중복 파괴.
+   3. UI 캡처 도구 첫 장(전투 HUD 1080)만 UI가 밀려 찍히는 원인 확인·수정(에디터 도구만).
+   4. 전체 회귀(PlayMode·씬 검증·캡처 눈 확인) → Codex 종합 리뷰 → 사용자 확인 후 `main`.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
 
