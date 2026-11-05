@@ -77,7 +77,15 @@ namespace ChronoSavior.Editor
             One<GameBoot>(persistent, problems);
             var flow = One<GameFlow>(persistent, problems);
             One<AutoSave>(persistent, problems);
-            One<HitSound>(persistent, problems);
+            var hitSound = One<HitSound>(persistent, problems);
+            if (hitSound != null)
+            {
+                // 소리 장치·클립은 씬이 원본(2026-11-05 생성 책임 2-1 — 예전엔 Awake에서 붙이고 Resources에서 읽었다)
+                var src = hitSound.GetComponent<AudioSource>();
+                if (src == null) problems.Add("HitSound에 AudioSource가 없다");
+                else if (src.playOnAwake || src.spatialBlend != 0f) problems.Add("HitSound의 AudioSource는 자동 재생 끔·2D(spatialBlend 0)여야 한다");
+                if (hitSound.Clip == null || hitSound.Clip != Resources.Load<AudioClip>(HitSound.ClipPath)) problems.Add($"HitSound 클립이 {HitSound.ClipPath}가 아니다");
+            }
             One<EventSystem>(persistent, problems);
             var canvas = One<PixelCanvas>(persistent, problems);
             if (canvas != null)
@@ -133,6 +141,7 @@ namespace ChronoSavior.Editor
             CheckMonsterCatalog(spawner, persistent, problems);
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;
+            if (player != null && player.GetComponent<MageChargeFlash>() == null) problems.Add("Player에 MageChargeFlash(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
             if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
             var portal = One<BossPortal>(combat, problems);
             if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");
@@ -269,6 +278,7 @@ namespace ChronoSavior.Editor
             var avatar = One<LobbyAvatar>(lobby, problems);
             if (avatar != null && avatar.Art == null) problems.Add("10_Lobby LobbyAvatar의 캐릭터 그림(CharacterArtSet)이 비어 있다");
             if (world != null && (avatar == null || world.Player != avatar.transform)) problems.Add("10_Lobby LobbyWorld.Player가 이 씬의 LobbyAvatar가 아니다");
+            if (world != null && (world.CameraAnchor == null || world.CameraAnchor.parent != world.transform)) problems.Add("10_Lobby LobbyWorld.CameraAnchor가 이 오브젝트의 자식 기준점이 아니다");
             var ground = lobby.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");
             if (ground == null || ground.GetComponent<BoxCollider2D>() == null) problems.Add("10_Lobby에 Ground(BoxCollider2D — 땅 그림 크기 입력)가 없다");
             var visuals = One<StageVisuals>(lobby, problems);

@@ -15,7 +15,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// `bladeDirInvuln`(project_test.html:2420~2517)을 그대로 옮겼는지 확인한다.
 ///
 /// `GameInput`이 실제 키보드만 읽어서 시뮬레이트할 수 없는 부분(공격 입력, 방향키 홀드)은
-/// `GunnerAttackTests`/`PlayerAttackTests`와 같은 관례대로 private 메서드를 리플렉션으로 직접
+/// `GunnerAttackTests`와 같은 관례대로 private 메서드를 리플렉션으로 직접
 /// 호출해서 검증한다.
 /// </summary>
 public class BladeCombatTests

@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (34)** — **[나] 2-1: 스스로 붙이던 부품을 씬 배치로 (`feature/creation-ownership`, PlayMode 471/471, 씬 검증 통과, Codex 통과).** `MageChargeFlash`는 20_Combat Player에(예전엔 `MageAttack.Awake`가 붙임),
+  `HitSound`는 `[RequireComponent(AudioSource)]`+직렬화 클립 — 00_Persistent `Audio`에 소리 장치(자동 재생 끔·2D)와 클립 참조(`Resources.Load` 제거), 로비 `CameraAnchor`는 10_Lobby `LobbyWorld`의 자식(위치는 준비 때 계산).
+  검증기가 셋 다 본다. **어느 씬에도 없던 옛 범용 근접 공격 `Combat/PlayerAttack`과 전용 테스트 삭제(사용자 승인)** — 스폰 무적 테스트는 `ISpawnProtectable` 상태로 다시 씀. 생성 담당 목록에서 C 분류 0곳.
 - **2026-11-05 (33)** — **[나] 정리 순서 2(생성 책임) 시작 — 2-0 목록·정책 테스트 (`feature/creation-ownership`).** 실행 코드의 `AddComponent`·`new GameObject`·`Instantiate`를 전수 조사(34파일)해
   A~F로 분류, Codex와 진행 합의(`HANDOFF.md` '정리 순서 2'). `Tests/PlayMode/CreationOwnershipTests` — 생성 담당 목록(분류·이유)이 유일한 원본, 목록에 없는 새 담당·더는 안 만드는 담당 둘 다 실패.
   다음: 2-1 씬에 놓인 오브젝트가 스스로 붙이던 부품(`MageChargeFlash`·`LineRenderer`·`AudioSource`·로비 `CameraAnchor`)을 씬 배치로.

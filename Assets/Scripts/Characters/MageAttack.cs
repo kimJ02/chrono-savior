@@ -14,8 +14,6 @@ namespace ChronoSavior.Characters
 /// 스킬트리 자체(갈래 선택·티어 습득)는 <see cref="PlayerProfile.TryLearnMageTier"/> — 이 클래스는
 /// 그 결과(`ProfileService.Current.mageBranch`/`mageTier`)를 매 프레임 읽어서 공식에 반영만 한다
 /// (원본 `bowFire`가 `meta.skills.bow`를 매번 새로 읽는 것과 동일한 방식).
-///
-/// PlayerAttack(범용 근접 판정)을 대체한다 — 이 캐릭터를 쓰는 동안은 씬에 둘 다 안 붙인다.
 /// </summary>
 public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSlotSource
 {
@@ -113,9 +111,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         bodyCol = GetComponent<CircleCollider2D>();
         health = GetComponent<PlayerHealth>();
 
-        // 차지 표시는 단계마다 캐릭터가 깜빡이는 것 하나다(2026-10-25 사용자) — 예전 하늘색 구체(차지할수록 커지는 마탄 그림)와
-        // 시전자 앞 마법진은 사용자 요청으로 뺐다.
-        if (!TryGetComponent(out MageChargeFlash _)) gameObject.AddComponent<MageChargeFlash>();
+        // 차지 표시(단계마다 캐릭터가 깜빡임, `MageChargeFlash`)는 씬의 Player에 같이 놓여 있다 — 예전엔 여기서 붙였다(2026-11-05 생성 책임 2-1, 씬이 원본).
     }
 
     /// <summary>

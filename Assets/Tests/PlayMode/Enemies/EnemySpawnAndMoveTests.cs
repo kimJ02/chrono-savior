@@ -3,7 +3,6 @@ using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using ChronoSavior.Combat;
 using ChronoSavior.Core;
 using ChronoSavior.Enemies;
 using ChronoSavior.Systems;
@@ -305,43 +304,28 @@ public class EnemySpawnAndMoveTests
     }
 
     /// <summary>
-    /// 원본 spawnInvuln(스폰 직후 2초 무적)이 실제로 공격을 막는지 확인한다. 무적 중엔
-    /// PlayerAttack이 파괴하지 못하고, 무적이 풀리면 정상적으로 파괴돼야 한다.
+    /// 원본 spawnInvuln(스폰 직후 2초 무적) — 몹이 무적 상태를 내보이고(`ISpawnProtectable`), 시간이 지나면 풀린다.
+    /// 공격마다 이 상태를 보고 건너뛰는 것은 각 공격의 테스트가 본다(예전엔 쓰지 않는 범용 근접 공격으로 봤다 — 2026-11-05 삭제).
     /// </summary>
     [UnityTest]
-    public IEnumerator SpawnProtectedMonster_SurvivesAttack_ThenDiesAfterProtectionExpires()
+    public IEnumerator SpawnProtection_IsExposed_ThenExpires()
     {
-        var playerGO = new GameObject("TestPlayer");
-        playerGO.tag = "Player";
-        var attack = playerGO.AddComponent<PlayerAttack>();
-        var attackMethod = typeof(PlayerAttack).GetMethod("Attack", BindingFlags.NonPublic | BindingFlags.Instance);
-
         var enemyGO = new GameObject("TestProtectedEnemy");
         enemyGO.tag = "Enemy";
-        enemyGO.transform.position = playerGO.transform.position; // 사거리 안에 확실히 들어오게
         enemyGO.AddComponent<CircleCollider2D>().radius = 0.3f;
         enemyGO.AddComponent<SpriteRenderer>();
-        // 스프린트 2 개정: 즉사가 아니라 체력을 깎으므로 EnemyHealth가 있어야 피격 여부를 볼 수 있다.
-        var enemyHp = enemyGO.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
-        var move = enemyGO.AddComponent<EnemyMove>(); // AddComponent가 Awake를 동기 실행하므로
-        // spawnProtectDuration 필드를 나중에 바꿔도 이미 실행된 Awake엔 반영 안 됨 — private
-        // 타이머 자체를 리플렉션으로 직접 짧게 세팅한다(테스트를 빨리 끝내려고, 원본 값은 2초).
-        var timerField = typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance);
-        Assert.IsNotNull(timerField);
-        timerField.SetValue(move, 0.1f);
+        enemyGO.AddComponent<ChronoSavior.Enemies.EnemyHealth>();
+        var move = enemyGO.AddComponent<EnemyMove>();
+        move.SetSpawnProtection(0.1f); // 원본 값은 2초 — 테스트를 빨리 끝내려고 짧게(스포너가 쓰는 공개 경로)
 
-        attackMethod.Invoke(attack, null);
-        yield return null;
-        Assert.AreEqual(enemyHp.MaxHp, enemyHp.CurrentHp, 0.001f, "스폰 직후 무적 중인데 피해가 들어갔다");
+        ISpawnProtectable protectable = enemyGO.GetComponent<ISpawnProtectable>();
+        Assert.IsNotNull(protectable, "공격 스크립트는 이 인터페이스로 무적을 묻는다");
+        Assert.IsTrue(protectable.IsSpawnProtected, "스폰 직후엔 무적");
 
         yield return new WaitForSeconds(0.2f); // 무적(0.1초) 만료 대기
-
-        attackMethod.Invoke(attack, null);
-        yield return null;
-        Assert.Less(enemyHp.CurrentHp, enemyHp.MaxHp, "무적이 풀렸는데도 피해가 안 들어갔다");
+        Assert.IsFalse(protectable.IsSpawnProtected, "시간이 지나면 풀린다");
 
         Object.Destroy(enemyGO);
-        Object.Destroy(playerGO);
         yield return null;
     }
 }

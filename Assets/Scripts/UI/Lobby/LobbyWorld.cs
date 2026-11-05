@@ -76,20 +76,14 @@ namespace ChronoSavior.UI
 
         /// <summary>
         /// 로비 카메라가 붙는 자리 — 필드 가운데, 캐릭터가 땅에 섰을 때 높이. 로비는 한 화면이라(건물 넷이 다 보인다, 사용자 2026-10-28) 카메라가 캐릭터를
-        /// 따라가지 않고 여기 서 있다(2026-11-05 2b — 예전엔 카메라가 '지금 로비인지'를 직접 보고 가운데에 섰다). 씬 분할 3단계의 로비 아바타도 같은 기준점을 쓴다.
+        /// 따라가지 않고 여기 서 있다(2026-11-05 2b — 예전엔 카메라가 '지금 로비인지'를 직접 보고 가운데에 섰다).
+        /// 10_Lobby에 이 오브젝트의 자식으로 놓여 있다(2026-11-05 생성 책임 2-1 — 예전엔 실행 중에 만들었다). 위치는 준비할 때 지금 무대 기준으로 맞춘다.
         /// </summary>
-        Transform cameraAnchor;
+        [Tooltip("같은 씬(10_Lobby)의 카메라 기준점 — 이 오브젝트의 자식. 위치는 실행 중에 필드 가운데로 맞춘다.")]
+        [SerializeField] Transform cameraAnchor;
 
-        Transform CameraAnchor()
-        {
-            if (cameraAnchor == null)
-            {
-                cameraAnchor = new GameObject("CameraAnchor").transform;
-                cameraAnchor.SetParent(transform, false); // 이 오브젝트(월드 씬)의 자식 — 씬을 내리면 같이 사라진다
-            }
-            cameraAnchor.position = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, 0f); // 지금 무대(일반) 기준
-            return cameraAnchor;
-        }
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public Transform CameraAnchor { get => cameraAnchor; set => cameraAnchor = value; }
 
         void Update()
         {
@@ -136,7 +130,11 @@ namespace ChronoSavior.UI
             if (!ReferenceEquals(WorldView.Lobby, this)) WorldView.Attach(this);
             if (root == null) Build();
             root.SetActive(true);
-            CameraFollow2D.Track(CameraAnchor(), snap: true); // 시간이 멈춘 로비라 바로 붙는다
+            if (cameraAnchor != null) // 씬엔 늘 있다(씬 검증이 본다) — 기준점 없이 도는 테스트용
+            {
+                cameraAnchor.position = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, 0f); // 지금 무대(일반) 기준
+                CameraFollow2D.Track(cameraAnchor, snap: true); // 시간이 멈춘 로비라 바로 붙는다
+            }
             if (player != null && !placed)
             {
                 placed = true;

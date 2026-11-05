@@ -29,10 +29,18 @@ public class HitSoundTests
     [Test]
     public void ClipIsInResources() => Assert.IsNotNull(Resources.Load<AudioClip>(HitSound.ClipPath));
 
+    /// <summary>게임에선 00_Persistent의 Audio에 소리 장치·클립이 놓여 있다 — 테스트는 같은 클립을 넣는다(소리 장치는 RequireComponent가 붙인다).</summary>
+    static HitSound NewHitSound()
+    {
+        var hs = new GameObject("TestHitSound").AddComponent<HitSound>();
+        hs.Clip = Resources.Load<AudioClip>(HitSound.ClipPath);
+        return hs;
+    }
+
     [UnityTest]
     public IEnumerator EnemyDamaged_PlaysOnce_AndCloseHitsAreSkipped()
     {
-        var hs = new GameObject("TestHitSound").AddComponent<HitSound>();
+        var hs = NewHitSound();
         yield return null;
         CombatEvents.RaiseEnemyDamaged(null);
         CombatEvents.RaiseEnemyDamaged(null); // 같은 프레임 — 건너뜀
@@ -45,7 +53,7 @@ public class HitSoundTests
     [UnityTest]
     public IEnumerator WeaponTick_LikeLaser_Plays_BurnTick_DoesNot()
     {
-        var hs = new GameObject("TestHitSound").AddComponent<HitSound>();
+        var hs = NewHitSound();
         yield return null;
         CombatEvents.RaiseEnemyTickDamaged(null);
         Assert.AreEqual(1, hs.Played, "레이저 같은 무기 틱에도 소리가 난다");
@@ -69,7 +77,7 @@ public class HitSoundTests
     public IEnumerator SfxVolumeZero_IsSilent()
     {
         GameSettings.SfxVolume = 0;
-        var hs = new GameObject("TestHitSound").AddComponent<HitSound>();
+        var hs = NewHitSound();
         yield return null;
         CombatEvents.RaiseEnemyDamaged(null);
         Assert.AreEqual(0, hs.Played);

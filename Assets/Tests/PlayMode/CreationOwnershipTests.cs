@@ -26,8 +26,6 @@ public class CreationOwnershipTests
         CombatObject,
         /// <summary>B. 몹 조립(프리팹 하나 + 타입 행동 부품). 2-2에서 정리.</summary>
         EnemyAssembly,
-        /// <summary>C. 씬에 놓인 오브젝트가 스스로 부품을 붙임 — 씬이 원본이라는 규칙과 어긋남. 2-1에서 씬으로 옮긴다.</summary>
-        SelfAttach,
         /// <summary>D. 그림만 있는 일회성 효과·효과 풀(판정 없음). 정당한 코드 생성.</summary>
         VisualEffect,
         /// <summary>E. UI를 코드로 짓기(Figma 좌표 그대로 — 화면마다 프리팹을 두면 좌표가 두 곳이 된다). 정당한 코드 생성.</summary>
@@ -54,10 +52,7 @@ public class CreationOwnershipTests
         // B. 몹 조립
         ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 Enemy_Base 프리팹에서 세우고 타입 행동·엘리트 부품을 붙인다"),
 
-        // C. 스스로 부품 붙이기 — 2-1에서 씬 배치로 옮긴다
-        ["Characters/MageAttack.cs"]       = (Kind.SelfAttach, "Awake에서 MageChargeFlash를 붙인다 → 20_Combat Player에 놓을 것(2-1)"),
-        ["Combat/PlayerAttack.cs"]         = (Kind.SelfAttach, "Awake에서 공격 링 LineRenderer를 붙인다 → 씬에 놓을 것(2-1)"),
-        ["UI/HitSound.cs"]                 = (Kind.SelfAttach, "Awake에서 AudioSource를 붙인다 → 00_Persistent에 놓을 것(2-1)"),
+        // C. 스스로 부품 붙이기 — 2-1에서 전부 씬 배치로 옮겼다(MageChargeFlash·HitSound 소리 장치·로비 CameraAnchor, 안 쓰던 PlayerAttack 삭제). 새로 생기면 안 된다.
 
         // D. 그림만 있는 효과
         ["Characters/BladeSlashVfx.cs"]    = (Kind.VisualEffect, "섬영 베기 그림 풀"),
@@ -80,7 +75,7 @@ public class CreationOwnershipTests
         ["UI/Screens/CombatHud.cs"]        = (Kind.UiBuild, "미니맵 가림막·글자 그라데이션"),
         ["UI/Screens/StageSelectScreen.cs"] = (Kind.UiBuild, "스테이지 칸 버튼"),
         ["UI/Screens/TitleMenu.cs"]        = (Kind.UiBuild, "타이틀 메뉴 버튼"),
-        ["UI/Lobby/LobbyWorld.cs"]         = (Kind.UiBuild, "로비 건물(월드 캔버스, 건물 표 Buildings에서 짓는다 — 건물 그림이 생기면 씬/프리팹으로)·카메라 기준점"),
+        ["UI/Lobby/LobbyWorld.cs"]         = (Kind.UiBuild, "로비 건물(월드 캔버스, 건물 표 Buildings에서 짓는다 — 건물 그림이 생기면 씬/프리팹으로). 카메라 기준점은 씬에 놓인다"),
 
         // F. 크기 입력으로 그림 깔기
         ["World/StageVisuals.cs"]          = (Kind.Procedural, "Ground·발판 판정 크기에서 땅 타일·발판 그림·배경을 깐다(그림 크기 = 판정 크기)"),

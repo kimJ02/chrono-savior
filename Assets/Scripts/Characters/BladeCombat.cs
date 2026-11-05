@@ -73,7 +73,7 @@ namespace ChronoSavior.Characters
         public float cooldown = SpinCd;
         [Tooltip("회전베기 판정 반경. 원본 spin.r 105px ÷100.")]
         public float spinRadius = SpinRadius;
-        [Tooltip("적 판정용 레이어. 기본값은 전체 — Enemy 전용 레이어를 쓰기 전까지는 태그로 한 번 더 거른다(PlayerAttack과 동일한 관례).")]
+        [Tooltip("적 판정용 레이어. 기본값은 전체 — Enemy 전용 레이어를 쓰기 전까지는 태그로 한 번 더 거른다(다른 공격 스크립트와 같은 관례).")]
         public LayerMask enemyMask = ~0;
 
         const float SpinCd = 0.13f;             // CONFIG.blade.spin.cd (:624)
