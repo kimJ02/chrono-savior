@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ChronoSavior.Characters;
 using ChronoSavior.Core;
-using ChronoSavior.Enemies;
+using ChronoSavior.Systems;
 using ChronoSavior.World;
 
 namespace ChronoSavior.UI
@@ -124,10 +124,8 @@ namespace ChronoSavior.UI
         readonly List<Vector2> enemyPositions = new List<Vector2>();
         float enemyScanTimer;
 
-        PlayerHealth health;
-        PlayerRig rig;
-        Transform player;
-        BossPortal bossPortal;
+        /// <summary>미니맵 포탈 점 자리 — 마지막으로 본 포탈 위치(포탈이 안 보이면 안 그린다).</summary>
+        Vector2 portalPosition;
 
         class Slot
         {
@@ -320,52 +318,47 @@ namespace ChronoSavior.UI
             return string.Join("  ", parts);
         }
 
+        /// <summary>
+        /// 지금 상태 — 전투 씬의 담당이 내준 읽기 창구(`Systems/WorldView.Combat`)에서만 읽는다(2026-11-05 2b — 예전엔 태그·타입으로
+        /// 씬을 뒤져 플레이어·포탈·보스를 찾았다). 전투 씬이 없으면 체력·칸·포탈·보스는 비운다.
+        /// </summary>
         PreviewState Live()
         {
-            FindPlayer();
+            var view = WorldView.Combat;
             var profile = ProfileService.Current;
             long need = PlayerProfile.RequiredExp(profile.level);
-            var src = rig != null ? rig.CurrentKit as ISkillSlotSource : null;
+            var src = view?.PlayerKit;
             var s = new PreviewState
             {
-                Hp = health != null ? health.CurrentHp : 0f,
-                MaxHp = health != null ? health.MaxHp : 0f,
+                Hp = view != null ? view.PlayerHp : 0f,
+                MaxHp = view != null ? view.PlayerMaxHp : 0f,
                 ExpRatio = need > 0 ? profile.exp / (float)need : 0f,
                 TimeLeft = RunState.TimeLeft,
                 Combo = CombatModifiers.Combo,
                 Kills = profile.RegionKills(RunState.Region),
                 Attack = src != null ? src.AttackSlot : default,
                 Skill = src != null ? src.SkillSlot : default,
-                Player = player != null ? (Vector2)player.position : Vector2.zero,
+                Player = view != null ? view.PlayerPosition : Vector2.zero,
                 Buffs = BuffLine(src),
             };
+            if (view == null) return s;
             if (RunState.Mode == RunMode.Normal)
             {
-                if (bossPortal == null) bossPortal = Object.FindFirstObjectByType<BossPortal>();
-                if (bossPortal != null)
-                {
-                    s.PortalInRange = bossPortal.PlayerInRange;
-                    s.PortalUnlocked = bossPortal.IsUnlocked;
-                }
+                var portalView = view.Portal;
+                showPortalDot = portalView.Visible;
+                portalPosition = portalView.Position;
+                s.PortalInRange = portalView.Visible && portalView.InRange;
+                s.PortalUnlocked = portalView.Unlocked;
             }
             else
             {
-                var boss = Object.FindFirstObjectByType<Boss>();
-                var bh = boss != null ? boss.GetComponent<EnemyHealth>() : null;
-                if (bh != null && bh.MaxHp > 0f) s.BossRatio = bh.CurrentHp / bh.MaxHp;
+                showPortalDot = false;
+                s.BossRatio = view.BossHpRatio;
             }
             return s;
         }
 
-        void FindPlayer()
-        {
-            if (player != null) return;
-            var go = GameObject.FindGameObjectWithTag("Player");
-            if (go == null) return;
-            player = go.transform;
-            health = go.GetComponent<PlayerHealth>();
-            rig = go.GetComponent<PlayerRig>();
-        }
+        bool showPortalDot;
 
         static void RefreshSlot(Slot s, SkillSlotState st)
         {
@@ -412,11 +405,11 @@ namespace ChronoSavior.UI
             var p = MapPoint(v.Player);
             Place(playerDot, p.x - 1f, p.y - 2f);
 
-            bool showPortal = RunState.Mode == RunMode.Normal && bossPortal != null;
+            bool showPortal = !Preview.HasValue && RunState.Mode == RunMode.Normal && showPortalDot;
             portalDot.enabled = showPortal || Preview.HasValue;
             if (portalDot.enabled)
             {
-                var q = MapPoint(bossPortal != null ? (Vector2)bossPortal.transform.position : new Vector2(FieldBounds.MaxX - 0.6f, 0f));
+                var q = MapPoint(showPortal ? portalPosition : new Vector2(FieldBounds.MaxX - 0.6f, 0f));
                 Place(portalDot, q.x - 1f, MinimapGroundY - 3f);
             }
 
@@ -426,10 +419,10 @@ namespace ChronoSavior.UI
                 enemyScanTimer -= Time.unscaledDeltaTime;
                 if (enemyScanTimer <= 0f)
                 {
-                    enemyScanTimer = 0.15f; // 몹 찾기는 0.15초마다(매 프레임 찾을 필요 없다)
-                    enemyPositions.Clear();
-                    foreach (var e in Object.FindObjectsByType<EnemyHealth>(FindObjectsSortMode.None))
-                        if (e != null && e.isActiveAndEnabled && e.CurrentHp > 0f) enemyPositions.Add(e.transform.position);
+                    enemyScanTimer = 0.15f; // 몹 위치는 0.15초마다(매 프레임 읽을 필요 없다)
+                    var view = WorldView.Combat;
+                    if (view != null) view.CopyEnemyPositions(enemyPositions);
+                    else enemyPositions.Clear(); // 전투 씬이 없으면 점도 없다
                 }
                 enemies = enemyPositions;
             }

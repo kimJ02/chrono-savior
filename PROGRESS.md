@@ -227,6 +227,12 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (15)** — **[나] 2b-3: 화면 창구 `WorldView` (`feature/world-links`, PlayMode 442/442, 씬 구성 검증 '문제 없음').** `Systems/WorldView` — 전투 씬 담당(`CombatDirector`)이
+  `ICombatView`를, 로비 월드가 `ILobbyView`를 OnEnable/OnDisable로 꽂고 뺀다(중복이면 오류). 화면은 계약으로 **물을 때** 읽는다(복사 루프 없음):
+  플레이어 체력·위치·키트, 포탈(일반 필드에서만), 보스 체력(`EnemyHealth.isBoss`), 살아 있는 적 위치(새 `EnemyHealth.Active` 등록 목록, 0.15초마다), 로비 근접 건물·캐릭터 위치.
+  `CombatHud`·`LobbyHud`의 태그·타입 탐색과 `LobbyWorld.Instance`가 사라졌다. **계획과 달라진 것**: `Systems`는 `Characters`를 참조하지 않아서(기존 방식) 플레이어를 읽는 계약을
+  `Core`에 — `IHealthView`(PlayerHealth)·`ISkillSlotHost`(PlayerRig), HUD 계약 `ISkillSlotSource`·`SkillSlotState`는 `Characters` → `Core`로 `git mv`.
+  테스트: 새 `Systems/WorldViewTests`(창구 규칙, 담당이 내주는 값 = 예전 탐색 결과, 전투 씬 없을 때 HUD 안전), `GameBootTests`(실제 씬에서 창구), 월드 탐색 금지 대상에 HUD 둘.
 - **2026-11-05 (14)** — **[나] 2b-2: 같은 씬은 직렬화, 생성물엔 스포너가 플레이어를 넣는다 (`feature/world-links`, PlayMode 438/438, 씬 구성 검증 '문제 없음').**
   씬 탐색을 걷어 냈다: `StageVisuals`(땅·발판 2·포탈 → 직렬화, 다른 씬 카메라는 `CameraFollow2D.CurrentCamera` 등록), `BossPortal`·`LobbyWorld`(Player 직렬화), `LobbyHud`(같은 씬 카메라 직렬화).
   실행 중 생기는 몹·경험치 구슬은 **스포너가 만들 때 Player를 넣는다**(`EnemySpawner.SpawnMonsterAt` — 잡몹·꼬마 슬라임·성소·보스가 다 지남, `ExpOrb.Spawn(…, player)`) — 몹이 Player 태그로 찾던 것 삭제.

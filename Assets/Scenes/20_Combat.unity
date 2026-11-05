@@ -1336,6 +1336,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1457870341}
+  portal: {fileID: 789030853}
 --- !u!4 &482494280
 Transform:
   m_ObjectHideFlags: 0

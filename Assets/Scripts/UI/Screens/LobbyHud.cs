@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ChronoSavior.Characters;
 using ChronoSavior.Core;
+using ChronoSavior.Systems;
 
 namespace ChronoSavior.UI
 {
@@ -15,7 +16,7 @@ namespace ChronoSavior.UI
         [Tooltip("같은 씬(00_Persistent)의 공용 카메라 — 건물 글씨를 화면 위치로 옮길 때 쓴다.")]
         [SerializeField] Camera cam;
 
-        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 `Camera.main`).</summary>
+        /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 태그로 공용 카메라를 찾았다).</summary>
         public Camera Camera { get => cam; set => cam = value; }
 
         protected override PixelCanvas.Layer Layer => PixelCanvas.Layer.Hud;
@@ -89,7 +90,7 @@ namespace ChronoSavior.UI
                 Place(buildingNames[i], LobbyWorld.LabelWorldPos(i, LobbyWorld.NameFromTop), c);
                 Place(buildingDoors[i], LobbyWorld.LabelWorldPos(i, LobbyWorld.DoorFromTop), c);
                 // 그 건물 앞에 서 있으면 "F / ↑"는 숨긴다 — 글씨가 캐릭터 위에 겹치고, 아래쪽 큰 안내가 대신 뜬다.
-                buildingDoors[i].enabled = LobbyWorld.Instance == null || LobbyWorld.Instance.NearIndex != i;
+                buildingDoors[i].enabled = WorldView.Lobby == null || WorldView.Lobby.NearBuilding != i;
             }
         }
 
@@ -121,15 +122,17 @@ namespace ChronoSavior.UI
             float ratio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;
             ((RectTransform)expFill.transform).sizeDelta = new Vector2(Mathf.Round(ratio * 638f), 2f);
 
-            var player = GameObject.FindGameObjectWithTag("Player");
-            if (player != null)
+            // 로비 월드는 읽기 창구(`Systems/WorldView.Lobby`)로만 읽는다(2026-11-05 2b — 예전엔 태그로 캐릭터를 찾고 정적 Instance를 읽었다).
+            var world = WorldView.Lobby;
+            var avatar = world != null ? world.AvatarPosition : null;
+            playerDot.enabled = avatar.HasValue;
+            if (avatar.HasValue)
                 ((RectTransform)playerDot.transform).anchoredPosition =
-                    new Vector2(Minimap.x + MapX(player.transform.position.x) - 1f, -(Minimap.y + 22f));
+                    new Vector2(Minimap.x + MapX(avatar.Value.x) - 1f, -(Minimap.y + 22f));
 
             PlaceBuildingLabels();
 
-            var world = LobbyWorld.Instance;
-            int near = world != null ? world.NearIndex : -1;
+            int near = world != null ? world.NearBuilding : -1;
             prompt.enabled = near >= 0 && !UiModal.Open;
             if (prompt.enabled) prompt.text = $"F / ↑ — {LobbyWorld.Buildings[near].Name} 들어가기";
         }

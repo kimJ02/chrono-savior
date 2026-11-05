@@ -67,6 +67,7 @@ public class GameBootTests
         GameState.Reset();
         RunState.Reset();
         CombatEvents.Reset(); RunEvents.Reset();
+        WorldView.Reset();
         RunTransient.Reset();
         CombatModifiers.Reset();
         HitFeel.Reset();
@@ -158,6 +159,17 @@ public class GameBootTests
         Assert.AreEqual(rig.Art.TintOf(SavedCharacter), sr.color);
     }
 
+    /// <summary>화면 창구(`WorldView`, 2026-11-05 2b) — 실제 씬이 뜨면 전투 담당이 꽂히고, 같은 씬의 Player·포탈을 가리킨다.</summary>
+    [Test]
+    public void WorldView_HasTheCombatScenesDirector_WithItsPortal()
+    {
+        var director = InScene<CombatDirector>(GameBoot.WorldScene).Single();
+        Assert.AreSame(director, WorldView.Combat, "전투 담당이 화면 창구에 꽂혀 있다");
+        Assert.AreSame(InScene<BossPortal>(GameBoot.WorldScene).Single(), director.BossPortal);
+        Assert.Greater(WorldView.Combat.PlayerMaxHp, 0f, "플레이어 체력을 읽는다");
+        Assert.IsNotNull(WorldView.Combat.PlayerKit, "지금 캐릭터 키트(스킬 칸)를 읽는다");
+    }
+
     /// <summary>스포너(전투 씬)와 스테이지 선택 화면(상주 씬)이 같은 몬스터 목록 에셋을 본다 — 화면이 월드를 찾지 않는다(2026-11-05).</summary>
     [Test]
     public void Spawner_AndStageSelect_ShareOneMonsterCatalog()
@@ -207,7 +219,8 @@ public class GameBootTests
         flow.EnterLobby();
         yield return null;
         Assert.AreEqual(GameScene.Lobby, GameState.Current);
-        Assert.IsNotNull(LobbyWorld.Instance, "로비 건물(월드 씬)이 있다");
+        Assert.IsNotNull(WorldView.Lobby, "로비 월드(월드 씬)가 화면 창구에 꽂혀 있다");
+        Assert.IsNotNull(WorldView.Lobby.AvatarPosition, "로비에서 걷는 캐릭터 위치가 보인다");
 
         flow.StartRun(1, RunMode.Normal);
         yield return null;

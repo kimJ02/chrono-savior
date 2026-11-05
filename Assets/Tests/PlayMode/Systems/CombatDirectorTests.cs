@@ -33,6 +33,7 @@ public class CombatDirectorTests
         GameState.Reset();
         RunState.Reset();
         CombatEvents.Reset(); RunEvents.Reset();
+        WorldView.Reset();
         RunTransient.Reset();
         CombatModifiers.Reset();
         HitFeel.Reset();

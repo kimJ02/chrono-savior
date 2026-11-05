@@ -152,6 +152,9 @@
       `ILobbyView Lobby`(구현 `LobbyWorld`), `Attach`는 중복이면 오류·`Detach`는 자기일 때만. `ICombatView` = 플레이어 체력·위치·`ISkillSlotSource` 키트, 포털(struct), 보스 체력 비율,
       `CopyEnemyPositions(list)`(먼저 비움). 미니맵은 지금처럼 **살아 있는 적 전부**(잡몹·소환·성소·보스) — `EnemyHealth`가 활성 목록에 등록하고 Director가 HUD 주기(0.15초)에 복사.
       `ILobbyView` = 근접 건물·아바타 위치. `CombatHud`·`LobbyHud`는 이것만 읽고 없으면 숨긴다.
+      **구현하며 정한 것(2026-11-05)**: `Systems`는 `Characters`를 참조하지 않는다(asmdef — 기존 `IRunResettable`·`CombatEvents.PlayerDied`와 같은 방식). 그래서 Director가 플레이어를
+      읽는 계약을 `Core`에 뒀다 — `IHealthView`(PlayerHealth 구현)·`ISkillSlotHost`(PlayerRig 구현, 지금 키트의 칸), 그리고 HUD 계약 `ISkillSlotSource`·`SkillSlotState`를
+      `Characters` → `Core`로 옮겼다(제공은 Characters, 읽기는 Systems·UI라 아래층 계약). 보스 체력은 스포너가 표시한 `EnemyHealth.isBoss`로 찾는다.
    4. 로비 카메라: `LobbyWorld`의 가운데 앵커를 로비 진입 때 `Track(anchor, snap)`(즉시), 사냥 시작 때 `CombatDirector.BeginField`가 `Track(player)`(지금처럼 부드럽게).
       `CameraFollow2D`의 `GameState.Lobby` 분기 2곳 삭제 — 로비 대상은 움직이지 않는 앵커라 멈춘 시간에도 따라갈 게 없다(3단계 로비 아바타도 카메라는 앵커).
       `LobbyWorld`는 `git mv` → `UI/Lobby/`(네임스페이스·meta 유지).

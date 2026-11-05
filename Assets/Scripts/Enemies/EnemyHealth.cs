@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using ChronoSavior.Core;
 using ChronoSavior.Combat;
@@ -79,6 +80,17 @@ namespace ChronoSavior.Enemies
 
         /// <summary>스폰 시 1회. `SetMaxHp`와 같은 이유로 필드 대입이 아니라 메서드로 받는다.</summary>
         public void SetLevel(int level) => Level = Mathf.Max(1, level);
+
+        static readonly List<EnemyHealth> active = new List<EnemyHealth>();
+
+        /// <summary>
+        /// 켜져 있는 적 전부(잡몹·소환·성소·보스) — 스스로 등록한다(2026-11-05 2b). 전투 담당(`Systems/CombatDirector`)이 미니맵·보스 체력바에 쓰려고
+        /// 읽는다(예전엔 화면이 씬을 뒤져 찾았다). 밖에선 읽기만.
+        /// </summary>
+        public static IReadOnlyList<EnemyHealth> Active => active;
+
+        void OnEnable() => active.Add(this);
+        void OnDisable() => active.Remove(this);
 
         void Awake()
         {

@@ -24,6 +24,8 @@ public class UiWorldLookupTests
         "World/BossPortal.cs",                 // 2b — Player는 직렬화
         "Enemies/EnemyMove.cs",                // 2b — 쫓을 대상은 스포너가 넣는다
         "Systems/ExpOrb.cs",                   // 2b — 끌려갈 플레이어는 스포너가 넣는다
+        "UI/Screens/CombatHud.cs",             // 2b — WorldView.Combat만 읽는다
+        "UI/Screens/LobbyHud.cs",              // 2b — WorldView.Lobby만 읽는다, 카메라는 같은 씬 직렬화
     };
 
     static readonly Regex WorldLookup = new Regex(@"\bCamera\.main\b|\b(FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag)\b|GameObject\.Find\s*\(");

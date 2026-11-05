@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using UnityEngine;
 using ChronoSavior.Core;
+using ChronoSavior.Enemies;
 using ChronoSavior.World;
 
 namespace ChronoSavior.Systems
@@ -16,12 +18,15 @@ namespace ChronoSavior.Systems
     ///   이쪽은 `GameFlow`를 모른 채 이벤트로만 알린다(런 종료 <see cref="RunEvents.RequestRunEnd"/>, 히트스톱 <see cref="CombatEvents.RequestHitstop"/>).
     ///   둘은 씬이 달라 직렬화로 이을 수 없다.
     ///
+    /// 전투 화면이 읽는 창구(<see cref="ICombatView"/>, `WorldView.Combat`)도 이 담당이다 — 같은 씬 참조(Player·포탈)와 적 등록 목록으로 **물을 때** 계산한다
+    /// (2026-11-05 2b). 화면은 이 타입을 모르고 계약만 본다.
+    ///
     /// 시간이 멈춘 동안(히트스톱·일시정지, `timeScale` 0)은 `Time.deltaTime`이 0이라 런 타이머·콤보 창이 저절로 멈춘다 — 원본도 `dt = 0`이다.
     /// 0을 빼는 호출은 결과를 바꾸지 않는다: 런 타이머는 0이 되는 순간 이미 종료를 요청하고(`RunState.Over` 뒤엔 무시),
     /// 콤보·연쇄 창은 0 이하가 되는 순간 이미 초기화된다(`CombatModifiers.Tick`). `CombatDirectorTests.WhileFrozen_TimersAndComboDoNotMove`.
     /// </summary>
     [DisallowMultipleComponent]
-    public class CombatDirector : MonoBehaviour
+    public class CombatDirector : MonoBehaviour, ICombatView
     {
         /// <summary>지금 떠 있는 전투 씬의 담당. 전투 씬이 없으면(타이틀 부팅 직후 등) null.</summary>
         public static CombatDirector Current { get; private set; }
@@ -31,6 +36,12 @@ namespace ChronoSavior.Systems
 
         /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다.</summary>
         public GameObject Player { get => player; set => player = value; }
+
+        [Tooltip("같은 씬(20_Combat)의 보스 포탈 — 전투 화면이 범위 안내·미니맵 점에 쓴다.")]
+        [SerializeField] BossPortal portal;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public BossPortal BossPortal { get => portal; set => portal = value; }
 
         /// <summary>원본 `setTimeout(() => endRun('bossdead'), 1600)`(project_test.html:4289).</summary>
         public const float BossDeadEndDelay = 1.6f;
@@ -49,6 +60,7 @@ namespace ChronoSavior.Systems
                 return;
             }
             Current = this;
+            WorldView.Attach(this);
             CombatEvents.PlayerDied += HandlePlayerDied;
             CombatEvents.EnemyKilled += HandleEnemyKilled;
             CombatEvents.EnemyDamaged += HandleEnemyHit;
@@ -61,6 +73,7 @@ namespace ChronoSavior.Systems
         void OnDisable()
         {
             if (Current == this) Current = null;
+            WorldView.Detach(this);
             CombatEvents.PlayerDied -= HandlePlayerDied;
             CombatEvents.EnemyKilled -= HandleEnemyKilled;
             CombatEvents.EnemyDamaged -= HandleEnemyHit;
@@ -94,6 +107,49 @@ namespace ChronoSavior.Systems
 
             // 콤보 창·연쇄 처치 창·성소 버프 감소(원본 `updateCombo` :1630 등).
             CombatModifiers.Tick(Time.deltaTime);
+        }
+
+        // ───────────────────────── 전투 화면이 읽는 것 (ICombatView) ─────────────────────────
+
+        // 플레이어 쪽은 `Core` 계약으로만 읽는다 — `Systems`는 `Characters`(PlayerHealth·PlayerRig)를 모른다(IRunResettable과 같은 이유).
+        IHealthView playerHealth;
+        ISkillSlotHost playerSkills;
+        GameObject cachedFor;
+
+        void CachePlayer()
+        {
+            if (cachedFor == player) return;
+            cachedFor = player;
+            playerHealth = player != null ? player.GetComponent<IHealthView>() : null;
+            playerSkills = player != null ? player.GetComponent<ISkillSlotHost>() : null;
+        }
+
+        float ICombatView.PlayerHp { get { CachePlayer(); return playerHealth != null ? playerHealth.CurrentHp : 0f; } }
+        float ICombatView.PlayerMaxHp { get { CachePlayer(); return playerHealth != null ? playerHealth.MaxHp : 0f; } }
+        Vector2 ICombatView.PlayerPosition => player != null ? (Vector2)player.transform.position : Vector2.zero;
+        ISkillSlotSource ICombatView.PlayerKit { get { CachePlayer(); return playerSkills?.CurrentSkillSlots; } }
+
+        /// <summary>포탈은 일반 필드에서만 보인다(보스 필드엔 없다) — 지금 HUD와 같은 조건.</summary>
+        PortalView ICombatView.Portal => portal != null && RunState.Mode == RunMode.Normal
+            ? new PortalView(true, portal.PlayerInRange, portal.IsUnlocked, portal.transform.position)
+            : default;
+
+        float? ICombatView.BossHpRatio
+        {
+            get
+            {
+                foreach (var e in EnemyHealth.Active)
+                    if (e != null && e.isBoss && !e.IsDead && e.MaxHp > 0f) return e.CurrentHp / e.MaxHp;
+                return null;
+            }
+        }
+
+        /// <summary>살아 있는 적 전부 — 예전 화면의 `FindObjectsByType&lt;EnemyHealth&gt;` + `isActiveAndEnabled && CurrentHp > 0`과 같은 범위.</summary>
+        void ICombatView.CopyEnemyPositions(List<Vector2> into)
+        {
+            into.Clear();
+            foreach (var e in EnemyHealth.Active)
+                if (e != null && e.isActiveAndEnabled && e.CurrentHp > 0f) into.Add(e.transform.position);
         }
 
         // ───────────────────────── GameFlow가 부르는 것 ─────────────────────────

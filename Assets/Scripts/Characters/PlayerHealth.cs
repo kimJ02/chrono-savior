@@ -16,7 +16,7 @@ namespace ChronoSavior.Characters
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
-    public class PlayerHealth : MonoBehaviour, IDamageable, IRunResettable
+    public class PlayerHealth : MonoBehaviour, IDamageable, IRunResettable, IHealthView
     {
         [Header("스탯 (원본 CONFIG.player — project_test.html:605~606)")]
         [Tooltip("최대 체력. 원본 baseHp 100.")]

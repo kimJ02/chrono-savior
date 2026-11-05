@@ -24,7 +24,7 @@ namespace ChronoSavior.Characters
     /// 이 파일을 고칠 필요가 없다.
     /// </summary>
     [DisallowMultipleComponent]
-    public class PlayerRig : MonoBehaviour
+    public class PlayerRig : MonoBehaviour, ISkillSlotHost
     {
         /// <summary>지금 선택된 캐릭터. 초기값은 원본 `defaultMeta().character`(:1134)와 같은 마법사.</summary>
         public CharacterId Current { get; private set; } = CharacterId.Mage;
@@ -70,6 +70,9 @@ namespace ChronoSavior.Characters
         /// 지금 켜져 있는 키트(<see cref="Current"/>의 것). HUD가 여기서 스킬 슬롯 상태(<see cref="ISkillSlotSource"/>)를
         /// 읽는다 — 키트가 없는 캐릭터를 가리키는 순간은 없지만(<see cref="Update"/>가 되돌린다) 방어로 null을 준다.
         /// </summary>
+        /// <summary>전투 화면이 읽는 스킬 칸(`Core/ISkillSlotHost`) — 지금 키트가 칸을 내주면 그것(2026-11-05 2b, `Systems/CombatDirector`가 읽는다).</summary>
+        public ISkillSlotSource CurrentSkillSlots => CurrentKit as ISkillSlotSource;
+
         public ICharacterKit CurrentKit
         {
             get

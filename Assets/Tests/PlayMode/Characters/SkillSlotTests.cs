@@ -297,7 +297,9 @@ public class SkillSlotTests
     public void CombatHud_DrawsSlotsFromTheCurrentKit()
     {
         string hud = File.ReadAllText(Path.Combine(Application.dataPath, "Scripts", "UI", "Screens", "CombatHud.cs"));
-        foreach (var use in new[] { @"CurrentKit as ISkillSlotSource\b", @"\.AttackSlot\b", @"\.SkillSlot\b", @"\.BuffText\b" })
+        // 2026-11-05 2b: HUD는 화면 창구(`WorldView.Combat.PlayerKit`)에서 키트를 받는다 — 키트를 내주는 길(Director → PlayerRig.CurrentSkillSlots)은
+        // `Systems/WorldViewTests.Director_ReportsPlayerPortalBossAndEnemies`가 실제로 확인한다.
+        foreach (var use in new[] { @"\.PlayerKit\b", @"\.AttackSlot\b", @"\.SkillSlot\b", @"\.BuffText\b" })
             Assert.IsTrue(Regex.IsMatch(hud, use), $"CombatHud가 `{use}`를 안 쓴다 — 슬롯이 화면에 안 뜬다");
     }
 }

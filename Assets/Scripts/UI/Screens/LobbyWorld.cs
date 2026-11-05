@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using ChronoSavior.Core;
+using ChronoSavior.Systems;
 using ChronoSavior.World;
 
 namespace ChronoSavior.UI
@@ -17,7 +18,8 @@ namespace ChronoSavior.UI
     ///     건물을 캐릭터 키(0.5)의 약 1.6배로 줄이고 필드 가운데에 모았다. 캐릭터도 가운데서 나오고, 로비에선 카메라가 가운데에
     ///     서 있고(`CameraFollow2D`) 캐릭터는 건물 줄 안에서만 걷는다.
     /// </summary>
-    public class LobbyWorld : MonoBehaviour
+    /// <remarks>로비 화면(`LobbyHud`)이 읽는 창구(<see cref="ILobbyView"/>, `WorldView.Lobby`)도 이 컴포넌트다(2026-11-05 2b — 예전엔 정적 `Instance`).</remarks>
+    public class LobbyWorld : MonoBehaviour, ILobbyView
     {
         public struct Building { public string Name, Icon; public float Offset; public System.Action Open; }
 
@@ -47,8 +49,11 @@ namespace ChronoSavior.UI
             new Vector2(XOf(index), FieldBounds.GroundY + (BuildingH - fromTop) * WorldPx);
         const float WorldPx = 1f / 128f; // 그림 1도트 = 월드 1/128유닛(C안)
 
-        public static LobbyWorld Instance { get; private set; }
+        /// <summary>캐릭터가 앞에 서 있는 건물 번호 — 없으면 -1.</summary>
         public int NearIndex { get; private set; } = -1;
+
+        int ILobbyView.NearBuilding => NearIndex;
+        Vector2? ILobbyView.AvatarPosition => player != null ? (Vector2)player.position : (Vector2?)null;
 
         [Tooltip("로비에서 걸어 다닐 캐릭터 — 지금은 같은 씬(20_Combat)의 Player(씬 분할 2차 3단계에서 로비 아바타로 바뀐다).")]
         [SerializeField] Transform player;
@@ -60,11 +65,11 @@ namespace ChronoSavior.UI
         float walkSpeed = 2.7f;
         bool wasLobby;
 
-        void Awake() => Instance = this;
+        void OnEnable() => WorldView.Attach(this);
+        void OnDisable() => WorldView.Detach(this);
 
         void OnDestroy()
         {
-            if (Instance == this) Instance = null;
             if (root != null) Destroy(root);
         }
 
@@ -110,7 +115,7 @@ namespace ChronoSavior.UI
         /// <summary>로비에 들어올 때 — 발판을 숨기고, 건물을 세우고, 캐릭터를 시작 자리 땅 위에.</summary>
         public void EnterLobby()
         {
-            Instance = this; // 편집 모드 캡처에선 Awake가 안 불린다
+            if (!ReferenceEquals(WorldView.Lobby, this)) WorldView.Attach(this); // 편집 모드 캡처에선 OnEnable이 안 불린다
             PlatformSet.HideAll();
             if (root == null) Build();
             root.SetActive(true);

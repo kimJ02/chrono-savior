@@ -132,6 +132,7 @@ namespace ChronoSavior.Editor
             if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
             var portal = One<BossPortal>(combat, problems);
             if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");
+            if (director != null && director.BossPortal != portal) problems.Add("CombatDirector.BossPortal이 이 씬의 BossPortal이 아니다 — 전투 화면에 포탈 안내·미니맵 점이 안 나온다");
             var visuals = One<StageVisuals>(combat, problems);
             if (visuals != null)
             {

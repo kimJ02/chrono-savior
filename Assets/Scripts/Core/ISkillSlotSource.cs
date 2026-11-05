@@ -1,7 +1,7 @@
 using System.Globalization;
 using UnityEngine;
 
-namespace ChronoSavior.Characters
+namespace ChronoSavior.Core
 {
     /// <summary>
     /// HUD 스킬 슬롯 한 칸(Z·X)의 상태 — 원본 `setSlotCooldown(sl, frac, remain)`(project_test.html:6248)의
@@ -78,6 +78,7 @@ namespace ChronoSavior.Characters
     /// 에러**가 난다. 따로 두면 구현하지 않은 키트도 그대로 돌고 슬롯에는 아이콘만 보인다.
     /// 지금은 세 키트(마법사·메카닉·섬영) 모두 구현했다 — 섬영은 2026-11-04에 붙였다.
     /// </summary>
+    /// <remarks>2026-11-05 `Characters`에서 `Core`로 옮겼다 — 제공은 `Characters`(키트), 읽기는 `Systems`(전투 화면 창구)·`UI`라 아래층 계약이어야 한다.</remarks>
     public interface ISkillSlotSource
     {
         /// <summary>Z 칸 — 기본공격 쿨다운.</summary>
