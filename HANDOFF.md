@@ -14,7 +14,7 @@
 | 0 | 규칙 정하기(아래) | ✅ 합의 |
 | 1 | 옛 IMGUI 화면 제거(`TitleScreen`·`LobbyScreen`·`GameHud`·`ResultScreen`·`RegressionWindow`·`UiTheme`·`UiTextures`·`Sprites/UI/`·`BuildUiTextures`) | ✅ 씬 분할 1차에 포함 |
 | 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 씬 원본과 어긋나던 2곳 ✅(2차 전 보완) / 목록화 할 일 |
-| 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector) 단계 0·1 ✅, 2a~4 할 일 | 진행 중 |
+| 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector) 단계 0·1·2a·2b ✅, 3·4 할 일 | 진행 중 |
 | 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 117곳, UI의 월드 탐색) | 할 일 |
 | 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
 
@@ -143,7 +143,7 @@
 2. ✅ **2a 데이터**(2026-11-05, 로그 11-05 (8)~(11)) — 캐릭터 선택은 프로필만(`PlayerRig` 탐색·`Select`/`SelectNext` 삭제), 몬스터 그림은 `Core/MonsterCatalog` 에셋
    (스포너·스테이지 선택이 같이 봄), 캐릭터 그림은 `Core/CharacterArtSet` 에셋(그림·색만). **정한 것**: 스테이지 선택 카드 목록은 스폰표 복사본이 아니라 표시 정책(칸 5개)으로 두고
    테스트로 묶는다 / 캐릭터 정의 SO(이름·해금)는 해금 조건이 생길 때 / 보스 정의 SO는 안 만든다(그림 하나뿐) / 그림 도구 둘은 같은 에셋을 고친다.
-   **2b 연결**(2026-11-05 Codex와 계획 합의 — 커밋 순서대로):
+   ✅ **2b 연결**(2026-11-05, 로그 11-05 (13)~(17), Codex "2b 통과" — 커밋 순서대로):
    1. `GravityWellZone.Active` → `IReadOnlyList`, 없애기는 `Vanish()`(목록에서 즉시 빼고 Destroy)(지금 `MageSkillEffects`가 목록을 직접 지운다).
    2. **같은 씬은 직렬화, 실행 중 생기는 것은 만드는 쪽이 넘긴다**: `StageVisuals`(Ground·발판 2·포털)·`BossPortal`(Player)·`LobbyWorld`(Player)·`LobbyHud`(같은 씬 카메라)
       → `[SerializeField]`. 경험치 구슬·몹(`EnemyMove`)은 **스포너가 생성 때 Player를 넣는다**(태그 탐색 제거 — 예외를 두면 같은 규칙이 두 갈래가 된다, 테스트 13파일은 대상을 직접 넣게).

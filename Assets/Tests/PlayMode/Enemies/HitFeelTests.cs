@@ -241,6 +241,35 @@ public class HitFeelTests
         Assert.Greater(cam.transform.position.x, settled.x, "시간이 다시 흐르면 정상적으로 따라간다");
     }
 
+    /// <summary>
+    /// "바로 붙기" 요청(`Track(t, snap: true)`, 로비 기준점)은 **그 대상에만** 걸린다 — 다음 프레임 전에 다른 대상으로 바꾸면 취소돼서, 새 대상(사냥의 플레이어)엔
+    /// 예전처럼 부드럽게 간다(2026-11-05 Codex 2b 리뷰: 요청이 남아 있으면 사냥 시작 때 순간 이동했다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Camera_SnapRequest_AppliesOnlyToItsOwnTarget()
+    {
+        float y = FieldBounds.GroundY + EntitySizeConfig.PlayerRadius;
+        var a = new GameObject("TestTarget").transform;
+        a.position = new Vector3(6f, y, 0f);
+        var b = new GameObject("TestTargetB").transform;
+        b.position = new Vector3(18f, y, 0f);
+        var cam = new GameObject("TestCamera");
+        cam.AddComponent<Camera>().orthographic = true;
+        cam.AddComponent<CameraFollow2D>();
+        CameraFollow2D.Track(a);
+        yield return null; // 첫 프레임엔 대상에 붙는다
+
+        CameraFollow2D.Track(a, snap: true);
+        CameraFollow2D.Track(b); // 프레임이 돌기 전에 다른 대상으로 — 바로 붙기 요청은 취소돼야 한다
+        yield return null;
+        Assert.Less(cam.transform.position.x, 17f, "다른 대상으로 바꿨는데 남은 바로 붙기 요청으로 순간 이동했다");
+
+        CameraFollow2D.Track(b, snap: true);
+        yield return null;
+        Assert.AreEqual(18f, cam.transform.position.x, 0.01f, "자기 대상의 바로 붙기 요청은 그 프레임에 바로 붙는다");
+        CameraFollow2D.Untrack(b);
+    }
+
     // ---------------- 플레이어가 맞을 때 ----------------
 
     static PlayerHealth NewPlayer()

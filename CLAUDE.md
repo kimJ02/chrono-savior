@@ -238,12 +238,14 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   **순서·날짜는 노션 일정표(2026-09-23)를 따른다** — 옮겨 적은 표는 `docs/worksplit.md` 1절. 옛 "단계 1/2/3"
   (9/9 회의)은 더 쓰지 않는다 — 단계 1(모든 캐릭터 0차)은 2026-09-28에 끝났고 드루이드는 기획에서 빠졌다.
   **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
-  씬 분할 1차가 끝났고 2차가 진행 중이다(단계 0 세이브 교체 경계·단계 1 `CombatDirector` ✅). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+  씬 분할 1차가 끝났고 2차가 진행 중이다(단계 0 세이브 교체 경계·1 `CombatDirector`·2a 그림 데이터·2b 연결 규칙 ✅ — 다음은 3단계 `10_Lobby` 분리). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
 - **씬 구성(2026-11-04)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번 — `GameBoot`·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
   EventSystem·공용 카메라·`Audio`) + `20_Combat.unity`(빌드 1번 — 월드: 전투 담당 `CombatDirector`·플레이어·발판·포털·스포너·스테이지 그림·로비 건물). 흐름(`GameFlow`)은 담당을 `CombatDirector.Current`로 부르고, 담당은 이벤트로만 알린다.
   **씬 파일이 유일한 원본이다** — 씬을 코드로 다시 만드는 도구는 없다(옛 `BuildPartAScene`은 삭제). 씬을 고친 뒤엔
   메뉴 `ChronoSavior/씬 구성 검증`(`Editor/SceneSetupValidator`)으로 검사한다. 에디터 Play는 어느 씬을 열어 두든 `00_Persistent`부터
   시작한다(`Editor/PlayFromPersistent`). **씬끼리는 직렬화 참조를 걸 수 없다** — 씬을 넘는 연결은 등록(예: `CameraFollow2D.Track`)으로.
+  **연결 규칙(2026-11-05)**: 같은 씬은 `[SerializeField]`, 실행 중 생기는 것은 만드는 쪽이 넘기고(스포너 → 몹·구슬), 화면은 `Systems/WorldView`로만 월드를 읽는다.
+  **실행 코드에서 씬 찾기(`Find*`·`FindWithTag`·`Camera.main`) 금지** — `Tests/PlayMode/WorldLookupTests`가 소스를 훑어 막는다(예외는 이유를 적어 그 표에).
 - **새 세션이 읽는 순서**: 이 파일 → `PROGRESS.md`(지금 상태·다음 할 일·배치 검증 명령) →
   `HANDOFF.md`(지금 스프린트) → `docs/worksplit.md`(분업). 원본 대조는 `docs/original-parity.md`.
 - **배치모드 `-executeMethod`는 전체 네임스페이스 경로가 필요하다**: `ChronoSavior.Editor.SceneSetupValidator.RunBatch`

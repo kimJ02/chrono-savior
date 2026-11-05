@@ -28,14 +28,16 @@ namespace ChronoSavior.World
         /// </summary>
         public static Transform Target { get; private set; }
 
-        static bool snapRequested;
+        /// <summary>바로 붙을 대상 — 그 대상을 따라가는 동안에만 유효하다. 다른 대상으로 바꾸거나 빼면 같이 취소된다(Codex 2b 리뷰: 요청이 다음 대상까지 남으면
+        /// 사냥 시작 때 플레이어에게 부드럽게 가지 않고 순간 이동했다).</summary>
+        static Transform snapTo;
 
         /// <summary>그 대상을 따라간다. <paramref name="snap"/>이면 다음 프레임에 부드럽게 옮기지 않고 바로 붙는다 — 로비처럼 시간이 멈춘 화면(timeScale 0)은
         /// 부드럽게 옮길 시간이 흐르지 않는다.</summary>
         public static void Track(Transform t, bool snap = false)
         {
             Target = t;
-            if (snap) snapRequested = true;
+            snapTo = snap ? t : null;
         }
 
         /// <summary>
@@ -55,6 +57,7 @@ namespace ChronoSavior.World
         public static void Untrack(Transform t)
         {
             if (Target == t) Target = null;
+            if (snapTo == t) snapTo = null;
         }
 
         public float smoothTime = 0.15f;
@@ -78,7 +81,7 @@ namespace ChronoSavior.World
             var target = Target;
             if (target == null) return;
             if (bodyOwner != target) { bodyOwner = target; targetBody = target.GetComponent<Rigidbody2D>(); }
-            if (snapRequested) { snapRequested = false; snapped = false; velocityX = velocityY = 0f; }
+            if (snapTo != null && snapTo == target) { snapTo = null; snapped = false; velocityX = velocityY = 0f; }
 
             float halfWidth = StageArtConfig.ViewHalfWidth;
             float min = FieldBounds.MinX + halfWidth;

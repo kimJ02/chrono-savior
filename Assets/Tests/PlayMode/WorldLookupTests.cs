@@ -23,7 +23,10 @@ public class WorldLookupTests
 
     static readonly Regex WorldLookup = new Regex(@"\bCamera\.main\b|\b(FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag)\b|GameObject\.Find\s*\(");
 
-    /// <summary>주석 줄(`//`, `///`)은 세지 않는다 — 예전 방식을 설명하는 글이 걸리지 않게.</summary>
+    /// <summary>
+    /// **줄 전체가 주석인 줄**(`//`·`///`로 시작)만 세지 않는다 — 예전 방식을 설명하는 글이 걸리지 않게. 코드 뒤에 붙은 주석과 블록 주석(`/* */`)은 센다
+    /// (그런 자리에는 옛 API 이름을 쓰지 말 것 — 단순하게 두려고 C# 구문 분석은 안 한다).
+    /// </summary>
     static int CountLookups(string source) =>
         source.Split('\n').Where(l => !l.TrimStart().StartsWith("//")).Sum(l => WorldLookup.Matches(l).Count);
 
