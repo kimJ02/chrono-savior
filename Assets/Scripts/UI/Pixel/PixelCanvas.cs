@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ChronoSavior.Core;
 using ChronoSavior.Systems;
 
 namespace ChronoSavior.UI
@@ -73,7 +74,7 @@ namespace ChronoSavior.UI
             Instance = this;
             Canvas = GetComponent<Canvas>();
             Scaler = GetComponent<CanvasScaler>();
-            if (Canvas == null || Scaler == null || !TryGetComponent(out GraphicRaycaster _))
+            if (Canvas == null || Scaler == null || !TryGetComponent(out raycaster))
             {
                 Debug.LogError("[PixelCanvas] 판(PixelUI)에 Canvas·CanvasScaler·GraphicRaycaster 중 빠진 게 있다 — 메뉴 ChronoSavior/씬 구성 검증", this);
                 enabled = false;
@@ -100,7 +101,20 @@ namespace ChronoSavior.UI
             if (Instance == this) Instance = null;
         }
 
-        void Update() => ApplyScale();
+        GraphicRaycaster raycaster;
+
+        /// <summary>
+        /// 화면이 입력(키·마우스)을 받는가 — 화면을 옮기는 동안(씬 불러오기 중)엔 받지 않는다(2026-11-05 씬 분할 2차 4-0).
+        /// 흐름은 전환 중 요청을 거부하지만, 프로필을 직접 바꾸는 버튼(캐릭터 선택 등)까지 막으려면 입력 자체를 닫아야 한다.
+        /// 키는 `PxScreen.HandleKeys`, 마우스는 이 판의 `GraphicRaycaster`가 이 값을 본다.
+        /// </summary>
+        public static bool AcceptsInput => !GameState.IsTransitioning;
+
+        void Update()
+        {
+            ApplyScale();
+            if (raycaster != null) raycaster.enabled = AcceptsInput;
+        }
 
         public RectTransform LayerRoot(Layer layer) => layers[(int)layer];
 

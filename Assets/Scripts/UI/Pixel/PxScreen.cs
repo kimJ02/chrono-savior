@@ -177,6 +177,7 @@ namespace ChronoSavior.UI
         void HandleKeys()
         {
             if (Time.frameCount == shownFrame || !HasKeyFocus) return; // 이 화면을 연 키가 바로 눌리지 않게
+            if (!PixelCanvas.AcceptsInput) return; // 화면을 옮기는 동안엔 키를 받지 않는다(마우스는 판의 GraphicRaycaster, 4-0)
             if (Modal && GameInput.PauseDown) { OnEscape(); return; }
             OnKeys();
             if (Nav.Count == 0) return;

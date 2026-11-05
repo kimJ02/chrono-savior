@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (28)** — **[나] 4-0: 화면을 옮기는 동안 화면 입력 잠금 (`feature/scene-split-finish`, PlayMode 472/472).** 4단계 진행은 Codex와 합의(4-0 입력 잠금 / 4-1 로비 timeScale 0 유지·근거 기록 / 4-2 정리 / 4-3 캡처 도구 첫 장 / 4-4 회귀·종합 리뷰).
+  `PixelCanvas.AcceptsInput`(= 전환 중 아님) 하나를 키(`PxScreen.HandleKeys` — 설정 창 등 `OnKeys`도 이 안)와 마우스(판의 `GraphicRaycaster.enabled`)가 같이 본다 — 프로필을 직접 바꾸는 버튼(캐릭터 선택 등)까지 전환 중엔 안 눌린다.
+  EventSystem 전체를 끄지 않는 이유: 포인터 상태·입력 재개까지 건드려 범위가 크다(Codex). 테스트: `PixelUiTests` 전환 중 입력 닫힘·재개, `GameBootTests`의 모든 전환 뒤(성공·실패) 클릭 다시 받음.
 - **2026-11-05 (27)** — **[나] 씬 분할 2차 3단계 `main` 병합**(`feature/lobby-scene`, 3-0~3-5 + 종합 리뷰 반영, PlayMode 471/471, 사용자 OK). `HANDOFF.md` 3단계 ✅·'구현하며 정한 것', `CLAUDE.md` 씬 구성(3씬)·진행 상태 갱신.
   최종 점검에서 UI 캡처 도구를 다시 돌려 30장 정상 확인(첫 장 전투 HUD 1080만 UI가 밀려 찍힘 — 도구 문제로 보임, 4단계에서 확인).
 - **2026-11-05 (26)** — **[나] 3단계 종합 리뷰 반영 (`feature/lobby-scene`, PlayMode 471/471, Codex '통과 — 병합 가능').** ① 사냥에 들어가다 필드 준비가 예외로 실패하면 날짜와

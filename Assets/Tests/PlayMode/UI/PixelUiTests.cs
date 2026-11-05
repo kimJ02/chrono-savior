@@ -70,6 +70,26 @@ public class PixelUiTests
         Assert.AreEqual(0f, PxArt.Apply(new Color(1f, 1f, 1f, 0f), PxArt.Tone.Hover).a, "투명은 투명");
     }
 
+    /// <summary>화면을 옮기는 동안엔 화면이 입력을 받지 않는다 — 마우스(판의 GraphicRaycaster)·키(PxScreen) 모두. 끝나면 다시 받는다(4-0).</summary>
+    [UnityTest]
+    public IEnumerator WhileTransitioning_ScreensTakeNoInput_ThenResume()
+    {
+        var raycaster = pc.GetComponent<UnityEngine.UI.GraphicRaycaster>();
+        try
+        {
+            GameState.SetTransitioning(true);
+            yield return null;
+            Assert.IsFalse(PixelCanvas.AcceptsInput);
+            Assert.IsFalse(raycaster.enabled, "전환 중엔 클릭을 받지 않는다");
+
+            GameState.SetTransitioning(false);
+            yield return null;
+            Assert.IsTrue(PixelCanvas.AcceptsInput);
+            Assert.IsTrue(raycaster.enabled, "끝나면 다시 받는다");
+        }
+        finally { GameState.SetTransitioning(false); }
+    }
+
     [UnityTest]
     public IEnumerator PauseMenu_ShowsOnlyWhilePaused()
     {

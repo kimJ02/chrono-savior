@@ -103,6 +103,8 @@ public class GameBootTests
         while (result == null && Time.realtimeSinceStartup < until) yield return null;
         Assert.AreEqual(expect, result, result == null ? "10초 안에 전환이 안 끝났다" : "전환 결과가 다르다");
         Assert.IsFalse(Flow.IsTransitioning);
+        yield return null; // 판이 다음 프레임에 입력을 다시 연다
+        Assert.IsTrue(PixelCanvas.Instance.GetComponent<UnityEngine.UI.GraphicRaycaster>().enabled, "전환이 끝나면(성공·실패 모두) 화면이 다시 클릭을 받는다");
     }
 
     static IEnumerator ToLobby() => Go(d => Flow.EnterLobby(d));
