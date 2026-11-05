@@ -160,9 +160,23 @@
       `LobbyWorld`는 `git mv` → `UI/Lobby/`(네임스페이스·meta 유지).
    검증: 런타임 코드 전체의 월드 탐색 금지(소스 훑기 — 남는 예외는 `PixelCanvas.EnsureEventSystem` 하나, 이유 기록), 미니맵 점 수·포털·보스 표시·카메라 전환이 예전과 같은지,
    `WorldView` 붙이기·떼기·월드 없을 때 HUD 안전, 검증기는 새 직렬화 참조 전부.
-3. **`10_Lobby` + 씬 전환** — `GameBoot`는 세이브 로드와 처음 부팅만, **타이틀에선 월드를 띄우지 않는다**(지금은 GameBoot가 20_Combat를 곧바로 로드). 이후 씬 흐름은 `GameFlow`:
-   `StartRun`이 20_Combat를 겹쳐 로드 → 활성 씬 → Director 등록 확인 → BeginField → Run, `EnterLobby`는 10_Lobby 로드 → 활성 → Lobby → 20_Combat 언로드, 재도전은 언로드 후 재로드.
-   '전환 중' 잠금·실패 복구·이전 월드 비활성. **전투 씬 로드가 성공한 뒤에만 날짜 차감·`RunState.Begin`을 한다**(지금 `StartRun`은 담당이 없으면 오류만 남기고 멈추는데, 비동기 로드에선 로드 실패 시 날짜만 줄어드는 일이 없게 — 1단계 Codex 리뷰). 에디터에서 열어 둔 씬으로 진입(`SessionState`)은 `GameFlow`가 소비하고, 20_Combat로 바로 들어올 때의 초기 상태를 명시한다.
+3. **`10_Lobby` + 씬 전환**(2026-11-05 Codex와 계획 합의 — 커밋 순서대로, 플레이 안 되는 중간 커밋은 만들지 않는다):
+   0. **발판 무대 전환을 전투 담당으로** — `PlatformSet.All`(정적, 꺼진 세트도 들고 있음)은 재도전 때 옛·새 전투 씬이 겹치면 옛 씬 발판까지 다시 켠다(Codex 지적).
+      → `CombatDirector`가 같은 씬의 두 세트를 직렬화로 들고 직접 켜고 끈다(연결 규칙 1), 정적 목록·`HideAll` 삭제. `FieldLayout.SetBossArena`(좌표 데이터)는 그대로.
+   1. **로비 아바타** — `LobbyAvatar`(걷기·그림만: 프로필 캐릭터의 `CharacterArtSet` 그림, 높이 맞추기는 `PlayerRig`와 **공용 함수**, 걸음 속도도 공용 값 — 복제 금지).
+   2. **`10_Lobby` 씬 만들기·검증**(아직 실행 경로에 안 잇는다): LobbyWorld·CameraAnchor·아바타·땅(그림 크기 입력용 — `StageVisuals.BuildGround`가 판정 상자 크기를 읽음)·
+      StageVisuals(땅·배경만). 검증기: 빌드 목록 `[00_Persistent, 10_Lobby, 20_Combat]`, 로비 필수 구성·전투 오브젝트 없음, 직렬화 참조.
+   3. **씬 로더 계약**: `IWorldSceneLoader`(실제 = `SceneManager` 경계만 감쌈, 테스트용 = 성공·실패·결과 제어). 기존 GameFlow 단위 테스트는 가짜 로더, 씬 왕복·재도전은 실제 씬 통합 테스트.
+      직렬화 플래그(`loadWorldScenes`)는 씬 설정 실수로 이어져서 안 쓴다.
+   4. **GameBoot·GameFlow·빌드 목록 전환**(한 커밋): GameBoot = 세이브만(타이틀엔 월드 없음). GameFlow 전환 코루틴 — 잠금(중복·입력 무시) → 이전 월드 루트 비활성 →
+      새 씬 로드 → **실패**(예외·씬 없음·전투면 Director 없음)면 이전 `GameState`·`timeScale`·활성 씬·루트별 `activeSelf` 복구 → 성공이면 **`sceneLoaded`로 받은 새 Scene 핸들**로
+      활성 씬 지정(재도전은 이름이 같아 이름으로 찾으면 안 된다) → 전투면 날짜 차감·`RunState.Begin`·`BeginField`·Run, 로비면 일반 무대로 되돌리고 `LobbyWorld.EnterLobby`(앵커 스냅)를
+      **전환 안에서** 끝낸 뒤 Lobby → 이전 씬은 **이전 핸들로** 언로드 → 잠금 해제. '새 원정'은 로비 로드 성공 **뒤에** 세이브 삭제(실패하면 진행을 잃지 않게).
+      새 씬 로드 중 `Awake`·`OnEnable`에서 생기는 오브젝트의 씬 소속을 확인(부모 지정)·테스트.
+   5. **에디터 진입**: `PlayFromPersistent`가 열린 씬을 `SessionState`에 쓰고 `GameFlow`가 `#if UNITY_EDITOR`에서 한 번 읽고 지운다 — 10_Lobby → 로비, 20_Combat → `defaultRegion` 사냥
+      (**디버그 진입은 날짜를 안 줄인다**), 그 밖 → 타이틀. 빌드 부팅은 늘 타이틀.
+   로비 timeScale은 **3단계에선 0 유지**(4단계에서 시간 쓰는 곳 확인 뒤 판단 — 씬 분리와 시간 규칙을 섞지 않는다).
+   테스트: 로더 실패·Director 누락·연속 입력·재도전 씬 핸들·활성 씬·실제 씬 왕복·세이브 보존·두 월드 발판/물리 겹침 없음·전환 실패 뒤 정적 등록·카메라 대상 복구·로비에서 캐릭터 바꾸면 아바타 그림.
 4. **마감** — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
