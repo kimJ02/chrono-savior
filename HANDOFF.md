@@ -14,7 +14,7 @@
 | 0 | 규칙 정하기(아래) | ✅ 합의 |
 | 1 | 옛 IMGUI 화면 제거(`TitleScreen`·`LobbyScreen`·`GameHud`·`ResultScreen`·`RegressionWindow`·`UiTheme`·`UiTextures`·`Sprites/UI/`·`BuildUiTextures`) | ✅ 씬 분할 1차에 포함 |
 | 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 씬 원본과 어긋나던 2곳 ✅(2차 전 보완) / 목록화 할 일 |
-| 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector) 단계 0·1·2a·2b·3 ✅, 4 할 일 | 진행 중 |
+| 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector·씬 전환) 단계 0~4 전부 ✅(2026-11-05) | ✅ 완료 |
 | 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 117곳, UI의 월드 탐색) | 할 일 |
 | 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
 
@@ -175,7 +175,7 @@
       새 씬 로드 중 `Awake`·`OnEnable`에서 생기는 오브젝트의 씬 소속을 확인(부모 지정)·테스트.
    5. **에디터 진입**: `PlayFromPersistent`가 열린 씬을 `SessionState`에 쓰고 `GameFlow`가 `#if UNITY_EDITOR`에서 한 번 읽고 지운다 — 10_Lobby → 로비, 20_Combat → `defaultRegion` 사냥
       (**디버그 진입은 날짜를 안 줄인다**), 그 밖 → 타이틀. 빌드 부팅은 늘 타이틀.
-   로비 timeScale은 **3단계에선 0 유지**(4단계에서 시간 쓰는 곳 확인 뒤 판단 — 씬 분리와 시간 규칙을 섞지 않는다).
+   로비 timeScale은 **3단계에선 0 유지**(4단계에서 시간 쓰는 곳 확인 뒤 판단 — 씬 분리와 시간 규칙을 섞지 않는다). → **4단계 결정: 0 유지**(아래 4-1).
    **재검토로 고친 것(2026-11-05, 사용자 "다시 확인" — Claude가 코드 대조로 찾고 Codex가 다듬음)**:
    - **계층**: `GameFlow`(Systems)는 `LobbyWorld`(UI)를 부를 수 없다 → **로비 씬 = 로비 모드**라 `LobbyWorld`가 `OnEnable`에서 스스로 준비(건물·카메라 앵커 스냅·아바타 시작 자리).
      준비는 여러 번 불려도 같게, **아바타 시작 자리는 처음 로드 때만**(전환 실패로 다시 켜질 땐 위치 유지). 예전의 'GameState를 보고 EnterLobby'는 삭제, 걷기·건물 입력은
@@ -195,16 +195,16 @@
    - 전환 중 예외(불러오기·멈추기·들어가기·되살리기)도 실패로 처리해 잠금을 푼다. 필드 준비 예외면 날짜와 **런 상태 전체**(`RunState.Capture/Restore`)를 되돌린다.
    - 필드 정리는 **그 씬 것만**(`RunTransient.DestroyAllIn(Scene)`) — 재도전 중 멈춰 둔 옛 전투 씬은 새 씬이 건드리지 않는다. 스포너 웨이브 타이머 초기값은 `FirstWaveDelay`(0이면 멈춘 시간에도 씬이 뜨자마자 한 무리).
    - 전투 씬이 다시 켜지면(`CombatDirector.OnEnable`) 카메라가 플레이어를 다시 잡는다. 화면 쪽 실패 알림은 `CommonPopup.AlertIfTransitionFails` 하나로(타이틀 불러오기·새 원정·'로비로'·스테이지 입장).
-   - **4단계로 미룸**: 전환 중 화면 버튼 입력 전체 잠금(지금은 흐름 요청·ESC·로비 걷기만 막는다), 로비 timeScale. UI 캡처 도구의 첫 장(전투 HUD 1080)만 UI가 가장자리로 밀려 찍힘 — 게임 동작과 무관, 4단계에서 확인.
-4. **마감** — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
+   - **4단계로 미뤘던 것 — 전부 처리됨**: 전환 중 화면 입력 잠금(4-0), 로비 timeScale(4-1, 0 유지), UI 캡처 도구 첫 장 잘림(4-3, PixelPerfectCamera가 잘라 둔 Viewport Rect).
+4. ✅ **마감**(2026-11-05, 로그 11-05 (28)~(32), Codex '통과 — 병합 가능') — UI 월드 탐색 0곳(소스 훑기 테스트), 로비 timeScale(0→1)은 게임 시간을 쓰는 곳을 전부 확인한 뒤에만, 전체 회귀.
    **진행 계획(2026-11-05 Codex 합의, 커밋 순서대로)**:
    0. ✅ 전환 중 화면 입력 잠금 — `PixelCanvas.AcceptsInput` 하나를 키(`PxScreen.HandleKeys`)·마우스(판의 `GraphicRaycaster`)가 같이 본다. EventSystem 전체는 끄지 않는다(포인터 상태까지 건드림).
    1. ✅ **로비 timeScale = 0 유지(결정)** — 조사: 게임 시간을 쓰는 실행 코드는 전투 씬 것(`CombatDirector`·스포너·구슬·보스 포털)과 흐름·카메라 보간뿐, 로비 씬엔 물리 물체가 없고
       카메라는 움직이지 않는 기준점, 로비 걷기·화면은 실제 시간. 원본도 사냥이 아니면 dt = 0(:7169) — 바꿔 얻는 게 없다. 로비에 게임 시간을 쓰는 것을 넣을 때 다시 정한다(근거는 `GameFlow.EnterLobbyThen` 주석).
       'UI 월드 탐색 0곳'은 `WorldLookupTests`가 이미 `Assets/Scripts` 전체를 막고 있어 따로 안 만든다. 대신 **상태 소유권**(`GameState.Set`·`SetTransitioning`·`timeScale` 대입은 `GameFlow`만)을 `StateOwnershipTests`가 소스로 막는다.
-   2. 정리 — 호출부 없는 `GameFlow.StartRun()`(인자 없음) 삭제, `UI/README.md`·주석의 옛 이름(`RunController`), `LobbyWorld.OnDestroy`의 중복 파괴.
-   3. UI 캡처 도구 첫 장(전투 HUD 1080)만 UI가 밀려 찍히는 원인 확인·수정(에디터 도구만).
-   4. 전체 회귀(PlayMode·씬 검증·캡처 눈 확인) → Codex 종합 리뷰 → 사용자 확인 후 `main`.
+   2. ✅ 정리 — 호출부 없는 `GameFlow.StartRun()`(인자 없음) 삭제, `UI/README.md`·주석의 옛 이름(`RunController`), `LobbyWorld.OnDestroy`의 중복 파괴.
+   3. ✅ UI 캡처 도구 첫 장(전투 HUD 1080)만 UI가 밀려 찍히는 원인 확인·수정(에디터 도구만) — 씬을 열 때 PixelPerfectCamera가 잘라 둔 Viewport Rect가 첫 렌더에 남았다 → 렌더 전 `cam.rect = (0,0,1,1)`.
+   4. ✅ 전체 회귀(PlayMode 473/473·씬 검증·UI 캡처 32장·스테이지 3장 눈 확인) → Codex 종합 리뷰 통과 → 사용자 확인 후 `main`.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
 

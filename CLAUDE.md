@@ -238,7 +238,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   **순서·날짜는 노션 일정표(2026-09-23)를 따른다** — 옮겨 적은 표는 `docs/worksplit.md` 1절. 옛 "단계 1/2/3"
   (9/9 회의)은 더 쓰지 않는다 — 단계 1(모든 캐릭터 0차)은 2026-09-28에 끝났고 드루이드는 기획에서 빠졌다.
   **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
-  씬 분할 1차가 끝났고 2차가 진행 중이다(단계 0 세이브 교체 경계·1 `CombatDirector`·2a 그림 데이터·2b 연결 규칙·3 `10_Lobby` 분리+씬 전환 ✅ — 다음은 4단계 마감). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+  **씬 분할(정리 순서 3)이 끝났다**(1차 상주 씬 분리 + 2차 단계 0 세이브 교체 경계·1 `CombatDirector`·2a 그림 데이터·2b 연결 규칙·3 `10_Lobby` 분리+씬 전환·4 마감, 2026-11-05). 다음 정리 순서(`HANDOFF.md` 표의 2 생성 책임 목록화·4 전역 상태·5 큰 클래스)는 사용자와 정한다. 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
 - **씬 구성(2026-11-05, 3씬)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번, 늘 떠 있음 — `GameBoot`(세이브만)·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
   EventSystem·공용 카메라·`Audio`) + `10_Lobby.unity`(빌드 1번 — 로비 월드 `LobbyWorld`·로비 아바타·땅·스테이지 그림) + `20_Combat.unity`(빌드 2번 — 전투 담당 `CombatDirector`·플레이어·발판·포털·스포너·스테이지 그림).
   **월드 씬은 `GameFlow`가 불러오고 내린다**(`Systems/WorldScenes`의 `IWorldScenes`) — 타이틀엔 월드가 없고, 로비·사냥으로 갈 때 그 씬을 불러와(곧바로 활성 씬) 이전 씬을 내린다. 재도전은 전투 씬을 새로 부른다.
