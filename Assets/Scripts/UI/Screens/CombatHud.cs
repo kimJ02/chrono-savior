@@ -341,7 +341,13 @@ namespace ChronoSavior.UI
                 Player = view != null ? view.PlayerPosition : Vector2.zero,
                 Buffs = BuffLine(src),
             };
-            if (view == null) return s;
+            if (view == null)
+            {
+                // 전투 씬이 없으면(타이틀·전환 중) 지난 포탈 점·적 점을 남기지 않는다(Codex 2b 리뷰).
+                showPortalDot = false;
+                enemyPositions.Clear();
+                return s;
+            }
             if (RunState.Mode == RunMode.Normal)
             {
                 var portalView = view.Portal;

@@ -145,6 +145,42 @@ public class WorldViewTests
         Assert.IsNull(WorldView.Combat, "전투 씬이 내려가면(담당이 꺼지면) 창구가 빈다");
     }
 
+    /// <summary>로비 월드도 켜지면 창구에 꽂히고 꺼지면 빠진다 — 캐릭터 위치·근접 건물을 내준다.</summary>
+    [Test]
+    public void LobbyWorld_AttachesWhileEnabled_AndReportsTheAvatar()
+    {
+        var avatar = new GameObject("TestAvatar").transform;
+        avatar.position = new Vector3(LobbyWorld.XOf(0), 0f, 0f);
+        var lobby = new GameObject("TestLobbyWorld").AddComponent<LobbyWorld>();
+        lobby.Player = avatar;
+        Assert.AreSame(lobby, WorldView.Lobby, "켜지면 로비 창구에 꽂힌다");
+        Assert.AreEqual((Vector2)avatar.position, WorldView.Lobby.AvatarPosition.Value);
+        Assert.AreEqual(-1, WorldView.Lobby.NearBuilding, "로비 화면이 아닐 땐 건물 앞이 아니다");
+
+        lobby.enabled = false;
+        Assert.IsNull(WorldView.Lobby, "꺼지면(로비 씬이 내려가면) 창구가 빈다");
+    }
+
+    /// <summary>로비 월드가 없을 때 로비 화면은 오류 없이 캐릭터 점·안내를 숨긴다.</summary>
+    [UnityTest]
+    public IEnumerator LobbyHud_WithoutLobbyWorld_IsSafe()
+    {
+        Assert.IsNull(WorldView.Lobby);
+        GameState.Set(GameScene.Lobby);
+        var pc = PixelCanvas.Create();
+        try
+        {
+            for (int i = 0; i < 3; i++) yield return null;
+            var dot = (UnityEngine.UI.Image)typeof(LobbyHud).GetField("playerDot", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .GetValue(pc.GetComponent<LobbyHud>());
+            Assert.IsFalse(dot.enabled, "로비 월드가 없으면 캐릭터 점을 숨긴다");
+        }
+        finally
+        {
+            Object.DestroyImmediate(pc.gameObject);
+        }
+    }
+
     /// <summary>전투 씬이 없을 때(타이틀·전환 중) 전투 화면은 오류 없이 비어 있다 — 다시 찾는 예비 경로가 없다.</summary>
     [UnityTest]
     public IEnumerator CombatHud_WithoutCombatScene_IsSafe()
