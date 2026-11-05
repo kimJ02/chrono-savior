@@ -16,12 +16,12 @@ namespace ChronoSavior.Tests.PlayMode
 public class ArenaAndDropThroughTests
 {
     [SetUp]
-    public void Setup() => PlatformSet.Activate(false);
+    public void Setup() => FieldLayout.SetBossArena(false);
 
     [TearDown]
     public void Teardown()
     {
-        PlatformSet.Activate(false);
+        FieldLayout.SetBossArena(false);
         foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
             if (go != null && go.name.StartsWith("Test")) Object.DestroyImmediate(go);
     }

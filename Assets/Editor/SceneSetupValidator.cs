@@ -146,6 +146,10 @@ namespace ChronoSavior.Editor
             var lobbyWorld = One<LobbyWorld>(combat, problems);
             if (lobbyWorld != null && lobbyWorld.Player != playerTf) problems.Add("LobbyWorld.Player가 이 씬의 Player가 아니다 — 로비에서 못 걷는다");
             var sets = All<PlatformSet>(combat);
+            if (director != null && (director.NormalPlatforms == null || director.NormalPlatforms.bossArena || !sets.Contains(director.NormalPlatforms)))
+                problems.Add("CombatDirector.NormalPlatforms가 이 씬의 일반 무대 발판 세트가 아니다");
+            if (director != null && (director.BossPlatforms == null || !director.BossPlatforms.bossArena || !sets.Contains(director.BossPlatforms)))
+                problems.Add("CombatDirector.BossPlatforms가 이 씬의 보스 무대 발판 세트가 아니다");
             if (sets.Count != 2 || sets.Count(s => s.bossArena) != 1)
                 problems.Add($"발판 세트는 일반 하나·보스 하나여야 한다 — 지금 {sets.Count}개(보스 {sets.Count(s => s.bossArena)})");
             foreach (var set in sets)

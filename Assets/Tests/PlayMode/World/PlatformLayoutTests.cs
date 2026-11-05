@@ -30,7 +30,7 @@ public class PlatformLayoutTests
         foreach (var stale in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             if (stale != null && stale.transform.parent == null && (stale.name == "Ground" || stale.name == "StageVisuals"))
                 Object.DestroyImmediate(stale);
-        PlatformSet.Activate(false);
+        FieldLayout.SetBossArena(false);
         int layer = LayerMask.NameToLayer("Ground");
         Assert.AreNotEqual(-1, layer, "Ground 레이어가 없다");
 
@@ -59,7 +59,7 @@ public class PlatformLayoutTests
             if (go != null && go.transform.parent == null &&
                 (go.name.StartsWith("Test") || go.name == "Ground" || go.name == "StageVisuals"))
                 Object.DestroyImmediate(go);
-        PlatformSet.Activate(false);
+        FieldLayout.SetBossArena(false);
     }
 
     /// <summary>BuildPartAScene.BuildPlatformSet 그대로.</summary>

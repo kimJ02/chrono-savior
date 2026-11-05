@@ -43,7 +43,7 @@ public class BossPortalTests
         RunTransient.Reset();
         CombatModifiers.Reset();
         ProfileService.Reset();
-        PlatformSet.Activate(false); // 무대를 일반으로 되돌린다(FieldBounds.MaxX도 같이 복구)
+        FieldLayout.SetBossArena(false); // 무대를 일반으로 되돌린다(FieldBounds.MaxX도 같이 복구)
     }
 
     static BossPortal NewPortal()

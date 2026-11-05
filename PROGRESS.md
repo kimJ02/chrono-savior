@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (20)** — **[나] 3-0: 발판 무대 전환을 전투 담당으로 (`feature/lobby-scene`, PlayMode 445/445, 씬 구성 검증 '문제 없음').** `PlatformSet`의 정적 목록·`Activate`·`HideAll` 삭제 —
+  재도전 때 옛·새 전투 씬이 겹치면 옛 씬 발판까지 다시 켰다(Codex 지적). `CombatDirector`가 같은 씬의 두 세트를 직렬화로 들고 `ShowArena`로 켜고 끈다(좌표 데이터 `FieldLayout`도 같이).
+  `PlatformSet`은 표시 + 씬이 뜰 때 지금 무대에 맞춰 스스로 켜고 끄기만. 로비(아직 같은 씬)의 발판 숨기기는 `ClearField`로(3-4에서 함수째 사라짐). 테스트의 무대 되돌리기는 `FieldLayout.SetBossArena(false)`로.
 - **2026-11-05 (19)** — **[나] 3단계 계획 재검토(문서만).** 사용자 "다시 확인". Claude가 코드와 대조해 10개 찾음 — 가장 큰 것: 계획대로면 `GameFlow`(Systems)가 `LobbyWorld`(UI)를 불러야 해서
   **컴파일이 안 된다**(→ 로비가 OnEnable에서 스스로 준비), 일시정지 메뉴 "로비로" 전환 중 ESC면 꺼진 월드에서 시간이 흐름(→ 잠금에 Pause·Resume·ESC·EndRun), 비동기 전환이면 기존 흐름 테스트
   7파일의 동기 단언이 다 깨짐(→ 즉시 끝난 로더면 yield 안 함). Codex가 동의하고 다듬음: 실패 복구 땐 아바타 위치 유지·보스 무대 값 복구, 시작 화면은 성공 때만 닫고 실패는 팝업. `HANDOFF.md` 3 "재검토로 고친 것".

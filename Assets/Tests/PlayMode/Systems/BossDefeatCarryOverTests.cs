@@ -40,7 +40,7 @@ public class BossDefeatCarryOverTests
         RunTransient.Reset();
         CombatModifiers.Reset();
         ProfileService.Reset();
-        PlatformSet.Activate(false);
+        FieldLayout.SetBossArena(false);
     }
 
     [UnityTest]

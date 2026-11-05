@@ -212,15 +212,19 @@ public class GameBootTests
         Assert.AreEqual(1, player.GetComponents<BladeSlashVfx>().Length, "섬영 회전베기 효과");
     }
 
+    /// <summary>전투 담당이 같은 씬의 두 발판 세트를 직렬화로 들고 무대에 맞춰 켠다(2026-11-05 3-0 — 예전엔 정적 목록이 모든 씬의 세트를 켰다).</summary>
     [Test]
-    public void BothPlatformSets_AreRegistered_SoTheBossArenaShowsItsPlatforms()
+    public void Director_SwitchesItsOwnPlatformSets_ByArena()
     {
         var sets = InScene<PlatformSet>(GameBoot.WorldScene);
         Assert.AreEqual(2, sets.Length);
-        PlatformSet.Activate(true);
+        var director = InScene<CombatDirector>(GameBoot.WorldScene).Single();
+        Assert.AreSame(sets.Single(s => !s.bossArena), director.NormalPlatforms);
+        Assert.AreSame(sets.Single(s => s.bossArena), director.BossPlatforms);
+        director.BeginField(RunMode.Boss);
         Assert.IsTrue(sets.Single(s => s.bossArena).gameObject.activeSelf, "보스 무대 발판이 켜진다(예전엔 꺼진 채 저장돼 안 켜졌다)");
         Assert.IsFalse(sets.Single(s => !s.bossArena).gameObject.activeSelf);
-        PlatformSet.Activate(false);
+        director.BeginField(RunMode.Normal);
         Assert.IsTrue(sets.Single(s => !s.bossArena).gameObject.activeSelf);
         Assert.IsFalse(sets.Single(s => s.bossArena).gameObject.activeSelf);
     }

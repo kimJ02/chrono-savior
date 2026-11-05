@@ -138,7 +138,6 @@ namespace ChronoSavior.UI
         public void EnterLobby()
         {
             if (!ReferenceEquals(WorldView.Lobby, this)) WorldView.Attach(this); // 편집 모드 캡처에선 OnEnable이 안 불린다
-            PlatformSet.HideAll();
             if (root == null) Build();
             root.SetActive(true);
             CameraFollow2D.Track(CameraAnchor(), snap: true); // 시간이 멈춘 로비라 바로 붙는다

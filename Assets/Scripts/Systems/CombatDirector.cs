@@ -37,6 +37,15 @@ namespace ChronoSavior.Systems
         /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다.</summary>
         public GameObject Player { get => player; set => player = value; }
 
+        [Tooltip("같은 씬(20_Combat)의 일반 무대 발판 세트.")]
+        [SerializeField] PlatformSet normalPlatforms;
+        [Tooltip("같은 씬(20_Combat)의 보스 무대 발판 세트.")]
+        [SerializeField] PlatformSet bossPlatforms;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public PlatformSet NormalPlatforms { get => normalPlatforms; set => normalPlatforms = value; }
+        public PlatformSet BossPlatforms { get => bossPlatforms; set => bossPlatforms = value; }
+
         [Tooltip("같은 씬(20_Combat)의 보스 포탈 — 전투 화면이 범위 안내·미니맵 점에 쓴다.")]
         [SerializeField] BossPortal portal;
 
@@ -162,7 +171,7 @@ namespace ChronoSavior.Systems
         /// </summary>
         public void BeginField(RunMode mode)
         {
-            PlatformSet.Activate(mode == RunMode.Boss);
+            ShowArena(mode == RunMode.Boss);
             RunTransient.DestroyAll();      // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 지난 런의 잔해
             CombatModifiers.ResetForRun();  // 원본 `combo.n = 0; run.chainN = 0`(:4307·:4319)
             HitFeel.Reset();
@@ -178,7 +187,8 @@ namespace ChronoSavior.Systems
         /// </summary>
         public void ClearField()
         {
-            PlatformSet.Activate(false);
+            ShowArena(false);
+            HidePlatforms(); // 로비(지금은 같은 씬)는 땅만 쓴다 — 씬 분할 2차 3-4에서 로비가 따로 서면 이 함수째 사라진다
             RunTransient.DestroyAll();
             bossDeadTimer = -1f;
         }
@@ -193,13 +203,30 @@ namespace ChronoSavior.Systems
         {
             if (!RunState.EnterBossField()) return false;
 
-            PlatformSet.Activate(true);
+            ShowArena(true);
             // 일반 필드의 잡몹·투사체·장판을 지운다. 안 지우면 좁아진 보스 무대에 이전 필드의 몹이 맵 밖 좌표로 남아,
             // 플레이어가 닿을 수 없는 곳에서 계속 살아 있다.
             RunTransient.DestroyAll();
             ResetPlayer(); // 좁아진 무대의 시작 지점으로
             RunEvents.RaiseBossFieldEntered(); // 스포너가 보스를 세운다
             return true;
+        }
+
+        /// <summary>
+        /// 무대를 바꾼다 — 좌표 데이터(<see cref="FieldLayout.SetBossArena"/>)와 **이 씬의** 발판 세트를 같이(따로 두면 스포너는 좁은 맵을 보는데 발판은
+        /// 넓은 배치로 남는 식의 조용한 불일치가 생긴다). 다른 씬의 발판은 건드리지 않는다.
+        /// </summary>
+        void ShowArena(bool boss)
+        {
+            FieldLayout.SetBossArena(boss);
+            if (normalPlatforms != null) normalPlatforms.gameObject.SetActive(!boss);
+            if (bossPlatforms != null) bossPlatforms.gameObject.SetActive(boss);
+        }
+
+        void HidePlatforms()
+        {
+            if (normalPlatforms != null) normalPlatforms.gameObject.SetActive(false);
+            if (bossPlatforms != null) bossPlatforms.gameObject.SetActive(false);
         }
 
         // ───────────────────────── 전투 사건 ─────────────────────────

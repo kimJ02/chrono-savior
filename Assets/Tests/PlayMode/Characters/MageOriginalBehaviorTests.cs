@@ -46,7 +46,7 @@ public class MageOriginalBehaviorTests
         CombatModifiers.Reset();
         CombatEvents.Reset(); RunEvents.Reset();
         RunTransient.Reset();
-        PlatformSet.Activate(false); // 일반 사냥 무대의 발판 데이터로 잰다
+        FieldLayout.SetBossArena(false); // 일반 사냥 무대의 발판 데이터로 잰다
     }
 
     // ───────────────────────── 도우미 ─────────────────────────

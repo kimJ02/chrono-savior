@@ -1336,6 +1336,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1457870341}
+  normalPlatforms: {fileID: 1061869209}
+  bossPlatforms: {fileID: 249017186}
   portal: {fileID: 789030853}
 --- !u!4 &482494280
 Transform:
