@@ -212,8 +212,8 @@ UI처럼 멈춰도 돌아야 하는 것만 `Time.unscaledDeltaTime`을 쓴다.
 - 7종 전부 원본 행동으로 구현·씬 등록 완료. PlayMode **94/94**.
 - 행동은 `Enemies/IEnemyMotion` 계약을 구현한 **종류 전용 컴포넌트**로 분리했고(CLAUDE.md
   "SO는 수치만, 행동이 다르면 스크립트 분리"), 고블린·오우거·꼬마 슬라임은 붙는 게 없다(기본 보행 + 수치만 다름).
-- 스포너가 `Instantiate` **뒤에** 컴포넌트를 붙이므로 `EnemyMove.RefreshTypeBehaviour()`를 반드시 부른다 —
-  안 부르면 박쥐이 중력에 떨어지는 **에러 없이 조용히 틀리는** 상태가 된다.
+- ~~스포너가 `Instantiate` 뒤에 컴포넌트를 붙이고 `EnemyMove.RefreshTypeBehaviour()`를 부른다~~ → **2026-11-05 바뀜**: 종류별 행동 부품은
+  **종류별 프리팹**(`Assets/Prefabs/Enemies/Enemy_Flyer` 등, `EnemyData.prefab`)에 들어 있고 `RefreshTypeBehaviour`는 없앴다(`HANDOFF.md` '정리 순서 2'). 새 몹 종류는 프리팹 변형을 만들 것.
 - 몸집은 콜라이더 반지름이 아니라 `transform.localScale`로 준다. 판정은 `EnemyMove.WorldRadius`로 읽을 것.
 - `EnemySpawner.eliteChanceOverride`(음수면 설정값) — 엘리트 확률을 0/1로 고정해야 하는 테스트·밸런스용 스위치.
 

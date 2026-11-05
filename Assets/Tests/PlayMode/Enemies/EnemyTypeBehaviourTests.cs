@@ -243,21 +243,23 @@ public class EnemyTypeBehaviourTests
     // ────────────────────────── 박쥐 (원본 :4042) ──────────────────────────
 
     /// <summary>
-    /// 비행형은 중력을 안 받는다. `EnemyMove.Awake`는 이미 끝난 뒤에 스포너가 컴포넌트를 붙이므로
-    /// `RefreshTypeBehaviour()`가 없으면 여기서 조용히 실패한다(이 프로젝트 단골 함정).
+    /// 비행형은 중력을 안 받는다 — 박쥐 프리팹(Enemy_Flyer)처럼 **행동 부품이 처음부터 같이 있으면** `EnemyMove.Awake`가 알아보고 중력을 끈다
+    /// (2026-11-05 생성 책임 2-2 — 예전엔 스포너가 나중에 붙이고 `RefreshTypeBehaviour()`로 다시 찾게 했다). 프리팹을 세우는 것처럼 꺼 둔 채 부품을 다 붙이고 켠다.
     /// </summary>
     [Test]
-    public void Wisp_RefreshTypeBehaviour_DisablesGravity()
+    public void Flyer_WithItsBehaviourFromTheStart_HasNoGravity()
     {
-        var enemy = NewEnemy(new Vector3(0f, 2f, 0f));
-        var rb = enemy.GetComponent<Rigidbody2D>();
-        rb.gravityScale = 1f; // Awake에서 꺼둔 걸 되돌려 "붙이기 전" 상태를 재현
-
-        enemy.AddComponent<EnemyFlyerMotion>();
-        Assert.AreEqual(1f, rb.gravityScale, "아직 EnemyMove는 새 컴포넌트를 모른다");
-
-        enemy.GetComponent<EnemyMove>().RefreshTypeBehaviour();
+        var go = new GameObject("TestFlyer");
+        go.SetActive(false);
+        go.AddComponent<SpriteRenderer>();
+        go.AddComponent<CircleCollider2D>().radius = 0.5f;
+        go.AddComponent<EnemyMove>();
+        go.AddComponent<EnemyFlyerMotion>();
+        var rb = go.GetComponent<Rigidbody2D>();
+        rb.gravityScale = 1f;
+        go.SetActive(true); // 프리팹 Instantiate와 같다 — 부품이 다 있는 상태에서 Awake
         Assert.AreEqual(0f, rb.gravityScale, 1e-4f);
+        Object.DestroyImmediate(go);
     }
 
     /// <summary>감지 범위(3.5) 밖이면 쫓아오지 않고 제자리에서 흔들린다 — 진폭 0.22를 넘지 않는다.</summary>

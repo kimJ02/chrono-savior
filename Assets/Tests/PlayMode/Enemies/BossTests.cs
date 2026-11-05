@@ -44,19 +44,22 @@ public class BossTests
 
     static Boss NewBoss(Vector3 pos)
     {
+        // 보스 프리팹(Enemy_Boss)처럼 부품을 다 붙인 뒤 켠다 — EnemyMove가 Awake에서 Boss를 이동 담당으로 알아본다(2026-11-05 생성 책임 2-2).
         var go = new GameObject("TestBoss");
+        go.SetActive(false);
         go.tag = "Enemy";
         go.transform.position = pos;
         go.AddComponent<SpriteRenderer>();
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         var move = go.AddComponent<EnemyMove>();
+        var health = go.AddComponent<EnemyHealth>();
+        health.isBoss = true;
+        var boss = go.AddComponent<Boss>();
+        go.SetActive(true);
         typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance)
                          .SetValue(move, 0f);
         go.GetComponent<Rigidbody2D>().gravityScale = 0f;
-        var health = go.AddComponent<EnemyHealth>();
         health.SetMaxHp(1000f);
-        var boss = go.AddComponent<Boss>();
-        move.RefreshTypeBehaviour();
         return boss;
     }
 

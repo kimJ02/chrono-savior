@@ -39,6 +39,8 @@ namespace ChronoSavior.Systems
 public class EnemySpawner : MonoBehaviour
 {
     [Header("몬스터 프리팹")]
+    [Tooltip("기본 몹 프리팹(Enemy_Base) — 스폰 높이를 잡는 몸 반지름의 기준이고, 데이터에 프리팹이 없을 때 쓴다. " +
+             "종류별 프리팹은 몹 데이터(EnemyData.prefab)가, 보스·성소 프리팹은 몬스터 목록(MonsterCatalog)이 가리킨다.")]
     public GameObject monsterPrefab;
 
     [Tooltip("같은 씬(20_Combat)의 플레이어 — 만든 몹이 쫓을 대상(EnemyMove.Target)과 경험치 구슬이 끌려갈 곳으로 넣어 준다.")]
@@ -191,7 +193,7 @@ public class EnemySpawner : MonoBehaviour
         if (monsterPrefab == null) return;
 
         var data = FindData(enemyType);
-        var monster = SpawnMonsterAt(position);
+        var monster = SpawnMonsterAt(PrefabOf(data), position);
         // 원본 `noElite: true`(project_test.html:1842) — 꼬마 슬라임은 엘리트로 승격되지 않는다.
         ApplyEnemyData(monster, data, allowElite: false);
 
@@ -204,12 +206,19 @@ public class EnemySpawner : MonoBehaviour
     EnemyData FindData(EnemyType enemyType) => catalog != null ? catalog.Find(enemyType) : null;
 
     /// <summary>
-    /// 몬스터 프리팹 하나를 그 자리에 세우고 **쫓을 플레이어를 넣는다** — 잡몹·꼬마 슬라임·성소·보스가 모두 여기를 지난다(2026-11-05 2b —
-    /// 예전엔 몹이 스스로 Player 태그로 찾았다). 위치만 받고 나머지(데이터·보호·이름)는 부르는 쪽이 정한다.
+    /// 그 종류의 프리팹 — 종류마다 다른 행동 부품(비행·돌진·사격·분열)이 프리팹에 들어 있다(2026-11-05 생성 책임 2-2, 예전엔 여기서 붙였다).
+    /// 데이터가 없거나 프리팹이 비어 있으면 기본 프리팹(기본 보행) — 실제 데이터는 씬 구성 검증이 종류별 프리팹을 확인한다.
     /// </summary>
-    GameObject SpawnMonsterAt(Vector3 position)
+    GameObject PrefabOf(EnemyData data) => data != null && data.prefab != null ? data.prefab : monsterPrefab;
+
+    /// <summary>
+    /// 프리팹 하나를 그 자리에 세우고 **쫓을 플레이어를 넣는다** — 잡몹·꼬마 슬라임·성소·보스가 모두 여기를 지난다(2026-11-05 2b —
+    /// 예전엔 몹이 스스로 Player 태그로 찾았다). 위치만 받고 나머지(데이터·보호·이름)는 부르는 쪽이 정한다.
+    /// 행동 부품은 프리팹에 이미 들어 있어서 세우는 순간(`Awake`) 몹이 자기 행동을 안다 — 데이터가 필요한 값(체력·속도·탄 그림)은 그 뒤 여기서 넣는다.
+    /// </summary>
+    GameObject SpawnMonsterAt(GameObject prefab, Vector3 position)
     {
-        var go = Instantiate(monsterPrefab, position, Quaternion.identity);
+        var go = Instantiate(prefab, position, Quaternion.identity);
         if (go.TryGetComponent(out EnemyMove move)) move.Target = player;
         return go;
     }
@@ -277,22 +286,18 @@ public class EnemySpawner : MonoBehaviour
         int groundCount = FieldLayout.GroundGridX.Length;
         float x = FieldLayout.GroundGridX[Random.Range(0, groundCount)];
 
+        var prefab = catalog != null ? catalog.shrinePrefab : null;
+        if (prefab == null) { Debug.LogError("[EnemySpawner] 성소 프리팹(MonsterCatalog.shrinePrefab)이 없다"); return; }
+
         // 발을 지면에 붙인다 — 구조물이라 물리로 안 떨어지므로 세울 때 정확히 놓아야 한다.
-        var go = SpawnMonsterAt(new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.ShrineHeight / 2f, 0f));
+        // 움직이지 않는 구조물 설정(원본 `if (e.shrine) continue;` :4024 — 컴포넌트를 끄지 않고 isStructure 플래그, Kinematic·중력 0)은 프리팹(Enemy_Shrine)에 있다.
+        // 플래그인 이유: 원본은 그 한 줄 앞에서 spawnInvuln을 깎기 때문에(`:4023`), Update가 멈추면 아래 스폰 보호가 영영 안 풀린다.
+        var go = SpawnMonsterAt(prefab, new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.ShrineHeight / 2f, 0f));
         go.name = "Shrine";
         RunTransient.Mark(go);
 
-        // 구조물이라 움직이지 않는다(원본 `if (e.shrine) continue;` :4024).
-        // **컴포넌트를 끄는 게 아니라 플래그로** 처리한다 — 원본은 그 한 줄 앞에서 spawnInvuln을
-        // 깎기 때문에(`:4023`), Update가 멈추면 아래 스폰 보호가 영영 안 풀린다.
         var move = go.GetComponent<EnemyMove>();
-        if (move != null)
-        {
-            move.isStructure = true;
-            move.SetSpawnProtection(Shrine.SpawnProtect); // 원본 `spawnInvuln: 1.0`(:4008) — 몹의 2초와 다르다
-            var rb = go.GetComponent<Rigidbody2D>();
-            if (rb != null) { rb.gravityScale = 0f; rb.linearVelocity = Vector2.zero; rb.bodyType = RigidbodyType2D.Kinematic; }
-        }
+        if (move != null) move.SetSpawnProtection(Shrine.SpawnProtect); // 원본 `spawnInvuln: 1.0`(:4008) — 몹의 2초와 다르다
 
         int level = Mathf.Clamp(RegionConfig.RecommendedLevel(RunProgress.RegionLv) + Random.Range(0, 2), 1, 40);
         var health = go.GetComponent<EnemyHealth>();
@@ -306,10 +311,8 @@ public class EnemySpawner : MonoBehaviour
         // 원본 w:64 h:96(`:698`) — 고블린(42×46)의 두 배 높이인 세로로 긴 구조물이다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(1f, 0.54f, 0.42f); // 원본 colors.soul '#ff8a6a'
-        FitToWorldSize(go, catalog != null ? catalog.shrine : null,
-                       EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight);
+        FitToWorldSize(go, catalog.shrine, EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight);
 
-        go.AddComponent<Shrine>();
         aliveShrine = go.transform;
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
     }
@@ -322,11 +325,13 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     void SpawnBoss()
     {
-        if (monsterPrefab == null) return;
+        var prefab = catalog != null ? catalog.bossPrefab : null;
+        if (prefab == null) { Debug.LogError("[EnemySpawner] 보스 프리팹(MonsterCatalog.bossPrefab)이 없다"); return; }
 
         int region = RunState.Region;
         float x = Mathf.Lerp(FieldBounds.MinX, FieldBounds.MaxX, 0.62f);
-        var go = SpawnMonsterAt(new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.BossHeight / 2f, 0f));
+        // Boss 부품(이동·공격 패턴)과 보스 표시(EnemyHealth.isBoss — 레벨 페널티 하한 50%, 원본 `levelFactor` :1652)는 프리팹(Enemy_Boss)에 있다.
+        var go = SpawnMonsterAt(prefab, new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.BossHeight / 2f, 0f));
         HitFeel.Shake(8f, 0.5f); // 원본 spawnBoss(:4174)
         go.name = "Boss";
         RunTransient.Mark(go);
@@ -338,9 +343,6 @@ public class EnemySpawner : MonoBehaviour
             health.SetMaxHp(Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, ProfileService.Current.regressions));
             health.SetLevel(Boss.LevelForRegion(region));
             health.knockbackMultiplier = Boss.KnockbackMultiplier; // 거의 안 밀린다
-            // 레벨 페널티 하한이 25%가 아니라 50%다(원본 `levelFactor`의 보스 분기 :1652).
-            // `Boss` 컴포넌트는 아래에서 붙기 때문에 EnemyHealth가 스스로는 알 수 없다.
-            health.isBoss = true;
             health.Died += HandleBossDied;
         }
 
@@ -358,11 +360,9 @@ public class EnemySpawner : MonoBehaviour
         // 탄환 스프라이트는 **그림을 갈아끼우기 전**의 원형을 쓴다 — 보스 그림을 그대로 쓰면
         // 화면을 가리는 거대한 탄이 날아간다.
         Sprite bolt = sr != null ? sr.sprite : null;
-        FitToWorldSize(go, catalog != null ? catalog.boss : null, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
+        FitToWorldSize(go, catalog.boss, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
 
-        var boss = go.AddComponent<Boss>();
-        boss.projectileSprite = bolt;
-        if (move != null) move.RefreshTypeBehaviour(); // Boss가 IEnemyMotion이라 다시 찾게 한다
+        if (go.TryGetComponent(out Boss boss)) boss.projectileSprite = bolt;
 
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
         // 넣으면 보스전 상한(4) 한 자리를 보스가 먹어 잡몹이 3마리만 나온다.
@@ -452,8 +452,9 @@ public class EnemySpawner : MonoBehaviour
 
             if (TryGetSpawnPosition(placedThisWave, out Vector2 spawnPos))
             {
-                GameObject monster = SpawnMonsterAt(spawnPos);
-                ApplyEnemyData(monster, PickEnemyData(), allowElite: true);
+                var data = PickEnemyData();
+                GameObject monster = SpawnMonsterAt(PrefabOf(data), spawnPos);
+                ApplyEnemyData(monster, data, allowElite: true);
                 aliveMonsters.Add(monster.transform);
                 placedThisWave.Add(spawnPos);
             }
@@ -620,7 +621,7 @@ public class EnemySpawner : MonoBehaviour
                     sr.color = data.color;
                 }
             }
-            AttachTypeBehaviour(monster, data, sr);
+            ConfigureTypeBehaviour(monster, data, sr);
             spawnedData[monster] = data; // 처치 보상에서 종류별 exp/gold를 읽으려고 기억해둔다
         }
 
@@ -671,44 +672,22 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 종류별 행동 스크립트를 붙인다 — 원본 `updateEnemies()`의 타입 분기(project_test.html:4042~4111)와
-    /// `killEnemy()`의 분열 분기(`:1840`)에 각각 대응한다.
-    ///
-    /// 고블린·오우거·꼬마 슬라임은 **붙일 게 없다**. 셋 다 기본 보행 AI를 그대로 쓰고 수치만 다르기 때문이다
-    /// (CLAUDE.md "SO는 수치만, 행동이 다르면 스크립트 분리" 규칙의 '수치만' 쪽).
-    ///
-    /// 붙인 뒤 <see cref="EnemyMove.RefreshTypeBehaviour"/>를 **반드시** 불러야 한다 —
-    /// `Instantiate` 시점에 이미 끝난 `EnemyMove.Awake`는 여기서 붙인 컴포넌트를 모르기 때문이다.
+    /// 종류별 행동의 **데이터 값**을 넣는다 — 행동 부품 자체(원본 `updateEnemies()`의 타입 분기 :4042~4111, `killEnemy()`의 분열 분기 :1840)는
+    /// 종류별 프리팹에 들어 있다(2026-11-05 생성 책임 2-2 — 예전엔 여기서 `AddComponent`로 붙이고 `EnemyMove`에 다시 찾게 했다).
+    /// 고블린·오우거·꼬마 슬라임은 기본 보행이라 넣을 게 없다(CLAUDE.md "SO는 수치만, 행동이 다르면 스크립트 분리").
     /// </summary>
-    void AttachTypeBehaviour(GameObject monster, EnemyData data, SpriteRenderer sr)
+    void ConfigureTypeBehaviour(GameObject monster, EnemyData data, SpriteRenderer sr)
     {
-        switch (data.type)
+        // 원본은 박쥐만 스폰 지점보다 50px 위에서 나온다(`y: type === 'wisp' ? y - 50 : y`,
+        // project_test.html:3955 — 원본은 Y+가 아래라 부호가 뒤집힌다).
+        if (data.type == EnemyType.Flyer) monster.transform.position += new Vector3(0f, 0.5f, 0f);
+
+        // 화염탄은 런타임에 새 오브젝트로 생성된다 — 몹이 쓰는 스프라이트·종류색을 그대로 물려준다.
+        if (monster.TryGetComponent(out EnemyShooterMotion shooter))
         {
-            case EnemyType.Flyer:
-                monster.AddComponent<EnemyFlyerMotion>();
-                // 원본은 박쥐만 스폰 지점보다 50px 위에서 나온다(`y: type === 'wisp' ? y - 50 : y`,
-                // project_test.html:3955 — 원본은 Y+가 아래라 부호가 뒤집힌다).
-                monster.transform.position += new Vector3(0f, 0.5f, 0f);
-                break;
-
-            case EnemyType.Charger:
-                monster.AddComponent<EnemyChargerMotion>();
-                break;
-
-            case EnemyType.Shooter:
-                var shooter = monster.AddComponent<EnemyShooterMotion>();
-                // 화염탄은 런타임에 새 오브젝트로 생성된다 — 몹이 쓰는 스프라이트를 그대로 물려준다.
-                if (sr != null) shooter.boltSprite = sr.sprite;
-                shooter.boltColor = data.color;
-                break;
-
-            case EnemyType.Splitter:
-                monster.AddComponent<EnemySplitOnDeath>();
-                break;
+            if (sr != null) shooter.boltSprite = sr.sprite;
+            shooter.boltColor = data.color;
         }
-
-        var move = monster.GetComponent<EnemyMove>();
-        if (move != null) move.RefreshTypeBehaviour();
     }
 
     /// <summary>

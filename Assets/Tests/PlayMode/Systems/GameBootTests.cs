@@ -428,6 +428,45 @@ public class GameBootTests
         Assert.IsFalse(director.BossPlatforms.gameObject.activeSelf);
     }
 
+    /// <summary>
+    /// 실제 전투 씬의 스포너가 **종류별 프리팹**으로 몹을 세운다(2026-11-05 생성 책임 2-2) — 세운 몹에 그 종류의 행동이 처음부터 있고(박쥐는 중력 없음),
+    /// 보스·성소도 목록의 프리팹에서 나온다. 예전엔 기본 프리팹에 행동 부품을 붙이고 다시 찾게 했다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Spawner_BuildsEachKindFromItsPrefab()
+    {
+        yield return ToRun();
+        var spawner = InScene<EnemySpawner>(GameFlow.CombatScene).Single();
+        var expected = new System.Collections.Generic.Dictionary<EnemyType, System.Type>
+        {
+            [EnemyType.Flyer] = typeof(ChronoSavior.Enemies.EnemyFlyerMotion),
+            [EnemyType.Charger] = typeof(ChronoSavior.Enemies.EnemyChargerMotion),
+            [EnemyType.Shooter] = typeof(ChronoSavior.Enemies.EnemyShooterMotion),
+            [EnemyType.Splitter] = typeof(ChronoSavior.Enemies.EnemySplitOnDeath),
+        };
+        foreach (EnemyType t in System.Enum.GetValues(typeof(EnemyType)))
+        {
+            var before = new System.Collections.Generic.HashSet<ChronoSavior.Enemies.EnemyMove>(Object.FindObjectsByType<ChronoSavior.Enemies.EnemyMove>(FindObjectsSortMode.None));
+            EnemySpawnRequestBus.Request(new Vector2(3f, FieldBounds.GroundY + 0.5f), t, 0.1f);
+            var fresh = Object.FindObjectsByType<ChronoSavior.Enemies.EnemyMove>(FindObjectsSortMode.None).Where(m => !before.Contains(m)).ToList();
+            Assert.AreEqual(1, fresh.Count, $"{t} 하나가 세워진다");
+            var spawned = fresh[0];
+            if (expected.TryGetValue(t, out var behaviour)) Assert.IsNotNull(spawned.GetComponent(behaviour), $"{t}에 {behaviour.Name}가 처음부터 있다");
+            if (t == EnemyType.Flyer) Assert.AreEqual(0f, spawned.GetComponent<Rigidbody2D>().gravityScale, "박쥐는 중력을 안 받는다");
+            Object.Destroy(spawned.gameObject);
+        }
+
+        typeof(EnemySpawner).GetMethod("SpawnBoss", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(spawner, null);
+        var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
+        Assert.IsNotNull(boss, "보스 프리팹에서 보스가 선다");
+        Assert.IsTrue(boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>().isBoss);
+        typeof(EnemySpawner).GetMethod("SpawnShrine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(spawner, null);
+        var shrine = Object.FindFirstObjectByType<ChronoSavior.Enemies.Shrine>();
+        Assert.IsNotNull(shrine, "성소 프리팹에서 성소가 선다");
+        Assert.IsTrue(shrine.GetComponent<ChronoSavior.Enemies.EnemyMove>().isStructure);
+        Assert.AreEqual(RigidbodyType2D.Kinematic, shrine.GetComponent<Rigidbody2D>().bodyType);
+    }
+
     /// <summary>스테이지 그림(땅·배경)은 지금 월드에 하나 — 로비와 전투가 각자 자기 그림을 갖고, 같이 떠 있지 않는다.</summary>
     [UnityTest]
     public IEnumerator StageVisuals_OnePerCurrentWorld()

@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (36)** — **[나] 2-2b: 스포너를 종류별 프리팹으로 전환 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과, Codex 통과).** 스포너는 `PrefabOf(data)`(데이터 프리팹, 없으면 기본)로 세우고,
+  성소·보스는 몬스터 목록의 프리팹(없으면 오류 — 부품 없는 보스를 조용히 세우지 않는다). 실행 중 `AddComponent`는 엘리트 표식만 남음. `EnemyMove.RefreshTypeBehaviour` 삭제(Awake에서 한 번 — '다시 불러야 하는' 순서 의존 없앰),
+  데이터 값(박쥐 높이·궁수 탄 그림·색)은 `ConfigureTypeBehaviour`. 테스트: 꺼 둔 채 부품을 다 붙이고 켜는 방식(프리팹과 같게), 실제 전투 씬 스포너로 종류별 행동·보스·성소 구성 확인(`GameBootTests`). `docs/worksplit.md`의 옛 규칙 문구 갱신.
 - **2026-11-05 (35)** — **[나] 2-2a: 몹 종류별 프리팹 + 데이터 연결 (`feature/creation-ownership`, PlayMode 471/471, 씬 검증 통과).** 몹 구성 방식은 Codex와 결정 — **종류별 프리팹 변형**
   (타입 행동 구성을 프리팹에 드러내고 스포너는 세우기·지역 스탯만, 엘리트 표식만 생성 담당 예외. 'Start에서 찾기'는 구성이 코드에 숨고 순서에 기대서 탈락).
   `Assets/Prefabs/Enemies/`(기본 `Enemy_Base`를 옮김 — GUID 유지) + 변형 `Enemy_Flyer`·`Charger`·`Shooter`·`Splitter`·`Shrine`(구조물·Kinematic·중력 0)·`Boss`(isBoss). `EnemyData.prefab`·`MonsterCatalog.bossPrefab/shrinePrefab`,

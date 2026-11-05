@@ -107,22 +107,19 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         if (enemyLayer >= 0) rb.excludeLayers |= 1 << enemyLayer;
         col = GetComponent<CircleCollider2D>();
         body = GetComponent<SpriteRenderer>();
-        RefreshTypeBehaviour();
+        CacheTypeBehaviour();
         spawnProtectTimer = spawnProtectDuration;
         wanderTimer = Random.Range(wanderIntervalRange.x, wanderIntervalRange.y);
         dir = Random.value < 0.5f ? 1 : -1; // 원본 `dir: Math.random() < 0.5 ? 1 : -1`(project_test.html:3959)
     }
 
     /// <summary>
-    /// 종류 전용 이동 스크립트(<see cref="IEnemyMotion"/> 등)를 다시 찾아 붙인다.
-    ///
-    /// **스포너는 `Instantiate` 뒤에 종류별 컴포넌트를 붙인다** — 그 시점엔 이 스크립트의 `Awake`가
-    /// 이미 끝나 있어서, 위에서 캐시한 `motion`이 계속 null로 남는다(이 프로젝트 단골 함정:
-    /// `AddComponent`/`Instantiate`는 `Awake`를 그 자리에서 동기 실행한다). 그래서 컴포넌트를 다 붙인
-    /// 스포너가 마지막에 이 메서드를 한 번 불러 준다. 안 부르면 박쥐이 중력에 떨어지고
-    /// 멧돼지가 그냥 걷기만 하는, **에러 없이 조용히 틀리는** 상태가 된다.
+    /// 종류 전용 이동 스크립트(<see cref="IEnemyMotion"/> 등)를 찾아 둔다 — `Awake`에서 한 번.
+    /// 행동 부품은 **종류별 프리팹에 이미 들어 있어서**(`Assets/Prefabs/Enemies/`, 2026-11-05 생성 책임 2-2) 세우는 순간 같이 보인다.
+    /// 예전엔 스포너가 `Instantiate` 뒤에 부품을 붙이고 이걸 다시 부르게 했다(빠뜨리면 박쥐가 떨어지고 멧돼지가 걷기만 하는, 에러 없이 틀리는 상태) —
+    /// 실행 중에 행동 부품을 붙이지 말고 프리팹에 넣을 것. 테스트도 꺼 둔 오브젝트에 부품을 다 붙인 뒤 켠다.
     /// </summary>
-    public void RefreshTypeBehaviour()
+    void CacheTypeBehaviour()
     {
         // 종류에 맞는 이동 스크립트가 붙어 있으면 그쪽을 쓴다. 없으면(고블린·오우거·슬라임·꼬마 슬라임) 기본 보행.
         motion = GetComponent<IEnemyMotion>();

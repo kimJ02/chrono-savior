@@ -24,7 +24,7 @@ public class CreationOwnershipTests
     {
         /// <summary>A. 실행 중 생기는 전투 물체(투사체·구슬·설치물·장판). 프리팹 우선 — 지금 코드로 짓는 것은 2-3에서 판단.</summary>
         CombatObject,
-        /// <summary>B. 몹 조립(프리팹 하나 + 타입 행동 부품). 2-2에서 정리.</summary>
+        /// <summary>B. 몹 세우기 — 종류별 프리팹을 Instantiate(2-2에서 정리: 행동 부품은 프리팹에, 엘리트 표식만 실행 중).</summary>
         EnemyAssembly,
         /// <summary>D. 그림만 있는 일회성 효과·효과 풀(판정 없음). 정당한 코드 생성.</summary>
         VisualEffect,
@@ -50,7 +50,7 @@ public class CreationOwnershipTests
         ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장(판정·수명) — 마법사 스킬이 연다"),
 
         // B. 몹 조립
-        ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 Enemy_Base 프리팹에서 세우고 타입 행동·엘리트 부품을 붙인다"),
+        ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 종류별 프리팹(EnemyData.prefab·MonsterCatalog)에서 세운다. 실행 중 붙이는 건 스폰 때 확률로 정해지는 엘리트 표식(EnemyElite)뿐"),
 
         // C. 스스로 부품 붙이기 — 2-1에서 전부 씬 배치로 옮겼다(MageChargeFlash·HitSound 소리 장치·로비 CameraAnchor, 안 쓰던 PlayerAttack 삭제). 새로 생기면 안 된다.
 

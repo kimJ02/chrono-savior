@@ -239,14 +239,33 @@ public class OriginalFidelityTests
         prefab.AddComponent<EnemyMove>();
         prefab.AddComponent<EnemyHealth>();
 
+        // 보스·성소는 몬스터 목록의 프리팹으로 세운다(2026-11-05 생성 책임 2-2) — 게임의 Enemy_Boss·Enemy_Shrine처럼 부품을 넣은 꺼진 원본.
+        var catalog = ScriptableObject.CreateInstance<MonsterCatalog>();
+        catalog.types = new EnemyData[0];
+        catalog.bossPrefab = TestEnemyPrefab(prefab, "TestBossPrefab", go => { go.AddComponent<Boss>(); go.GetComponent<EnemyHealth>().isBoss = true; });
+        catalog.shrinePrefab = TestEnemyPrefab(prefab, "TestShrinePrefab", go => { go.AddComponent<Shrine>(); go.GetComponent<EnemyMove>().isStructure = true; });
+
         var go = new GameObject("TestSpawner");
         var spawner = go.AddComponent<EnemySpawner>();
         spawner.monsterPrefab = prefab;
+        spawner.Catalog = catalog;
         spawner.eliteChanceOverride = 0f;
         // `waveTimer`가 0에서 시작하므로 켜 두면 첫 프레임에 웨이브가 나간다 — 여기 테스트들은
         // 전부 private 메서드를 직접 부르므로 자동 웨이브는 잡음일 뿐이다.
         spawner.enabled = false;
         return spawner;
+    }
+
+    /// <summary>
+    /// 기본 몹 원본을 복제해 부품을 더한 원본(테스트용 '프리팹 변형') — 이걸 Instantiate한 복제본은 부품이 다 있는 채로 깨어난다(Awake가 알아본다).
+    /// 원본 자체는 기본 몹 원본처럼 켜진 채 둔다(꺼 두면 복제본도 꺼진 채 나온다).
+    /// </summary>
+    static GameObject TestEnemyPrefab(GameObject basePrefab, string name, System.Action<GameObject> addParts)
+    {
+        var go = Object.Instantiate(basePrefab);
+        go.name = name;
+        addParts(go);
+        return go;
     }
 
     static void InvokeUpdateShrine(EnemySpawner s, float dt) =>
