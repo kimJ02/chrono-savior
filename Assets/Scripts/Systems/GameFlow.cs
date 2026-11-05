@@ -80,8 +80,27 @@ namespace ChronoSavior.Systems
         /// <summary>화면을 옮기는 중인지 — 그동안 시작·로비·타이틀·새 원정·일시정지·재개·종료 요청을 받지 않는다(<see cref="GameState.IsTransitioning"/>).</summary>
         public bool IsTransitioning => GameState.IsTransitioning;
 
+        /// <summary>
+        /// 에디터 Play 진입 씬을 넘겨받는 열쇠(`SessionState`) — `Editor/PlayFromPersistent`가 Play 직전에 열어 둔 게임 씬 이름을 쓰고, 여기서 한 번 읽고 지운다
+        /// (2026-11-05 씬 분할 2차 3-5). 빌드에는 없다.
+        /// </summary>
+        public const string EditorEntryKey = "ChronoSavior.EditorEntryScene";
+
+        /// <summary>실제 게임의 흐름이 사는 상주 씬 — 에디터 진입은 이 씬의 흐름만 따른다(테스트가 빈 씬에 만든 흐름은 무시).</summary>
+        public const string PersistentScene = "00_Persistent";
+
         void Start()
         {
+#if UNITY_EDITOR
+            // 에디터에서 `10_Lobby`/`20_Combat`을 열고 Play하면 그 화면으로 바로(타이틀을 거치지 않게). 사냥은 날짜를 쓰지 않는다(디버그 진입).
+            if (gameObject.scene.name == PersistentScene)
+            {
+                string entry = UnityEditor.SessionState.GetString(EditorEntryKey, "");
+                UnityEditor.SessionState.EraseString(EditorEntryKey); // 한 번만
+                if (entry == LobbyScene) { EnterLobby(); return; }
+                if (entry == CombatScene) { StartRun(defaultRegion, RunMode.Normal, null, spendDay: false); return; }
+            }
+#endif
             // 원본은 로비에서 시작하지만(`state.scene` 초기값 'lobby', :1466), 디자인에 타이틀
             // 화면이 생겨서(Figma 35:2) 그쪽이 먼저다. 로비로는 타이틀 메뉴를 거쳐 들어간다. 타이틀엔 월드가 없다.
             EnterTitle();

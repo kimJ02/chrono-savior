@@ -28,7 +28,7 @@ public class GameBootTests
 {
     string tempSave;
 
-    const string PersistentScene = "00_Persistent";
+    const string PersistentScene = GameFlow.PersistentScene;
     static readonly string[] WorldScenes = { GameFlow.LobbyScene, GameFlow.CombatScene };
 
     [UnitySetUp]

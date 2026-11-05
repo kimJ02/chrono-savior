@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (25)** — **[나] 3-5: 에디터에서 연 씬으로 바로 진입 (`feature/lobby-scene`, PlayMode 469/469, Codex 리뷰 통과).** `Editor/PlayFromPersistent`가 Play 직전 열어 둔 게임 씬 이름을
+  `SessionState`(`GameFlow.EditorEntryKey`)에 적고(게임 씬이 아니면·Play가 끝나면 지움), 상주 씬의 `GameFlow.Start`가 `#if UNITY_EDITOR`로 한 번 읽고 지운다 — `10_Lobby` → 로비, `20_Combat` → 사냥(`defaultRegion`, 날짜 안 씀), 그 밖 → 타이틀.
+  테스트가 빈 씬에 만든 흐름은 읽지 않는다(`gameObject.scene`이 `00_Persistent`일 때만). `Systems/EditorEntryTests`(로비·사냥·없음·상주 씬 밖 무시). **3단계 구현 끝 — 다음: 3단계 전체 Codex 리뷰 → 사용자 확인 후 `main` 병합 → HANDOFF/CLAUDE 갱신.**
 - **2026-11-05 (24)** — **[나] 3-4: 씬 전환 연결 (`feature/lobby-scene`, PlayMode 465/465, 씬 구성 검증 통과, Codex 리뷰 2회 반영).**
   리뷰 반영: 전환이 실패해 다시 켜진 전투 씬이 카메라를 다시 잡음(`CombatDirector.OnEnable`), 로더·활성화·멈추기·들어가기 예외도 실패로(잠금 해제·복구, 필드 준비 예외면 깎은 날짜 반환),
   복구 순서(시간·무대 값 → 활성 씬 → 이전 월드 켜기, 새 월드는 먼저 멈춤), 내리기는 실제로 내려간 뒤에만 로더가 잊고 못 내린 월드는 다음 전환에 다시 내림,
