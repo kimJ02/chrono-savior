@@ -11,13 +11,16 @@ namespace ChronoSavior.Systems
     /// </summary>
     public interface IWorldScenes
     {
-        /// <summary>그 씬을 겹쳐 불러오기 시작한다 — 끝나면 <see cref="WorldSceneOp.IsDone"/>, 성공이면 <see cref="WorldSceneOp.World"/>가 새 씬.</summary>
+        /// <summary>
+        /// 그 씬을 겹쳐 불러오기 시작한다 — 끝나면 <see cref="WorldSceneOp.IsDone"/>, 성공이면 <see cref="WorldSceneOp.World"/>가 새 씬.
+        /// **불러온 씬은 곧바로 활성 씬이 된다**(첫 Update보다 먼저) — 새 월드가 첫 프레임에 만드는 것(몹·투사체)이 이전 씬에 생기지 않게.
+        /// </summary>
         WorldSceneOp Load(string sceneName);
 
         /// <summary>그 월드를 내리기 시작한다.</summary>
         WorldSceneOp Unload(WorldHandle world);
 
-        /// <summary>활성 씬으로 — Unity는 새 오브젝트를 활성 씬에 만든다(사냥 중 투사체·이펙트가 그 월드에 생기게).</summary>
+        /// <summary>활성 씬으로 — Unity는 새 오브젝트를 활성 씬에 만든다. 전환이 실패해 이전 월드로 되돌릴 때 쓴다(새 월드는 불러오면서 이미 활성).</summary>
         void Activate(WorldHandle world);
 
         /// <summary>그 월드의 루트를 켜고 끈다 — 전환 중 이전 월드를 멈춰 두고(Update·물리·정적 등록이 빠진다), 실패하면 다시 켠다.</summary>
@@ -78,6 +81,9 @@ namespace ChronoSavior.Systems
                 if (scene.name != sceneName || mode != LoadSceneMode.Additive) return;
                 SceneManager.sceneLoaded -= OnLoaded;
                 scenes[id] = scene;
+                // 바로 활성 씬으로 — sceneLoaded는 이 씬의 첫 Update보다 먼저 온다. 흐름이 다음 프레임에 정하면 그 사이 한 프레임 동안
+                // 새 월드가 만든 것(스포너의 첫 웨이브 등)이 이전 활성 씬에 생긴다(3단계 종합 리뷰 때 실제로 잡힘).
+                SceneManager.SetActiveScene(scene);
                 op.Complete(new WorldHandle(id, sceneName));
             }
             SceneManager.sceneLoaded += OnLoaded;

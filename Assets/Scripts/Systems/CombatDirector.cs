@@ -174,7 +174,7 @@ namespace ChronoSavior.Systems
         public void BeginField(RunMode mode)
         {
             ShowArena(mode == RunMode.Boss);
-            RunTransient.DestroyAll();      // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 지난 런의 잔해
+            RunTransient.DestroyAllIn(gameObject.scene); // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 이 씬의 지난 런 잔해(재도전의 옛 전투 씬은 건드리지 않는다)
             CombatModifiers.ResetForRun();  // 원본 `combo.n = 0; run.chainN = 0`(:4307·:4319)
             HitFeel.Reset();
             bossDeadTimer = -1f;
@@ -196,7 +196,7 @@ namespace ChronoSavior.Systems
             ShowArena(true);
             // 일반 필드의 잡몹·투사체·장판을 지운다. 안 지우면 좁아진 보스 무대에 이전 필드의 몹이 맵 밖 좌표로 남아,
             // 플레이어가 닿을 수 없는 곳에서 계속 살아 있다.
-            RunTransient.DestroyAll();
+            RunTransient.DestroyAllIn(gameObject.scene);
             ResetPlayer(); // 좁아진 무대의 시작 지점으로
             RunEvents.RaiseBossFieldEntered(); // 스포너가 보스를 세운다
             return true;

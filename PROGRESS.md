@@ -227,6 +227,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (26)** — **[나] 3단계 종합 리뷰 반영 (`feature/lobby-scene`, PlayMode 471/471, Codex '통과 — 병합 가능').** ① 사냥에 들어가다 필드 준비가 예외로 실패하면 날짜와
+  **런 상태 전체**를 되돌린다(`RunState.Capture/Restore` 스냅샷 — 재도전 실패 시 결과 화면의 지난 런 기록 유지). ② 필드 정리는 **그 씬 것만**(`RunTransient.DestroyAll` → `DestroyAllIn(Scene)`) — 재도전 중 멈춰 둔 옛 전투 씬은
+  새 씬의 필드 준비가 건드리지 않고, 씬이 내려갈 때 같이 사라진다. ③ ②를 하자 **숨어 있던 실제 버그**가 드러남: 전투 씬이 뜬 첫 프레임(흐름이 활성 씬을 정하기 전)에 스포너가 웨이브 타이머 초기값 0 때문에
+  멈춘 시간에도 한 무리를 만들었고, 그게 이전 활성 씬(타이틀에서 들어가면 상주 씬)에 생겨 안 지워졌다(전역 정리가 가리고 있었음). 고침: 불러온 씬은 `sceneLoaded`에서 곧바로 활성 씬(`IWorldScenes.Load` 계약, 흐름의 새 월드 Activate 호출 삭제),
+  `EnemySpawner.waveTimer` 초기값 = `FirstWaveDelay`. 낡은 주석(`LobbySceneTests`) 갱신. **4단계로 넘긴 것**: 전환 중 UI 버튼 입력 전체 잠금, 로비 timeScale 0 유지 판단.
 - **2026-11-05 (25)** — **[나] 3-5: 에디터에서 연 씬으로 바로 진입 (`feature/lobby-scene`, PlayMode 469/469, Codex 리뷰 통과).** `Editor/PlayFromPersistent`가 Play 직전 열어 둔 게임 씬 이름을
   `SessionState`(`GameFlow.EditorEntryKey`)에 적고(게임 씬이 아니면·Play가 끝나면 지움), 상주 씬의 `GameFlow.Start`가 `#if UNITY_EDITOR`로 한 번 읽고 지운다 — `10_Lobby` → 로비, `20_Combat` → 사냥(`defaultRegion`, 날짜 안 씀), 그 밖 → 타이틀.
   테스트가 빈 씬에 만든 흐름은 읽지 않는다(`gameObject.scene`이 `00_Persistent`일 때만). `Systems/EditorEntryTests`(로비·사냥·없음·상주 씬 밖 무시). **3단계 구현 끝 — 다음: 3단계 전체 Codex 리뷰 → 사용자 확인 후 `main` 병합 → HANDOFF/CLAUDE 갱신.**

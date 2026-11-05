@@ -129,5 +129,32 @@ namespace ChronoSavior.Core
 
         /// <summary>테스트 격리용(`ProfileService.Reset`과 같은 이유).</summary>
         public static void Reset() => Begin(1, RunMode.Normal);
+
+        /// <summary>런 상태 전체의 사본 — 사냥에 들어가다 실패하면 들어가기 전(예: 결과 화면의 지난 런)으로 되돌릴 때(`GameFlow.StartRun`, 2026-11-05 씬 분할 2차).</summary>
+        public readonly struct Snapshot
+        {
+            internal readonly int region, kills, fury, gold;
+            internal readonly RunMode mode;
+            internal readonly float timeLeft, elapsed;
+            internal readonly GameObject deathSource;
+            internal readonly long exp;
+            internal readonly bool over;
+
+            internal Snapshot(int region, RunMode mode, float timeLeft, float elapsed, GameObject deathSource,
+                              int kills, int fury, int gold, long exp, bool over)
+            {
+                this.region = region; this.mode = mode; this.timeLeft = timeLeft; this.elapsed = elapsed; this.deathSource = deathSource;
+                this.kills = kills; this.fury = fury; this.gold = gold; this.exp = exp; this.over = over;
+            }
+        }
+
+        public static Snapshot Capture() =>
+            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, Over);
+
+        public static void Restore(Snapshot s)
+        {
+            Region = s.region; Mode = s.mode; TimeLeft = s.timeLeft; Elapsed = s.elapsed; DeathSource = s.deathSource;
+            Kills = s.kills; Fury = s.fury; GoldEarned = s.gold; ExpEarned = s.exp; Over = s.over;
+        }
     }
 }

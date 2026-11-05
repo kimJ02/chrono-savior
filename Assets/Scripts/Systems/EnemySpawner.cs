@@ -116,7 +116,8 @@ public class EnemySpawner : MonoBehaviour
     readonly List<Transform> aliveMonsters = new List<Transform>();
     // 스폰된 몹이 어떤 종류였는지 — 처치 보상에서 종류별 exp/gold를 읽어야 해서 들고 있는다.
     readonly Dictionary<GameObject, EnemyData> spawnedData = new Dictionary<GameObject, EnemyData>();
-    float waveTimer;
+    // 사냥 전엔 첫 웨이브 대기로 둔다 — 0이면 시간이 멈춘(timeScale 0) 화면에서도 `0 <= 0`이라 씬이 뜨자마자 한 무리를 만든다(사냥 시작이 다시 맞춘다).
+    float waveTimer = FirstWaveDelay;
     float cachedMonsterRadius = -1f; // Awake 시점엔 monsterPrefab이 아직 할당 전이라(씬 빌드 순서상)
                                       // 필요할 때 지연 계산한다(GetMonsterRadius 참고).
 
@@ -166,7 +167,7 @@ public class EnemySpawner : MonoBehaviour
     /// 원본은 보스전이 별개의 런이라 `startRun`에서 한 번만 보스를 세우면 됐지만, 이제는
     /// **런 도중에** 무대가 바뀌므로 그 시점에 보스를 세우고 잡몹 타이머를 보스전 간격으로 돌린다.
     ///
-    /// `CombatDirector`가 이미 `RunTransient.DestroyAll()`로 필드를 비운 뒤에 이 이벤트를 쏘므로
+    /// `CombatDirector`가 이미 `RunTransient.DestroyAllIn`로 필드를 비운 뒤에 이 이벤트를 쏘므로
     /// 여기서 다시 지우지 않는다 — 두 번 지우면 이 프레임에 세운 보스까지 날아간다.
     /// </summary>
     void HandleBossFieldEntered()

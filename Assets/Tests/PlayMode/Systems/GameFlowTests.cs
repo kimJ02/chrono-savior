@@ -46,7 +46,7 @@ public class GameFlowTests
     /// <summary>게임 흐름 + 전투 담당(`TestFlow`). 플레이어 리셋을 보는 테스트는 그 플레이어를 넘긴다(실제 씬에선 직렬화 참조).</summary>
     static GameFlow NewController(GameObject player = null) => TestFlow.Create(player);
 
-    /// <summary>런 오브젝트 흉내 — 표식만 있으면 `RunTransient.DestroyAll()`이 지워야 한다.</summary>
+    /// <summary>런 오브젝트 흉내 — 표식만 있으면 `RunTransient.DestroyAllIn`이 지워야 한다.</summary>
     static GameObject NewTransient()
     {
         var go = new GameObject("TestTransient");
@@ -381,6 +381,62 @@ public class GameFlowTests
         int resumeOld = scenes.Running.FindLastIndex(r => r.world.Id == lobby.Id && r.running);
         Assert.GreaterOrEqual(stopFresh, 0, "새 월드를 멈춘다");
         Assert.Greater(resumeOld, stopFresh, "새 월드를 멈춘 뒤에 이전 월드를 켠다");
+    }
+
+    /// <summary>필드 정리는 그 씬 것만 — 재도전 중 멈춰 둔 옛 전투 씬의 런 오브젝트는 새 씬의 필드 준비가 지우지 않는다(Codex 3단계 종합 리뷰).</summary>
+    [UnityTest]
+    public IEnumerator DestroyAllIn_OnlyClearsThatScene()
+    {
+        var other = UnityEngine.SceneManagement.SceneManager.CreateScene("TestOtherWorld");
+        var here = NewTransient();
+        var there = NewTransient();
+        UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(there, other);
+
+        RunTransient.DestroyAllIn(here.scene);
+        yield return null;
+        Assert.IsTrue(here == null, "이 씬 것은 지운다");
+        Assert.IsTrue(there != null, "다른 씬 것은 남는다");
+        Assert.AreEqual(1, RunTransient.ActiveCount);
+        yield return UnityEngine.SceneManagement.SceneManager.UnloadSceneAsync(other);
+        Assert.AreEqual(0, RunTransient.ActiveCount, "그 씬이 내려가면 같이 빠진다");
+    }
+
+    /// <summary>필드 준비에서 예외를 던지는 플레이어 부품(테스트용).</summary>
+    sealed class ThrowingReset : MonoBehaviour, IRunResettable
+    {
+        public bool Armed;
+        public void ResetForRun() { if (Armed) throw new System.InvalidOperationException("테스트: 필드 준비 실패"); }
+    }
+
+    /// <summary>
+    /// 재도전에서 필드 준비가 예외로 실패하면 결과 화면으로 돌아오고, **날짜와 지난 런 기록이 그대로**다(Codex 3단계 종합 리뷰).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator FieldSetupException_RestoresDaysAndThePreviousRun()
+    {
+        var player = new GameObject("TestPlayer");
+        var trap = player.AddComponent<ThrowingReset>();
+        var rc = NewController(player);
+        yield return null;
+        rc.StartRun(2, RunMode.Normal);
+        RunState.RegisterKill(false);
+        RunState.RegisterReward(50, 7);
+        rc.EndRun(RunEndReason.Timeout);
+        int days = ProfileService.Current.doomDays;
+
+        trap.Armed = true;
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("InvalidOperationException"));
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        bool? entered = null;
+        rc.StartRun(1, RunMode.Normal, ok => entered = ok);
+
+        Assert.AreEqual(false, entered);
+        Assert.AreEqual(GameScene.Result, GameState.Current);
+        Assert.AreEqual(days, ProfileService.Current.doomDays, "들어가지 못했는데 날짜가 줄었다");
+        Assert.AreEqual(2, RunState.Region, "지난 런 기록이 그대로");
+        Assert.AreEqual(1, RunState.Kills);
+        Assert.AreEqual(50, RunState.GoldEarned);
+        Assert.IsTrue(RunState.Over);
     }
 
     /// <summary>"새 원정"은 로비 씬이 뜬 뒤에만 세이브를 지운다 — 불러오기가 실패하면 진행이 그대로 남는다.</summary>

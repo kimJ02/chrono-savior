@@ -33,11 +33,12 @@ namespace ChronoSavior.Tests.PlayMode
             Loaded.Add(sceneName);
             var world = new WorldHandle(nextId++, sceneName);
             if (HoldNext) { HoldNext = false; held = new WorldSceneOp(); heldWorld = world; return held; }
+            Active = world; // 실제 로더처럼 불러오면 곧바로 활성
             return WorldSceneOp.Done(world);
         }
 
         /// <summary>붙잡아 둔 불러오기를 끝낸다(성공).</summary>
-        public void Release() { held?.Complete(heldWorld); held = null; }
+        public void Release() { if (held == null) return; Active = heldWorld; held.Complete(heldWorld); held = null; }
 
         /// <summary>참이면 다음 내리기 하나를 실패시킨다(기록하지 않는다 — 그 월드는 남아 있다).</summary>
         public bool FailUnloadNext;

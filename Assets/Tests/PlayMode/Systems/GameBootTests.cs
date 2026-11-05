@@ -195,7 +195,8 @@ public class GameBootTests
         yield return ToLobby();
         yield return null; // Destroy 반영
         Assert.IsTrue(leftover == null, "로비로 나왔는데 지난 런의 오브젝트가 남았다");
-        Assert.AreEqual(0, RunTransient.ActiveCount);
+        // 0이어야 한다 — 전투 씬이 뜨는 첫 프레임에 생긴 것(예전엔 스포너의 첫 웨이브)이 이전 활성 씬에 생기면 전투 씬과 같이 안 내려가 여기 남는다.
+        Assert.AreEqual(0, RunTransient.ActiveCount, "전투 씬 밖에 생긴 런 오브젝트가 남았다");
     }
 
     /// <summary>

@@ -61,8 +61,10 @@ public class WorldScenesTests
         Assert.IsTrue(loader.TryGetScene(b.World, out var sb));
         Assert.AreNotEqual(sa, sb, "핸들이 각자 다른 씬을 가리킨다");
 
+        Assert.AreEqual(sb, SceneManager.GetActiveScene(), "불러오면 곧바로 활성 씬(첫 Update 전)");
+        loader.Activate(a.World);
+        Assert.AreEqual(sa, SceneManager.GetActiveScene(), "되돌릴 땐 Activate로");
         loader.Activate(b.World);
-        Assert.AreEqual(sb, SceneManager.GetActiveScene(), "새 월드가 활성 씬");
 
         var u = loader.Unload(a.World);
         yield return Wait(u);

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace ChronoSavior.Core
 {
@@ -41,19 +42,21 @@ namespace ChronoSavior.Core
         }
 
         /// <summary>
-        /// 전부 제거. 원본 `startRun()`의 배열 비우기와 같다.
-        /// 뒤에서부터 지우는 이유는 `OnDestroy`가 <see cref="Active"/>에서 자기를 빼기 때문 —
-        /// 앞에서부터 돌면 인덱스가 밀린다.
+        /// 그 씬의 런 오브젝트를 전부 제거. 원본 `startRun()`의 배열 비우기와 같다.
+        /// **씬 하나만** 비운다(2026-11-05 씬 분할 2차) — 재도전은 옛 전투 씬을 멈춰 둔 채 새 전투 씬을 준비하므로, 새 씬의 필드 준비가
+        /// 옛 씬의 것까지 지우면 전환이 실패해 되돌아왔을 때 옛 화면이 이미 비어 있다. 옛 씬의 것은 그 씬이 내려갈 때 같이 사라진다.
+        /// 지운 것은 목록에서 바로 뺀다 — Destroy는 프레임 끝에 반영돼서 OnDestroy가 아직 안 불린다.
         /// </summary>
-        public static void DestroyAll()
+        public static void DestroyAllIn(Scene scene)
         {
             for (int i = Active.Count - 1; i >= 0; i--)
             {
                 var t = Active[i];
-                if (t != null) Object.Destroy(t.gameObject);
-                else Active.RemoveAt(i);
+                if (t == null) { Active.RemoveAt(i); continue; }
+                if (t.gameObject.scene != scene) continue;
+                Object.Destroy(t.gameObject);
+                Active.RemoveAt(i);
             }
-            Active.Clear(); // Destroy는 프레임 끝에 반영돼서 OnDestroy가 아직 안 불린다
         }
 
         /// <summary>테스트 격리용(정적 목록이라 테스트끼리 샌다).</summary>
