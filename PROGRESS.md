@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (21)** — **[나] 3-1: 로비 아바타 (`feature/lobby-scene`, PlayMode 447/447).** `UI/Lobby/LobbyAvatar` — 그림만 있는 로비 캐릭터(키트·체력·물리·Player 태그 없음), 세이브의 지금 캐릭터를 따라
+  `CharacterArtSet`에서 그림·색을 입는다(캐릭터 선택 다음 프레임). 높이 맞추기는 `EntitySizeConfig.ScaleToHeight`로 빼서 `PlayerRig`와 같이 쓰고, 기본 이동 속도는 `Core/PlayerMoveConfig.BaseSpeed`
+  하나로(원본 270÷100) — `CharacterMover2D.moveSpeed` 필드와 로비가 그걸 찾아 읽던 것 삭제. 아직 씬에 안 놓는다(3-2). `UI/LobbyAvatarTests`.
 - **2026-11-05 (20)** — **[나] 3-0: 발판 무대 전환을 전투 담당으로 (`feature/lobby-scene`, PlayMode 445/445, 씬 구성 검증 '문제 없음').** `PlatformSet`의 정적 목록·`Activate`·`HideAll` 삭제 —
   재도전 때 옛·새 전투 씬이 겹치면 옛 씬 발판까지 다시 켰다(Codex 지적). `CombatDirector`가 같은 씬의 두 세트를 직렬화로 들고 `ShowArena`로 켜고 끈다(좌표 데이터 `FieldLayout`도 같이).
   `PlatformSet`은 표시 + 씬이 뜰 때 지금 무대에 맞춰 스스로 켜고 끄기만. 로비(아직 같은 씬)의 발판 숨기기는 `ClearField`로(3-4에서 함수째 사라짐). 테스트의 무대 되돌리기는 `FieldLayout.SetBossArena(false)`로.

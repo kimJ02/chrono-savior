@@ -30,7 +30,6 @@ namespace ChronoSavior.Characters
 [RequireComponent(typeof(Collider2D))]
 public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
 {
-    public float moveSpeed = 2.7f;
     public float jumpSpeed = 9.6f;
     public float groundCheckRadius = 0.12f;
     public LayerMask groundMask;
@@ -142,9 +141,9 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
 
         float vx = moveMode == MoveMode.Inertial
             ? ComputeInertialVx(h, Time.fixedDeltaTime)
-            // 원본 statMs()(project_test.html:1286) — 골드 강화(ms)가 반영된 배수. moveSpeed 필드 자체는
+            // 원본 statMs()(project_test.html:1286) — 골드 강화(ms)가 반영된 배수. 기본 속도(`Core/PlayerMoveConfig.BaseSpeed`, 로비 아바타와 같은 값)는
             // 안 바꾸고 매 프레임 곱해서 적용(다른 배수들과 같은 자리에서, 누적 곱 버그 없이).
-            : h * moveSpeed * SpeedMultiplier * PlayerStatCalculator.ComputeMoveSpeedMultiplier(ProfileService.Current);
+            : h * PlayerMoveConfig.BaseSpeed * SpeedMultiplier * PlayerStatCalculator.ComputeMoveSpeedMultiplier(ProfileService.Current);
 
         float minX = FieldBounds.MinX + edgeMargin;
         float maxX = FieldBounds.MaxX - edgeMargin;

@@ -62,7 +62,6 @@ namespace ChronoSavior.UI
         public Transform Player { get => player; set => player = value; }
 
         GameObject root;
-        float walkSpeed = 2.7f;
         bool wasLobby;
 
         void OnEnable() => WorldView.Attach(this);
@@ -111,7 +110,7 @@ namespace ChronoSavior.UI
                 if (dir != 0)
                 {
                     var pos = player.position;
-                    pos.x = Mathf.Clamp(pos.x + dir * walkSpeed * Time.unscaledDeltaTime, CenterX - WalkHalfRange, CenterX + WalkHalfRange);
+                    pos.x = Mathf.Clamp(pos.x + dir * PlayerMoveConfig.BaseSpeed * Time.unscaledDeltaTime, CenterX - WalkHalfRange, CenterX + WalkHalfRange);
                     player.position = pos;
                     if (player.TryGetComponent(out Rigidbody2D rb)) rb.position = pos; // 다음 물리 단계가 되돌리지 않게
                 }
@@ -143,7 +142,6 @@ namespace ChronoSavior.UI
             CameraFollow2D.Track(CameraAnchor(), snap: true); // 시간이 멈춘 로비라 바로 붙는다
             if (player != null)
             {
-                if (player.TryGetComponent(out ChronoSavior.Characters.CharacterMover2D mover)) walkSpeed = mover.moveSpeed; // 사냥과 같은 걸음
                 var pos = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, player.position.z);
                 player.position = pos;
                 if (player.TryGetComponent(out Rigidbody2D rb)) { rb.position = pos; rb.linearVelocity = Vector2.zero; }

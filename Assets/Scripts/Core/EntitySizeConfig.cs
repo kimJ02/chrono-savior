@@ -28,6 +28,17 @@ namespace ChronoSavior.Core
     public static class EntitySizeConfig
     {
         /// <summary>
+        /// 그림을 이 월드 높이로 보이게 하는 배율 — 그림마다 원본 픽셀 크기가 달라서(마법사 81×116, 메카닉 63×66 …) 그대로 쓰면 덩치가 제각각이다.
+        /// 전투의 플레이어(`Characters/PlayerRig`)와 로비 아바타(`UI/Lobby/LobbyAvatar`)가 같이 쓴다(2026-11-05 3-1). 그림이 없거나 높이가 0이면 0.
+        /// </summary>
+        public static float ScaleToHeight(UnityEngine.Sprite sprite, float worldHeight)
+        {
+            if (sprite == null) return 0f;
+            float h = sprite.bounds.size.y;
+            return h > 0.0001f ? worldHeight / h : 0f;
+        }
+
+        /// <summary>
         /// 플레이어 그림 높이(유닛). 콜라이더 반지름도 이 값의 절반으로 따라간다 —
         /// 그림과 히트박스가 따로 놀면 "보이는 곳을 때렸는데 안 맞는" 상태가 된다.
         /// </summary>

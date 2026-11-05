@@ -120,9 +120,8 @@ namespace ChronoSavior.Characters
             // 정식 아트(색이 이미 칠해진 그림)로 바꾸면 그 캐릭터 색을 흰색으로 두면 된다(`CharacterArtSet.tints`).
             sr.color = art.TintOf(id);
 
-            float h = sprite.bounds.size.y;
-            if (h <= 0.0001f) return;
-            float scale = spriteHeight / h;
+            float scale = EntitySizeConfig.ScaleToHeight(sprite, spriteHeight); // 로비 아바타와 같은 계산
+            if (scale <= 0f) return;
 
             // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 —
             // 그래서 반지름을 역으로 나눠 원하는 월드 반지름을 맞춘다(적 쪽 `EnemySpawner.ApplySize`와 같은 방식).
