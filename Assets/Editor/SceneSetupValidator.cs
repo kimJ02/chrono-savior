@@ -236,6 +236,51 @@ namespace ChronoSavior.Editor
             if (catalog == null) return;
             foreach (ChronoSavior.Core.EnemyType t in System.Enum.GetValues(typeof(ChronoSavior.Core.EnemyType)))
                 if (catalog.types.Count(d => d != null && d.type == t) != 1) problems.Add($"몬스터 목록에 {t} 데이터가 하나가 아니다");
+            CheckEnemyPrefabs(catalog, problems);
+        }
+
+        /// <summary>
+        /// 몹 프리팹 구성(2026-11-05 생성 책임 2-2) — 종류마다 데이터가 가리키는 프리팹에 **그 종류의 행동 부품만** 들어 있는지(박쥐 = 비행, 멧돼지 = 돌진,
+        /// 해골 궁수 = 사격, 슬라임 = 분열, 나머지 = 기본 보행), 보스·성소 프리팹은 그 부품과 구조 설정을 갖는지. 예전엔 스포너가 실행 중에 붙였다.
+        /// </summary>
+        static void CheckEnemyPrefabs(ChronoSavior.Core.MonsterCatalog catalog, List<string> problems)
+        {
+            var behaviours = new[] { typeof(ChronoSavior.Enemies.EnemyFlyerMotion), typeof(ChronoSavior.Enemies.EnemyChargerMotion),
+                                     typeof(ChronoSavior.Enemies.EnemyShooterMotion), typeof(ChronoSavior.Enemies.EnemySplitOnDeath),
+                                     typeof(ChronoSavior.Enemies.Boss), typeof(ChronoSavior.Enemies.Shrine) };
+            void Check(GameObject prefab, string what, System.Type expected)
+            {
+                if (prefab == null) { problems.Add($"{what} 프리팹이 비어 있다"); return; }
+                if (prefab.GetComponent<ChronoSavior.Enemies.EnemyMove>() == null || prefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() == null)
+                    problems.Add($"{what} 프리팹({prefab.name})에 EnemyMove·EnemyHealth가 없다");
+                foreach (var b in behaviours)
+                {
+                    bool has = prefab.GetComponent(b) != null;
+                    if (has != (b == expected)) problems.Add($"{what} 프리팹({prefab.name})의 {b.Name}: {(has ? "있으면 안 된다" : "있어야 한다")}");
+                }
+            }
+            foreach (var d in catalog.types.Where(d => d != null))
+            {
+                System.Type expected = d.type switch
+                {
+                    ChronoSavior.Core.EnemyType.Flyer => typeof(ChronoSavior.Enemies.EnemyFlyerMotion),
+                    ChronoSavior.Core.EnemyType.Charger => typeof(ChronoSavior.Enemies.EnemyChargerMotion),
+                    ChronoSavior.Core.EnemyType.Shooter => typeof(ChronoSavior.Enemies.EnemyShooterMotion),
+                    ChronoSavior.Core.EnemyType.Splitter => typeof(ChronoSavior.Enemies.EnemySplitOnDeath),
+                    _ => null,
+                };
+                Check(d.prefab, $"{d.type}", expected);
+            }
+            Check(catalog.bossPrefab, "보스", typeof(ChronoSavior.Enemies.Boss));
+            if (catalog.bossPrefab != null && catalog.bossPrefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() is { isBoss: false })
+                problems.Add("보스 프리팹의 EnemyHealth.isBoss가 꺼져 있다(레벨 페널티 하한이 보스 값이 아니게 된다)");
+            Check(catalog.shrinePrefab, "성소", typeof(ChronoSavior.Enemies.Shrine));
+            if (catalog.shrinePrefab != null)
+            {
+                if (catalog.shrinePrefab.GetComponent<ChronoSavior.Enemies.EnemyMove>() is { isStructure: false }) problems.Add("성소 프리팹이 구조물(isStructure)이 아니다");
+                var rb = catalog.shrinePrefab.GetComponent<Rigidbody2D>();
+                if (rb != null && (rb.bodyType != RigidbodyType2D.Kinematic || rb.gravityScale != 0f)) problems.Add("성소 프리팹은 움직이지 않는 구조물(Kinematic·중력 0)이어야 한다");
+            }
         }
 
         /// <summary>

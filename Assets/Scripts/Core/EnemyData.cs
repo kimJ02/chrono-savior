@@ -26,6 +26,8 @@ namespace ChronoSavior.Core
         public EnemyType type = EnemyType.Grunt;
         [Tooltip("표시용 이름(원본에 대응하는 우리말 이름).")]
         public string displayName = "고블린";
+        [Tooltip("이 종류의 프리팹 — 종류마다 다른 행동 부품(비행·돌진·사격·분열)이 들어 있다(Assets/Prefabs/Enemies/). 행동이 같은 종류(고블린·오우거·꼬마 슬라임)는 Enemy_Base.")]
+        public GameObject prefab;
 
         [Header("기본 스탯 (원본 CONFIG.enemyBase — 지역 배율은 스폰 때 곱한다)")]
         [Tooltip("기본 체력. 지역당 ×2.15가 스폰 시 곱해진다.")]

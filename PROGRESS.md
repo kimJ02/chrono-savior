@@ -227,6 +227,10 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (35)** — **[나] 2-2a: 몹 종류별 프리팹 + 데이터 연결 (`feature/creation-ownership`, PlayMode 471/471, 씬 검증 통과).** 몹 구성 방식은 Codex와 결정 — **종류별 프리팹 변형**
+  (타입 행동 구성을 프리팹에 드러내고 스포너는 세우기·지역 스탯만, 엘리트 표식만 생성 담당 예외. 'Start에서 찾기'는 구성이 코드에 숨고 순서에 기대서 탈락).
+  `Assets/Prefabs/Enemies/`(기본 `Enemy_Base`를 옮김 — GUID 유지) + 변형 `Enemy_Flyer`·`Charger`·`Shooter`·`Splitter`·`Shrine`(구조물·Kinematic·중력 0)·`Boss`(isBoss). `EnemyData.prefab`·`MonsterCatalog.bossPrefab/shrinePrefab`,
+  `BuildEnemyData`가 종류별 프리팹을 이어 준다(`PrefabFor`). 검증기: 종류마다 그 행동 부품만 있는지·보스·성소 구성. **아직 스포너는 옛 방식**(다음 2-2b에서 전환·`RefreshTypeBehaviour` 삭제).
 - **2026-11-05 (34)** — **[나] 2-1: 스스로 붙이던 부품을 씬 배치로 (`feature/creation-ownership`, PlayMode 471/471, 씬 검증 통과, Codex 통과).** `MageChargeFlash`는 20_Combat Player에(예전엔 `MageAttack.Awake`가 붙임),
   `HitSound`는 `[RequireComponent(AudioSource)]`+직렬화 클립 — 00_Persistent `Audio`에 소리 장치(자동 재생 끔·2D)와 클립 참조(`Resources.Load` 제거), 로비 `CameraAnchor`는 10_Lobby `LobbyWorld`의 자식(위치는 준비 때 계산).
   검증기가 셋 다 본다. **어느 씬에도 없던 옛 범용 근접 공격 `Combat/PlayerAttack`과 전용 테스트 삭제(사용자 승인)** — 스폰 무적 테스트는 `ISpawnProtectable` 상태로 다시 씀. 생성 담당 목록에서 C 분류 0곳.

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   type: 3
   displayName: "\uBA67\uB3FC\uC9C0"
+  prefab: {fileID: 2443193656866721538, guid: 16f1438bbc7b07045acde9187f416eb9, type: 3}
   maxHp: 50
   attackPower: 15
   moveSpeed: 0.58

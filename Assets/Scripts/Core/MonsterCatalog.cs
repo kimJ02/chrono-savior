@@ -7,7 +7,8 @@ namespace ChronoSavior.Core
     /// 보여 주는 쪽(`UI/Screens/StageSelectScreen`, 상주 씬)이 **같은 에셋**을 참조한다(2026-11-05 씬 분할 2차 2a).
     /// 예전엔 이 값들이 스포너 컴포넌트(씬)에 있어서 스테이지 선택 화면이 씬을 뒤져 스포너를 찾았다 — 로비가 전투 씬과 떨어지면 못 찾는다.
     ///
-    /// 보스·성소는 지금 그림만 같이 쓴다(수치는 코드 — `Enemies/Boss`·`Systems/EnemySpawner`·`Enemies/Shrine`). 그래서 따로 정의 SO를 두지 않는다.
+    /// 보스·성소는 프리팹·그림만 여기 둔다(수치는 코드 — `Enemies/Boss`·`Systems/EnemySpawner`·`Enemies/Shrine`). 그래서 따로 정의 SO를 두지 않는다.
+    /// 잡몹 프리팹은 종류별 데이터(<see cref="EnemyData.prefab"/>)가 가리킨다(2026-11-05 생성 책임 2-2 — 예전엔 기본 프리팹 하나에 스포너가 행동 부품을 붙였다).
     /// 에셋: `Assets/Data/Enemies/MonsterCatalog.asset`.
     /// </summary>
     [CreateAssetMenu(menuName = "ChronoSavior/Monster Catalog", fileName = "MonsterCatalog")]
@@ -15,6 +16,12 @@ namespace ChronoSavior.Core
     {
         [Tooltip("스폰할 잡몹 종류들(Assets/Data/Enemies/, BuildEnemyData가 생성). 지역별로 무엇이 나올지는 Systems/EnemySpawnTable이 정한다.")]
         public EnemyData[] types;
+
+        [Tooltip("보스 프리팹(Enemy_Boss — Boss 부품·보스 표시).")]
+        public GameObject bossPrefab;
+
+        [Tooltip("성소 프리팹(Enemy_Shrine — Shrine 부품·움직이지 않는 구조물).")]
+        public GameObject shrinePrefab;
 
         [Tooltip("보스 그림(전 지역 같음). 비어 있으면 프리팹의 기본 스프라이트를 색만 칠해서 쓴다.")]
         public Sprite boss;

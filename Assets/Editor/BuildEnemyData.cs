@@ -8,8 +8,8 @@ namespace ChronoSavior.Editor
 {
     /// <summary>
     /// `Assets/Data/Enemies/`의 `EnemyData` 에셋 7종을 **원본 수치 그대로** 생성/갱신한다.
-    /// 에셋을 손으로 만들지 않는 이유는 씬을 `BuildPartAScene`으로 만드는 것과 같다 — 에디터에서
-    /// 손으로 찍은 값은 원본과 어긋나도 아무도 모르고, diff에도 근거가 안 남는다.
+    /// 에셋을 손으로 만들지 않는 이유: 에디터에서 손으로 찍은 수치는 원본과 어긋나도 아무도 모르고, diff에도 근거가 안 남는다.
+    /// 종류별 프리팹(`Assets/Prefabs/Enemies/`, <see cref="PrefabFor"/>)도 여기서 이어 준다 — 프리팹 자체는 에셋 파일이 원본이다.
     ///
     /// 실행: 메뉴 `ChronoSavior/Build Enemy Data`, 또는 배치모드
     /// `-executeMethod ChronoSavior.Editor.BuildEnemyData.Build`
@@ -87,6 +87,21 @@ namespace ChronoSavior.Editor
             _ => null,
         };
 
+        public const string PrefabFolder = "Assets/Prefabs/Enemies";
+
+        /// <summary>
+        /// 종류별 프리팹 — 행동이 다른 종류만 따로(비행·돌진·사격·분열), 나머지는 기본(2026-11-05 생성 책임 2-2).
+        /// CLAUDE.md "SO는 수치만, 행동이 다르면 스크립트 분리" — 그 스크립트 구성이 프리팹에 드러난다.
+        /// </summary>
+        public static string PrefabFor(EnemyType type) => $"{PrefabFolder}/" + type switch
+        {
+            EnemyType.Flyer => "Enemy_Flyer",
+            EnemyType.Charger => "Enemy_Charger",
+            EnemyType.Shooter => "Enemy_Shooter",
+            EnemyType.Splitter => "Enemy_Splitter",
+            _ => "Enemy_Base",
+        } + ".prefab";
+
         [MenuItem("ChronoSavior/Build Enemy Data")]
         public static void Build()
         {
@@ -120,6 +135,8 @@ namespace ChronoSavior.Editor
                     ? BuildPrototypeSprites.Load(SpriteNameFor(row.type))
                     : null;
                 asset.shape = row.shape;
+                asset.prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFor(row.type));
+                if (asset.prefab == null) Debug.LogError($"[BuildEnemyData] {row.type} 프리팹이 없다: {PrefabFor(row.type)}");
                 asset.originalWidthPx = row.w;
                 asset.originalHeightPx = row.h;
 
