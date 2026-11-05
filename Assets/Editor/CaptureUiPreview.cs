@@ -204,6 +204,9 @@ namespace ChronoSavior.Editor
         {
             var rt = new RenderTexture(w, h, 24, RenderTextureFormat.ARGB32) { filterMode = FilterMode.Point };
             cam.targetTexture = rt;
+            // 그림 전체에 그린다 — 씬을 열 때 PixelPerfectCamera가 배치 창 비율에 맞춰 Viewport Rect를 잘라 두어(예: 1920×810),
+            // 첫 장만 화면이 좁게 잡혀 UI가 가장자리로 밀려 찍혔다(2026-11-05 씬 분할 마감 4-3). 그 뒤 장은 첫 렌더 때 PPC가 다시 맞춰 괜찮았다.
+            cam.rect = new Rect(0f, 0f, 1f, 1f);
             pc.UseCamera(cam); // 캔버스 크기를 새 그림 크기로 다시 잡게
             pc.Scaler.scaleFactor = scale;
             pc.Canvas.scaleFactor = scale;

@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (31)** — **[나] 4-3: 캡처 도구 첫 장 잘림 수정 (`feature/scene-split-finish`, 에디터 도구만).** 원인: 씬을 열 때 PixelPerfectCamera가 배치 창 비율에 맞춰 카메라 Viewport Rect를 잘라 두어
+  첫 렌더만 1920×810으로 잡혔다(로그로 확인 — 그 뒤 장은 첫 렌더 때 PPC가 다시 맞춤). `CaptureUiPreview.Render`·`CaptureStagePreview`가 렌더 전에 `cam.rect = (0,0,1,1)`. UI 캡처 32장·스테이지 3장 다시 찍어 확인, 씬 파일 변경 없음.
 - **2026-11-05 (30)** — **[나] 4-2: 정리 (`feature/scene-split-finish`, PlayMode 473/473).** 호출부 없는 `GameFlow.StartRun()`(인자 없는 임시 진입점) 삭제, `defaultRegion` 설명을 지금 쓰임(에디터 전투 진입)으로,
   `UI/README.md`의 옛 이름(`RunController`)을 `GameFlow.StartRun(region, mode, done)`으로 고치고 화면 규칙 두 줄(월드는 `WorldView`로만, 상태·시간은 `GameFlow`에 요청), `LobbyWorld.OnDestroy`(자식 오브젝트 중복 파괴) 삭제.
 - **2026-11-05 (29)** — **[나] 4-1: 로비 timeScale 0 유지 결정 + 상태 소유권 소스 검사 (`feature/scene-split-finish`, PlayMode 473/473).** 게임 시간을 쓰는 실행 코드를 전부 확인 —

@@ -161,6 +161,7 @@ namespace ChronoSavior.Editor
             var rt = new RenderTexture(StageArtConfig.RefWidth, StageArtConfig.RefHeight, 24, RenderTextureFormat.ARGB32)
             { filterMode = FilterMode.Point };
             cam.targetTexture = rt;
+            cam.rect = new Rect(0f, 0f, 1f, 1f); // 그림 전체에 — 열 때 PixelPerfectCamera가 잘라 둔 Viewport Rect가 첫 장에 남지 않게(CaptureUiPreview.Render와 같은 이유)
             // 배치 모드 편집 화면 렌더에선 SRP 배처가 켜져 있으면 모든 스프라이트가 첫 텍스처(배경)로 찍혔다(2026-10-24).
             // 캡처할 때만 끄고 되돌린다 — 게임 설정은 안 바뀐다.
             var urp = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
