@@ -91,11 +91,6 @@ namespace ChronoSavior.UI
             return cameraAnchor;
         }
 
-        void OnDestroy()
-        {
-            if (root != null) Destroy(root);
-        }
-
         void Update()
         {
             // 로비 화면일 때만 걷고 들어간다 — 씬을 불러오는 중(아직 타이틀·전환 중)엔 입력을 받지 않는다.

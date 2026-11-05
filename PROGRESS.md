@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (30)** — **[나] 4-2: 정리 (`feature/scene-split-finish`, PlayMode 473/473).** 호출부 없는 `GameFlow.StartRun()`(인자 없는 임시 진입점) 삭제, `defaultRegion` 설명을 지금 쓰임(에디터 전투 진입)으로,
+  `UI/README.md`의 옛 이름(`RunController`)을 `GameFlow.StartRun(region, mode, done)`으로 고치고 화면 규칙 두 줄(월드는 `WorldView`로만, 상태·시간은 `GameFlow`에 요청), `LobbyWorld.OnDestroy`(자식 오브젝트 중복 파괴) 삭제.
 - **2026-11-05 (29)** — **[나] 4-1: 로비 timeScale 0 유지 결정 + 상태 소유권 소스 검사 (`feature/scene-split-finish`, PlayMode 473/473).** 게임 시간을 쓰는 실행 코드를 전부 확인 —
   전투 씬 것·흐름·카메라 보간뿐이고 로비 씬엔 없다(물리 물체 없음, 걷기·화면은 실제 시간). 원본도 사냥이 아니면 dt = 0이라 그대로 둔다(근거: `GameFlow.EnterLobbyThen` 주석·`HANDOFF.md` 4단계).
   `StateOwnershipTests` — `GameState.Set`·`SetTransitioning`·`Time.timeScale` 대입이 `GameFlow` 밖(정의 `Core/GameState` 제외)에 있으면 실패(지금 0곳 — 규칙을 잠금).

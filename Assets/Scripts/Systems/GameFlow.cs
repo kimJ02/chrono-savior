@@ -29,7 +29,7 @@ namespace ChronoSavior.Systems
     public class GameFlow : MonoBehaviour
     {
         [Header("시작 설정")]
-        [Tooltip("로비에서 '사냥 시작'을 눌렀을 때 들어갈 지역. 정식 지역 선택은 로비 스테이지 탭이 맡는다.")]
+        [Tooltip("에디터에서 20_Combat을 열고 Play했을 때 들어갈 지역(디버그 진입, 날짜 안 씀). 게임에선 로비 던전(스테이지 선택)이 지역을 고른다.")]
         public int defaultRegion = 1;
 
         /// <summary>마지막 런이 끝난 이유. 결과 화면이 제목을 고르는 데 쓴다(원본 `endRun(reason)`).</summary>
@@ -151,9 +151,6 @@ namespace ChronoSavior.Systems
                 Time.timeScale = 1f;
                 return true;
             }, done);
-
-        /// <summary>로비에서 기본 지역으로 바로 시작(임시 진입점 — 정식 지역 선택은 로비 스테이지 탭).</summary>
-        public bool StartRun() => StartRun(defaultRegion, RunMode.Normal);
 
         /// <summary>원본 `toLobby()`(:4382) — 로비 씬을 불러오고 지금 월드(전투)를 내린다.</summary>
         public bool EnterLobby(System.Action<bool> done = null) => EnterLobbyThen(null, done);
