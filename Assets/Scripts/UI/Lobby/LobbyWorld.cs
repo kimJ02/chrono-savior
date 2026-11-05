@@ -13,7 +13,9 @@ namespace ChronoSavior.UI
     ///   - **로비는 지금처럼 시간이 멈춘 채(timeScale 0)** 캐릭터만 실제 시간으로 좌우로 걷는다 — 공격·몹·스포너가 전부 "로비에선 시간이
     ///     멈춘다"는 전제로 돌아가서(로비에서 Z를 눌러도 아무것도 안 나가게), 물리 이동 대신 위치만 옮긴다. 점프는 없다.
     ///   - 건물 그림이 아직 없어 Figma 공용 창 틀에 이름·아이콘을 붙인 자리표시로 세웠다(뼈대의 회색 상자 자리).
-    ///   - 발판은 로비에서 숨긴다(사냥을 시작하면 다시 켜진다). 들어가기: 건물 앞에서 F 또는 ↑.
+    ///   - 로비는 자기 씬(`10_Lobby`)이라 발판이 없다(2026-11-05 씬 분할 2차 3단계 — 예전엔 전투 씬의 발판을 숨겼다). 들어가기: 건물 앞에서 F 또는 ↑.
+    ///   - **씬이 켜지면 스스로 준비한다**(<see cref="EnterLobby"/>, `OnEnable`) — 흐름(`GameFlow`, 3층)은 이 화면(4층)을 모르므로 부르지 않는다.
+    ///     전환이 실패해 멈췄던 로비가 다시 켜져도 같은 준비를 한 번 더 할 뿐이다(건물은 한 번만 세우고, 캐릭터 시작 자리도 처음 한 번만).
     ///   - **한 화면에 다 보인다**(2026-10-28 사용자 "맨 왼쪽에서 나와 던전까지 너무 오래 걸린다, 캐릭터가 너무 작다, 아이콘이 한눈에"):
     ///     건물을 캐릭터 키(0.5)의 약 1.6배로 줄이고 필드 가운데에 모았다. 캐릭터도 가운데서 나오고, 로비에선 카메라가 가운데에
     ///     서 있고(`CameraFollow2D`) 캐릭터는 건물 줄 안에서만 걷는다.
@@ -55,16 +57,16 @@ namespace ChronoSavior.UI
         int ILobbyView.NearBuilding => NearIndex;
         Vector2? ILobbyView.AvatarPosition => player != null ? (Vector2)player.position : (Vector2?)null;
 
-        [Tooltip("로비에서 걸어 다닐 캐릭터 — 지금은 같은 씬(20_Combat)의 Player(씬 분할 2차 3단계에서 로비 아바타로 바뀐다).")]
+        [Tooltip("로비에서 걸어 다닐 캐릭터 — 같은 씬(10_Lobby)의 로비 아바타(LobbyAvatar).")]
         [SerializeField] Transform player;
 
         /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다).</summary>
         public Transform Player { get => player; set => player = value; }
 
         GameObject root;
-        bool wasLobby;
+        bool placed;
 
-        void OnEnable() => WorldView.Attach(this);
+        void OnEnable() => EnterLobby();
 
         void OnDisable()
         {
@@ -96,11 +98,8 @@ namespace ChronoSavior.UI
 
         void Update()
         {
-            bool lobby = GameState.Current == GameScene.Lobby;
-            if (lobby && !wasLobby) EnterLobby();
-            if (!lobby && wasLobby && root != null) root.SetActive(false);
-            wasLobby = lobby;
-            if (!lobby) { NearIndex = -1; return; }
+            // 로비 화면일 때만 걷고 들어간다 — 씬을 불러오는 중(아직 타이틀·전환 중)엔 입력을 받지 않는다.
+            if (GameState.Current != GameScene.Lobby || GameState.IsTransitioning) { NearIndex = -1; return; }
 
             if (player == null) return;
             bool windowOpen = UiModal.Open;
@@ -133,15 +132,19 @@ namespace ChronoSavior.UI
         }
 
 
-        /// <summary>로비에 들어올 때 — 발판을 숨기고, 건물을 세우고, 캐릭터를 시작 자리 땅 위에.</summary>
+        /// <summary>
+        /// 로비 준비 — 창구 등록, 건물 세우기(한 번), 카메라를 가운데 기준점에, 캐릭터를 시작 자리 땅 위에(처음 한 번).
+        /// 씬이 켜질 때(`OnEnable`) 부른다. 몇 번 불러도 같다. 공개인 건 편집 모드 캡처(`Editor/CaptureUiPreview`)가 OnEnable 없이 부르려고.
+        /// </summary>
         public void EnterLobby()
         {
-            if (!ReferenceEquals(WorldView.Lobby, this)) WorldView.Attach(this); // 편집 모드 캡처에선 OnEnable이 안 불린다
+            if (!ReferenceEquals(WorldView.Lobby, this)) WorldView.Attach(this);
             if (root == null) Build();
             root.SetActive(true);
             CameraFollow2D.Track(CameraAnchor(), snap: true); // 시간이 멈춘 로비라 바로 붙는다
-            if (player != null)
+            if (player != null && !placed)
             {
+                placed = true;
                 var pos = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, player.position.z);
                 player.position = pos;
                 if (player.TryGetComponent(out Rigidbody2D rb)) { rb.position = pos; rb.linearVelocity = Vector2.zero; }
@@ -153,7 +156,6 @@ namespace ChronoSavior.UI
             root = new GameObject("LobbyBuildings");
             root.transform.SetParent(transform, false); // 이 오브젝트(월드 씬)의 자식 — 씬을 내리면 같이 사라진다
             for (int i = 0; i < Buildings.Length; i++) BuildBuilding(Buildings[i], XOf(i));
-            root.SetActive(false);
         }
 
         void BuildBuilding(Building b, float x)

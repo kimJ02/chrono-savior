@@ -42,7 +42,7 @@ namespace ChronoSavior.UI
 
         void Resume() => Flow?.Resume();
 
-        void ToLobby() => Flow?.EnterLobby();
+        void ToLobby() => Flow?.EnterLobby(CommonPopup.AlertIfTransitionFails("로비"));
 
         static Color WithAlpha(Color c, float a)
         {

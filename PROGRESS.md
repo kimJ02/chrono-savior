@@ -227,6 +227,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (24)** — **[나] 3-4: 씬 전환 연결 (`feature/lobby-scene`, PlayMode 465/465, 씬 구성 검증 통과, Codex 리뷰 2회 반영).**
+  리뷰 반영: 전환이 실패해 다시 켜진 전투 씬이 카메라를 다시 잡음(`CombatDirector.OnEnable`), 로더·활성화·멈추기·들어가기 예외도 실패로(잠금 해제·복구, 필드 준비 예외면 깎은 날짜 반환),
+  복구 순서(시간·무대 값 → 활성 씬 → 이전 월드 켜기, 새 월드는 먼저 멈춤), 내리기는 실제로 내려간 뒤에만 로더가 잊고 못 내린 월드는 다음 전환에 다시 내림,
+  화면 쪽 실패 알림 `CommonPopup.AlertIfTransitionFails`(타이틀 불러오기·새 원정(캐릭터 선택은 성공 뒤)·일시정지/결과 '로비로'·스테이지 입장). **보류**: 전환 중 UI 버튼 입력 전체 잠금(4단계 최종 점검 후보). `GameFlow`가 월드 씬을 불러오고 내린다 —
+  타이틀(월드 없음) → `EnterLobby`/`StartNewExpedition`(`10_Lobby`) → `StartRun`(`20_Combat`, 재도전도 새로 불러옴) → 이전 월드 내림. 순서: 잠금(`GameState.IsTransitioning`) → 이전 월드 멈춤 →
+  불러오기 → 활성 씬 → 들어가기(날짜 차감·`RunState.Begin`·`BeginField`·세이브 삭제는 **불러오기 성공 뒤에만**) → 이전 월드 내림. 실패하면 화면·시간·보스 무대 값·이전 월드(다시 켜고 활성 씬)로 되돌리고 `done(false)`.
+  전환 중엔 시작·로비·타이틀·일시정지·재개·ESC·런 종료·히트스톱을 받지 않는다. `GameBoot`는 세이브만(월드 로드·`WorldScene` 삭제). `CombatDirector.ClearField`·`HidePlatforms` 삭제(전투 씬째 내려가 정리됨).
+  `LobbyWorld`는 켜질 때 스스로 준비(`OnEnable` → `EnterLobby`, 건물·캐릭터 자리는 처음 한 번 — 흐름이 화면 층을 부르지 않게), 입력은 로비·전환 아님일 때만. `20_Combat`에서 `LobbyWorld` 제거(검증: `None<LobbyWorld>`).
+  `StageSelectScreen.TryEnter(flow, s, entered)` — 성공한 뒤에만 닫고 실패면 공용 팝업. 테스트: `TestFlow`는 가짜 로더(`FakeWorldScenes`, `HoldNext`·`Release` 추가), `GameFlowTests` 실패 복구·새 원정 실패 시 세이브 유지·전환 중 잠금,
+  `GameBootTests`를 진짜 전환 기준으로 다시 씀(부팅=타이틀·월드 없음, 타이틀→로비→사냥→결과→재도전→로비에서 월드 하나·활성 씬, 전투를 나가면 런 오브젝트 사라짐, 실제 로더로 실패 복구, 전투 씬 구성은 사냥에 들어가서). 다음: 3-5(에디터에서 연 씬으로 바로 진입).
 - **2026-11-05 (23)** — **[나] 3-3: 씬 로더 계약 (`feature/lobby-scene`, PlayMode 454/454).** `Systems/WorldScenes` — `IWorldScenes`(불러오기·내리기·활성 씬·멈추기), 실제 구현 `SceneWorldScenes`
   (`sceneLoaded`로 받은 **그 Scene**을 핸들 번호에 묶음 — 재도전처럼 같은 이름 씬이 둘이어도 안 헷갈림, 멈출 때 켜져 있던 루트만 기억해 다시 켬, 빌드 목록에 없는 씬은 예외 없이 실패).
   테스트용 `FakeWorldScenes`(즉시 끝남·실패 지정). 아직 `GameFlow`에 안 이었다(3-4). `Systems/WorldScenesTests`(실제 씬: 같은 이름 둘·핸들별 내리기·활성 씬·멈춤 복구·없는 씬).

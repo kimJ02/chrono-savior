@@ -97,14 +97,18 @@ public class CombatDirectorTests
     public IEnumerator WithoutCombatScene_TitleAndLobbyWork_ButRunDoesNotStart()
     {
         var flow = new GameObject("TestGameFlow").AddComponent<GameFlow>();
+        flow.Scenes = new FakeWorldScenes(); // 씬 '불러오기'는 성공하지만 그 씬에 전투 담당이 없는 상황
         yield return null;
         Assert.AreEqual(GameScene.Title, GameState.Current);
 
         flow.EnterLobby();
         Assert.AreEqual(GameScene.Lobby, GameState.Current);
 
-        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("전투 씬"));
-        flow.StartRun(1, RunMode.Normal);
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("전투 담당"));
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        bool? entered = null;
+        flow.StartRun(1, RunMode.Normal, ok => entered = ok);
+        Assert.AreEqual(false, entered, "실패를 알려야 한다");
         Assert.AreEqual(GameScene.Lobby, GameState.Current, "전투 씬이 없는데 사냥으로 넘어갔다");
         Assert.AreEqual(0f, Time.timeScale);
     }

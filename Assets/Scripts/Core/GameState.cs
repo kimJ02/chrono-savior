@@ -34,6 +34,15 @@ namespace ChronoSavior.Core
         /// <summary>화면이 바뀔 때 1회. HUD/로비 UI가 구독해서 표시를 전환한다.</summary>
         public static event System.Action<GameScene> Changed;
 
+        /// <summary>
+        /// 화면 사이를 옮기는 중인지(월드 씬을 내리고 불러오는 동안, 2026-11-05 씬 분할 2차 3-4). 이동 중엔 입력·전환 요청을 받지 않는다 —
+        /// `Systems/GameFlow`만 바꾸고, 다른 씬의 입력(로비 걷기 등)이 이걸 본다(그쪽은 GameFlow를 모른다).
+        /// </summary>
+        public static bool IsTransitioning { get; private set; }
+
+        /// <summary>`GameFlow`만 부른다.</summary>
+        public static void SetTransitioning(bool transitioning) => IsTransitioning = transitioning;
+
         public static void Set(GameScene scene)
         {
             if (Current == scene) return;
@@ -52,6 +61,7 @@ namespace ChronoSavior.Core
         {
             Current = GameScene.Lobby;
             Previous = GameScene.Lobby;
+            IsTransitioning = false;
             Version++;
             Changed = null;
         }

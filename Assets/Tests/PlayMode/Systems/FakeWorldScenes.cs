@@ -18,14 +18,36 @@ namespace ChronoSavior.Tests.PlayMode
         /// <summary>참이면 다음 불러오기 하나를 실패시킨다.</summary>
         public bool FailNext;
 
+        /// <summary>참이면 다음 불러오기 하나를 끝내지 않고 붙잡아 둔다 — 전환 중 잠금을 볼 때. <see cref="Release"/>로 끝낸다.</summary>
+        public bool HoldNext;
+        WorldSceneOp held;
+        WorldHandle heldWorld;
+
+        /// <summary>참이면 다음 불러오기 하나가 예외를 던진다 — 전환이 예외에도 잠금을 풀고 되돌리는지.</summary>
+        public bool ThrowNext;
+
         public WorldSceneOp Load(string sceneName)
         {
+            if (ThrowNext) { ThrowNext = false; throw new System.InvalidOperationException("테스트가 던짐: " + sceneName); }
             if (FailNext) { FailNext = false; return WorldSceneOp.Failed("테스트가 실패시킴: " + sceneName); }
             Loaded.Add(sceneName);
-            return WorldSceneOp.Done(new WorldHandle(nextId++, sceneName));
+            var world = new WorldHandle(nextId++, sceneName);
+            if (HoldNext) { HoldNext = false; held = new WorldSceneOp(); heldWorld = world; return held; }
+            return WorldSceneOp.Done(world);
         }
 
-        public WorldSceneOp Unload(WorldHandle world) { Unloaded.Add(world); return WorldSceneOp.Done(world); }
+        /// <summary>붙잡아 둔 불러오기를 끝낸다(성공).</summary>
+        public void Release() { held?.Complete(heldWorld); held = null; }
+
+        /// <summary>참이면 다음 내리기 하나를 실패시킨다(기록하지 않는다 — 그 월드는 남아 있다).</summary>
+        public bool FailUnloadNext;
+
+        public WorldSceneOp Unload(WorldHandle world)
+        {
+            if (FailUnloadNext) { FailUnloadNext = false; return WorldSceneOp.Failed("테스트가 내리기를 실패시킴: " + world); }
+            Unloaded.Add(world);
+            return WorldSceneOp.Done(world);
+        }
         public void Activate(WorldHandle world) => Active = world;
         public void SetRunning(WorldHandle world, bool running) => Running.Add((world, running));
     }

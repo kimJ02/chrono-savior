@@ -219,14 +219,16 @@ namespace ChronoSavior.UI
 
         void Enter()
         {
-            if (TryEnter(Flow, selected)) open = false;
+            TryEnter(Flow, selected, () => open = false); // 전투 씬이 실제로 뜬 뒤에만 닫는다
         }
 
         /// <summary>
         /// 스테이지에 들어간다 — 잠김·멸망(0일)을 확인하고(안 되면 공용 팝업으로 알림) 사냥을 시작한다. 입장료는 없다(사용자 2026-10-25).
         /// 스테이지 선택의 "원정 떠나기"와 결과 화면의 "다시 원정"이 같이 쓴다. 들어가면 멸망까지 하루가 준다(`GameFlow.StartRun`).
+        /// 전투 씬 불러오기는 시간이 걸린다(2026-11-05 씬 분할 2차 3-4) — 들어가는 데 성공하면 <paramref name="entered"/>를 부르고,
+        /// 실패하면(이전 화면으로 되돌아온다) 공용 팝업으로 알린다. 돌려주는 값은 '요청을 받아들였는지'(전환 중이면 false).
         /// </summary>
-        public static bool TryEnter(GameFlow flow, int s)
+        public static bool TryEnter(GameFlow flow, int s, System.Action entered = null)
         {
             var p = ProfileService.Current;
             if (!p.IsRegionOpen(s)) { CommonPopup.Alert($"stage {s}", "이전 스테이지의 보스를 잡아야 열린다."); return false; }
@@ -236,8 +238,7 @@ namespace ChronoSavior.UI
                 return false;
             }
             if (flow == null) return false;
-            flow.StartRun(s, RunMode.Normal);
-            return true;
+            return flow.StartRun(s, RunMode.Normal, CommonPopup.AlertIfTransitionFails($"stage {s}", entered));
         }
     }
 }

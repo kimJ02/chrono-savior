@@ -83,7 +83,7 @@ namespace ChronoSavior.UI
                     else StartFresh();
                     break;
                 case 1:
-                    if (SaveService.HasSave) Flow?.EnterLobby();
+                    if (SaveService.HasSave) Flow?.EnterLobby(CommonPopup.AlertIfTransitionFails("불러오기"));
                     break;
                 case 2:
                     SettingsWindow.Open();
@@ -97,8 +97,8 @@ namespace ChronoSavior.UI
         /// <summary>세이브를 지우고 새 프로필로 로비에 들어간다 — 흐름은 `GameFlow.StartNewExpedition`이 맡는다(화면은 프로필을 직접 바꾸지 않는다).</summary>
         void StartFresh()
         {
-            Flow?.StartNewExpedition();
-            CharacterSelectScreen.Open(); // 새 원정은 캐릭터부터 고른다(캐릭터 선택창 뼈대의 뒤로가기/선택하기)
+            // 새 원정은 캐릭터부터 고른다(캐릭터 선택창 뼈대의 뒤로가기/선택하기) — 로비 씬이 실제로 뜬 뒤에만 연다.
+            Flow?.StartNewExpedition(CommonPopup.AlertIfTransitionFails("새 원정", CharacterSelectScreen.Open));
         }
 
         static void Quit()

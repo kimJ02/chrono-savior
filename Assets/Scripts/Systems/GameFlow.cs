@@ -1,5 +1,7 @@
+using System.Collections;
 using UnityEngine;
 using ChronoSavior.Core;
+using ChronoSavior.World;
 
 namespace ChronoSavior.Systems
 {
@@ -59,27 +61,208 @@ namespace ChronoSavior.Systems
             RunEvents.RunEndRequested -= EndRun;
         }
 
+        // ───────────────────────── 월드 씬 전환 (2026-11-05 씬 분할 2차 3-4) ─────────────────────────
+
+        /// <summary>로비 월드 씬(빌드 1번).</summary>
+        public const string LobbyScene = "10_Lobby";
+        /// <summary>전투 월드 씬(빌드 2번).</summary>
+        public const string CombatScene = "20_Combat";
+
+        /// <summary>
+        /// 월드 씬을 불러오고 내리는 일(`IWorldScenes`). 실제 게임은 `SceneWorldScenes`, 씬 없이 도는 테스트는 가짜 로더를 넣는다 —
+        /// 가짜 로더는 즉시 끝나서 전환이 그 자리에서 끝난다(아래 <see cref="Transition"/>은 끝난 작업을 기다리며 yield하지 않는다).
+        /// </summary>
+        public IWorldScenes Scenes { get; set; } = new SceneWorldScenes();
+
+        /// <summary>지금 떠 있는 월드 씬(로비 또는 전투) — 타이틀·부팅 직후엔 없음.</summary>
+        public WorldHandle CurrentWorld { get; private set; } = WorldHandle.None;
+
+        /// <summary>화면을 옮기는 중인지 — 그동안 시작·로비·타이틀·새 원정·일시정지·재개·종료 요청을 받지 않는다(<see cref="GameState.IsTransitioning"/>).</summary>
+        public bool IsTransitioning => GameState.IsTransitioning;
+
         void Start()
         {
             // 원본은 로비에서 시작하지만(`state.scene` 초기값 'lobby', :1466), 디자인에 타이틀
-            // 화면이 생겨서(Figma 35:2) 그쪽이 먼저다. 로비로는 타이틀 메뉴를 거쳐 들어간다.
+            // 화면이 생겨서(Figma 35:2) 그쪽이 먼저다. 로비로는 타이틀 메뉴를 거쳐 들어간다. 타이틀엔 월드가 없다.
             EnterTitle();
         }
 
         /// <summary>
-        /// 타이틀 화면으로. **원본에 없는 화면**이다(2026-09-16, Figma 적용).
-        /// 로비와 같은 정리를 한다 — 타이틀에서 "새 원정"을 고르면 바로 로비로 가므로
-        /// 필드에 지난 런의 잔해가 남아 있으면 안 된다.
+        /// 타이틀 화면으로. **원본에 없는 화면**이다(2026-09-16, Figma 적용). 떠 있는 월드를 내린다 — 타이틀엔 월드가 없다.
         /// </summary>
-        public void EnterTitle()
+        public bool EnterTitle(System.Action<bool> done = null) =>
+            BeginTransition(null, false, () => { GameState.Set(GameScene.Title); Time.timeScale = 0f; return true; }, done);
+
+        /// <summary>
+        /// 원본 `startRun(region, mode)`(project_test.html:4293). 전투 씬을 새로 불러와(재도전도 — 지금 전투 씬은 멈췄다가 새 씬이 뜨면 내린다)
+        /// **불러오기가 성공한 뒤에만** 날짜 차감 → 런 상태 → 필드 준비(<see cref="CombatDirector.BeginField"/>) → 사냥 화면 → 시간 흐름.
+        /// 실패하면 이전 화면·월드로 되돌리고 <paramref name="done"/>에 false를 준다. 받아들이지 않으면(전환 중) false를 돌려준다.
+        /// </summary>
+        /// <param name="spendDay">스테이지에 들어갈 때마다 멸망까지 하루가 준다(사용자 결정 2026-10-24) — 에디터 디버그 진입만 false.</param>
+        public bool StartRun(int region, RunMode mode, System.Action<bool> done = null, bool spendDay = true) =>
+            BeginTransition(CombatScene, false, () =>
+            {
+                var director = CombatDirector.Current;
+                if (director == null)
+                {
+                    Debug.LogError("[GameFlow] 전투 씬을 불러왔는데 전투 담당(CombatDirector)이 없다");
+                    return false;
+                }
+                var profile = ProfileService.Current;
+                int daysBefore = profile.doomDays;
+                try
+                {
+                    // 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(그건 이 함수를 안 거친다).
+                    if (spendDay && mode == RunMode.Normal) profile.SpendDay();
+                    RunState.Begin(region, mode);
+                    hitstopLeft = 0f;
+                    hitstopCooldown = 0f;
+                    director.BeginField(mode);
+                }
+                catch
+                {
+                    // 필드 준비가 예외로 실패하면 깎은 날짜를 돌려준다 — 전환이 이전 화면으로 되돌린다(들어가지 못한 사냥에 하루를 쓰지 않게).
+                    profile.doomDays = daysBefore;
+                    throw;
+                }
+                GameState.Set(GameScene.Run);
+                Time.timeScale = 1f;
+                return true;
+            }, done);
+
+        /// <summary>로비에서 기본 지역으로 바로 시작(임시 진입점 — 정식 지역 선택은 로비 스테이지 탭).</summary>
+        public bool StartRun() => StartRun(defaultRegion, RunMode.Normal);
+
+        /// <summary>원본 `toLobby()`(:4382) — 로비 씬을 불러오고 지금 월드(전투)를 내린다.</summary>
+        public bool EnterLobby(System.Action<bool> done = null) => EnterLobbyThen(null, done);
+
+        /// <summary>
+        /// 타이틀의 "새 원정" — 로비 씬을 **불러온 뒤에** 세이브를 지우고(새 프로필) 로비로(불러오기가 실패하면 진행을 잃지 않게).
+        /// 프로필 교체는 `SaveService`가, 화면 이동은 여기서 한다(예전엔 `TitleMenu`가 직접 했다).
+        /// </summary>
+        public bool StartNewExpedition(System.Action<bool> done = null) => EnterLobbyThen(SaveService.DeleteSave, done);
+
+        // 로비는 일반 무대 기준(가운데 자리·카메라 범위) — 로비 씬이 뜨며 준비하기 전에 바꾼다(normalArena). 실패하면 전환이 되돌린다.
+        bool EnterLobbyThen(System.Action beforeLobby, System.Action<bool> done) =>
+            BeginTransition(LobbyScene, true, () =>
+            {
+                beforeLobby?.Invoke();
+                GameState.Set(GameScene.Lobby);
+                Time.timeScale = 0f; // 로비는 시간이 멈춘 채(로비 걷기는 실제 시간) — 3단계에선 그대로(4단계에서 판단)
+                return true;
+            }, done);
+
+        /// <summary>전환을 시작한다 — 이미 옮기는 중이면 받지 않는다(false).</summary>
+        bool BeginTransition(string nextScene, bool normalArena, System.Func<bool> enter, System.Action<bool> done)
         {
-            ClearCombatField();
-            GameState.Set(GameScene.Title);
-            Time.timeScale = 0f;
+            if (IsTransitioning) return false;
+            StartCoroutine(Transition(nextScene, normalArena, enter, done));
+            return true;
+        }
+
+        /// <summary>
+        /// 화면 전환 — 잠금 → 이전 월드 멈춤 → 새 월드 불러오기 → 활성 씬 → 들어가기(<paramref name="enter"/>) → 이전 월드 내리기 → 잠금 해제.
+        /// 불러오기·들어가기가 실패하면 **바꾸기 전 상태**(게임 화면·시간·보스 무대 값·이전 월드와 활성 씬)로 되돌린다. 그래서 들어가기 전엔 아무것도 지우지 않는다.
+        /// 끝난 작업은 기다리지 않아서(yield 없음) 즉시 끝나는 로더면 전환 전체가 이 호출 안에서 끝난다.
+        /// </summary>
+        IEnumerator Transition(string nextScene, bool normalArena, System.Func<bool> enter, System.Action<bool> done)
+        {
+            GameState.SetTransitioning(true);
+            var old = CurrentWorld;
+            float timeScaleBefore = Time.timeScale;
+            bool bossArenaBefore = FieldLayout.IsBossArena;
+            string failure = null;
+            if (!old.IsNone) failure = Safe(() => Scenes.SetRunning(old, false), "이전 월드 멈추기");
+            if (normalArena) FieldLayout.SetBossArena(false);
+
+            var fresh = WorldHandle.None;
+            if (failure == null && nextScene != null)
+            {
+                WorldSceneOp load = null;
+                // 예외도 실패로 — 잠금이 풀리지 않거나 이전 월드가 멈춘 채 남지 않게(yield는 try 밖에서).
+                failure = Safe(() => load = Scenes.Load(nextScene), nextScene + " 불러오기");
+                if (failure == null)
+                {
+                    while (!load.IsDone) yield return null;
+                    if (load.Succeeded) { fresh = load.World; failure = Safe(() => Scenes.Activate(fresh), "새 월드 활성화"); }
+                    else failure = load.Error;
+                }
+            }
+            if (failure == null)
+            {
+                try { if (!enter()) failure = $"{nextScene ?? "타이틀"}에 들어가지 못했다"; }
+                catch (System.Exception e) { Debug.LogException(e); failure = $"{nextScene ?? "타이틀"}에 들어가다 예외: {e.Message}"; }
+            }
+
+            if (failure != null)
+            {
+                Debug.LogError("[GameFlow] 화면 전환 실패 — 이전 화면으로 되돌린다: " + failure);
+                if (!fresh.IsNone)
+                {
+                    // 새 월드부터 멈춘다 — 내리기가 실패해도 두 월드가 같이 켜져 있지 않게(전투 담당이 둘이 되지 않게).
+                    Safe(() => Scenes.SetRunning(fresh, false), "새 월드 멈추기");
+                    var drop = StartUnload(fresh);
+                    while (!drop.IsDone) yield return null;
+                    ReportUnload(fresh, drop);
+                }
+                // 값부터 되돌리고 이전 월드를 켠다 — 다시 켜질 때(OnEnable) 이전 무대 값을 보게.
+                Time.timeScale = timeScaleBefore;
+                FieldLayout.SetBossArena(bossArenaBefore);
+                if (!old.IsNone) Safe(() => { Scenes.Activate(old); Scenes.SetRunning(old, true); }, "이전 월드 되살리기");
+                GameState.SetTransitioning(false);
+                done?.Invoke(false);
+                yield break;
+            }
+
+            CurrentWorld = fresh;
+            // 예전 전환에서 못 내린 월드(꺼진 채 남은 것)가 있으면 이번에 다시 내려 본다 — 이번에 못 내린 건 다음 전환에.
+            var earlier = stranded.ToArray();
+            stranded.Clear();
+            foreach (var w in earlier)
+            {
+                var retry = StartUnload(w);
+                while (!retry.IsDone) yield return null;
+                ReportUnload(w, retry);
+            }
+            if (!old.IsNone)
+            {
+                var unload = StartUnload(old);
+                while (!unload.IsDone) yield return null;
+                ReportUnload(old, unload);
+            }
+            GameState.SetTransitioning(false);
+            done?.Invoke(true);
+        }
+
+        /// <summary>내리지 못해 꺼진 채 남은 월드 — 다음 전환이 성공할 때 다시 내려 본다.</summary>
+        readonly System.Collections.Generic.List<WorldHandle> stranded = new System.Collections.Generic.List<WorldHandle>();
+
+        /// <summary>그 일을 하고, 예외가 나면 실패 문구를 돌려준다(성공이면 null) — 전환 중 어디서 던져도 잠금이 풀리고 되돌리게.</summary>
+        static string Safe(System.Action action, string what)
+        {
+            try { action(); return null; }
+            catch (System.Exception e) { Debug.LogException(e); return $"{what} 중 예외: {e.Message}"; }
+        }
+
+        /// <summary>월드 내리기를 시작한다(예외는 실패로). 내리기가 실패해도 전환 자체는 되돌리지 않는다 — 그 월드는 꺼진 채 남고 <see cref="stranded"/>에 넣어 다음 전환에 다시 내린다.</summary>
+        /// <remarks>기다리는 건 부르는 쪽(<see cref="Transition"/>)이 직접 한다 — 코루틴 안에서 다른 IEnumerator를 yield하면 끝난 작업이어도 한 프레임을 쉬어서, 즉시 끝나는 로더의 전환이 그 자리에서 안 끝난다.</remarks>
+        WorldSceneOp StartUnload(WorldHandle world)
+        {
+            try { return Scenes.Unload(world); }
+            catch (System.Exception e) { return WorldSceneOp.Failed($"내리기 예외: {e.Message}"); }
+        }
+
+        void ReportUnload(WorldHandle world, WorldSceneOp op)
+        {
+            if (op.Succeeded) return;
+            Debug.LogError($"[GameFlow] 월드를 내리지 못했다(꺼진 채 남음, 다음 전환에 다시 시도): {world} — {op.Error}");
+            if (!stranded.Contains(world)) stranded.Add(world);
         }
 
         void Update()
         {
+            if (IsTransitioning) return; // 옮기는 중엔 ESC를 받지 않는다(일시정지 메뉴 '로비로' 전환 중 ESC → 재개 → 꺼진 월드에서 시간이 흐르던 구멍)
+
             // ⚠️ `timeScale = 0`이어도 `Update`는 계속 돈다 — 멈추는 건 `Time.deltaTime`과 물리다.
             // 그래서 일시정지 중에도 ESC를 읽을 수 있다.
             // 설정 창 같은 창이 떠 있으면 ESC는 창 몫이다(창 닫기) — 일시정지까지 같이 풀리지 않게(UiModal, 2026-10-24).
@@ -105,39 +288,10 @@ namespace ChronoSavior.Systems
             }
         }
 
-        /// <summary>
-        /// 원본 `startRun(region, mode)`(project_test.html:4293). 순서: 날짜·런 상태 → 전투 필드 준비(<see cref="CombatDirector.BeginField"/>) →
-        /// 사냥 화면 → 시간 흐름.
-        /// </summary>
-        public void StartRun(int region, RunMode mode)
-        {
-            var director = CombatDirector.Current;
-            if (director == null)
-            {
-                Debug.LogError("[GameFlow] 전투 씬(CombatDirector)이 없어 사냥을 시작할 수 없다");
-                return;
-            }
-
-            // 스테이지에 들어갈 때마다 멸망까지 하루가 준다(사용자 결정 2026-10-24, PlayerProfile.doomDays).
-            // 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(그건 이 함수를 안 거친다).
-            if (mode == RunMode.Normal) ProfileService.Current.SpendDay();
-            RunState.Begin(region, mode);
-            hitstopLeft = 0f;
-            hitstopCooldown = 0f;
-
-            director.BeginField(mode);
-
-            GameState.Set(GameScene.Run);
-            Time.timeScale = 1f;
-        }
-
-        /// <summary>로비에서 기본 지역으로 바로 시작(임시 진입점 — 정식 지역 선택은 로비 스테이지 탭).</summary>
-        public void StartRun() => StartRun(defaultRegion, RunMode.Normal);
-
         /// <summary>원본 `pauseRun()`(:4332) — 사냥 중에만, 그리고 이미 끝난 런에선 안 걸린다.</summary>
         public void Pause()
         {
-            if (RunState.Over || GameState.Current != GameScene.Run) return;
+            if (IsTransitioning || RunState.Over || GameState.Current != GameScene.Run) return;
             hitstopLeft = 0f; // 히트스톱 중에 멈추면 그게 timeScale을 다시 1로 되돌려버린다
             GameState.Set(GameScene.Pause);
             Time.timeScale = 0f;
@@ -146,7 +300,7 @@ namespace ChronoSavior.Systems
         /// <summary>원본 `resumeRun()`(:4346).</summary>
         public void Resume()
         {
-            if (GameState.Current != GameScene.Pause) return;
+            if (IsTransitioning || GameState.Current != GameScene.Pause) return;
             GameState.Set(GameScene.Run);
             Time.timeScale = 1f;
             hitstopLeft = 0f;
@@ -154,42 +308,16 @@ namespace ChronoSavior.Systems
 
         /// <summary>
         /// 원본 `endRun(reason)`(:4354). 이미 끝난 런은 두 번 끝나지 않는다(`if (run.over) return`).
-        /// 전투 쪽의 종료 사건(사망·시간 초과·보스 격파 뒤 지연)은 `RunEvents.RunEndRequested`로 여기 온다.
+        /// 전투 쪽의 종료 사건(사망·시간 초과·보스 격파 뒤 지연)은 `RunEvents.RunEndRequested`로 여기 온다. 옮기는 중엔 받지 않는다.
         /// </summary>
         public void EndRun(RunEndReason reason)
         {
-            if (RunState.Over) return;
+            if (IsTransitioning || RunState.Over) return;
             RunState.MarkOver();
             LastEndReason = reason;
             hitstopLeft = 0f; // 히트스톱 중에 멈추면 그게 timeScale을 다시 1로 되돌려버린다
             GameState.Set(GameScene.Result);
             Time.timeScale = 0f;
-        }
-
-        /// <summary>
-        /// 타이틀의 "새 원정" — 세이브를 지우고(새 프로필) 로비로. 프로필 교체는 `SaveService`가, 화면 이동은 여기서 한다
-        /// (2026-11-05 — 예전엔 `TitleMenu`가 직접 세이브를 지우고 프로필을 초기화했다).
-        /// </summary>
-        public void StartNewExpedition()
-        {
-            SaveService.DeleteSave();
-            EnterLobby();
-        }
-
-        /// <summary>원본 `toLobby()`(:4382).</summary>
-        public void EnterLobby()
-        {
-            ClearCombatField(); // 결과 화면을 거치지 않고 나가도 필드가 남지 않게
-            GameState.Set(GameScene.Lobby);
-            Time.timeScale = 0f;
-        }
-
-        /// <summary>
-        /// 전투 필드를 비운다. 전투 씬이 아직 없으면(부팅 첫 프레임 — 월드 씬은 `GameBoot`가 겹쳐 부르는 중) 비울 것도 없다.
-        /// </summary>
-        static void ClearCombatField()
-        {
-            if (CombatDirector.Current != null) CombatDirector.Current.ClearField();
         }
 
         /// <summary>
@@ -202,7 +330,7 @@ namespace ChronoSavior.Systems
         /// </summary>
         public void Hitstop(float duration)
         {
-            if (GameState.Current != GameScene.Run || RunState.Over) return;
+            if (IsTransitioning || GameState.Current != GameScene.Run || RunState.Over) return;
             // 쉬는 중이면 건너뛴다(HitstopGap) — 이미 멈춰 있는 중이거나 아주 긴 멈춤이면 예외.
             if (hitstopLeft <= 0f && hitstopCooldown > 0f && duration < HitstopGapBypass) return;
             hitstopLeft = Mathf.Max(hitstopLeft, duration); // 원본도 max로 겹친다

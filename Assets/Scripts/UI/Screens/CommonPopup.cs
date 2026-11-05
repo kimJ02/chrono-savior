@@ -47,6 +47,16 @@ namespace ChronoSavior.UI
             instance.Show(title, body, onOk, "확인", null, null, twoButtons: false);
         }
 
+        /// <summary>
+        /// 화면 전환(`GameFlow`)이 실패하면 알린다 — 전환 함수의 완료 콜백으로 넘긴다. 실패하면 흐름이 이전 화면으로 되돌려 놓았다(2026-11-05 씬 분할 2차 3-4).
+        /// 성공하면 <paramref name="onSuccess"/>.
+        /// </summary>
+        public static System.Action<bool> AlertIfTransitionFails(string title, System.Action onSuccess = null) => ok =>
+        {
+            if (ok) onSuccess?.Invoke();
+            else Alert(title, "화면을 불러오지 못했다.\n다시 시도해 줘.");
+        };
+
         protected override void Awake()
         {
             base.Awake();

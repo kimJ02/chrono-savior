@@ -90,13 +90,22 @@ namespace ChronoSavior.Systems
 
         public WorldSceneOp Unload(WorldHandle world)
         {
-            if (!scenes.TryGetValue(world.Id, out var scene) || !scene.isLoaded) return WorldSceneOp.Done(world); // 이미 없다
-            scenes.Remove(world.Id);
-            paused.Remove(world.Id);
+            if (!scenes.TryGetValue(world.Id, out var scene) || !scene.isLoaded)
+            {
+                scenes.Remove(world.Id); paused.Remove(world.Id);
+                return WorldSceneOp.Done(world); // 이미 없다
+            }
             var op = new WorldSceneOp();
-            var async = SceneManager.UnloadSceneAsync(scene);
+            AsyncOperation async;
+            try { async = SceneManager.UnloadSceneAsync(scene); }
+            catch (System.Exception e) { return WorldSceneOp.Failed($"{world} 내리기 예외: {e.Message}"); }
+            // 시작하지 못하면 기록을 그대로 둔다 — 그 씬은 남아 있으니 핸들로 다시 내리거나 켤 수 있게.
             if (async == null) return WorldSceneOp.Failed($"{world} 내리기를 시작하지 못했다");
-            async.completed += _ => op.Complete(world);
+            async.completed += _ =>
+            {
+                scenes.Remove(world.Id); paused.Remove(world.Id); // 실제로 내려간 뒤에 잊는다
+                op.Complete(world);
+            };
             return op;
         }
 

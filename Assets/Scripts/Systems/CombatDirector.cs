@@ -14,7 +14,7 @@ namespace ChronoSavior.Systems
     /// ## `GameFlow`와 나눈 기준 (`HANDOFF.md` "씬 분할 2차")
     /// - **`GameFlow`(상주 씬)**: 화면 흐름(타이틀·로비·사냥·일시정지·결과), `GameState.Set`, `Time.timeScale`(히트스톱 포함). 씬이 바뀌어도 남는 것.
     /// - **`CombatDirector`(전투 씬)**: 전투가 벌어지는 동안의 일. 전투 씬과 함께 생기고 사라진다.
-    /// - 연결은 한 방향만 직접 안다 — `GameFlow`가 <see cref="Current"/>로 이 컴포넌트를 부르고(<see cref="BeginField"/>·<see cref="ClearField"/>),
+    /// - 연결은 한 방향만 직접 안다 — `GameFlow`가 <see cref="Current"/>로 이 컴포넌트를 부르고(<see cref="BeginField"/>),
     ///   이쪽은 `GameFlow`를 모른 채 이벤트로만 알린다(런 종료 <see cref="RunEvents.RequestRunEnd"/>, 히트스톱 <see cref="CombatEvents.RequestHitstop"/>).
     ///   둘은 씬이 달라 직렬화로 이을 수 없다.
     ///
@@ -61,7 +61,7 @@ namespace ChronoSavior.Systems
         void OnEnable()
         {
             // 전투 담당은 하나뿐이어야 한다 — 둘이면 처치·사망 이벤트를 두 번 처리하고, 하나가 꺼질 때 등록이 엉킨다.
-            // 전투 씬이 두 번 겹쳐 뜨는 건 전환 버그라 조용히 넘기지 않는다(3단계 전환은 이전 전투 씬을 내린 뒤 다시 부른다).
+            // 전투 씬이 두 번 켜진 채 겹치는 건 전환 버그라 조용히 넘기지 않는다(재도전은 이전 전투 씬을 멈춰(꺼) 둔 뒤 새로 부른다 — `GameFlow` 전환).
             if (Current != null && Current != this)
             {
                 Debug.LogError($"[CombatDirector] 전투 담당이 둘이다 — {name}은 꺼 둔다(전투 씬이 두 번 떴는지 확인)");
@@ -77,6 +77,8 @@ namespace ChronoSavior.Systems
             CombatEvents.ShrineBuffGranted += CombatModifiers.GrantShrineBuff;
             RunEvents.BossPortalRequested += HandleBossPortalRequested;
             RunEvents.BossDefeated += HandleBossDefeated;
+            // 켜지면 카메라가 이 씬의 플레이어를 본다 — 꺼질 때(OnDisable) 놓으므로, 전환이 실패해 멈췄던 전투 씬이 다시 켜질 때도 되돌아온다.
+            if (player != null) CameraFollow2D.Track(player.transform);
         }
 
         void OnDisable()
@@ -182,18 +184,6 @@ namespace ChronoSavior.Systems
         }
 
         /// <summary>
-        /// 사냥을 벗어날 때(타이틀·로비) 필드를 비운다 — 결과 화면을 거치지 않고 나가도 지난 런이 남지 않게.
-        /// 로비는 일반 무대로 되돌린다(로비 건물이 일반 무대 위에 서 있다).
-        /// </summary>
-        public void ClearField()
-        {
-            ShowArena(false);
-            HidePlatforms(); // 로비(지금은 같은 씬)는 땅만 쓴다 — 씬 분할 2차 3-4에서 로비가 따로 서면 이 함수째 사라진다
-            RunTransient.DestroyAll();
-            bossDeadTimer = -1f;
-        }
-
-        /// <summary>
         /// 일반 필드 → 보스 필드. 무대·타이머·필드 정리·플레이어 위치를 한 번에 바꾼다. <see cref="BeginField"/>와 같은 순서다
         /// (무대를 먼저 바꿔야 `FieldBounds.MaxX`가 갱신되고 그 뒤 좌표 계산이 맞는다). **원본에 없는 전환**(사용자 지시 2026-09-16).
         /// 실행 코드에선 포털 요청(<see cref="HandleBossPortalRequested"/>, 해금 확인 뒤)만 부른다 — 공개인 건 테스트가 해금 없이 보스 필드를 세우려고.
@@ -221,12 +211,6 @@ namespace ChronoSavior.Systems
             FieldLayout.SetBossArena(boss);
             if (normalPlatforms != null) normalPlatforms.gameObject.SetActive(!boss);
             if (bossPlatforms != null) bossPlatforms.gameObject.SetActive(boss);
-        }
-
-        void HidePlatforms()
-        {
-            if (normalPlatforms != null) normalPlatforms.gameObject.SetActive(false);
-            if (bossPlatforms != null) bossPlatforms.gameObject.SetActive(false);
         }
 
         // ───────────────────────── 전투 사건 ─────────────────────────

@@ -147,8 +147,7 @@ namespace ChronoSavior.Editor
                     problems.Add("StageVisuals.PlatformSets가 이 씬의 발판 세트 전부가 아니다");
                 if (visuals.Portal != portal) problems.Add("StageVisuals.Portal이 이 씬의 BossPortal이 아니다");
             }
-            var lobbyWorld = One<LobbyWorld>(combat, problems);
-            if (lobbyWorld != null && lobbyWorld.Player != playerTf) problems.Add("LobbyWorld.Player가 이 씬의 Player가 아니다 — 로비에서 못 걷는다");
+            None<LobbyWorld>(combat, problems); // 로비는 자기 씬(10_Lobby)에만 — 2026-11-05 씬 분할 2차 3-4
             var sets = All<PlatformSet>(combat);
             if (director != null && (director.NormalPlatforms == null || director.NormalPlatforms.bossArena || !sets.Contains(director.NormalPlatforms)))
                 problems.Add("CombatDirector.NormalPlatforms가 이 씬의 일반 무대 발판 세트가 아니다");

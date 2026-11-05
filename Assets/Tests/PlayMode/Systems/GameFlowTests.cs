@@ -261,20 +261,175 @@ public class GameFlowTests
 
     // ────────────────────────── 로비 복귀 ──────────────────────────
 
-    /// <summary>원본 `toLobby()`(:4382) — 필드를 비우고 로비로. 시간은 멈춘 채로 둔다.</summary>
+    /// <summary>
+    /// 원본 `toLobby()`(:4382) — 로비로. 시간은 멈춘 채로 둔다. 로비 씬을 불러오고 전투 씬을 내린다.
+    /// (필드가 비는 건 전투 씬째 내려가기 때문 — 진짜 씬으로 `GameBootTests`가 본다.)
+    /// </summary>
     [UnityTest]
-    public IEnumerator EnterLobby_ClearsFieldAndFreezes()
+    public IEnumerator EnterLobby_LoadsLobbyUnloadsCombatAndFreezes()
     {
         var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
         yield return null;
         rc.StartRun(1, RunMode.Normal);
-        NewTransient();
+        var combat = rc.CurrentWorld;
+        Assert.AreEqual(GameFlow.CombatScene, combat.SceneName);
 
-        rc.EnterLobby();
+        bool? entered = null;
+        rc.EnterLobby(ok => entered = ok);
 
+        Assert.AreEqual(true, entered);
         Assert.AreEqual(GameScene.Lobby, GameState.Current);
         Assert.AreEqual(0f, Time.timeScale);
-        Assert.AreEqual(0, RunTransient.ActiveCount, "로비로 나왔는데 필드에 오브젝트가 남았다");
+        Assert.AreEqual(GameFlow.LobbyScene, rc.CurrentWorld.SceneName);
+        Assert.AreEqual(rc.CurrentWorld.Id, scenes.Active.Id, "새 월드가 활성 씬");
+        Assert.IsTrue(scenes.Unloaded.Exists(w => w.Id == combat.Id), "전투 씬을 내린다");
+        Assert.IsFalse(rc.IsTransitioning);
+    }
+
+    // ────────────────────────── 화면 전환 (2026-11-05 씬 분할 2차 3-4) ──────────────────────────
+
+    /// <summary>불러오기가 실패하면 바꾸기 전 화면·시간·월드로 되돌린다 — 날짜도 안 줄고, 이전 월드는 다시 켜지고 활성 씬으로.</summary>
+    [UnityTest]
+    public IEnumerator FailedLoad_RestoresPreviousScreenAndWorld()
+    {
+        var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
+        yield return null;
+        rc.EnterLobby();
+        var lobby = rc.CurrentWorld;
+        int daysBefore = ProfileService.Current.doomDays;
+
+        scenes.FailNext = true;
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        bool? entered = null;
+        Assert.IsTrue(rc.StartRun(1, RunMode.Normal, ok => entered = ok), "요청은 받아들인다");
+
+        Assert.AreEqual(false, entered);
+        Assert.AreEqual(GameScene.Lobby, GameState.Current);
+        Assert.AreEqual(0f, Time.timeScale);
+        Assert.AreEqual(daysBefore, ProfileService.Current.doomDays, "들어가지 못했는데 날짜가 줄었다");
+        Assert.AreEqual(lobby.Id, rc.CurrentWorld.Id);
+        Assert.AreEqual(lobby.Id, scenes.Active.Id, "이전 월드가 다시 활성 씬");
+        var last = scenes.Running[scenes.Running.Count - 1];
+        Assert.IsTrue(last.world.Id == lobby.Id && last.running, "이전 월드를 다시 켠다");
+        Assert.IsFalse(scenes.Unloaded.Exists(w => w.Id == lobby.Id), "이전 월드를 내리지 않는다");
+        Assert.IsFalse(rc.IsTransitioning);
+    }
+
+    /// <summary>불러오기가 예외를 던져도 실패로 처리한다 — 잠금이 풀리고, 이전 화면·월드로 돌아온다(Codex 3-4 리뷰).</summary>
+    [UnityTest]
+    public IEnumerator LoaderException_IsAFailure_AndReleasesTheLock()
+    {
+        var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
+        yield return null;
+        rc.EnterLobby();
+        var lobby = rc.CurrentWorld;
+
+        scenes.ThrowNext = true;
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("InvalidOperationException"));
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        bool? entered = null;
+        rc.StartRun(1, RunMode.Normal, ok => entered = ok);
+
+        Assert.AreEqual(false, entered);
+        Assert.IsFalse(rc.IsTransitioning, "예외 뒤에도 잠금이 풀린다");
+        Assert.AreEqual(GameScene.Lobby, GameState.Current);
+        Assert.AreEqual(lobby.Id, rc.CurrentWorld.Id);
+        Assert.AreEqual(lobby.Id, scenes.Active.Id);
+    }
+
+    /// <summary>옛 월드를 못 내려도 새 화면은 그대로이고, 그 월드는 다음 전환에 다시 내린다(꺼진 채 계속 쌓이지 않게, Codex 3-4 재리뷰).</summary>
+    [UnityTest]
+    public IEnumerator FailedUnload_IsRetriedOnTheNextTransition()
+    {
+        var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
+        yield return null;
+        rc.EnterLobby();
+        var lobby = rc.CurrentWorld;
+
+        scenes.FailUnloadNext = true;
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("내리지 못했다"));
+        bool? entered = null;
+        rc.StartRun(1, RunMode.Normal, ok => entered = ok);
+        Assert.AreEqual(true, entered, "새 화면은 떠 있다");
+        Assert.AreEqual(GameScene.Run, GameState.Current);
+        Assert.IsFalse(scenes.Unloaded.Exists(w => w.Id == lobby.Id));
+
+        rc.EnterLobby();
+        Assert.IsTrue(scenes.Unloaded.Exists(w => w.Id == lobby.Id), "남은 로비 월드를 다음 전환에 내린다");
+    }
+
+    /// <summary>새 월드에 들어가지 못하면 그 월드부터 멈춘다 — 내리기가 늦거나 실패해도 두 월드가 같이 켜져 있지 않게.</summary>
+    [UnityTest]
+    public IEnumerator FailedEnter_StopsTheFreshWorldBeforeRestoringTheOld()
+    {
+        var rc = new GameObject("TestGameFlow").AddComponent<GameFlow>(); // 전투 담당 없음 → 들어가기 실패
+        var scenes = new FakeWorldScenes();
+        rc.Scenes = scenes;
+        yield return null;
+        rc.EnterLobby();
+        var lobby = rc.CurrentWorld;
+
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("전투 담당"));
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        rc.StartRun(1, RunMode.Normal);
+
+        int stopFresh = scenes.Running.FindIndex(r => r.world.SceneName == GameFlow.CombatScene && !r.running);
+        int resumeOld = scenes.Running.FindLastIndex(r => r.world.Id == lobby.Id && r.running);
+        Assert.GreaterOrEqual(stopFresh, 0, "새 월드를 멈춘다");
+        Assert.Greater(resumeOld, stopFresh, "새 월드를 멈춘 뒤에 이전 월드를 켠다");
+    }
+
+    /// <summary>"새 원정"은 로비 씬이 뜬 뒤에만 세이브를 지운다 — 불러오기가 실패하면 진행이 그대로 남는다.</summary>
+    [UnityTest]
+    public IEnumerator NewExpedition_FailedLoad_KeepsSave()
+    {
+        var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
+        yield return null;
+        ProfileService.Current.gold = 123;
+        SaveService.Save();
+        Assert.IsTrue(SaveService.HasSave);
+
+        scenes.FailNext = true;
+        LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("화면 전환 실패"));
+        rc.StartNewExpedition();
+
+        Assert.IsTrue(SaveService.HasSave, "실패했는데 세이브가 지워졌다");
+        Assert.AreEqual(123, ProfileService.Current.gold);
+        Assert.AreEqual(GameScene.Title, GameState.Current);
+    }
+
+    /// <summary>옮기는 중엔 다른 전환·일시정지·종료 요청을 받지 않는다 — 끝나면 다시 받는다.</summary>
+    [UnityTest]
+    public IEnumerator WhileTransitioning_OtherRequestsAreRefused()
+    {
+        var rc = NewController();
+        var scenes = (FakeWorldScenes)rc.Scenes;
+        yield return null;
+        rc.StartRun(1, RunMode.Normal);
+        Assert.AreEqual(GameScene.Run, GameState.Current);
+
+        scenes.HoldNext = true;
+        Assert.IsTrue(rc.EnterLobby());
+        Assert.IsTrue(rc.IsTransitioning);
+        Assert.IsTrue(GameState.IsTransitioning);
+
+        Assert.IsFalse(rc.StartRun(1, RunMode.Normal), "전환 중 사냥 시작을 받았다");
+        Assert.IsFalse(rc.EnterTitle(), "전환 중 타이틀을 받았다");
+        rc.Pause();
+        Assert.AreEqual(GameScene.Run, GameState.Current, "전환 중 일시정지가 걸렸다");
+        rc.EndRun(RunEndReason.Dead);
+        Assert.IsFalse(RunState.Over, "전환 중 런 종료를 받았다");
+
+        scenes.Release();
+        yield return null; // 전환 코루틴이 끝난 불러오기를 본다
+        Assert.IsFalse(rc.IsTransitioning);
+        Assert.AreEqual(GameScene.Lobby, GameState.Current);
+        Assert.IsTrue(rc.StartRun(1, RunMode.Normal), "전환이 끝나면 다시 받는다");
     }
 
     /// <summary>

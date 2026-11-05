@@ -126,6 +126,6 @@ namespace ChronoSavior.UI
 
         void Retry() => StageSelectScreen.TryEnter(Flow, RunState.Region);
 
-        void ToLobby() => Flow?.EnterLobby();
+        void ToLobby() => Flow?.EnterLobby(CommonPopup.AlertIfTransitionFails("로비"));
     }
 }
