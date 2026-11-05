@@ -13,7 +13,7 @@
 |---|---|---|
 | 0 | 규칙 정하기(아래) | ✅ 합의 |
 | 1 | 옛 IMGUI 화면 제거(`TitleScreen`·`LobbyScreen`·`GameHud`·`ResultScreen`·`RegressionWindow`·`UiTheme`·`UiTextures`·`Sprites/UI/`·`BuildUiTextures`) | ✅ 씬 분할 1차에 포함 |
-| 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 씬 원본과 어긋나던 2곳 ✅(2차 전 보완) / 목록화 할 일 |
+| 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | 씬 원본과 어긋나던 2곳 ✅(2차 전 보완) / **진행 중**(아래 '정리 순서 2') |
 | 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector·씬 전환) 단계 0~4 전부 ✅(2026-11-05) | ✅ 완료 |
 | 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 117곳, UI의 월드 탐색) | 할 일 |
 | 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
@@ -205,6 +205,24 @@
    2. ✅ 정리 — 호출부 없는 `GameFlow.StartRun()`(인자 없음) 삭제, `UI/README.md`·주석의 옛 이름(`RunController`), `LobbyWorld.OnDestroy`의 중복 파괴.
    3. ✅ UI 캡처 도구 첫 장(전투 HUD 1080)만 UI가 밀려 찍히는 원인 확인·수정(에디터 도구만) — 씬을 열 때 PixelPerfectCamera가 잘라 둔 Viewport Rect가 첫 렌더에 남았다 → 렌더 전 `cam.rect = (0,0,1,1)`.
    4. ✅ 전체 회귀(PlayMode 473/473·씬 검증·UI 캡처 32장·스테이지 3장 눈 확인) → Codex 종합 리뷰 통과 → 사용자 확인 후 `main`.
+
+## 정리 순서 2 — 오브젝트 생성 책임 (2026-11-05 Codex와 합의, 진행 중)
+
+기본은 **씬 배치**(씬이 원본)와 **프리팹**(재사용되는 구성). 코드로 짓는 담당과 이유는 `Tests/PlayMode/CreationOwnershipTests`의 목록이 **유일한 원본**이다
+(새 파일이 `AddComponent`·`new GameObject`·`Instantiate`를 쓰면 목록에 분류·이유를 적어야 통과 — 개수는 세지 않고 새 담당이 생기는 것을 막는다). 에디터 도구·테스트의 생성은 정책 밖.
+
+분류: **A** 실행 중 생기는 전투 물체(투사체 3종·구슬·드론·포탑·장판 2) / **B** 몹 조립(기본 프리팹 + 타입 행동 `AddComponent` + `RefreshTypeBehaviour`) /
+**C** 씬에 놓인 오브젝트가 스스로 부품을 붙임(`MageAttack`→`MageChargeFlash`, `PlayerAttack`→`LineRenderer`+`Shader.Find`, `HitSound`→`AudioSource`+`Resources.Load`) /
+**D** 그림만 있는 효과·풀(판정 없음) / **E** UI 짓기(Figma 좌표 — 화면별 프리팹을 두면 좌표가 두 곳) / **F** 크기 입력으로 그림 깔기(`StageVisuals`). D·E·F는 정당한 코드 생성(이유만 기록).
+
+커밋 순서(Codex 합의):
+0. 목록·정책 테스트(`CreationOwnershipTests`).
+1. **C → 씬 배치**: 부품은 씬(20_Combat Player·00_Persistent)에 미리 놓고 Awake는 가져오기+없으면 오류. 머티리얼·소리는 직렬화 참조. 로비 `CameraAnchor`도 10_Lobby에 배치(고정 구성).
+2. **B 몹 구성**: 타입별 고정 행동이 다르면 `EnemyData`가 프리팹(변형)을 가리키게 — `Instantiate` 뒤 `AddComponent` + `RefreshTypeBehaviour()` 순서 의존을 없앤다.
+   엘리트처럼 스폰 때 정해지는 선택 부품은 생성 담당이 붙이는 예외. 변형 수가 과하면 기본 프리팹 유지 + 초기화를 한 절차로 묶기.
+3. **A 프리팹화**(묶음별 커밋 — 투사체 / 플레이어 생성물 / 적 생성물): 반복 구성(본체·그림 자식·판정·리지드바디)은 프리팹, **생성 담당(무기·스포너)이 직렬화 참조로 들고 생성 함수에 넘긴다**
+   (정적 `Spawn`이 프리팹을 전역에서 찾지 않게). 장판 둘은 에디터에서 조정할 그림·판정 구성이 있으면 프리팹, 아니면 코드 유지+이유. 풀링·범용 투사체 틀은 이번에 안 넣는다.
+4. D·E·F 목록 확정·통합 검증.
 
 ## 성능(나중에) — 구조 정리 뒤에 본다
 

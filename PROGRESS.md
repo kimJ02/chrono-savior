@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-05 (33)** — **[나] 정리 순서 2(생성 책임) 시작 — 2-0 목록·정책 테스트 (`feature/creation-ownership`).** 실행 코드의 `AddComponent`·`new GameObject`·`Instantiate`를 전수 조사(34파일)해
+  A~F로 분류, Codex와 진행 합의(`HANDOFF.md` '정리 순서 2'). `Tests/PlayMode/CreationOwnershipTests` — 생성 담당 목록(분류·이유)이 유일한 원본, 목록에 없는 새 담당·더는 안 만드는 담당 둘 다 실패.
+  다음: 2-1 씬에 놓인 오브젝트가 스스로 붙이던 부품(`MageChargeFlash`·`LineRenderer`·`AudioSource`·로비 `CameraAnchor`)을 씬 배치로.
 - **2026-11-05 (32)** — **[나] 씬 분할 2차 4단계(마감) 완료 — 전체 회귀·Codex 종합 리뷰 '통과 — 병합 가능'** (씬 검증 통과, PlayMode 473/473, UI 캡처 32장·스테이지 3장 눈 확인, 진짜 세이브 해시 그대로).
   `HANDOFF.md` 씬 분할 ✅·'4단계로 미룸' 문구 정리, `CLAUDE.md` 진행 상태 갱신.
 - **2026-11-05 (31)** — **[나] 4-3: 캡처 도구 첫 장 잘림 수정 (`feature/scene-split-finish`, 에디터 도구만).** 원인: 씬을 열 때 PixelPerfectCamera가 배치 창 비율에 맞춰 카메라 Viewport Rect를 잘라 두어
