@@ -62,7 +62,10 @@ namespace ChronoSavior.Core
         public static int Combo { get; private set; }
         /// <summary>콤보가 끊기기까지 남은 시간. 원본 `combo.t`.</summary>
         public static float ComboTimeLeft { get; private set; }
-        /// <summary>이번 런 최고 콤보(결과 화면·업적용). 원본 `meta.stats.maxCombo`(`:1623`).</summary>
+        /// <summary>
+        /// **이번 원정**의 최고 콤보 — 결과 화면 '원정 통계'(Figma가 추가한 통계 — 원본 결과 화면엔 콤보 표시가 없다). 원정마다 <see cref="ResetForRun"/>이 지운다(2026-11-06 —
+        /// 예전엔 테스트용 `Reset`만 지워서 결과 화면에 그 세션 전체의 최고가 보였다). 업적용 **평생** 최고는 프로필 `stats.maxCombo`(원본 `meta.stats.maxCombo` :1623)가 따로 쌓는다.
+        /// </summary>
         public static int MaxCombo { get; private set; }
 
         /// <summary>연쇄 처치 카운트. 원본 `run.chainN`.</summary>
@@ -211,11 +214,12 @@ namespace ChronoSavior.Core
 
         /// <summary>
         /// 새 런 시작 시. 원본 `startRun`이 `combo.n = 0`·`run.chainN = 0`으로 되돌린다(`:4307`·`:4319`).
-        /// 살기는 <see cref="RunState.Begin"/>이 이미 0으로 만든다.
+        /// 살기는 <see cref="RunState.Begin"/>이 이미 0으로 만든다. 이번 원정 최고 콤보도 지운다(평생 최고는 프로필에 남는다).
         /// </summary>
         public static void ResetForRun()
         {
             Combo = 0;
+            MaxCombo = 0;
             ComboTimeLeft = 0f;
             ChainKills = 0;
             chainTimeLeft = 0f;
@@ -223,11 +227,7 @@ namespace ChronoSavior.Core
             ShrineActive = false;
         }
 
-        /// <summary>테스트 격리용 — 최고 콤보까지 전부 지운다(정적 상태 오염 방지).</summary>
-        public static void Reset()
-        {
-            ResetForRun();
-            MaxCombo = 0;
-        }
+        /// <summary>테스트 격리용(정적 상태 오염 방지) — 게임에선 <see cref="ResetForRun"/>.</summary>
+        public static void Reset() => ResetForRun();
     }
 }

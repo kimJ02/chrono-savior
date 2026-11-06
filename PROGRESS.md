@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (55)** — **[나] 4-1: 결과 화면 '최대 콤보'를 원정마다 (`feature/state-ownership`, PlayMode 474/474).** `CombatModifiers.MaxCombo`를 `ResetForRun`이 지운다(예전엔 테스트용 `Reset`만 지워 결과 화면에 그 세션 전체 최고가 보였다).
+  Figma가 추가한 '원정 통계'의 의미를 바로잡은 것(원본 결과 화면엔 콤보 표시 없음). 업적용 평생 최고는 프로필 `stats.maxCombo` 그대로. `CombatModifierTests.MaxCombo_IsPerExpedition_ButProfileKeepsTheLifetimeBest`.
 - **2026-11-06 (54)** — **[나] 정리 순서 4(상태 소유권) 시작 — 4-0 상태 표 (`feature/state-ownership`, 문서만).** 실행 중 바뀌는 정적 상태를 전수 조사해 `docs/state-ownership.md`(분류·static·소유자·변경 요청자·수명·읽기·검증).
   Codex 합의 계획(`HANDOFF.md`): 상태가 자기 변경을 책임지고 사건 쪽이 의미 있는 메서드를 부른다(한 관리자에 몰지 않음). 찾은 것: 결과 화면 '최대 콤보'가 원정마다 안 지워짐, `RunProgress.TotalKills` 읽는 곳 없음, `FieldBounds` public 가변 필드, 프로필 직접 대입 몇 곳.
 - **2026-11-06 (53)** — **[나] 정리 순서 3.5(에셋 교체 경계) 완료 — Codex xhigh 종합 리뷰 '통과 — 병합 가능'**(PlayMode 473/473, 씬 검증 통과, 기준 캡처 동일, 진짜 세이브 해시 그대로). `HANDOFF.md` 3.5 ✅, `CLAUDE.md`·지금 상태 갱신.

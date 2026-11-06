@@ -65,6 +65,24 @@ public class CombatModifierTests
         Assert.AreEqual(5, CombatModifiers.MaxCombo);
     }
 
+    /// <summary>
+    /// 최고 콤보는 **이번 원정** 것이다 — 새 원정을 시작하면 0부터(결과 화면 '원정 통계', 2026-11-06 — 예전엔 세션 전체 최고가 보였다).
+    /// 업적용 평생 최고는 프로필 `stats.maxCombo`에 남는다(`AchievementTests.MaxCombo_IsRecordedOnProfile`).
+    /// </summary>
+    [Test]
+    public void MaxCombo_IsPerExpedition_ButProfileKeepsTheLifetimeBest()
+    {
+        ProfileService.Reset(); // 이 테스트는 프로필 통계도 본다(다른 테스트가 쌓은 값 없이)
+        for (int i = 0; i < 7; i++) CombatModifiers.AddCombo();
+        Assert.AreEqual(7, CombatModifiers.MaxCombo);
+
+        CombatModifiers.ResetForRun(); // 새 원정
+        Assert.AreEqual(0, CombatModifiers.MaxCombo, "새 원정인데 지난 원정 최고 콤보가 남았다");
+        for (int i = 0; i < 3; i++) CombatModifiers.AddCombo();
+        Assert.AreEqual(3, CombatModifiers.MaxCombo, "결과 화면엔 이번 원정 최고(3)가 보여야 한다");
+        Assert.AreEqual(7, ProfileService.Current.stats.maxCombo, "평생 최고는 프로필에 그대로");
+    }
+
     // ────────────────────────── 살기 ──────────────────────────
 
     /// <summary>
