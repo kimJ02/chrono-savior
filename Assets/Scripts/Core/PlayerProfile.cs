@@ -99,6 +99,14 @@ namespace ChronoSavior.Core
 
         /// <summary>달성한 업적 id. 원본 `meta.achieved`(project_test.html:1150).</summary>
         public List<string> achieved = new List<string>();
+
+        /// <summary>업적을 달성으로 기록한다(`Achievements.CheckNew`가 조건을 본 뒤). 이미 달성했으면 아무것도 안 하고 false.</summary>
+        public bool TryUnlockAchievement(string id)
+        {
+            if (achieved.Contains(id)) return false;
+            achieved.Add(id);
+            return true;
+        }
         /// <summary>지금까지 회귀한 횟수. 원본 `meta.regressions` — 회귀 장벽 계산의 기준이다.</summary>
         public int regressions = 0;
 

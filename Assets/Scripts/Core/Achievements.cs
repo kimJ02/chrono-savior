@@ -127,8 +127,7 @@ namespace ChronoSavior.Core
             {
                 if (p.achieved.Contains(a.id)) continue;
                 if (!a.Check(p)) continue;
-                p.achieved.Add(a.id);
-                fresh.Add(a);
+                if (p.TryUnlockAchievement(a.id)) fresh.Add(a);
             }
             return fresh;
         }

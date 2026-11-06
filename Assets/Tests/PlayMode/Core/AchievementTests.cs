@@ -67,6 +67,16 @@ public class AchievementTests
         Assert.AreEqual(5000, p.stats.goldEarned);
     }
 
+    /// <summary>업적 기록은 한 번만 — 이미 달성한 id는 다시 넣지 않는다(2026-11-06 4단계, `PlayerProfile.TryUnlockAchievement`).</summary>
+    [Test]
+    public void TryUnlockAchievement_RecordsOnce()
+    {
+        var p = ProfileService.Current;
+        Assert.IsTrue(p.TryUnlockAchievement("kill1"));
+        Assert.IsFalse(p.TryUnlockAchievement("kill1"), "이미 달성한 업적을 또 기록했다");
+        Assert.AreEqual(1, p.achieved.FindAll(id => id == "kill1").Count);
+    }
+
     /// <summary>
     /// 전투 사건이 세는 통계 — 보스 격파는 통계와 정복을 같이, 성소 파괴는 통계만(2026-11-06 4-4, 원본 `:4285`·`:1808`).
     /// 정복만 표시하는 `MarkBossCleared`는 통계를 안 건드린다(테스트 준비용).

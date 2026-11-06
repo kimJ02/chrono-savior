@@ -400,6 +400,7 @@ public class OriginalFidelityTests
             ("RecordEnemyKill",            "PlayerProfile.cs"),    // EnemySpawner
             ("RecordCombo",                "PlayerProfile.cs"),    // CombatModifiers.AddCombo
             ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
+            ("TryUnlockAchievement",       "PlayerProfile.cs"),    // Achievements.CheckNew
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
         };
