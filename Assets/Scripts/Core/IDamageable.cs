@@ -42,7 +42,9 @@ namespace ChronoSavior.Core
         /// <param name="knockbackSpeed">넉백 속도. 0을 넘기면 넉백이 없다(원본 `kb: 0` — 화상 틱·중력 틱 등).</param>
         /// <param name="hitstop">맞힌 순간 멈춤(초) — 원본 `dealDamage`의 `hitstop`/`noHitstop`(:1683). 공격마다 다르다:
         /// 기본 <see cref="HitFeel.HitstopHit"/>, 스킬 <see cref="HitFeel.HitstopSkill"/>, 없음 <see cref="HitFeel.HitstopNone"/>(2026-10-24).</param>
-        /// <returns>실제로 준 피해(원본 `dealDamage`의 반환값 — 대상 배수·반올림 뒤, 못 줬으면 0). 흡혈처럼 '준 만큼'을 쓰는 쪽이 받는다(2026-11-07).</returns>
+        /// <returns>실제로 준 피해(원본 `dealDamage`의 반환값 — 대상 배수·반올림 뒤, 못 줬으면 0). 흡혈처럼 '준 만큼'을 쓰는 쪽이 받는다(2026-11-07).
+        /// **이 경로로 피해를 받는 건 적(`Enemies/EnemyHealth`)뿐이고 그쪽이 직접 구현한다** — 공격은 `Enemy` 태그로 대상을 고른다.
+        /// 아래 기본 구현(요청량을 그대로 돌려줌)은 피해를 깎거나 거부하지 않는 구현체용이다 — 깎거나 거부한다면 이 메서드를 직접 구현할 것.</returns>
         float TakeDamageWithKnockback(float amount, GameObject source, float knockbackDirSign, float knockbackSpeed,
                                       float hitstop = HitFeel.HitstopHit)
         {

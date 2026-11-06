@@ -52,6 +52,7 @@ namespace ChronoSavior.Combat
         /// `critChance`를 생략하면 <see cref="BaseCritChance"/>(골드 강화 미적용 기본값)를 쓴다 —
         /// 스탯이 있는 호출자(`MageProjectile` 등)는 `Core.PlayerStatCalculator.ComputeCritChance()`를
         /// 넘겨서 강화가 반영되게 한다.
+        /// **반올림 전 값**이다 — 굴린 피해는 적(`Enemy` 태그, `EnemyHealth`)만 받고, 그쪽이 대상 배수를 곱한 뒤 `max(1, round)`를 한 번 한다(원본 `:1664`).
         /// </summary>
         public static float Roll(float baseDamage, float critChance, out bool isCrit)
         {

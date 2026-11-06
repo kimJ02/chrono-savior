@@ -61,14 +61,27 @@ public class TestSaveSandboxTests
         CollectionAssert.IsEmpty(outside, $"이 파일들은 {ns} 밖이라 세이브 안전장치가 안 걸린다");
     }
 
-    /// <summary>파일의 namespace 선언이 전부 <paramref name="ns"/>이고, 그 첫 선언보다 앞에 형식 선언이 없는지(주석·문자열은 뺀 코드로).</summary>
+    /// <summary>
+    /// 파일의 namespace 선언이 전부 <paramref name="ns"/>이고, **모든 형식 선언이 그 중괄호 안에** 있는지(주석·문자열은 뺀 코드로 —
+    /// 네임스페이스 앞이든 닫힌 뒤든 밖에 선언된 형식은 안전장치가 안 걸린다).
+    /// </summary>
     static bool AllTypesInside(string code, string ns)
     {
-        var decls = Regex.Matches(code, @"\bnamespace\s+([\w.]+)");
+        var decls = Regex.Matches(code, @"\bnamespace\s+([\w.]+)\s*\{");
         if (decls.Count == 0) return false;
         if (decls.Cast<Match>().Any(m => m.Groups[1].Value != ns)) return false;
-        string head = code.Substring(0, decls[0].Index);
-        return !Regex.IsMatch(head, @"\b(class|struct|interface|enum|record)\s+\w+");
+        // 네임스페이스 중괄호가 덮는 구간
+        var inside = new bool[code.Length];
+        foreach (Match m in decls)
+        {
+            int open = m.Index + m.Length - 1, depth = 0;
+            for (int i = open; i < code.Length; i++)
+            {
+                if (code[i] == '{') depth++;
+                else if (code[i] == '}' && --depth == 0) { for (int k = open; k <= i; k++) inside[k] = true; break; }
+            }
+        }
+        return Regex.Matches(code, @"\b(class|struct|interface|enum|record)\s+\w+").Cast<Match>().All(t => inside[t.Index]);
     }
 }
 
