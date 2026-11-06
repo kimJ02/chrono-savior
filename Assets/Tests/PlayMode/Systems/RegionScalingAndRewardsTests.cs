@@ -115,6 +115,27 @@ public class RegionScalingAndRewardsTests
     }
 
     /// <summary>
+    /// 보스 처치 보상(2026-11-06 정리 순서 5-2 — `EnemyRewards`로 옮기면서 고정한 특성 테스트): 지역 배율을 곱한 고정 EXP·골드(확률 없음),
+    /// 처치 수엔 안 들고 살기엔 든다, 보스 통계와 지역 정복(원본 `onBossKilled` :4282·`killEnemy` 보스 분기).
+    /// </summary>
+    [Test]
+    public void BossKill_GrantsScaledFixedRewards_AndConquersTheRegion()
+    {
+        RunState.Begin(2, RunMode.Boss);
+        float sc = DifficultyScalingConfig.RewardMultiplier(2);
+
+        EnemyRewards.GrantBossKill(2);
+
+        Assert.AreEqual(Mathf.RoundToInt(Boss.RewardGold * sc), RunState.GoldEarned);
+        Assert.AreEqual(Mathf.RoundToInt(Boss.RewardExp * sc), RunState.ExpEarned);
+        Assert.AreEqual(RunState.GoldEarned, ProfileService.Current.gold, "골드는 프로필에도 들어간다");
+        Assert.AreEqual(0, RunState.Kills, "보스는 처치 수에 안 든다");
+        Assert.AreEqual(1, RunState.Fury, "보스도 살기엔 든다");
+        Assert.AreEqual(1, ProfileService.Current.stats.bosses);
+        Assert.IsTrue(ProfileService.Current.IsBossCleared(2), "지역이 정복된다");
+    }
+
+    /// <summary>
     /// 스폰 시점의 RegionLv에 따라 몹 체력/공격력이 원본 CONFIG.scale 공식대로 스케일링되는지 확인한다.
     /// hp = 38 × 2.15^(RegionLv-1), dmg = 13 × 1.4^(RegionLv-1).
     /// </summary>

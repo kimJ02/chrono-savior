@@ -401,6 +401,11 @@ public class OriginalFidelityTests
             ("RecordCombo",                "PlayerProfile.cs"),    // CombatModifiers.AddCombo
             ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
             ("TryUnlockAchievement",       "PlayerProfile.cs"),    // Achievements.CheckNew
+            // 책임별 분리(2026-11-06 5단계) — 스포너가 부르는 몹 설정·보상
+            ("SetupShrine",                "EnemySetup.cs"),       // EnemySpawner.SpawnShrine
+            ("SetupBoss",                  "EnemySetup.cs"),       // EnemySpawner.SpawnBoss
+            ("GrantKill",                  "EnemyRewards.cs"),     // EnemySpawner.HandleEnemyDied
+            ("GrantBossKill",              "EnemyRewards.cs"),     // EnemySpawner.HandleBossDied
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
         };

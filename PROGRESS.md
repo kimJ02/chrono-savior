@@ -227,6 +227,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (64)** — **[나] 5-2: 처치 보상을 `EnemyRewards`로 (`feature/responsibility-split`).** 일반 몹(통계·런 집계·지역 토벌·EXP/골드·연쇄·업적)과 보스(보상·정복) 보상을 정적 클래스로(`EnemySpawner` 562→496줄). 스포너는 처치 이벤트를 듣고 몹↔데이터를 넘기며, 경험치 구슬(생성)과 보스 격파 알림은 그대로 갖는다. 난수 순서(골드 드랍 확률→양) 그대로. `DefinedApis` 목록에 분리한 공개 메서드. 보스 보상 금액·정복을 지키는 특성 테스트 `RegionScalingAndRewardsTests.BossKill_GrantsScaledFixedRewards_AndConquersTheRegion`(일반 처치 보상은 같은 파일의 기존 테스트가 덮는다). PlayMode 480/480, 씬 검증 통과.
 - **2026-11-06 (63)** — **[나] 5-1: 몹 개체 설정을 `EnemySetup`으로 (`feature/responsibility-split`, PlayMode 479/479).** 데이터로 몹 한 마리를 완성하는 일(엘리트 승격·지역/회귀 장벽 스탯·레벨·그림·크기·종류별 값, 보스·성소 스탯과 크기)을 정적 클래스로 떼어 냈다(`EnemySpawner` 763→562줄). 스포너는 언제·어디·무엇을 세울지, 처치 연결(`Died` 구독), 몹↔데이터 기억만. 새 컴포넌트가 아니라 씬·프리팹 연결은 그대로, 난수 호출 순서(엘리트→레벨→속도, 성소 위치→레벨)도 그대로.
   옮긴 보스·성소 설정을 지키는 특성 테스트 `GameBootTests.BossAndShrine_GetTheirStatsAndSizes`(실제 씬·목록으로 체력·레벨·넉백·공격·속도·그림 크기·판정 반지름). 생성 담당 목록에 `EnemySetup`(엘리트 표식), 옛 위치를 가리키던 주석·문서 3곳 정정.
 - **2026-11-06 (62)** — **[나] 정리 순서 5(책임별 분리) 시작 — 계획 (`feature/responsibility-split`, 문서만).** Codex와 상의: 처음 안(스포너는 배치 계산만)이 약해 코드를 읽고 다시 물어 **`EnemySpawner`를 개체 설정(`EnemySetup`)·처치 보상(`EnemyRewards`)·배치(`EnemySpawnPlacement`)로** 나누기로. `CombatHud`는 미니맵만, `BladeCombat`은 의존 표를 보고 판정. 새 컴포넌트 없이 정적 클래스 → 씬 연결 그대로. 계획은 `HANDOFF.md` 정리 순서 5 항목.
