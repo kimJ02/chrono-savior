@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (59)** — **[나] 4-5: 로비↔사냥 왕복 수명 테스트 (`feature/state-ownership`, PlayMode 477/477).** `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState` — 진짜 3씬으로 로비 → 사냥(몹이 나올 때까지) → 로비 뒤, 로비 창구·카메라 기준점은 남고 전투 창구·담당 등록·몹/중력장/드론/포탑 목록·런 오브젝트는 비며, **정적 이벤트 구독자 수가 왕복 전과 같은지**(리플렉션, 사냥 중엔 달라야 검사가 살아 있다).
+  `RunState`·`CombatModifiers` 변경 API는 검토 결과 바꿀 것 없음(전부 `private set` + 사건 이름 메서드). 다음: 4단계 종합 리뷰(Codex xhigh).
 - **2026-11-06 (58)** — **[나] 4-4: 프로필 쓰기를 의미 있는 메서드로 (`feature/state-ownership`, PlayMode 476/476).** `PlayerProfile.SetSelectedCharacter`(캐릭터 선택 화면·`PlayerRig` 되돌리기 — 고를 수 있는지·키트는 각자 본다), `RecordBossKill`(통계 + 정복), `RecordShrineBroken`, `TryPayForPull`(파편·뽑기 수, 모자라거나 0 이하면 아무것도 안 바꿈) + `ItemInventory.RecordPull`(아이템 + 천장). 동작 같음.
   직접 대입 예외(문서화): 세이브 이전, 사냥 시작 실패 롤백(`doomDays` 복원), 에디터 전용 'SP +1' 버튼, 테스트 준비. 직렬화 필드는 세이브 형식 때문에 public 유지. 테스트 3개 추가(`PayForPull_…`·`RecordPull_…`·`BossKillAndShrine_CountStats`), `DefinedApis` 목록에 새 메서드·`SetMaxX`.
 - **2026-11-06 (57)** — **[나] 4-3: `FieldBounds`를 읽기 전용으로 (`feature/state-ownership`, PlayMode 473/473).** public 가변 필드였다 — 아무도 안 바꾸는 `MinX`·`GroundY`는 `const`, 무대마다 다른 `MaxX`는 읽기 전용 속성 + `SetMaxX`(부르는 곳은 `FieldLayout.SetBossArena` 하나, 직접 대입은 컴파일 에러). 동작 같음.

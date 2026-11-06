@@ -46,6 +46,8 @@
 
 ## 6. 정리할 것 (4-1~4-5)
 
+- ✅ 왕복 수명(4-5): 로비 → 사냥 → 로비 뒤 로비 창구·카메라 기준점은 남고, 전투 창구·담당 등록·몹·중력장·드론·포탑·런 오브젝트는 비며, 정적 이벤트 구독자 수가 왕복 전과 같다 — `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`. `RunState`·`CombatModifiers` 변경 API는 검토만(이미 사건 이름 메서드뿐).
+
 - ✅ `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1).
 - ✅ `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2). 난이도·보상은 `RunState.Region`을 직접 읽는다.
 - ✅ `FieldBounds.MinX`·`MaxX`·`GroundY`가 public 가변 필드 → `MinX`·`GroundY`는 상수, `MaxX`는 읽기 전용 + `SetMaxX`(4-3).

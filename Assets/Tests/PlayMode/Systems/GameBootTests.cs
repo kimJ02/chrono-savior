@@ -8,7 +8,9 @@ using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using ChronoSavior.Characters;
+using ChronoSavior.Combat;
 using ChronoSavior.Core;
+using ChronoSavior.Enemies;
 using ChronoSavior.Systems;
 using ChronoSavior.UI;
 using ChronoSavior.World;
@@ -199,6 +201,55 @@ public class GameBootTests
         Assert.IsTrue(leftover == null, "로비로 나왔는데 지난 런의 오브젝트가 남았다");
         // 0이어야 한다 — 전투 씬이 뜨는 첫 프레임에 생긴 것(예전엔 스포너의 첫 웨이브)이 이전 활성 씬에 생기면 전투 씬과 같이 안 내려가 여기 남는다.
         Assert.AreEqual(0, RunTransient.ActiveCount, "전투 씬 밖에 생긴 런 오브젝트가 남았다");
+    }
+
+    /// <summary>
+    /// 로비 → 사냥 → 로비 왕복 뒤 상태별 기대값(2026-11-06 정리 순서 4-5, `docs/state-ownership.md`).
+    /// 로비에 남아야 하는 것: 로비 창구·카메라 기준점. 전투 씬과 같이 사라져야 하는 것: 전투 창구·담당 등록,
+    /// 몹·중력장·드론·포탑 목록, 그리고 **이벤트 구독**(전투 쪽 구독자가 남으면 내려간 오브젝트를 붙잡고 있는 것 — 개수가 왕복 전과 같아야 한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState()
+    {
+        yield return ToLobby();
+        var lobbySubscribers = SubscriberCounts();
+
+        yield return ToRun();
+        float until = Time.realtimeSinceStartup + 5f;
+        while (EnemyHealth.Active.Count == 0 && Time.realtimeSinceStartup < until) yield return null;
+        Assert.Greater(EnemyHealth.Active.Count, 0, "사냥 중에 몹이 나와야 왕복 확인이 의미가 있다");
+        Assert.IsNotNull(WorldView.Combat);
+        Assert.AreNotEqual(lobbySubscribers, SubscriberCounts(), "사냥 중엔 전투 쪽 구독자가 붙어 있어야 한다(검사가 비어 있지 않게)");
+
+        yield return ToLobby();
+        yield return null; // Destroy 반영
+
+        Assert.IsNotNull(WorldView.Lobby, "로비 창구가 남아 있다");
+        Assert.AreEqual("CameraAnchor", CameraFollow2D.Target.name, "카메라는 로비 기준점");
+        Assert.IsNull(WorldView.Combat, "전투 창구가 비었다");
+        Assert.IsNull(CombatDirector.Current, "전투 담당 등록이 빠졌다");
+        Assert.AreEqual(0, EnemyHealth.Active.Count, "몹 목록이 비었다");
+        Assert.AreEqual(0, GravityWellZone.Active.Count, "중력장 목록이 비었다");
+        Assert.AreEqual(0, GunnerDrone.Active.Count, "드론 목록이 비었다");
+        Assert.AreEqual(0, GunnerTurret.Active.Count, "포탑 목록이 비었다");
+        Assert.AreEqual(0, RunTransient.ActiveCount, "런 오브젝트가 남지 않았다");
+        Assert.AreEqual(lobbySubscribers, SubscriberCounts(), "이벤트 구독이 왕복 전과 같다 — 전투 쪽 구독이 남았다");
+    }
+
+    /// <summary>정적 이벤트마다 지금 구독자 수(이름=수). 필드형 이벤트는 같은 이름의 숨은 필드에 대리자가 있다.</summary>
+    static string SubscriberCounts()
+    {
+        var types = new[] { typeof(CombatEvents), typeof(RunEvents), typeof(EnemySpawnRequestBus), typeof(GameState) };
+        var parts = new List<string>();
+        foreach (var t in types)
+            foreach (var e in t.GetEvents(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
+            {
+                var field = t.GetField(e.Name, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+                Assert.IsNotNull(field, $"{t.Name}.{e.Name}의 대리자 필드를 못 찾았다");
+                var d = field.GetValue(null) as System.Delegate;
+                parts.Add($"{t.Name}.{e.Name}={(d == null ? 0 : d.GetInvocationList().Length)}");
+            }
+        return string.Join(", ", parts);
     }
 
     /// <summary>
