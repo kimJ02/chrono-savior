@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (46)** — **[나] 3.5-c: 타격음 검증이 특정 파일을 요구하지 않게 (`feature/asset-seams`, PlayMode 472/472, 씬 검증 통과).** 검증기는 클립이 연결됐는지·소리 장치 설정만 본다. 테스트만 쓰던 `HitSound.ClipPath` 삭제 —
+  테스트는 `AudioClip.Create`로 만든 짧은 소리를 넣는다(파일 존재 테스트 1개 삭제 → 472). 외주·구매 소리를 어디에 둬도 된다.
 - **2026-11-06 (45)** — **[나] 3.5-b: 스테이지 그림 묶음 `StageArtSet` (`feature/asset-seams`, PlayMode 473/473, 씬 검증 통과, Codex 통과).** `World/StageArtSet`(땅 윗면·흙·발판·배경·포탈 + 그 그림에 딸린 숫자:
   배경 배율·보여 줄 범위·풀밭 높이·포탈 배율), `Assets/Data/Stages/StageArt_Forest`, `StageVisuals.art`(로비·전투) — `Resources` 경로 문자열·그림 전용 상수(640/360·190/450·181.8·BackgroundScale·BossPortal.ArtScale) 삭제.
   그림을 바꿀 땐 이 에셋만. 묶음 칸이 비면 오류(포탈은 포탈 있는 씬만), 검증기가 두 씬 확인. 기준 캡처와 바이트 비교 — 스테이지 3장 동일(각성·유물개방·업적은 캡처마다 뽑기가 달라 원래 매번 다름).

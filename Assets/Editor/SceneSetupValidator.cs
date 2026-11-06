@@ -84,7 +84,8 @@ namespace ChronoSavior.Editor
                 var src = hitSound.GetComponent<AudioSource>();
                 if (src == null) problems.Add("HitSound에 AudioSource가 없다");
                 else if (src.playOnAwake || src.spatialBlend != 0f) problems.Add("HitSound의 AudioSource는 자동 재생 끔·2D(spatialBlend 0)여야 한다");
-                if (hitSound.Clip == null || hitSound.Clip != Resources.Load<AudioClip>(HitSound.ClipPath)) problems.Add($"HitSound 클립이 {HitSound.ClipPath}가 아니다");
+                // 클립이 연결돼 있는지만 본다 — 어느 파일인지는 묻지 않는다(외주·구매 소리로 갈아끼울 때 다른 곳에 둬도 되게, 2026-11-06 3.5-c).
+                if (hitSound.Clip == null) problems.Add("HitSound 클립이 비어 있다");
             }
             One<EventSystem>(persistent, problems);
             var canvas = One<PixelCanvas>(persistent, problems);

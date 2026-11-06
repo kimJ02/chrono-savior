@@ -26,14 +26,14 @@ public class HitSoundTests
             if (go != null && go.name == "TestHitSound") Object.DestroyImmediate(go);
     }
 
-    [Test]
-    public void ClipIsInResources() => Assert.IsNotNull(Resources.Load<AudioClip>(HitSound.ClipPath));
-
-    /// <summary>게임에선 00_Persistent의 Audio에 소리 장치·클립이 놓여 있다 — 테스트는 같은 클립을 넣는다(소리 장치는 RequireComponent가 붙인다).</summary>
+    /// <summary>
+    /// 게임에선 00_Persistent의 Audio에 소리 장치·클립이 놓여 있다(씬 구성 검증이 클립이 연결됐는지 본다). 테스트는 **어느 소리인지와 상관없이**
+    /// 짧은 소리를 만들어 넣는다 — 소리 파일은 외주·구매로 갈아끼울 예정이라 특정 파일에 기대지 않는다(2026-11-06 3.5-c). 소리 장치는 RequireComponent가 붙인다.
+    /// </summary>
     static HitSound NewHitSound()
     {
         var hs = new GameObject("TestHitSound").AddComponent<HitSound>();
-        hs.Clip = Resources.Load<AudioClip>(HitSound.ClipPath);
+        hs.Clip = AudioClip.Create("TestHit", 441, 1, 44100, false);
         return hs;
     }
 

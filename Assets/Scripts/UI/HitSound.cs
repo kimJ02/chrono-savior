@@ -14,8 +14,6 @@ namespace ChronoSavior.UI
     [RequireComponent(typeof(AudioSource))]
     public class HitSound : MonoBehaviour
     {
-        /// <summary>클립 에셋 경로(`Resources` 아래) — 씬에 넣을 클립이 이것인지 테스트가 본다.</summary>
-        public const string ClipPath = "Audio/Sfx/enemy_hit";
         /// <summary>타격 소리 사이 최소 간격(초) — 이보다 가까운 소리는 건너뛴다. 섬영 회전베기(0.13초)마다 한 번쯤 나는 정도.</summary>
         public const float MinGap = 0.12f;
         const float BaseVolume = 0.7f;
