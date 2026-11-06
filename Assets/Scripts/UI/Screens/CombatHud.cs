@@ -11,7 +11,7 @@ namespace ChronoSavior.UI
     /// <summary>
     /// 전투 HUD — Figma "스테이지 HUD"(124:3, 640×360). 2026-10-24 사용자 결정대로:
     /// 초상화 틀의 **빨간 칸 = 플레이어 체력**(숫자 포함), 하늘·어두운 칸은 아직 뜻이 정해지지 않아 **비워 둔다**,
-    /// 가운데 숫자 = 남은 초, 오른쪽 위 COMBO, 왼쪽 아래 스킬 칸 3개(Z·X·C), 오른쪽 아래 미니맵(실제 맵을 그린다),
+    /// 가운데 숫자 = 남은 초, 오른쪽 위 COMBO, 왼쪽 아래 스킬 칸 3개(Z·X·C), 오른쪽 아래 미니맵(실제 맵을 그린다 — <see cref="CombatMinimapView"/>),
     /// **경험치 = 화면 맨 아래 가로 바**(사용자 "A — Figma 디자인 가져와서": 숨겨진 옛 1920판 "경험치 바" 124:5의 색 그대로).
     ///
     /// Figma에 없는데 임시로 둔 것(사용자 확인 전): 남은 초 밑의 토벌 진행(100마리 → 보스가 게임의 뼈대라서),
@@ -75,13 +75,6 @@ namespace ChronoSavior.UI
         /// <summary>쿨다운 중 아이콘을 흐리는 덮개 — 원본 `opacity:.34`를 바탕색 66% 덮개로(예전 IMGUI HUD와 같은 계산).</summary>
         const float IconDimVeil = 1f - 0.34f;
 
-        // 미니맵: 맵 가로(26유닛)를 128px에, 높이는 땅이 58·발판 1층마다 약 11px(Figma 그림의 층 간격 16px에 가깝게 4층이 들어가도록)
-        const float MinimapGroundY = 58f, MinimapPxPerUnitY = 8f;
-        static readonly Color MinimapLine = Px.Ink;
-        static readonly Color MinimapEnemy = Px.Hex(0xea323c);
-        static readonly Color MinimapPlayer = Color.white;
-        static readonly Color MinimapPortal = Px.Hex(0x0cf1ff);
-
         /// <summary>캡처·테스트용 가짜 값 — 있으면 실제 게임 대신 이걸 그린다(`Editor/CaptureUiPreview`).</summary>
         public PreviewState? Preview;
 
@@ -93,7 +86,7 @@ namespace ChronoSavior.UI
         public float ExpFillWidth => expFill != null ? ((RectTransform)expFill.transform).sizeDelta.x : 0f;
         public bool ComboShown => comboNum != null && comboNum.enabled;
         public bool BossBarShown => bossRoot != null && bossRoot.gameObject.activeSelf;
-        public int MinimapLineCount => platformLines.Count;
+        public int MinimapLineCount => minimap.PlatformLineCount;
 
         public struct PreviewState
         {
@@ -116,13 +109,7 @@ namespace ChronoSavior.UI
         Image bossFill;
         Image expFill;
         readonly Slot[] slots = new Slot[3];
-        RectTransform minimap;
-        readonly List<Image> platformLines = new List<Image>();
-        readonly List<Image> enemyDots = new List<Image>();
-        Image playerDot, portalDot;
-        bool? minimapBossArena;
-        readonly List<Vector2> enemyPositions = new List<Vector2>();
-        float enemyScanTimer;
+        CombatMinimapView minimap;
 
         /// <summary>미니맵 포탈 점 자리 — 마지막으로 본 포탈 위치(포탈이 안 보이면 안 그린다).</summary>
         Vector2 portalPosition;
@@ -145,7 +132,7 @@ namespace ChronoSavior.UI
             BuildStatusFrame();
             BuildTexts();
             for (int i = 0; i < 3; i++) slots[i] = BuildSlot(i);
-            BuildMinimap();
+            minimap = new CombatMinimapView(Content, Minimap);
             BuildBossBar();
             BuildExpBar();
         }
@@ -224,13 +211,6 @@ namespace ChronoSavior.UI
             return s;
         }
 
-        void BuildMinimap()
-        {
-            minimap = Px.Node(Content, "Minimap", Minimap.x, Minimap.y, Minimap.width, Minimap.height);
-            portalDot = Px.Fill(minimap, "Portal", MinimapPortal, 0f, 0f, 2f, 3f);
-            playerDot = Px.Fill(minimap, "Player", MinimapPlayer, 0f, 0f, 2f, 2f);
-        }
-
         void BuildBossBar()
         {
             bossRoot = Px.Node(Content, "BossBar", BossBar.x, BossBar.y, BossBar.width, BossBar.height);
@@ -291,7 +271,7 @@ namespace ChronoSavior.UI
             ((RectTransform)expFill.transform).sizeDelta =
                 new Vector2(Mathf.Round(Mathf.Clamp01(v.ExpRatio) * (ExpBar.width - 2f)), ExpBar.height - 2f);
 
-            RefreshMinimap(v);
+            minimap.Refresh(v.Player, v.Enemies, MinimapPortal());
 
             var fc = new Color(1f, 30f / 255f, 10f / 255f, HitFeel.RedFlash * HitFeel.RedFlashAlphaScale);
             if (flash.color != fc) flash.color = fc;
@@ -304,7 +284,7 @@ namespace ChronoSavior.UI
         /// </summary>
         public static string BuffLine(ISkillSlotSource kit)
         {
-            var parts = new System.Collections.Generic.List<string>();
+            var parts = new List<string>();
             float dm = CombatModifiers.DamageMultiplier;
             if (dm > 1.01f) parts.Add($"피해 ×{dm:0.00}");                                   // :6284
             if (RunState.Fury > 0) parts.Add($"살기 x{RunState.Fury}");                       // :6285
@@ -345,7 +325,7 @@ namespace ChronoSavior.UI
             {
                 // 전투 씬이 없으면(타이틀·전환 중) 지난 포탈 점·적 점을 남기지 않는다(Codex 2b 리뷰).
                 showPortalDot = false;
-                enemyPositions.Clear();
+                minimap.ForgetEnemies();
                 return s;
             }
             if (RunState.Mode == RunMode.Normal)
@@ -394,78 +374,13 @@ namespace ChronoSavior.UI
             }
         }
 
-        // ───────────────────────── 미니맵 ─────────────────────────
-
-        static Vector2 MapPoint(Vector2 world)
+        /// <summary>
+        /// 미니맵 포탈 점 자리 — 일반 사냥에서 포탈이 보이면 그 위치, 캡처·테스트(가짜 값)면 맵 오른쪽 끝 고정 자리, 그 밖엔 없음.
+        /// </summary>
+        Vector2? MinimapPortal()
         {
-            float span = Mathf.Max(0.01f, FieldBounds.MaxX - FieldBounds.MinX);
-            float x = (world.x - FieldBounds.MinX) / span * Minimap.width;
-            float y = MinimapGroundY - (world.y - FieldBounds.GroundY) * MinimapPxPerUnitY;
-            return new Vector2(Mathf.Round(Mathf.Clamp(x, 0f, Minimap.width - 1f)), Mathf.Round(Mathf.Clamp(y, 1f, Minimap.height - 1f)));
+            if (Preview.HasValue) return new Vector2(FieldBounds.MaxX - 0.6f, 0f);
+            return RunState.Mode == RunMode.Normal && showPortalDot ? portalPosition : (Vector2?)null;
         }
-
-        void RefreshMinimap(PreviewState v)
-        {
-            if (minimapBossArena != FieldLayout.IsBossArena) RebuildPlatforms();
-
-            var p = MapPoint(v.Player);
-            Place(playerDot, p.x - 1f, p.y - 2f);
-
-            bool showPortal = !Preview.HasValue && RunState.Mode == RunMode.Normal && showPortalDot;
-            portalDot.enabled = showPortal || Preview.HasValue;
-            if (portalDot.enabled)
-            {
-                var q = MapPoint(showPortal ? portalPosition : new Vector2(FieldBounds.MaxX - 0.6f, 0f));
-                Place(portalDot, q.x - 1f, MinimapGroundY - 3f);
-            }
-
-            IList<Vector2> enemies = v.Enemies;
-            if (enemies == null)
-            {
-                enemyScanTimer -= Time.unscaledDeltaTime;
-                if (enemyScanTimer <= 0f)
-                {
-                    enemyScanTimer = 0.15f; // 몹 위치는 0.15초마다(매 프레임 읽을 필요 없다)
-                    var view = WorldView.Combat;
-                    if (view != null) view.CopyEnemyPositions(enemyPositions);
-                    else enemyPositions.Clear(); // 전투 씬이 없으면 점도 없다
-                }
-                enemies = enemyPositions;
-            }
-            while (enemyDots.Count < enemies.Count) enemyDots.Add(Px.Fill(minimap, "Enemy", MinimapEnemy, 0f, 0f, 2f, 2f));
-            for (int i = 0; i < enemyDots.Count; i++)
-            {
-                bool on = i < enemies.Count;
-                enemyDots[i].enabled = on;
-                if (on)
-                {
-                    var e = MapPoint(enemies[i]);
-                    Place(enemyDots[i], e.x - 1f, e.y - 2f);
-                }
-            }
-            playerDot.transform.SetAsLastSibling(); // 플레이어 점이 몹 점 위에
-        }
-
-        void RebuildPlatforms()
-        {
-            minimapBossArena = FieldLayout.IsBossArena;
-            foreach (var l in platformLines)
-                if (l != null) { if (Application.isPlaying) Destroy(l.gameObject); else DestroyImmediate(l.gameObject); }
-            platformLines.Clear();
-            // 땅 — 맨 아래 한 줄
-            platformLines.Add(Px.Fill(minimap, "Ground", MinimapLine, 0f, MinimapGroundY, Minimap.width, 1f));
-            var table = FieldLayout.Platforms;
-            for (int i = 0; i < table.GetLength(0); i++)
-            {
-                float cx = table[i, 0], w = table[i, 2];
-                var a = MapPoint(new Vector2(cx - w / 2f, FieldLayout.PlatformTopY(i)));
-                var b = MapPoint(new Vector2(cx + w / 2f, FieldLayout.PlatformTopY(i)));
-                platformLines.Add(Px.Fill(minimap, "Platform" + i, MinimapLine, a.x, a.y, Mathf.Max(1f, b.x - a.x), 1f));
-            }
-            foreach (var l in platformLines) l.transform.SetAsFirstSibling();
-        }
-
-        static void Place(Image img, float x, float y) =>
-            ((RectTransform)img.transform).anchoredPosition = new Vector2(x, -y);
     }
 }

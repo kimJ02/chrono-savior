@@ -227,6 +227,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (67)** — **[나] 5-4: 전투 HUD 미니맵을 `CombatMinimapView`로 (`feature/responsibility-split`, PlayMode 482/482).** 미니맵(땅·발판 선, 플레이어·몹·포탈 점, 무대가 바뀌면 다시 그리기, 0.15초마다 몹 위치 읽기)을 HUD가 만들어 소유하는 일반 클래스로(`CombatHud` 471→386줄). 포탈 점 자리(실제 포탈·캡처용 고정 자리·없음)는 HUD가 정해 넘긴다. **UI 캡처를 기준(`docs/baseline-2026-11-06/ui`)과 비교 — 전투 HUD 4장 모두 픽셀까지 같다**(다른 건 뽑기 난수로 매번 달라지는 각성·유물개방뿐). 씬 검증 통과.
 - **2026-11-06 (66)** — **[나] 5-3: 스폰 자리 고르기를 `EnemySpawnPlacement`로 (`feature/responsibility-split`).** 원본 스폰 지점 21곳 중 고르고 흔들기 + 같은 웨이브 간격 검사(정적, 간격·재시도·몸 반지름은 스포너의 씬 설정을 넘긴다). `EnemySpawner` 496→420줄 — 이제 웨이브·보스전 부하·성소·보스 등장 타이밍과 처치 연결·구슬만. 배치는 기존 `EnemySpawnAndMoveTests`(필드 안·발판 착지 높이)에 같은 층 간격 테스트 `Placement_KeepsSpacingOnlyWithinTheSameLayer` 추가. PlayMode 482/482, 씬 검증 통과.
 - **2026-11-06 (65)** — **[나] 5-1·5-2 Codex 리뷰 '통과' + 난수 순서 테스트 (`feature/responsibility-split`, PlayMode 481/481).** 권고대로 `RegionScalingAndRewardsTests.SetupAndRewards_UseRandomInTheSameOrder` — 같은 시드에서 몹 설정(엘리트→레벨→속도)과 처치 보상(골드 확률→양)이 옮기기 전 순서로 난수를 쓰는지.
 - **2026-11-06 (64)** — **[나] 5-2: 처치 보상을 `EnemyRewards`로 (`feature/responsibility-split`).** 일반 몹(통계·런 집계·지역 토벌·EXP/골드·연쇄·업적)과 보스(보상·정복) 보상을 정적 클래스로(`EnemySpawner` 562→496줄). 스포너는 처치 이벤트를 듣고 몹↔데이터를 넘기며, 경험치 구슬(생성)과 보스 격파 알림은 그대로 갖는다. 난수 순서(골드 드랍 확률→양) 그대로. `DefinedApis` 목록에 분리한 공개 메서드. 보스 보상 금액·정복을 지키는 특성 테스트 `RegionScalingAndRewardsTests.BossKill_GrantsScaledFixedRewards_AndConquersTheRegion`(일반 처치 보상은 같은 파일의 기존 테스트가 덮는다). PlayMode 480/480, 씬 검증 통과.
