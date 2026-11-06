@@ -406,6 +406,14 @@ public class GameBootTests
         var player = InScene<PlayerRig>(GameFlow.CombatScene).Single();
         Assert.AreEqual(1, player.GetComponents<PlayerAfterimages>().Length, "잔상(마법사 순간이동·섬영 고속 이동)");
         Assert.AreEqual(1, player.GetComponents<BladeSlashVfx>().Length, "섬영 회전베기 효과");
+
+        // 효과 에셋은 씬의 연결 칸(2026-11-06 3.5-e) — 섬영 베기 프레임은 이름순으로 연결돼 있고, 테스트가 쓰는 프레임(TestPrefabs)과 같다.
+        var frames = player.GetComponent<BladeSlashVfx>().Frames;
+        Assert.IsNotEmpty(frames);
+        CollectionAssert.AreEqual(frames.Select(f => f.name).OrderBy(n => n, System.StringComparer.Ordinal).ToArray(), frames.Select(f => f.name).ToArray(), "프레임이 이름순이 아니다");
+        CollectionAssert.AreEqual(TestPrefabs.BladeSlashFrames, frames, "테스트가 쓰는 프레임과 씬에 연결된 프레임이 다르다");
+        Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<MageChargeFlash>().FlashMaterial);
+        Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<PlayerAfterimages>().GhostMaterial);
     }
 
     /// <summary>전투 담당이 같은 씬의 두 발판 세트를 직렬화로 들고 무대에 맞춰 켠다(2026-11-05 3-0 — 예전엔 정적 목록이 모든 씬의 세트를 켰다).</summary>

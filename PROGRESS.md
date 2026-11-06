@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (51)** — **[나] 3.5 종합 리뷰(Codex xhigh) 반영 (`feature/asset-seams`, PlayMode 474/474, 씬 검증 통과).** 막던 2건: `docs/pixel-standard.md`가 3.5-d 이전 출처를 가리키던 것 → 지금 출처(`StageArtSet`·`heights`·`visualHeight`·`bossSize`)로,
+  도트 배율 보고서가 옛 파일 경로로 섬영 베기 프레임을 읽던 것 → Player에 **실제로 연결된** 프레임을 읽고, 경고 합계를 표와 같게(임시 도형 수 따로). 같이: 기준점(피벗)은 가운데 규칙을 문서에, 포탈 배율 0 이하 검증,
+  섬영 베기 프레임은 '지금과 같은 크기·PPU일 때만 코드 수정 없이'라고 표에 명시, 씬 Player의 프레임이 이름순이고 테스트 프레임과 같은지·효과 머티리얼 연결을 `GameBootTests`가 확인.
 - **2026-11-06 (50)** — **[나] 3.5-g: UI 그림 목록 + 교체 방식 결정 (`feature/asset-seams`, 문서만).** Codex 합의 — **경로 키 유지**(`PxArt.Get("키")` 한곳이라 같은 키로 덮어쓰면 코드 수정 없이 교체, UiArtSet은 원본이 둘이 되고 64곳을 고쳐 과함),
   화면 배치(Figma 좌표 `Build()`)는 그대로. `docs/asset-swap-points.md` UI 절: 파일 54개 전부 사용(변수로 고르는 아이콘 포함)·빠진 파일 0·9-슬라이스 테두리·글꼴, 제작 상태 칸은 팀원 확인 필요. **3.5 a~g 끝.**
 - **2026-11-06 (49)** — **[나] 3.5-f: 도트 배율 보고서 (`feature/asset-seams`, 에디터 도구만).** `Editor/DotScaleReport`(메뉴 `ChronoSavior/도트 배율 보고서`, 배치 `RunBatch -reportOut`) — 그림 묶음·캐릭터·몹(엘리트 포함)·보스/성소·효과의

@@ -27,18 +27,18 @@ namespace ChronoSavior.Editor
         [MenuItem("ChronoSavior/도트 배율 보고서")]
         public static void Run()
         {
-            string report = Build(out int warnings);
+            string report = Build(out int warnings, out int shapes);
             Debug.Log(report);
-            Debug.Log($"[DotScaleReport] 정수가 아닌 도트 배율 {warnings}곳(경고만 — 지금은 임시 그림)");
+            Debug.Log($"[DotScaleReport] 정수가 아닌 도트 배율 {warnings}곳(그중 임시 도형 {shapes}곳) — 경고만, 지금은 임시 그림");
         }
 
         public static void RunBatch()
         {
-            string report = Build(out int warnings);
+            string report = Build(out int warnings, out int shapes);
             string path = ArgValue("-reportOut");
             if (!string.IsNullOrEmpty(path)) File.WriteAllText(path, report, new UTF8Encoding(false));
             Debug.Log(report);
-            Debug.Log($"[DotScaleReport] 정수가 아닌 도트 배율 {warnings}곳(경고만 — 지금은 임시 그림)");
+            Debug.Log($"[DotScaleReport] 정수가 아닌 도트 배율 {warnings}곳(그중 임시 도형 {shapes}곳) — 경고만, 지금은 임시 그림");
             EditorApplication.Exit(0);
         }
 
@@ -52,7 +52,7 @@ namespace ChronoSavior.Editor
         /// <summary>그림 한 장이 화면에서 차지하는 크기(유닛)로 도트 배율 — 픽셀 수 기준.</summary>
         static float Dot(float worldSize, float pixels) => pixels > 0f ? GridPpu * worldSize / pixels : 0f;
 
-        static string Build(out int warnings)
+        static string Build(out int warnings, out int shapes)
         {
             var rows = new List<Row>();
 
@@ -104,8 +104,11 @@ namespace ChronoSavior.Editor
             }
 
             // 효과 — 코드 상수로 크기를 정하는 것
-            var slashFrame = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Resources/Art/Figma/Vfx/BladeSlash/slash1_color4_01.png");
-            if (slashFrame != null) rows.Add(new Row { what = "섬영 베기 효과", art = slashFrame.name, source = "BladeSlashVfx.Scale", dotX = GridPpu * BladeSlashVfx.Scale / slashFrame.pixelsPerUnit, dotY = GridPpu * BladeSlashVfx.Scale / slashFrame.pixelsPerUnit });
+            // 섬영 베기 — 실제로 Player에 연결된 프레임(20_Combat)을 읽는다(파일 경로가 아니라 연결 칸 — 외주 프레임으로 바꾸면 그게 보이게)
+            var slashFrames = ReadPlayerSlashFrames();
+            foreach (var f in slashFrames.Where(f => f != null).GroupBy(f => (f.rect.width, f.rect.height, f.pixelsPerUnit)).Select(g => g.First()))
+                rows.Add(new Row { what = "섬영 베기 효과", art = f.name + (slashFrames.Length > 1 ? $" 외({slashFrames.Length}장)" : ""), source = "Player BladeSlashVfx.frames × BladeSlashVfx.Scale",
+                                   dotX = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit, dotY = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit });
             var impact = AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Resources/Art/Figma/Vfx/GravityImpact" }).Select(g => AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GUIDToAssetPath(g))).FirstOrDefault();
             if (impact != null)
             {
@@ -114,7 +117,7 @@ namespace ChronoSavior.Editor
                 rows.Add(new Row { what = "중력 착탄 효과", art = impact.name, source = "스킬 반경×2(MageSpecConfig)", dotX = lo, dotY = hi, note = $"층·차지에 따라 {lo:0.##}~{hi:0.##}(가로=최소, 세로=최대)" });
             }
 
-            warnings = 0;
+            warnings = 0; shapes = 0;
             var sb = new StringBuilder();
             sb.AppendLine("# 도트 배율 보고서 (" + System.DateTime.Now.ToString("yyyy-MM-dd HH:mm") + ")");
             sb.AppendLine();
@@ -125,11 +128,23 @@ namespace ChronoSavior.Editor
             foreach (var r in rows)
             {
                 bool whole = IsWhole(r.dotX) && IsWhole(r.dotY);
-                if (!whole && r.note == null) warnings++;
+                if (!whole) { warnings++; if (r.note != null) shapes++; }
                 string dots = Mathf.Approximately(r.dotX, r.dotY) ? $"{r.dotX:0.###}" : $"{r.dotX:0.###} × {r.dotY:0.###}";
                 sb.AppendLine($"| {r.what} | {r.art} | {r.source} | {dots} | {(whole ? "" : "⚠")} {r.note} |");
             }
             return sb.ToString();
+        }
+
+        /// <summary>20_Combat의 Player에 연결된 섬영 베기 프레임 — 씬이 안 열려 있으면 잠깐 열었다 닫는다.</summary>
+        static Sprite[] ReadPlayerSlashFrames()
+        {
+            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath(SceneSetupValidator.CombatPath);
+            bool opened = !scene.isLoaded;
+            if (opened) scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, UnityEditor.SceneManagement.OpenSceneMode.Additive);
+            var vfx = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<BladeSlashVfx>(true)).FirstOrDefault();
+            var frames = vfx != null && vfx.Frames != null ? vfx.Frames.ToArray() : new Sprite[0];
+            if (opened) UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
+            return frames;
         }
 
         static bool IsWhole(float v) => Mathf.Abs(v - Mathf.Round(v)) < 0.01f && v >= 0.99f;

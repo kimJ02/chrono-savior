@@ -318,6 +318,7 @@ namespace ChronoSavior.Editor
             if (art.groundTop == null || art.groundDirt == null || art.platformTile == null || art.background == null || art.portal == null)
                 problems.Add($"{sceneName} 그림 묶음({art.name})에 빈 칸이 있다(땅 윗면·흙·발판·배경·포탈)");
             if (art.backgroundScale < 1) problems.Add($"{sceneName} 그림 묶음({art.name})의 배경 배율이 1보다 작다");
+            if (art.portalScale <= 0f) problems.Add($"{sceneName} 그림 묶음({art.name})의 포탈 배율이 0 이하다(포탈이 안 보인다)");
         }
 
         /// <summary>
