@@ -23,11 +23,11 @@ namespace ChronoSavior.Characters
     /// `Rigidbody2D.position`을 직접 덮어써서(원본 `MageAttack.Teleport`와 같은 기법을 매 프레임
     /// 반복) 구현했다 — 물리 충돌 자체가 안 걸리므로 발판을 실제로 통과한다.
     ///
-    /// ⚠️ **스킬트리(갈래 선택·SP 소비) 자체는 아직 로비 UI가 없다.** `Core/PlayerProfile.
-    /// TryLearnBladeTier`(팀원 추가, 팀장 확인 필요 — 그 파일 주석 참고)로 데이터는 있지만,
-    /// `UI/LobbyScreen.DrawSpecTab`은 여전히 마법사 전용이라 실제 플레이에서 갈래를 고를 방법이
-    /// 없다(UI는 이 키트 소유가 아니다). 지금은 테스트에서 `TryLearnBladeTier`를 직접 불러
-    /// 검증한다 — 로비 화면 연결은 별도 작업(팀장 담당 또는 추후 요청).
+    /// **파일 지도**(2026-11-06 정리 순서 5 — 한 캐릭터 키트라 한 컴포넌트로 두고, 안을 세 구역으로 나눴다):
+    /// 설정값·상태(집중·칼날폭풍 상태는 각각 묶음) → **공통**(수명·HUD 칸·`Update`/`LateUpdate`·속도 비율·속도 피해 배수·회전베기 `SpinHit`·충돌/방향 무적)
+    /// → **집중**(`TryFocusStart`·`UpdateFocus`·`UpdateTrail`·`RipTrail`·5층 `UpdatePassTick`) → **칼날폭풍**(`TryStormStart`·`TryStormHop`·`EndStorm`·`UpdateStorm`·`StormLand`·`UpdateFalling`과 위치 덮어쓰기).
+    /// 두 갈래는 이동기·물리·회전베기·속도 배수를 같이 써서 클래스로 나누지 않았다(Codex 판정 — 나누면 넘겨 주는 값만 는다).
+    /// 갈래 선택·SP 소비는 `PlayerProfile.TryLearnBladeTier`, 화면은 각성 화면(`UI/Screens/AwakenScreen`).
     ///
     /// **1층 범위**(`SPEC.blade.move/conv.tiers[0]`, project_test.html:937·944): 집중은 가속 증가 +
     /// 궤적 피해, 칼날폭풍은 공중 활공 + 회전베기 유지만.
@@ -202,6 +202,8 @@ namespace ChronoSavior.Characters
         /// 갱신된다(원본 `bladeFallingUpdate`가 `bladeStormUpdate`와 별도로 항상 도는 것과 동일, :2724~2737).
         /// </summary>
         readonly List<FallRecord> stormFalling = new List<FallRecord>();
+
+        // ═══════════════════════ 공통(갈래 무관 — 수명·HUD·입력·속도·회전베기·무적) ═══════════════════════
 
         public CharacterId Character => CharacterId.Blade;
         /// <summary>섬영만 관성 가속 이동을 쓴다(원본 `bladeMove`, 나머지 셋은 즉시-속도).</summary>
@@ -481,6 +483,36 @@ namespace ChronoSavior.Characters
         void SpinAttack(float dmgMultiplier) => SpinHit(dmgMultiplier, spinRadius, false, true);
 
         /// <summary>
+        /// bladeCrashImmune (project_test.html:2444~2446) — 게이팅 조건(최고 속도 + 티어)은
+        /// <see cref="Update"/>가 계산해서 넘긴다. `ApplyDirectionalInvuln`과 같은 근사 기법
+        /// (감소 타이머라 "상시"를 표현할 다른 방법이 없어 매 프레임 짧게 갱신)을 그대로 재사용한다.
+        /// </summary>
+        void ApplyCrashImmunity(bool active)
+        {
+            if (!active || playerHealth == null) return;
+            playerHealth.GrantInvuln(Time.deltaTime * DirInvulnRefresh);
+        }
+
+        /// <summary>
+        /// bladeDirInvuln (project_test.html:2448~2451) — 원본은 "이 프레임에 방향키가 눌려
+        /// 있는가"를 매 프레임 새로 평가하는 상태 없는(stateless) 조건이다. Unity 쪽 무적은
+        /// 감소하는 타이머(<see cref="PlayerHealth.InvulnRemaining"/>)라 외부에서 "이번 프레임만"
+        /// 무적을 끼워 넣을 지점이 없다 — 그래서 방향키가 눌려 있는 동안 매 프레임 "최소 이번
+        /// 프레임 두 배만큼"을 계속 갱신하는 방식으로 근사했다. `GrantInvuln`은 값을 줄이지 않고
+        /// 올리기만 하므로 이미 더 긴 무적(피격 직후 0.9초 등)을 갖고 있으면 그대로 둔다.
+        ///
+        /// 한계: 키를 뗀 직후 최대 한 프레임 분량의 잔여 무적이 남을 수 있다 — 원본의 프레임 단위
+        /// 판정과 사실상 구분되지 않는 오차라 범위 안에서 받아들였다.
+        /// </summary>
+        void ApplyDirectionalInvuln(bool anyDirectionHeld)
+        {
+            if (!anyDirectionHeld || playerHealth == null) return;
+            playerHealth.GrantInvuln(Time.deltaTime * DirInvulnRefresh);
+        }
+
+        // ═══════════════════════ 집중(Focus 갈래 — 원본 SPEC.blade.move) ═══════════════════════
+
+        /// <summary>
         /// 집중 진입 — 원본 `bladeFocusStart()`(project_test.html:2521~2535)의 1~5층 범위.
         ///
         /// **5층**: 재사용(취소) 분기를 통과한 뒤에도 궤적이 아직 남아 있으면(`trailPts.Count>1`)
@@ -636,6 +668,40 @@ namespace ChronoSavior.Characters
             trailPts.Clear();
             trailT = 0f;
         }
+
+        /// <summary>
+        /// 5층 "쿨타임 환급" — 원본 `bladePassTick()`(project_test.html:2594~2608). 최고 속도로
+        /// 적과 겹쳐 지나갈 때마다(적당 <see cref="PassTickInterval"/>초에 한 번) 집중 쿨타임을
+        /// <see cref="PassCooldownReduction"/>만큼 깎는다. Focus 갈래 5층 전용 — 원본도
+        /// `bladeTier('move')`가 Storm 갈래에선 0이라 이 함수가 아무 일도 안 한다.
+        ///
+        /// 원본의 겹침 판정(`hypot` 없이 x·y 절반폭 비교, :2601)은 실제 콜라이더 형태가 아니라
+        /// 사각형 AABB지만, 이 포트는 원형 콜라이더 기반이라 다른 근접 판정(SpinHit/StormLand 등)과
+        /// 같은 방식 — `Physics2D.OverlapCircleAll`에 자기 콜라이더 반지름을 넘겨 실제 겹침을 묻는다.
+        /// </summary>
+        void UpdatePassTick(bool atTop)
+        {
+            var profile = ProfileService.Current;
+            if (profile.bladeBranch != BladeBranch.Focus || profile.bladeTier < 5 || !atTop) return;
+            if (col == null) return;
+
+            float now = Time.time;
+            foreach (var c in Physics2D.OverlapCircleAll(transform.position, col.bounds.extents.x, enemyMask))
+            {
+                if (c == null || !c.CompareTag("Enemy")) continue;
+
+                var protectable = c.GetComponent<ISpawnProtectable>();
+                if (protectable != null && protectable.IsSpawnProtected) continue;
+                var target = c.GetComponent<IDamageable>();
+                if (target == null || target.IsDead) continue;
+
+                if (passHitTimestamps.TryGetValue(c, out float last) && now - last <= PassTickInterval) continue;
+                passHitTimestamps[c] = now;
+                focusCd = Mathf.Max(0f, focusCd - PassCooldownReduction);
+            }
+        }
+
+        // ═══════════════════════ 칼날폭풍(Storm 갈래 — 원본 SPEC.blade.conv) ═══════════════════════
 
         bool IsGrounded()
         {
@@ -882,49 +948,6 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>
-        /// bladeCrashImmune (project_test.html:2444~2446) — 게이팅 조건(최고 속도 + 티어)은
-        /// <see cref="Update"/>가 계산해서 넘긴다. `ApplyDirectionalInvuln`과 같은 근사 기법
-        /// (감소 타이머라 "상시"를 표현할 다른 방법이 없어 매 프레임 짧게 갱신)을 그대로 재사용한다.
-        /// </summary>
-        void ApplyCrashImmunity(bool active)
-        {
-            if (!active || playerHealth == null) return;
-            playerHealth.GrantInvuln(Time.deltaTime * DirInvulnRefresh);
-        }
-
-        /// <summary>
-        /// 5층 "쿨타임 환급" — 원본 `bladePassTick()`(project_test.html:2594~2608). 최고 속도로
-        /// 적과 겹쳐 지나갈 때마다(적당 <see cref="PassTickInterval"/>초에 한 번) 집중 쿨타임을
-        /// <see cref="PassCooldownReduction"/>만큼 깎는다. Focus 갈래 5층 전용 — 원본도
-        /// `bladeTier('move')`가 Storm 갈래에선 0이라 이 함수가 아무 일도 안 한다.
-        ///
-        /// 원본의 겹침 판정(`hypot` 없이 x·y 절반폭 비교, :2601)은 실제 콜라이더 형태가 아니라
-        /// 사각형 AABB지만, 이 포트는 원형 콜라이더 기반이라 다른 근접 판정(SpinHit/StormLand 등)과
-        /// 같은 방식 — `Physics2D.OverlapCircleAll`에 자기 콜라이더 반지름을 넘겨 실제 겹침을 묻는다.
-        /// </summary>
-        void UpdatePassTick(bool atTop)
-        {
-            var profile = ProfileService.Current;
-            if (profile.bladeBranch != BladeBranch.Focus || profile.bladeTier < 5 || !atTop) return;
-            if (col == null) return;
-
-            float now = Time.time;
-            foreach (var c in Physics2D.OverlapCircleAll(transform.position, col.bounds.extents.x, enemyMask))
-            {
-                if (c == null || !c.CompareTag("Enemy")) continue;
-
-                var protectable = c.GetComponent<ISpawnProtectable>();
-                if (protectable != null && protectable.IsSpawnProtected) continue;
-                var target = c.GetComponent<IDamageable>();
-                if (target == null || target.IsDead) continue;
-
-                if (passHitTimestamps.TryGetValue(c, out float last) && now - last <= PassTickInterval) continue;
-                passHitTimestamps[c] = now;
-                focusCd = Mathf.Max(0f, focusCd - PassCooldownReduction);
-            }
-        }
-
-        /// <summary>
         /// 칼날폭풍 활공 중 매 프레임 위치를 직접 덮어쓴다 — 원본 "충돌 판정 없음"(플랫폼 통과)을
         /// 재현하는 방법. `Rigidbody2D.position`까지 같이 맞추고 속도는 0으로 비워서, 다음
         /// `CharacterMover2D.FixedUpdate`가 남은 관성 속도로 우리 위치를 밀어내지 않게 한다
@@ -1005,21 +1028,5 @@ namespace ChronoSavior.Characters
             }
         }
 
-        /// <summary>
-        /// bladeDirInvuln (project_test.html:2448~2451) — 원본은 "이 프레임에 방향키가 눌려
-        /// 있는가"를 매 프레임 새로 평가하는 상태 없는(stateless) 조건이다. Unity 쪽 무적은
-        /// 감소하는 타이머(<see cref="PlayerHealth.InvulnRemaining"/>)라 외부에서 "이번 프레임만"
-        /// 무적을 끼워 넣을 지점이 없다 — 그래서 방향키가 눌려 있는 동안 매 프레임 "최소 이번
-        /// 프레임 두 배만큼"을 계속 갱신하는 방식으로 근사했다. `GrantInvuln`은 값을 줄이지 않고
-        /// 올리기만 하므로 이미 더 긴 무적(피격 직후 0.9초 등)을 갖고 있으면 그대로 둔다.
-        ///
-        /// 한계: 키를 뗀 직후 최대 한 프레임 분량의 잔여 무적이 남을 수 있다 — 원본의 프레임 단위
-        /// 판정과 사실상 구분되지 않는 오차라 범위 안에서 받아들였다.
-        /// </summary>
-        void ApplyDirectionalInvuln(bool anyDirectionHeld)
-        {
-            if (!anyDirectionHeld || playerHealth == null) return;
-            playerHealth.GrantInvuln(Time.deltaTime * DirInvulnRefresh);
-        }
     }
 }

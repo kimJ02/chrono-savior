@@ -160,6 +160,37 @@ public class BladeSkillTreeTests
         m.Invoke(blade, new object[] { atTop });
     }
 
+    /// <summary>
+    /// 새 사냥(`ResetForRun`)이 두 갈래 상태를 모두 비운다 — 집중 지속·쿨·궤적, 칼날폭풍 활공·쿨·붙잡은 적, 가속 배율
+    /// (2026-11-06 정리 순서 5 — 파일을 구역으로 정리하면서 수명 경로를 고정. 원본 `resetPlayerForRun`의 `p.atkCds` 등).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator ResetForRun_ClearsFocusAndStormState()
+    {
+        var go = NewBlade(new Vector3(2f, 0.5f, 0f));
+        var blade = go.GetComponent<BladeCombat>();
+        var mover = go.GetComponent<CharacterMover2D>();
+        yield return null;
+
+        InvokeTryFocusStart(blade, 1);
+        InvokeUpdateFocus(blade, 0.05f);
+        Field("storming").SetValue(blade, true);
+        Field("stormCd").SetValue(blade, 5f);
+        Assert.Greater(GetFocusT(blade), 0f, "준비: 집중 중");
+        Assert.Greater(GetFocusCd(blade), 0f, "준비: 집중 쿨");
+        Assert.Greater(GetTrailT(blade), 0f, "준비: 궤적이 남아 있다");
+
+        blade.ResetForRun();
+
+        Assert.AreEqual(0f, GetFocusT(blade));
+        Assert.AreEqual(0f, GetFocusCd(blade));
+        Assert.AreEqual(0f, GetTrailT(blade));
+        Assert.AreEqual(0, GetTrailPtsCount(blade));
+        Assert.IsFalse((bool)Field("storming").GetValue(blade), "칼날폭풍이 끝났다");
+        Assert.AreEqual(0f, (float)Field("stormCd").GetValue(blade));
+        Assert.AreEqual(1f, mover.AccelMultiplier, 0.0001f, "가속 배율이 원래대로");
+    }
+
     [UnityTest]
     public IEnumerator Focus_WithTierZero_DoesNothing()
     {
