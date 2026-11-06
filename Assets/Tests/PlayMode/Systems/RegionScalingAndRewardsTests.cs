@@ -12,14 +12,14 @@ namespace ChronoSavior.Tests.PlayMode
 {
 
 /// <summary>
-/// 스프린트 2(성장곡선 검증) 트랙 A — 가상 지역 레벨(<see cref="RunProgress"/>)과
+/// 스프린트 2(성장곡선 검증) 트랙 A — 지역(<see cref="RunState.Region"/>, 예전 '가상 지역 레벨')과
 /// 처치 보상(<see cref="EnemySpawner"/>.HandleEnemyDied)이 실제로 맞물려 도는지 검증한다.
 /// 공식 자체는 `docs/sprints/03-growth-curve-worksplit.md`(원본 CONFIG.scale, project_test.html:727) 그대로.
 ///
-/// `RunProgress`/`ProfileService.Current`는 둘 다 정적 상태라 테스트끼리 서로 오염시키므로
+/// `RunState`/`ProfileService.Current`는 둘 다 정적 상태라 테스트끼리 서로 오염시키므로
 /// 매 테스트 시작 전 반드시 초기화한다.
 /// </summary>
-public class RunProgressAndRewardsTests
+public class RegionScalingAndRewardsTests
 {
     // 고블린 기본 스탯(원본 CONFIG.enemyBase.oni, project_test.html:709).
     // 2026-09-09 SO 전환으로 `DifficultyScalingConfig`에서 `Core/EnemyData`(에셋)로 옮겨졌다.
@@ -31,7 +31,6 @@ public class RunProgressAndRewardsTests
     [SetUp]
     public void ResetStatics()
     {
-        RunProgress.Reset();
         // 난이도 기준이 RunState.Region으로 바뀌어서, 앞 테스트가 올려둔 지역이 남으면
         // 뒤 테스트의 몹 체력이 배로 뛴다(정적 상태 오염 — 이 프로젝트 단골 함정).
         RunState.Reset();
@@ -116,29 +115,6 @@ public class RunProgressAndRewardsTests
     }
 
     /// <summary>
-    /// 난이도 기준이 **진짜 지역**(`RunState.Region`)이다.
-    ///
-    /// 런 사이클이 없던 시절엔 `RunProgress`가 "누적 처치 100마리 = 가상 지역 레벨 1 상승"으로
-    /// 지역을 대신했는데(그때 이 클래스가 생긴 이유), 이제 로비에서 지역을 골라 입장하므로
-    /// 처치 수는 난이도를 바꾸지 않는다 — **한 스테이지 안에서는 몹이 안 세진다**는 원본 주석
-    /// (project_test.html:3925 "몬스터 레벨은 지역에만 의존")과 이제야 맞는다.
-    /// </summary>
-    [Test]
-    public void RegionLv_FollowsRunRegion_NotKillCount()
-    {
-        Assert.AreEqual(1, RunProgress.RegionLv, "초기 지역은 1이어야 한다");
-
-        for (int i = 0; i < DifficultyScalingConfig.KillsPerRegionLevel * 3; i++) RunProgress.RegisterKill();
-        Assert.AreEqual(1, RunProgress.RegionLv,
-            "같은 스테이지 안에서는 아무리 잡아도 지역이 오르면 안 된다(원본 :3925)");
-        Assert.AreEqual(DifficultyScalingConfig.KillsPerRegionLevel * 3, RunProgress.TotalKills,
-            "난이도와 무관해졌을 뿐 처치 수 집계는 계속돼야 한다");
-
-        RunState.Begin(4, RunMode.Normal);
-        Assert.AreEqual(4, RunProgress.RegionLv, "4지역에 입장했으면 난이도 기준도 4여야 한다");
-    }
-
-    /// <summary>
     /// 스폰 시점의 RegionLv에 따라 몹 체력/공격력이 원본 CONFIG.scale 공식대로 스케일링되는지 확인한다.
     /// hp = 38 × 2.15^(RegionLv-1), dmg = 13 × 1.4^(RegionLv-1).
     /// </summary>
@@ -146,7 +122,6 @@ public class RunProgressAndRewardsTests
     public IEnumerator SpawnWave_ScalesEnemyStatsByRegionLevel()
     {
         RunState.Begin(3, RunMode.Normal); // 3지역에 입장한 상태로 스폰시킨다
-        Assert.AreEqual(3, RunProgress.RegionLv);
 
         var prefab = NewMonsterPrefab();
         var spawner = NewSpawner(prefab);
@@ -238,7 +213,7 @@ public class RunProgressAndRewardsTests
         health.TakeDamage(health.MaxHp * 10f, attacker); // 확실히 즉사시킬 만큼(레벨 페널티가 깎아도 남게)
         yield return null;
 
-        Assert.AreEqual(1, RunProgress.TotalKills, "죽였는데 누적 처치 수가 안 올랐다");
+        Assert.AreEqual(1, RunState.Kills, "죽였는데 이번 런 처치 수가 안 올랐다");
         int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1));
         Assert.AreEqual(expectedExp, ProfileService.Current.exp, "1지역(sc=1) 고블린 처치 EXP는 OniBaseExp 그대로여야 한다");
     }
@@ -270,7 +245,7 @@ public class RunProgressAndRewardsTests
             yield return null;
         }
 
-        Assert.AreEqual(kills, RunProgress.TotalKills);
+        Assert.AreEqual(kills, RunState.Kills);
         int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1)) * kills;
         Assert.AreEqual(expectedExp, ProfileService.Current.exp, $"40마리 전부 1지역(sc=1)이라 EXP는 결정적이어야 한다(OniBaseExp×{kills})");
         Assert.Greater(ProfileService.Current.gold, 0, $"{kills}마리 죽였는데 골드가 한 번도 안 드랍됐다(DifficultyScalingConfig.GoldDropChance 확률상 사실상 불가능) — 확률 로직 확인 필요");

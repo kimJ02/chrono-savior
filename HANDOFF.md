@@ -254,9 +254,9 @@
 3. **4 상태 소유권**: 상태마다 **static 여부 · 쓰기 주체 · 수명·초기화 · 읽기 경로**를 따로 표로(세 축을 섞지 않는다 — 이벤트 구독 목록·`WorldView` 참조도 실행 중 바뀐다. static은 유지하되 구독 해제·씬 전환 때 수명을 적는다).
    `ProfileService.Current`는 0이 목표가 아니다 — 규칙이 있는 쓰기(날짜 차감·보상·골드 소비·캐릭터 선택·스킬 습득)만 소유 API로. 완료: 쓰기 규칙·테스트가 있고 동작 불변(전부 주입·정적 제거는 완료 조건이 아니다).
    **진행 계획(2026-11-06 Codex 합의, 커밋 순서대로)** — 쓰기 주체는 하나로 모으되 모든 쓰기를 `GameFlow`나 새 범용 관리자에 몰지 않는다(상태가 자기 변경을 책임지고, 사건 발생자가 의미 있는 메서드를 부른다):
-   - 4-0 상태 표 `docs/state-ownership.md`(분류·static·소유자·변경 요청자·수명/초기화·읽기·검증). `StateOwnershipTests`를 범용으로 키우지 않는다.
-   - 4-1 `CombatModifiers.MaxCombo` = **이번 원정 최고 콤보**로 확정·런마다 초기화(결과 화면 '원정 통계' — Figma 추가 통계라 원본 버그 수정이 아니라 프로젝트 통계 의미 바로잡기. 평생 최고는 프로필 `stats.maxCombo`).
-   - 4-2 읽는 곳 없는 `RunProgress.TotalKills`·`RegionLv` 별칭 삭제(`RunState.Region` 직접).
+   - ✅ 4-0 상태 표 `docs/state-ownership.md`(분류·static·소유자·변경 요청자·수명/초기화·읽기·검증). `StateOwnershipTests`를 범용으로 키우지 않는다.
+   - ✅ 4-1 `CombatModifiers.MaxCombo` = **이번 원정 최고 콤보**로 확정·런마다 초기화(결과 화면 '원정 통계' — Figma 추가 통계라 원본 버그 수정이 아니라 프로젝트 통계 의미 바로잡기. 평생 최고는 프로필 `stats.maxCombo`).
+   - ✅ 4-2 읽는 곳 없는 `RunProgress.TotalKills`·`RegionLv` 별칭 삭제(`RunState.Region` 직접). 테스트에서만 쓰던 `DifficultyScalingConfig.KillsPerRegionLevel`도 삭제.
    - 4-3 `FieldBounds` public 가변 필드 → 읽기 전용(쓰기는 `FieldLayout` 한 경로).
    - 4-4 프로필 쓰기 중 규칙 있는 것만 `PlayerProfile` API로 — 캐릭터 선택 검증, 뽑기 재화 차감·통계, `stats.shrines/bosses++`(의미 있는 메서드, 범용 `SetStat` 금지). 각성 화면 'SP +1 테스트 버튼'은 사용자 확인 후(제거 또는 에디터 전용).
    - 4-5 `RunState`·`CombatModifiers`의 변경 API 정리 + 로비↔전투 왕복 수명 테스트(**상태별 기대값** — 로비엔 `WorldView.Lobby`가 남아야 하고, 내려간 전투의 등록·구독·런 오브젝트는 없어야). `HitFeel`은 요청형 그대로.

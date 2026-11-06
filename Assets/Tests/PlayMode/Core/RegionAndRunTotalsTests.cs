@@ -28,7 +28,6 @@ public class RegionAndRunTotalsTests
     static void ResetStatics()
     {
         RunState.Reset();
-        RunProgress.Reset();
         RunTransient.Reset();
         CombatModifiers.Reset();
         ProfileService.Replace(new PlayerProfile());

@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (56)** — **[나] 4-2: 쓰이지 않는 `RunProgress` 삭제 (`feature/state-ownership`, PlayMode 473/473).** `TotalKills`는 세기만 하고 읽는 곳이 없었고 `RegionLv`는 `RunState.Region`의 별칭이었다 — `EnemySpawner`가 `RunState.Region`을 직접 읽는다(동작 같음). 테스트에서만 쓰던 `DifficultyScalingConfig.KillsPerRegionLevel`도 삭제.
+  위임만 확인하던 `RegionLv_FollowsRunRegion_NotKillCount` 테스트 삭제(474→473), 처치 수 확인은 `RunState.Kills`로. 테스트 클래스 이름 `RunProgressAndRewardsTests` → `RegionScalingAndRewardsTests`.
 - **2026-11-06 (55)** — **[나] 4-1: 결과 화면 '최대 콤보'를 원정마다 (`feature/state-ownership`, PlayMode 474/474).** `CombatModifiers.MaxCombo`를 `ResetForRun`이 지운다(예전엔 테스트용 `Reset`만 지워 결과 화면에 그 세션 전체 최고가 보였다).
   Figma가 추가한 '원정 통계'의 의미를 바로잡은 것(원본 결과 화면엔 콤보 표시 없음). 업적용 평생 최고는 프로필 `stats.maxCombo` 그대로. `CombatModifierTests.MaxCombo_IsPerExpedition_ButProfileKeepsTheLifetimeBest`.
 - **2026-11-06 (54)** — **[나] 정리 순서 4(상태 소유권) 시작 — 4-0 상태 표 (`feature/state-ownership`, 문서만).** 실행 중 바뀌는 정적 상태를 전수 조사해 `docs/state-ownership.md`(분류·static·소유자·변경 요청자·수명·읽기·검증).

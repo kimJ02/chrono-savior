@@ -27,8 +27,8 @@ namespace ChronoSavior.Systems
 /// 몹은 이제 Rigidbody2D로 실제 중력을 받으므로(EnemyMove 참고) 발판 위에 스폰하면 물리로
 /// 그 위에 서 있는다. FieldLayout이 발판/바닥그리드 좌표의 단일 출처다.
 ///
-/// 스프린트 2(성장곡선 검증, `docs/sprints/03-growth-curve-worksplit.md` 트랙 A) — 스폰 직후 "가상 지역
-/// 레벨"(<see cref="RunProgress"/>)에 따라 몹 체력/공격력을 스케일링하고, 그 몹이 죽으면
+/// 스프린트 2(성장곡선 검증, `docs/sprints/03-growth-curve-worksplit.md` 트랙 A) — 스폰 직후 지역
+/// (<see cref="RunState.Region"/>, 예전 '가상 지역 레벨' `RunProgress`는 2026-11-06 삭제)에 따라 몹 체력/공격력을 스케일링하고, 그 몹이 죽으면
 /// 처치 보상(골드+EXP)을 지급한다. 둘 다 이 스포너가 몹 프리팹을 다루는 유일한 지점이라
 /// 자연스럽게 여기서 담당한다(트랙 A/B 경계 — `Core/PlayerProfile.cs`·`Characters/` 전체는
 /// 트랙 B 소유라 손대지 않는다). **스케일링/보상 수치는 전부 `Core/DifficultyScalingConfig`에
@@ -302,7 +302,7 @@ public class EnemySpawner : MonoBehaviour
         var move = go.GetComponent<EnemyMove>();
         if (move != null) move.SetSpawnProtection(Shrine.SpawnProtect); // 원본 `spawnInvuln: 1.0`(:4008) — 몹의 2초와 다르다
 
-        int level = Mathf.Clamp(RegionConfig.RecommendedLevel(RunProgress.RegionLv) + Random.Range(0, 2), 1, 40);
+        int level = Mathf.Clamp(RegionConfig.RecommendedLevel(RunState.Region) + Random.Range(0, 2), 1, 40);
         var health = go.GetComponent<EnemyHealth>();
         if (health != null)
         {
@@ -546,7 +546,7 @@ public class EnemySpawner : MonoBehaviour
     {
         var types = catalog != null ? catalog.types : null;
         if (types == null || types.Length == 0) return null;
-        var rolled = FindData(EnemySpawnTable.Roll(RunProgress.RegionLv));
+        var rolled = FindData(EnemySpawnTable.Roll(RunState.Region));
         return rolled != null ? rolled : types[Random.Range(0, types.Length)];
     }
 
@@ -561,7 +561,7 @@ public class EnemySpawner : MonoBehaviour
         // 로비로 나가면 필드가 비워져야 한다(원본 `enemies = []`, project_test.html:4318).
         RunTransient.Mark(monster);
 
-        int regionLv = RunProgress.RegionLv;
+        int regionLv = RunState.Region;
 
         // 원본 `elite = !opts.noElite && Math.random() < CONFIG.elite.chance`(project_test.html:3948).
         // 엘리트는 별도 종류가 아니라 **아무 몹에게나 붙는 승격**이라, 종류를 정한 뒤에 굴린다.
@@ -708,7 +708,6 @@ public class EnemySpawner : MonoBehaviour
         stats.totalKills++;
         if (elite) stats.elites++;
 
-        RunProgress.RegisterKill();
         // 결과 화면·HUD가 읽는 이번 런 집계. 원본도 `run.kills`와 누적 통계를 따로 센다(:1857).
         RunState.RegisterKill(isBoss: false);
         // 지역 토벌 진행도 — 100마리를 채우면 그 지역 보스가 열린다(원본 :1866).
@@ -718,7 +717,7 @@ public class EnemySpawner : MonoBehaviour
         if (enemy != null) spawnedData.TryGetValue(enemy.gameObject, out data);
 
         int enemyLevel = enemy.Level;
-        float sc = DifficultyScalingConfig.RewardMultiplier(RunProgress.RegionLv);
+        float sc = DifficultyScalingConfig.RewardMultiplier(RunState.Region);
         // 원본 `eliteMult = e.elite ? CONFIG.elite.rewardMult : 1`(project_test.html:1810).
         if (elite) sc *= DifficultyScalingConfig.EliteRewardMult;
 

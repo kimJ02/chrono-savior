@@ -46,7 +46,7 @@
 
 ## 6. 정리할 것 (4-1~4-5)
 
-- `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1).
-- `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2).
+- ✅ `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1).
+- ✅ `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2). 난이도·보상은 `RunState.Region`을 직접 읽는다.
 - `FieldBounds.MinX`·`MaxX`·`GroundY`가 public 가변 필드 → 읽기 전용(4-3).
 - 프로필 직접 대입: 캐릭터 선택(`PlayerRig`·`CharacterSelectScreen`), 뽑기 재화·통계(`GachaService`), `stats.shrines++`(`Shrine`)·`stats.bosses++`(`EnemySpawner`), 각성 화면 'SP +1 테스트 버튼'(`level++`) → 의미 있는 `PlayerProfile` 메서드로(4-4).

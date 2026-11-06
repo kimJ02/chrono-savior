@@ -5,7 +5,7 @@ namespace ChronoSavior.Core
     /// <summary>
     /// 난이도 스케일링("가상 지역 레벨") + 처치 보상 수치를 전부 여기 모았다(`docs/sprints/03-growth-curve-worksplit.md`
     /// 트랙 A "0. 착수 전 필독", 2026-09-08 추가). 나중에 밸런스를 조정할 때 이 파일 상수만 바꾸면
-    /// 되고 `EnemySpawner`/`RunProgress` 로직 코드는 안 건드려도 된다 — 원본(`project_test.html`)
+    /// 되고 `EnemySpawner` 로직 코드는 안 건드려도 된다 — 원본(`project_test.html`)
     /// 밸런스 자체가 완전히 정리된 게 아니라서(예: `CONFIG.souls`/`CONFIG.scale.soulGrow`처럼 아무 데서도
     /// 안 읽는 죽은 설정값이 실제로 있었다, `:701`,`:727`) 우리도 나중에 직접 세밀하게 조정할 가능성이
     /// 높다는 판단에서 나온 구조다.
@@ -15,8 +15,6 @@ namespace ChronoSavior.Core
     /// </summary>
     public static class DifficultyScalingConfig
     {
-        public const int KillsPerRegionLevel = 100; // 원본 regionKillTarget(:699)
-
         public const float HpPerRegion = 2.15f;     // CONFIG.scale.hpPerRegion(:727)
         public const float DmgPerRegion = 1.4f;     // CONFIG.scale.dmgPerRegion(:727)
         public const float RewardGrow = 1.42f;      // CONFIG.scale.rewardGrow(:727)
