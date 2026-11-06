@@ -19,6 +19,28 @@ namespace ChronoSavior.Tests.PlayMode
 public class EnemySpawnAndMoveTests
 {
     /// <summary>
+    /// 같은 웨이브 간격(원본 `spawnWave()` — `|dx| < 52px && |dy| < 12px`이면 너무 가깝다, 2026-11-06 5-3 `EnemySpawnPlacement`로 옮기며 고정):
+    /// 이미 고른 자리와 **같은 층에서** 간격 안이면 다시 뽑고, 다른 층(높이 차 12px 이상)이면 가까워도 된다.
+    /// </summary>
+    [Test]
+    public void Placement_KeepsSpacingOnlyWithinTheSameLayer()
+    {
+        FieldLayout.SetBossArena(false);
+        const float spacing = 0.52f, radius = 0.5f;
+        var placed = new System.Collections.Generic.List<Vector2>();
+        Random.InitState(42);
+        for (int i = 0; i < 200; i++)
+        {
+            if (!EnemySpawnPlacement.TryPick(placed, radius, spacing, 10, out var p)) continue;
+            foreach (var q in placed)
+                Assert.IsFalse(Mathf.Abs(p.x - q.x) < spacing && Mathf.Abs(p.y - q.y) < 0.12f, $"같은 층에서 너무 가깝다: {p} / {q}");
+            Assert.That(p.x, Is.InRange(FieldBounds.MinX, FieldBounds.MaxX), "필드 안");
+            placed.Add(p);
+        }
+        Assert.Greater(placed.Count, 10, "자리를 충분히 찾았다");
+    }
+
+    /// <summary>
     /// 웨이브 하나를 강제로 발생시켜, 스폰된 몹이 전부 필드 X 경계 안 + "알려진 착지 Y" 중
     /// 하나(바닥 또는 15개 발판 중 하나의 착지 높이)에 있는지 확인한다. 전부 GroundY였던 이전
     /// 가정과 달리 이제 발판 스폰 포인트는 그 발판 실제 높이를 쓴다(사용자 지적으로 수정됨).

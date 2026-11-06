@@ -266,7 +266,7 @@
    **진행 계획(2026-11-06 Codex 합의, 커밋 순서대로)** — 새 `MonoBehaviour`·범용 서비스 계층은 만들지 않는다. 떼어 낸 것은 **일반 C# 정적 클래스**이고, 직렬화 필드(프리팹·목록·플레이어)는 원래 컴포넌트에 남겨 호출 때 넘긴다 → 씬·프리팹 연결은 바뀌지 않는다. 이벤트 구독은 원래 컴포넌트의 `OnEnable`/`OnDisable`에 둔다.
    - ✅ 5-1 `EnemySpawner` → `EnemySetup`(데이터로 몹 한 마리 완성: 엘리트 표식·지역/회귀 장벽 스탯·레벨·그림·크기·종류별 값, 보스·성소 스탯과 크기 포함). 스포너는 언제·어디·무엇을 세울지와 몹↔데이터 기억(`spawnedData`)을 갖는다.
    - ✅ 5-2 `EnemySpawner` → `EnemyRewards`(죽으면 무엇을 얼마나 주나: 통계·런 집계·지역 토벌·EXP/골드·연쇄·업적, 보스 보상). 경험치 구슬을 세우는 건 생성이라 스포너에 남긴다.
-   - 5-3 `EnemySpawner` → `EnemySpawnPlacement`(스폰 지점 후보·같은 웨이브 간격).
+   - ✅ 5-3 `EnemySpawner` → `EnemySpawnPlacement`(스폰 지점 후보·같은 웨이브 간격). 스포너 763→420줄 — 남은 건 웨이브·보스전 부하·성소·보스 등장 타이밍, 몹이 낳는 몹, 처치 연결·구슬.
    - 5-4 `CombatHud` → `CombatMinimapView`(미니맵 생성·갱신·발판 다시 그리기·좌표 변환).
    - 5-5 `BladeCombat` — 메서드↔상태 의존 표를 만든 뒤 Codex와 판정(결합이 높으면 그대로 둔다). `PlayerProfile`·`GameFlow`는 응집돼 있어 그대로.
    각 단계: 테스트가 리플렉션으로 부르는 메서드 이름(`SpawnWave`·`SpawnBoss`·`SpawnShrine`·`HandleEnemyDied`·`aliveMonsters` 등)은 스포너에 남기고, 기존 테스트가 못 덮는 동작만 특성 테스트로 보강. 생성 담당 목록(`CreationOwnershipTests`)·`DefinedApis` 갱신.

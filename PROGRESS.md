@@ -227,6 +227,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (66)** — **[나] 5-3: 스폰 자리 고르기를 `EnemySpawnPlacement`로 (`feature/responsibility-split`).** 원본 스폰 지점 21곳 중 고르고 흔들기 + 같은 웨이브 간격 검사(정적, 간격·재시도·몸 반지름은 스포너의 씬 설정을 넘긴다). `EnemySpawner` 496→420줄 — 이제 웨이브·보스전 부하·성소·보스 등장 타이밍과 처치 연결·구슬만. 배치는 기존 `EnemySpawnAndMoveTests`(필드 안·발판 착지 높이)에 같은 층 간격 테스트 `Placement_KeepsSpacingOnlyWithinTheSameLayer` 추가. PlayMode 482/482, 씬 검증 통과.
 - **2026-11-06 (65)** — **[나] 5-1·5-2 Codex 리뷰 '통과' + 난수 순서 테스트 (`feature/responsibility-split`, PlayMode 481/481).** 권고대로 `RegionScalingAndRewardsTests.SetupAndRewards_UseRandomInTheSameOrder` — 같은 시드에서 몹 설정(엘리트→레벨→속도)과 처치 보상(골드 확률→양)이 옮기기 전 순서로 난수를 쓰는지.
 - **2026-11-06 (64)** — **[나] 5-2: 처치 보상을 `EnemyRewards`로 (`feature/responsibility-split`).** 일반 몹(통계·런 집계·지역 토벌·EXP/골드·연쇄·업적)과 보스(보상·정복) 보상을 정적 클래스로(`EnemySpawner` 562→496줄). 스포너는 처치 이벤트를 듣고 몹↔데이터를 넘기며, 경험치 구슬(생성)과 보스 격파 알림은 그대로 갖는다. 난수 순서(골드 드랍 확률→양) 그대로. `DefinedApis` 목록에 분리한 공개 메서드. 보스 보상 금액·정복을 지키는 특성 테스트 `RegionScalingAndRewardsTests.BossKill_GrantsScaledFixedRewards_AndConquersTheRegion`(일반 처치 보상은 같은 파일의 기존 테스트가 덮는다). PlayMode 480/480, 씬 검증 통과.
 - **2026-11-06 (63)** — **[나] 5-1: 몹 개체 설정을 `EnemySetup`으로 (`feature/responsibility-split`, PlayMode 479/479).** 데이터로 몹 한 마리를 완성하는 일(엘리트 승격·지역/회귀 장벽 스탯·레벨·그림·크기·종류별 값, 보스·성소 스탯과 크기)을 정적 클래스로 떼어 냈다(`EnemySpawner` 763→562줄). 스포너는 언제·어디·무엇을 세울지, 처치 연결(`Died` 구독), 몹↔데이터 기억만. 새 컴포넌트가 아니라 씬·프리팹 연결은 그대로, 난수 호출 순서(엘리트→레벨→속도, 성소 위치→레벨)도 그대로.

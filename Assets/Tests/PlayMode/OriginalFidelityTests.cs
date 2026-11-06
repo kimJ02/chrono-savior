@@ -406,6 +406,7 @@ public class OriginalFidelityTests
             ("SetupBoss",                  "EnemySetup.cs"),       // EnemySpawner.SpawnBoss
             ("GrantKill",                  "EnemyRewards.cs"),     // EnemySpawner.HandleEnemyDied
             ("GrantBossKill",              "EnemyRewards.cs"),     // EnemySpawner.HandleBossDied
+            ("EnemySpawnPlacement.TryPick", "EnemySpawnPlacement.cs"), // EnemySpawner.SpawnWaveOf
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
         };
