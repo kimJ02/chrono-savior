@@ -392,7 +392,7 @@ public class EnemySpawner : MonoBehaviour
     {
         // 로비로 나가면 필드가 비워져야 한다(원본 `enemies = []`, project_test.html:4318).
         RunTransient.Mark(monster);
-        EnemySetup.Apply(monster, data, allowElite, EliteChance, data != null ? SpriteFor(data.shape) : null);
+        EnemySetup.Apply(monster, data, allowElite, EliteChance, data != null && data.sprite == null ? SpriteFor(data.shape) : null);
         if (monster.TryGetComponent(out EnemyHealth health)) health.Died += HandleEnemyDied;
         if (data != null) spawnedData[monster] = data;
     }
@@ -408,13 +408,14 @@ public class EnemySpawner : MonoBehaviour
         if (enemy.GetComponent<Boss>() != null) return;
 
         spawnedData.TryGetValue(enemy.gameObject, out var data);
-        spawnedData.Remove(enemy.gameObject);
         EnemyRewards.GrantKill(enemy, data);
 
         // 경험치 구슬 — 원본 `if (run.kills % CONFIG.orb.every === 0)`(:1860).
         // **이번 런 처치 수 기준**이라(누적이 아니다) 런마다 50마리째부터 다시 센다.
         if (RunState.Kills > 0 && RunState.Kills % ExpOrb.DropEveryKills == 0)
             ExpOrb.Spawn(orbPrefab, enemy.transform.position, player);
+
+        spawnedData.Remove(enemy.gameObject);
     }
 }
 }

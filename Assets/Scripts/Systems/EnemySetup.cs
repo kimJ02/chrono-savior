@@ -21,7 +21,7 @@ public static class EnemySetup
     /// </summary>
     /// <param name="allowElite">꼬마 슬라임은 승격되지 않는다(원본 `noElite: true`, project_test.html:1842).</param>
     /// <param name="eliteChance">엘리트 기본 확률(아이템 '몬스터 유인향'은 여기서 곱한다).</param>
-    /// <param name="shapeSprite">정식 그림이 없을 때 꽂을 종류별 임시 도형(데이터가 없으면 쓰지 않는다).</param>
+    /// <param name="shapeSprite">정식 그림(`data.sprite`)이 없을 때 꽂을 종류별 임시 도형 — 그때만 넘긴다.</param>
     public static void Apply(GameObject monster, EnemyData data, bool allowElite, float eliteChance, Sprite shapeSprite)
     {
         int regionLv = RunState.Region;

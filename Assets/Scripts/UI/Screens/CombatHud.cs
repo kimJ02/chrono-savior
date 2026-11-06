@@ -86,7 +86,7 @@ namespace ChronoSavior.UI
         public float ExpFillWidth => expFill != null ? ((RectTransform)expFill.transform).sizeDelta.x : 0f;
         public bool ComboShown => comboNum != null && comboNum.enabled;
         public bool BossBarShown => bossRoot != null && bossRoot.gameObject.activeSelf;
-        public int MinimapLineCount => minimap.PlatformLineCount;
+        public int MinimapLineCount => minimap != null ? minimap.PlatformLineCount : 0;
 
         public struct PreviewState
         {

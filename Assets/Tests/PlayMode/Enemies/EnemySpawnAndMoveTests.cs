@@ -25,19 +25,29 @@ public class EnemySpawnAndMoveTests
     [Test]
     public void Placement_KeepsSpacingOnlyWithinTheSameLayer()
     {
-        FieldLayout.SetBossArena(false);
-        const float spacing = 0.52f, radius = 0.5f;
-        var placed = new System.Collections.Generic.List<Vector2>();
-        Random.InitState(42);
-        for (int i = 0; i < 200; i++)
+        bool arenaBefore = FieldLayout.IsBossArena;
+        var randomBefore = Random.state; // 시드를 고정하므로 끝나면 되돌린다
+        try
         {
-            if (!EnemySpawnPlacement.TryPick(placed, radius, spacing, 10, out var p)) continue;
-            foreach (var q in placed)
-                Assert.IsFalse(Mathf.Abs(p.x - q.x) < spacing && Mathf.Abs(p.y - q.y) < 0.12f, $"같은 층에서 너무 가깝다: {p} / {q}");
-            Assert.That(p.x, Is.InRange(FieldBounds.MinX, FieldBounds.MaxX), "필드 안");
-            placed.Add(p);
+            FieldLayout.SetBossArena(false);
+            const float spacing = 0.52f, radius = 0.5f;
+            var placed = new System.Collections.Generic.List<Vector2>();
+            Random.InitState(42);
+            for (int i = 0; i < 200; i++)
+            {
+                if (!EnemySpawnPlacement.TryPick(placed, radius, spacing, 10, out var p)) continue;
+                foreach (var q in placed)
+                    Assert.IsFalse(Mathf.Abs(p.x - q.x) < spacing && Mathf.Abs(p.y - q.y) < 0.12f, $"같은 층에서 너무 가깝다: {p} / {q}");
+                Assert.That(p.x, Is.InRange(FieldBounds.MinX, FieldBounds.MaxX), "필드 안");
+                placed.Add(p);
+            }
+            Assert.Greater(placed.Count, 10, "자리를 충분히 찾았다");
         }
-        Assert.Greater(placed.Count, 10, "자리를 충분히 찾았다");
+        finally
+        {
+            Random.state = randomBefore;
+            FieldLayout.SetBossArena(arenaBefore);
+        }
     }
 
     /// <summary>

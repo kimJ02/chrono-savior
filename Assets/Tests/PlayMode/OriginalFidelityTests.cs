@@ -402,6 +402,7 @@ public class OriginalFidelityTests
             ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
             ("TryUnlockAchievement",       "PlayerProfile.cs"),    // Achievements.CheckNew
             // 책임별 분리(2026-11-06 5단계) — 스포너가 부르는 몹 설정·보상
+            ("EnemySetup.Apply",           "EnemySetup.cs"),       // EnemySpawner.ApplyEnemyData(이름이 흔해 클래스까지 적는다)
             ("SetupShrine",                "EnemySetup.cs"),       // EnemySpawner.SpawnShrine
             ("SetupBoss",                  "EnemySetup.cs"),       // EnemySpawner.SpawnBoss
             ("GrantKill",                  "EnemyRewards.cs"),     // EnemySpawner.HandleEnemyDied

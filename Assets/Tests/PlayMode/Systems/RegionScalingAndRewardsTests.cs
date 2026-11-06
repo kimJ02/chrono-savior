@@ -121,35 +121,43 @@ public class RegionScalingAndRewardsTests
     [Test]
     public void SetupAndRewards_UseRandomInTheSameOrder()
     {
+        var randomBefore = Random.state; // 시드를 고정하므로 끝나면 되돌린다 — 뒤 테스트의 난수에 영향을 주지 않게
         var data = ScriptableObject.CreateInstance<EnemyData>();
-        var go = new GameObject("TestOrderMonster");
-        go.AddComponent<SpriteRenderer>();
-        go.AddComponent<CircleCollider2D>().radius = 0.5f;
-        var health = go.AddComponent<EnemyHealth>();
-        var move = go.AddComponent<EnemyMove>();
+        try
+        {
+            var go = new GameObject("TestOrderMonster");
+            go.AddComponent<SpriteRenderer>();
+            go.AddComponent<CircleCollider2D>().radius = 0.5f;
+            var health = go.AddComponent<EnemyHealth>();
+            var move = go.AddComponent<EnemyMove>();
 
-        Random.InitState(1234);
-        bool elite = Random.value < 0.5f;
-        int levelStep = Random.Range(0, 2);
-        float speed = data.moveSpeed * Random.Range(0.9f, 1.1f);
-        Random.InitState(1234);
-        EnemySetup.Apply(go, data, allowElite: true, eliteChance: 0.5f, shapeSprite: null);
-        Assert.AreEqual(elite, go.GetComponent<EnemyElite>() != null, "엘리트가 첫 난수");
-        Assert.AreEqual(Mathf.Clamp(RegionConfig.RecommendedLevel(RunState.Region) + levelStep, 1, 40), health.Level, "레벨이 둘째");
-        Assert.AreEqual(speed, move.moveSpeed, 1e-5f, "이동속도가 셋째");
+            Random.InitState(1234);
+            bool elite = Random.value < 0.5f;
+            int levelStep = Random.Range(0, 2);
+            float speed = data.moveSpeed * Random.Range(0.9f, 1.1f);
+            Random.InitState(1234);
+            EnemySetup.Apply(go, data, allowElite: true, eliteChance: 0.5f, shapeSprite: null);
+            Assert.AreEqual(elite, go.GetComponent<EnemyElite>() != null, "엘리트가 첫 난수");
+            Assert.AreEqual(Mathf.Clamp(RegionConfig.RecommendedLevel(RunState.Region) + levelStep, 1, 40), health.Level, "레벨이 둘째");
+            Assert.AreEqual(speed, move.moveSpeed, 1e-5f, "이동속도가 셋째");
 
-        var victim = new GameObject("TestOrderVictim");
-        var victimHealth = victim.AddComponent<EnemyHealth>();
-        int seed = 0;
-        while (true) { Random.InitState(seed); if (Random.value < DifficultyScalingConfig.GoldDropChance) break; seed++; } // 골드가 떨어지는 시드
-        Random.InitState(seed);
-        _ = Random.value; // 드랍 확률
-        int rolled = Random.Range(data.goldMin, data.goldMax + 1);
-        int expectedGold = Mathf.RoundToInt(rolled * DifficultyScalingConfig.RewardMultiplier(RunState.Region) * CombatModifiers.GoldMultiplier);
-        Random.InitState(seed);
-        EnemyRewards.GrantKill(victimHealth, data);
-        Assert.AreEqual(expectedGold, RunState.GoldEarned, "골드 드랍 확률 다음에 양을 굴린다");
-        Object.DestroyImmediate(data);
+            var victim = new GameObject("TestOrderVictim");
+            var victimHealth = victim.AddComponent<EnemyHealth>();
+            int seed = 0;
+            while (true) { Random.InitState(seed); if (Random.value < DifficultyScalingConfig.GoldDropChance) break; seed++; } // 골드가 떨어지는 시드
+            Random.InitState(seed);
+            _ = Random.value; // 드랍 확률
+            int rolled = Random.Range(data.goldMin, data.goldMax + 1);
+            int expectedGold = Mathf.RoundToInt(rolled * DifficultyScalingConfig.RewardMultiplier(RunState.Region) * CombatModifiers.GoldMultiplier);
+            Random.InitState(seed);
+            EnemyRewards.GrantKill(victimHealth, data);
+            Assert.AreEqual(expectedGold, RunState.GoldEarned, "골드 드랍 확률 다음에 양을 굴린다");
+        }
+        finally
+        {
+            Random.state = randomBefore;
+            Object.DestroyImmediate(data); // 몹 둘(이름이 Test…)은 이 클래스의 TearDown이 지운다
+        }
     }
 
     /// <summary>

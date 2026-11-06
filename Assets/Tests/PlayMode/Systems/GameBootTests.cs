@@ -547,6 +547,7 @@ public class GameBootTests
     [UnityTest]
     public IEnumerator BossAndShrine_GetTheirStatsAndSizes()
     {
+        // 세운 보스·성소는 전투 씬(지금 활성 씬)에 생겨 TearDown이 씬째 내린다. 보스 등장 흔들림·성소 버프 같은 정적 상태는 ResetStatics가 지운다.
         yield return ToRun();
         var spawner = InScene<EnemySpawner>(GameFlow.CombatScene).Single();
         var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
