@@ -52,20 +52,22 @@ namespace ChronoSavior.Tests.PlayMode
         /// <summary>효과 머티리얼(SpriteFlash) — 게임 씬·몹 프리팹이 쓰는 것.</summary>
         public static Material SpriteFlash => LoadAsset<Material>("Assets/Materials/SpriteFlash.mat");
 
-        /// <summary>섬영 베기 프레임 — 게임 씬 Player의 `BladeSlashVfx`가 쓰는 것과 같은 순서(이름순).</summary>
+        /// <summary>
+        /// 섬영 베기 테스트용 프레임 — **특정 파일에 기대지 않는다**(효과 그림은 외주로 바꿀 예정이라 파일이 옮겨져도 테스트가 깨지지 않게, 타격음과 같은 방식).
+        /// 지금 게임 프레임과 같은 규격(128×128·128 PPU, 9장)으로 만든다. 씬에 실제로 연결된 프레임은 `GameBootTests`가 본다.
+        /// </summary>
         public static Sprite[] BladeSlashFrames
         {
             get
             {
-#if UNITY_EDITOR
-                var guids = UnityEditor.AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Resources/Art/Figma/Vfx/BladeSlash" });
-                var list = new System.Collections.Generic.List<Sprite>();
-                foreach (var g in guids) list.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(UnityEditor.AssetDatabase.GUIDToAssetPath(g)));
-                list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
-                return list.ToArray();
-#else
-                throw new System.NotSupportedException("TestPrefabs는 에디터에서만 쓴다");
-#endif
+                var frames = new Sprite[9];
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    var tex = new Texture2D(128, 128) { filterMode = FilterMode.Point };
+                    frames[i] = Sprite.Create(tex, new Rect(0, 0, 128, 128), new Vector2(0.5f, 0.5f), 128f);
+                    frames[i].name = $"TestSlash_{i:00}";
+                }
+                return frames;
             }
         }
 

@@ -37,15 +37,6 @@ public class BladeSlashVfxTests
         Assert.AreEqual(8, BladeSlashVfx.FrameAt(BladeSlashVfx.Life, 9), "끝을 넘어도 마지막 프레임");
     }
 
-    [Test]
-    public void Frames_AreImportedAsNineSprites()
-    {
-        var all = Resources.LoadAll<Sprite>("Art/Figma/Vfx/BladeSlash");
-        Assert.AreEqual(9, all.Length, "Slash 1 color4는 9프레임");
-        Assert.AreEqual(FilterMode.Point, all[0].texture.filterMode);
-        Assert.AreEqual(128f, all[0].pixelsPerUnit, "128px = 1유닛");
-    }
-
     [UnityTest]
     public IEnumerator Swing_SpawnsSlash_ThenItEnds()
     {

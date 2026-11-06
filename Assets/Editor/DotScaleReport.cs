@@ -22,7 +22,7 @@ namespace ChronoSavior.Editor
     {
         const float GridPpu = StageArtConfig.PixelsPerUnit; // 월드 격자: 1유닛 = 128칸
 
-        struct Row { public string what, art, source; public float dotX, dotY; public string note; }
+        struct Row { public string what, art, source; public float dotX, dotY; public string note; public bool placeholderShape; }
 
         [MenuItem("ChronoSavior/도트 배율 보고서")]
         public static void Run()
@@ -90,9 +90,9 @@ namespace ChronoSavior.Editor
                     float px = s != null ? s.rect.height : 128f;
                     float h = data.visualHeight > 0f ? data.visualHeight : data.colliderRadius * 2f;
                     float d = Dot(h, px);
-                    rows.Add(new Row { what = "몹 " + data.displayName, art = s != null ? s.name : "(도형)", source = data.name + ".visualHeight", dotX = d, dotY = d, note = note });
+                    rows.Add(new Row { what = "몹 " + data.displayName, art = s != null ? s.name : "(도형)", source = data.name + ".visualHeight", dotX = d, dotY = d, note = note, placeholderShape = s == null });
                     float de = Dot(h * DifficultyScalingConfig.EliteScale, px);
-                    rows.Add(new Row { what = "몹 " + data.displayName + "(엘리트)", art = s != null ? s.name : "(도형)", source = "×EliteScale", dotX = de, dotY = de, note = note });
+                    rows.Add(new Row { what = "몹 " + data.displayName + "(엘리트)", art = s != null ? s.name : "(도형)", source = "×EliteScale", dotX = de, dotY = de, note = note, placeholderShape = s == null });
                 }
                 void Big(string what, Sprite s, Vector2 size, string src)
                 {
@@ -128,7 +128,7 @@ namespace ChronoSavior.Editor
             foreach (var r in rows)
             {
                 bool whole = IsWhole(r.dotX) && IsWhole(r.dotY);
-                if (!whole) { warnings++; if (r.note != null) shapes++; }
+                if (!whole) { warnings++; if (r.placeholderShape) shapes++; }
                 string dots = Mathf.Approximately(r.dotX, r.dotY) ? $"{r.dotX:0.###}" : $"{r.dotX:0.###} × {r.dotY:0.###}";
                 sb.AppendLine($"| {r.what} | {r.art} | {r.source} | {dots} | {(whole ? "" : "⚠")} {r.note} |");
             }

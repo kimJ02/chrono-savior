@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (52)** — **[나] 3.5 재확인(xhigh) 반영 (`feature/asset-seams`, PlayMode 473/473).** 보고서의 임시 도형 수를 별도 표시로(중력 착탄 설명 행이 섞이던 것), 테스트용 섬영 베기 프레임은 **만든 그림**으로(특정 파일에 기대지 않게 — 옛 폴더 import 테스트 1개 삭제),
+  씬에 연결된 프레임은 `GameBootTests`가 '비지 않음·이름순·Point 필터·같은 크기·PPU' 규칙으로 확인. `pixel-standard.md` 임시 도형 몹 줄 출처를 `visualHeight`로.
 - **2026-11-06 (51)** — **[나] 3.5 종합 리뷰(Codex xhigh) 반영 (`feature/asset-seams`, PlayMode 474/474, 씬 검증 통과).** 막던 2건: `docs/pixel-standard.md`가 3.5-d 이전 출처를 가리키던 것 → 지금 출처(`StageArtSet`·`heights`·`visualHeight`·`bossSize`)로,
   도트 배율 보고서가 옛 파일 경로로 섬영 베기 프레임을 읽던 것 → Player에 **실제로 연결된** 프레임을 읽고, 경고 합계를 표와 같게(임시 도형 수 따로). 같이: 기준점(피벗)은 가운데 규칙을 문서에, 포탈 배율 0 이하 검증,
   섬영 베기 프레임은 '지금과 같은 크기·PPU일 때만 코드 수정 없이'라고 표에 명시, 씬 Player의 프레임이 이름순이고 테스트 프레임과 같은지·효과 머티리얼 연결을 `GameBootTests`가 확인.

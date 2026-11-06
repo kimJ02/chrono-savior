@@ -407,11 +407,14 @@ public class GameBootTests
         Assert.AreEqual(1, player.GetComponents<PlayerAfterimages>().Length, "잔상(마법사 순간이동·섬영 고속 이동)");
         Assert.AreEqual(1, player.GetComponents<BladeSlashVfx>().Length, "섬영 회전베기 효과");
 
-        // 효과 에셋은 씬의 연결 칸(2026-11-06 3.5-e) — 섬영 베기 프레임은 이름순으로 연결돼 있고, 테스트가 쓰는 프레임(TestPrefabs)과 같다.
+        // 효과 에셋은 씬의 연결 칸(2026-11-06 3.5-e) — 섬영 베기 프레임은 비어 있지 않고 이름순, 도트 그림 규격(Point 필터·모두 같은 크기·PPU)이다.
+        // 어느 파일인지는 묻지 않는다(외주 프레임으로 바꿔도 이 규칙만 지키면 된다 — 지금 크기·PPU가 아니면 `BladeSlashVfx.Scale`도 같이 맞출 것).
         var frames = player.GetComponent<BladeSlashVfx>().Frames;
         Assert.IsNotEmpty(frames);
+        Assert.IsTrue(frames.All(f => f != null), "빈 프레임이 있다");
         CollectionAssert.AreEqual(frames.Select(f => f.name).OrderBy(n => n, System.StringComparer.Ordinal).ToArray(), frames.Select(f => f.name).ToArray(), "프레임이 이름순이 아니다");
-        CollectionAssert.AreEqual(TestPrefabs.BladeSlashFrames, frames, "테스트가 쓰는 프레임과 씬에 연결된 프레임이 다르다");
+        Assert.IsTrue(frames.All(f => f.texture.filterMode == FilterMode.Point), "도트 그림인데 흐리게(Bilinear) 들어왔다");
+        Assert.AreEqual(1, frames.Select(f => (f.rect.width, f.rect.height, f.pixelsPerUnit)).Distinct().Count(), "프레임마다 크기·PPU가 다르다");
         Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<MageChargeFlash>().FlashMaterial);
         Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<PlayerAfterimages>().GhostMaterial);
     }
