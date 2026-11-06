@@ -392,6 +392,13 @@ public class OriginalFidelityTests
             ("DefaultSpawnProtect",        "EnemySpawnRequestBus.cs"),
             ("WallPlayerDamage",           "RegressionConfig.cs"),
             ("StartNewExpedition",         "GameFlow.cs"),   // 타이틀 "새 원정"(TitleMenu)이 부른다 — 2026-11-05
+            // 상태 소유권(2026-11-06 4-3·4-4) — 바꾸는 길을 하나로 모은 메서드
+            ("SetMaxX",                    "FieldBounds.cs"),      // FieldLayout.SetBossArena
+            ("SetSelectedCharacter",       "PlayerProfile.cs"),    // 캐릭터 선택 화면·PlayerRig
+            ("RecordBossKill",             "PlayerProfile.cs"),    // EnemySpawner(보스 격파)
+            ("RecordShrineBroken",         "PlayerProfile.cs"),    // Shrine
+            ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
+            ("RecordPull",                 "ItemInventory.cs"),    // GachaService
         };
 
         var scriptFiles = Directory.GetFiles(

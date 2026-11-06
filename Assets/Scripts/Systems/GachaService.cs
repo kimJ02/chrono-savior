@@ -98,11 +98,8 @@ namespace ChronoSavior.Systems
                 var def = Roll(inv);
                 if (def == null) break; // 전 아이템 상한 — 더 줄 게 없다
 
-                profile.shards -= Cost;
-                inv.Add(def.id);
-                // 천장은 **영웅 이상이 나오면 초기화**된다(원본 `:6583`).
-                inv.pity = (def.grade == ItemGrade.Epic || def.grade == ItemGrade.Legend) ? 0 : inv.pity + 1;
-                profile.stats.pulls++;
+                if (!profile.TryPayForPull(Cost)) break;
+                inv.RecordPull(def);
                 got.Add(def);
             }
             if (got.Count > 0) Achievements.CheckNew(profile);

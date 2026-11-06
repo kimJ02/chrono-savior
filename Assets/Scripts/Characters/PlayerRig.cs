@@ -94,7 +94,7 @@ namespace ChronoSavior.Characters
             var profile = ProfileService.Current;
             if (profile.character == Current) return;
             if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
-            else profile.character = Current; // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
+            else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace ChronoSavior.Characters
             }
 
             Current = id;
-            ProfileService.Current.character = id;
+            ProfileService.Current.SetSelectedCharacter(id);
             ApplySprite(id);
 
             foreach (var kit in kits)

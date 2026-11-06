@@ -43,6 +43,12 @@ namespace ChronoSavior.Core
         public CharacterId character = CharacterId.Mage;
 
         /// <summary>
+        /// 고른 캐릭터를 바꾼다 — 게임 코드는 이 길로만(로비 캐릭터 선택·`PlayerRig`의 되돌리기). 저장된 선택값만 바꾼다:
+        /// 고를 수 있는지는 화면(`CharacterSelectScreen.Selectable`)이, 키트가 있는지는 `PlayerRig`이 본다(Core는 키트를 모른다).
+        /// </summary>
+        public void SetSelectedCharacter(CharacterId id) => character = id;
+
+        /// <summary>
         /// **지금 고른 캐릭터**가 스킬트리(전문화)에 쓴 SP — 원본 `charProg().spUsed`(project_test.html:7023).
         /// 캐릭터마다 따로다(<see cref="charProgress"/>). 예전엔 필드였고 이름은 그대로다(<see cref="level"/> 참고).
         /// </summary>
@@ -187,6 +193,31 @@ namespace ChronoSavior.Core
         public void MarkBossCleared(int region)
         {
             if (InRange(region)) regionBossCleared[region - 1] = true;
+        }
+
+        /// <summary>
+        /// 전투에서 보스를 쓰러뜨렸다 — 업적 통계(`stats.bosses`)를 세고 그 지역을 정복으로 표시한다.
+        /// 원본 `onBossKilled`의 `meta.stats.bosses++`(project_test.html:4285). 정복만 표시하려면(테스트 준비 등) <see cref="MarkBossCleared"/>.
+        /// </summary>
+        public void RecordBossKill(int region)
+        {
+            stats.bosses++;
+            MarkBossCleared(region);
+        }
+
+        /// <summary>성소를 부쉈다 — 업적 통계(`stats.shrines`). 원본 `meta.stats.shrines++`(project_test.html:1808).</summary>
+        public void RecordShrineBroken() => stats.shrines++;
+
+        /// <summary>
+        /// 유물 개방 1회 값을 낸다 — 파편을 빼고 뽑기 횟수(`stats.pulls`)를 센다. 파편이 모자라거나 값이 0 이하면 아무것도 안 바꾸고 false.
+        /// 무엇이 나왔는지는 `ItemInventory.RecordPull`이 맡는다.
+        /// </summary>
+        public bool TryPayForPull(int cost)
+        {
+            if (cost <= 0 || shards < cost) return false;
+            shards -= cost;
+            stats.pulls++;
+            return true;
         }
 
         /// <summary>

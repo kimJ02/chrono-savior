@@ -167,7 +167,7 @@ namespace ChronoSavior.UI
             var e = Entries[i];
             shownCard = i;
             if (!e.Id.HasValue) return;
-            ProfileService.Current.character = e.Id.Value; // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
+            ProfileService.Current.SetSelectedCharacter(e.Id.Value); // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
             SaveService.Save();
             Close();
         }

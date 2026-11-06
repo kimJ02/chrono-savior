@@ -56,6 +56,15 @@ namespace ChronoSavior.Core
             return true;
         }
 
+        /// <summary>
+        /// 뽑기로 하나 얻었다 — 아이템을 더하고 천장을 갱신한다. 천장은 **영웅 이상이 나오면 초기화**, 아니면 1 오른다(원본 `:6583`).
+        /// </summary>
+        public void RecordPull(ItemDef def)
+        {
+            Add(def.id);
+            pity = (def.grade == ItemGrade.Epic || def.grade == ItemGrade.Legend) ? 0 : pity + 1;
+        }
+
         /// <summary>원본 `itemPow(id) = itemCount(id) * per`(`:1187`) — 특수 아이템의 총 세기.</summary>
         public float Pow(string id)
         {

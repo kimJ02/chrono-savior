@@ -67,6 +67,26 @@ public class AchievementTests
         Assert.AreEqual(5000, p.stats.goldEarned);
     }
 
+    /// <summary>
+    /// 전투 사건이 세는 통계 — 보스 격파는 통계와 정복을 같이, 성소 파괴는 통계만(2026-11-06 4-4, 원본 `:4285`·`:1808`).
+    /// 정복만 표시하는 `MarkBossCleared`는 통계를 안 건드린다(테스트 준비용).
+    /// </summary>
+    [Test]
+    public void BossKillAndShrine_CountStats()
+    {
+        var p = ProfileService.Current;
+
+        p.MarkBossCleared(1);
+        Assert.AreEqual(0, p.stats.bosses, "정복 표시만 했는데 보스 통계가 올랐다");
+
+        p.RecordBossKill(2);
+        Assert.AreEqual(1, p.stats.bosses);
+        Assert.IsTrue(p.IsBossCleared(2), "보스를 잡았는데 지역이 정복되지 않았다");
+
+        p.RecordShrineBroken();
+        Assert.AreEqual(1, p.stats.shrines);
+    }
+
     /// <summary>시간 회귀 자체도 업적이다 — 시간 회귀 직후 확인하면 잡힌다.</summary>
     [Test]
     public void Regression_UnlocksRegressionAchievement()

@@ -143,7 +143,7 @@ namespace ChronoSavior.Systems
                 {
                     // 필드 준비가 예외로 실패하면 깎은 날짜와 런 상태를 돌려준다 — 전환이 이전 화면으로 되돌린다
                     // (들어가지 못한 사냥에 하루를 쓰지 않고, 결과 화면이면 지난 런 기록이 그대로 보이게). 새 전투 씬의 필드는 씬째 내려간다.
-                    profile.doomDays = daysBefore;
+                    profile.doomDays = daysBefore; // 롤백 — 깎기 전 값을 그대로 되돌린다(직접 대입 예외, `docs/state-ownership.md`)
                     RunState.Restore(runBefore);
                     throw;
                 }

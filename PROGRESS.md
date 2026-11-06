@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (58)** — **[나] 4-4: 프로필 쓰기를 의미 있는 메서드로 (`feature/state-ownership`, PlayMode 476/476).** `PlayerProfile.SetSelectedCharacter`(캐릭터 선택 화면·`PlayerRig` 되돌리기 — 고를 수 있는지·키트는 각자 본다), `RecordBossKill`(통계 + 정복), `RecordShrineBroken`, `TryPayForPull`(파편·뽑기 수, 모자라거나 0 이하면 아무것도 안 바꿈) + `ItemInventory.RecordPull`(아이템 + 천장). 동작 같음.
+  직접 대입 예외(문서화): 세이브 이전, 사냥 시작 실패 롤백(`doomDays` 복원), 에디터 전용 'SP +1' 버튼, 테스트 준비. 직렬화 필드는 세이브 형식 때문에 public 유지. 테스트 3개 추가(`PayForPull_…`·`RecordPull_…`·`BossKillAndShrine_CountStats`), `DefinedApis` 목록에 새 메서드·`SetMaxX`.
 - **2026-11-06 (57)** — **[나] 4-3: `FieldBounds`를 읽기 전용으로 (`feature/state-ownership`, PlayMode 473/473).** public 가변 필드였다 — 아무도 안 바꾸는 `MinX`·`GroundY`는 `const`, 무대마다 다른 `MaxX`는 읽기 전용 속성 + `SetMaxX`(부르는 곳은 `FieldLayout.SetBossArena` 하나, 직접 대입은 컴파일 에러). 동작 같음.
 - **2026-11-06 (56)** — **[나] 4-2: 쓰이지 않는 `RunProgress` 삭제 (`feature/state-ownership`, PlayMode 473/473).** `TotalKills`는 세기만 하고 읽는 곳이 없었고 `RegionLv`는 `RunState.Region`의 별칭이었다 — `EnemySpawner`가 `RunState.Region`을 직접 읽는다(동작 같음). 테스트에서만 쓰던 `DifficultyScalingConfig.KillsPerRegionLevel`도 삭제.
   위임만 확인하던 `RegionLv_FollowsRunRegion_NotKillCount` 테스트 삭제(474→473), 처치 수 확인은 `RunState.Kills`로. 테스트 클래스 이름 `RunProgressAndRewardsTests` → `RegionScalingAndRewardsTests`.

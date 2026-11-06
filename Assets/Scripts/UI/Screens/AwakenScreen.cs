@@ -176,7 +176,7 @@ namespace ChronoSavior.UI
                           CloseBox.width, CloseBox.height, 2f, 2f, 19f, 19f, Close);
 #if UNITY_EDITOR
             // 에디터 전용 "SP +1"(사용자 2026-09-29 — 스킬을 한 층씩 찍어 보며 테스트). 예전 로비 전문화 탭에 있던 것을 옮겼다.
-            // SP는 레벨에서 나오므로 레벨을 1 올린다. 빌드한 게임엔 없다.
+            // SP는 레벨에서 나오므로 레벨을 1 올린다. 빌드한 게임엔 없다 — 그래서 프로필 직접 대입의 예외로 둔다(`docs/state-ownership.md`).
             var sp = Px.TextButton(Content, "TestSp", PxArt.Sliced("Common/button", 4), 470f, 160f, 116f, 18f, "SP +1 (테스트)", 8,
                                    Color.white, () => { ProfileService.Current.level++; SaveService.Save(); });
             sp.Art.type = Image.Type.Sliced;

@@ -421,8 +421,7 @@ public class EnemySpawner : MonoBehaviour
         RunState.RegisterReward(gold, exp);
         RunState.RegisterKill(isBoss: true);
 
-        ProfileService.Current.stats.bosses++;
-        ProfileService.Current.MarkBossCleared(region); // 다음 지역이 열린다
+        ProfileService.Current.RecordBossKill(region); // 통계 + 정복 — 다음 지역이 열린다
         Achievements.CheckNew(ProfileService.Current);
 
         // 원본은 격파 1.6초 뒤에 `endRun('bossdead')`을 부른다(:4289). 지연을 주는 주체가

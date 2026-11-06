@@ -215,6 +215,43 @@ public class ItemAndGachaTests
         Assert.AreEqual(1000, p.shards);
     }
 
+    /// <summary>
+    /// 개방 값 — 낼 수 있으면 파편이 빠지고 뽑기 수가 하나 오른다. 모자라거나 값이 0 이하면 **둘 다 그대로**(2026-11-06 4-4, `PlayerProfile.TryPayForPull`).
+    /// </summary>
+    [Test]
+    public void PayForPull_ChargesShardsAndCountsPull_OrChangesNothing()
+    {
+        var p = ProfileService.Current;
+        p.shards = GachaService.Cost;
+
+        Assert.IsTrue(p.TryPayForPull(GachaService.Cost));
+        Assert.AreEqual(0, p.shards);
+        Assert.AreEqual(1, p.stats.pulls);
+
+        Assert.IsFalse(p.TryPayForPull(GachaService.Cost), "파편이 없는데 냈다");
+        Assert.IsFalse(p.TryPayForPull(0), "0으로 뽑기 수만 올릴 수 있다");
+        Assert.AreEqual(0, p.shards);
+        Assert.AreEqual(1, p.stats.pulls, "못 냈는데 뽑기 수가 올랐다");
+    }
+
+    /// <summary>뽑힌 아이템 기록 — 아이템이 더해지고, 천장은 일반·희귀면 1 오르고 영웅 이상이면 0(원본 `:6583`).</summary>
+    [Test]
+    public void RecordPull_AddsItemAndUpdatesPity()
+    {
+        var inv = ProfileService.Current.items;
+        var common = System.Array.Find(ItemDatabase.All, d => d.grade == ItemGrade.Common);
+        var epic = System.Array.Find(ItemDatabase.All, d => d.grade == ItemGrade.Epic);
+
+        inv.RecordPull(common);
+        inv.RecordPull(common);
+        Assert.AreEqual(2, inv.Count(common.id));
+        Assert.AreEqual(2, inv.pity);
+
+        inv.RecordPull(epic);
+        Assert.AreEqual(1, inv.Count(epic.id));
+        Assert.AreEqual(0, inv.pity, "영웅이 나왔는데 천장이 안 풀렸다");
+    }
+
     /// <summary>아이템은 **회귀해도 남는다** — 이게 영구 성장 축의 정의다.</summary>
     [Test]
     public void Items_SurviveRegression()
