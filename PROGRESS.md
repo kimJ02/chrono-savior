@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (41)** — **[나] 1~3 중간 점검 + 남은 계획 Codex 합의(`HANDOFF.md` '중간 점검과 남은 계획').** 사용자 새 기준: 그림·효과·소리는 외주/구매로 갈아끼운다 → **정리 순서 3.5 '에셋 교체 경계'** 신설
+  (`StageVisuals` 경로 읽기 → `StageArtSet`, 타격음 검증의 경로 요구 제거, 효과·소리 교체 지점 표 — 미리 큰 틀은 안 만든다). 4는 '변경 권한·수명' 기준(ProfileService 쓰기만 소유 API로), 5는 책임 기준. 경험치 구슬 흰색(원본 보라)은 사용자 결정 대기.
 - **2026-11-06 (40)** — **[나] 정리 순서 2(생성 책임) 완료 — Codex 종합 리뷰 '통과 — 병합 가능'** (PlayMode 472/472, 씬 검증 통과, UI 캡처 32장·스테이지 3장, 진짜 세이브 해시 그대로). `HANDOFF.md` 2 ✅, `CLAUDE.md`·이 파일 지금 상태 갱신.
 - **2026-11-06 (39)** — **[나] 2-3c: 경험치 구슬 프리팹화 + 생성 담당 목록 확정 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과).** `Assets/Prefabs/Combat/ExpOrb`(그림 자식·RunTransient),
   `ExpOrb.Spawn(prefab, …)`, `EnemySpawner.orbPrefab`(`orbSprite` 대체). 장판 둘(`FireTrailZone`·`GravityWellZone`)은 코드 유지 — 구성이 루트+컴포넌트뿐이라 프리팹으로 얻는 게 없다(이유를 목록에).
