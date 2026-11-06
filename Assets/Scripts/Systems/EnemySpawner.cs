@@ -83,8 +83,11 @@ public class EnemySpawner : MonoBehaviour
     public bool spawnShrines = true;
 
     [Header("경험치 구슬")]
-    [Tooltip("구슬 스프라이트. 씬 빌더가 꽂아준다. 비어 있어도 동작은 하고 안 보이기만 한다.")]
-    public Sprite orbSprite;
+    [Tooltip("경험치 구슬 프리팹(Assets/Prefabs/Combat/ExpOrb).")]
+    [SerializeField] ExpOrb orbPrefab;
+
+    /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+    public ExpOrb OrbPrefab { get => orbPrefab; set => orbPrefab = value; }
 
 
     [Header("임시 도형 (정식 아트 전까지 — 씬 빌더가 꽂아준다)")]
@@ -756,7 +759,7 @@ public class EnemySpawner : MonoBehaviour
         // 경험치 구슬 — 원본 `if (run.kills % CONFIG.orb.every === 0)`(:1860).
         // **이번 런 처치 수 기준**이라(누적이 아니다) 런마다 50마리째부터 다시 센다.
         if (RunState.Kills > 0 && RunState.Kills % ExpOrb.DropEveryKills == 0 && enemy != null)
-            ExpOrb.Spawn(enemy.transform.position, orbSprite, player);
+            ExpOrb.Spawn(orbPrefab, enemy.transform.position, player);
 
         if (enemy != null) spawnedData.Remove(enemy.gameObject);
     }

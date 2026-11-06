@@ -22,7 +22,7 @@ public class CreationOwnershipTests
     /// <summary>분류 — `HANDOFF.md` "2단계 생성 책임"의 A~F와 같다.</summary>
     enum Kind
     {
-        /// <summary>A. 실행 중 생기는 전투 물체(투사체·구슬·설치물·장판). 프리팹 우선 — 지금 코드로 짓는 것은 2-3에서 판단.</summary>
+        /// <summary>A. 실행 중 생기는 전투 물체 — 프리팹을 세운다(투사체 3종·구슬·드론·포탑, 프리팹은 만드는 쪽이 넘긴다). 장판 둘만 코드(이유는 각 줄).</summary>
         CombatObject,
         /// <summary>B. 몹 세우기 — 종류별 프리팹을 Instantiate(2-2에서 정리: 행동 부품은 프리팹에, 엘리트 표식만 실행 중).</summary>
         EnemyAssembly,
@@ -43,11 +43,11 @@ public class CreationOwnershipTests
         ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다"),
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
-        ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 처치 때 스포너 쪽에서 떨군다"),
+        ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
         ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
-        ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판(판정·수명) — 마법사 스킬이 깐다"),
-        ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장(판정·수명) — 마법사 스킬이 연다"),
+        ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐이고 에디터에서 조정할 그림·판정 부품이 없다(값은 MageSpecConfig). 마법사 스킬이 깐다"),
+        ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐, 그림은 소용돌이 효과(D)가 따로. 값은 MageSpecConfig. 마법사 스킬이 연다"),
 
         // B. 몹 조립
         ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 종류별 프리팹(EnemyData.prefab·MonsterCatalog)에서 세운다. 실행 중 붙이는 건 스폰 때 확률로 정해지는 엘리트 표식(EnemyElite)뿐"),

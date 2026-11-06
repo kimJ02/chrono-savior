@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (39)** — **[나] 2-3c: 경험치 구슬 프리팹화 + 생성 담당 목록 확정 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과).** `Assets/Prefabs/Combat/ExpOrb`(그림 자식·RunTransient),
+  `ExpOrb.Spawn(prefab, …)`, `EnemySpawner.orbPrefab`(`orbSprite` 대체). 장판 둘(`FireTrailZone`·`GravityWellZone`)은 코드 유지 — 구성이 루트+컴포넌트뿐이라 프리팹으로 얻는 게 없다(이유를 목록에).
+  ⚠️ 확인: 씬의 구슬 그림이 흰 `Circle`이라 구슬이 **흰색**으로 보인다(원본은 보라 `#c9a2ff` — 예전 코드도 '그림이 있으면 흰색'이라 원래 그랬음, 이번에 바꾸지 않음). 사용자에게 짚기.
 - **2026-11-06 (38)** — **[나] 2-3b: 메카닉 드론·포탑 프리팹화 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과, Codex 통과).** `Assets/Prefabs/Combat/GunnerDrone`·`GunnerTurret`(그림 자식·RunTransient),
   `GunnerDrone.Summon(prefab, …)`·`GunnerTurret.Spawn/Place(prefab, …)`, `GunnerAttack.dronePrefab`·`turretPrefab`(Player). 드론의 탄은 주인의 탄 프리팹. `bulletSprite`는 레이저 구간·연결선 그림(그림만 있는 효과)용으로만 남음.
 - **2026-11-06 (37)** — **[나] 2-3a: 투사체 3종 프리팹화 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과, Codex 통과).** `Assets/Prefabs/Combat/GunnerBullet`·`MageBolt`·`EnemyBolt`

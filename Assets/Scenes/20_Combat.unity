@@ -250,7 +250,7 @@ MonoBehaviour:
   maxPlacementRetries: 10
   eliteChanceOverride: -1
   spawnShrines: 1
-  orbSprite: {fileID: 21300000, guid: b7429cf9bd758cc4cbe217c9294b83e5, type: 3}
+  orbPrefab: {fileID: 6372652740479495329, guid: 6fad7d6fbefe4454aaa22e7a5c1db3a6, type: 3}
   circleSprite: {fileID: 21300000, guid: b7429cf9bd758cc4cbe217c9294b83e5, type: 3}
   squareSprite: {fileID: 21300000, guid: 8afb9b204a0f033499fb23fd273abdba, type: 3}
   triangleSprite: {fileID: 21300000, guid: 692531654aefc5044a24f6e50e868b6b, type: 3}

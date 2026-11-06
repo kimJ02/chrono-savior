@@ -138,6 +138,7 @@ namespace ChronoSavior.Editor
                 problems.Add("CombatDirector.Player가 이 씬의 Player를 가리키지 않는다 — 사냥 시작·보스 필드 진입 때 플레이어가 안 되돌아간다");
             var spawner = One<EnemySpawner>(combat, problems);
             if (spawner != null && spawner.monsterPrefab == null) problems.Add("EnemySpawner.monsterPrefab이 비어 있다");
+            if (spawner != null) CheckProjectilePrefab(spawner.OrbPrefab, "EnemySpawner.orbPrefab", problems);
             CheckMonsterCatalog(spawner, persistent, problems);
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;

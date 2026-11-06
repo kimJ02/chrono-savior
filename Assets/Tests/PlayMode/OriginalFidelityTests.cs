@@ -126,7 +126,7 @@ public class OriginalFidelityTests
     {
         var player = new GameObject("TestPlayer") { tag = "Player" };
         player.transform.position = new Vector3(5f, FieldBounds.GroundY - ExpOrb.PlayerCenterOffset, 0f);
-        ExpOrb.Spawn(new Vector3(5f, FieldBounds.GroundY, 0f), null, player.transform);
+        ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, FieldBounds.GroundY, 0f), player.transform);
         yield return null;
         yield return null;
     }

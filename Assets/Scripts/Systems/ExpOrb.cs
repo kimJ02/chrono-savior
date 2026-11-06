@@ -45,32 +45,25 @@ namespace ChronoSavior.Systems
         float baseY;
         Transform player;
 
+        // 구성은 프리팹(Assets/Prefabs/Combat/ExpOrb)에 있다(2026-11-06 생성 책임 2-3) — 그림 자식(구운 보라 구슬 그림, 색 흰색 — 그림에 이미 칠해져 있다)·RunTransient.
+        [SerializeField] SpriteRenderer visualRenderer;
+
         /// <summary>
         /// 구슬 하나를 떨군다. 원본은 죽은 자리에서 살짝 위에 놓고, **지면 아래로는 안 내려간다**
         /// (`Math.min(e.y, groundY)` — 원본은 Y+가 아래라 min이지만 우리 좌표계에선 max다).
         /// </summary>
         /// <param name="player">끌려갈 플레이어 — 만드는 쪽(스포너)이 넣는다(2026-11-05 2b — 예전엔 Player 태그로 찾았다). 없으면 제자리에 떠 있기만 한다.</param>
-        public static ExpOrb Spawn(Vector3 deathPosition, Sprite sprite, Transform player)
+        /// <remarks>떨구는 쪽(스포너)이 들고 있는 프리팹을 세운다(2026-11-06 생성 책임 2-3). 프리팹이 없으면 오류.</remarks>
+        public static ExpOrb Spawn(ExpOrb prefab, Vector3 deathPosition, Transform player)
         {
+            if (prefab == null) { Debug.LogError("[ExpOrb] 구슬 프리팹이 없다 — EnemySpawner의 orbPrefab을 확인"); return null; }
             float y = Mathf.Max(deathPosition.y, FieldBounds.GroundY) + DropHeight;
-
-            var go = new GameObject("ExpOrb");
-            go.transform.position = new Vector3(deathPosition.x, y, 0f);
-            go.AddComponent<RunTransient>(); // 로비로 나가면 사라져야 한다
-
-            var visual = new GameObject("Visual");
-            visual.transform.SetParent(go.transform, false);
-            var sr = visual.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            // 그림마다 픽셀 크기가 다르니 **지름을 기준으로** 스케일을 되돌린다 — 원형 스프라이트를
-            // 전제로 0.28을 박아두면 그림을 갈아끼우는 순간 구슬 크기가 통째로 달라진다.
+            var orb = Instantiate(prefab, new Vector3(deathPosition.x, y, 0f), Quaternion.identity); // RunTransient — 로비로 나가면 사라진다
+            orb.name = prefab.name;
+            // 그림마다 픽셀 크기가 다르니 **지름을 기준으로** 스케일을 맞춘다 — 프리팹의 그림을 갈아끼워도 구슬 크기(원본 지름)가 그대로다.
+            var sprite = orb.visualRenderer.sprite;
             float h = sprite != null ? sprite.bounds.size.y : 1f;
-            visual.transform.localScale = Vector3.one * (h > 0.0001f ? Diameter / h : Diameter);
-            // 구운 그림에는 색이 이미 칠해져 있다 — 여기서 또 곱하면 보라색이 두 번 먹는다.
-            sr.color = sprite != null ? Color.white : new Color(0.79f, 0.64f, 1f); // 원본 '#c9a2ff'
-            sr.sortingOrder = 4;
-
-            var orb = go.AddComponent<ExpOrb>();
+            orb.visualRenderer.transform.localScale = Vector3.one * (h > 0.0001f ? Diameter / h : Diameter);
             orb.baseY = y;
             orb.player = player;
             return orb;

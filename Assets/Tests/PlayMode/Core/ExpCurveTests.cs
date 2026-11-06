@@ -125,7 +125,7 @@ public class ExpCurveTests
         var player = new GameObject("TestPlayer");
         player.tag = "Player";
         player.transform.position = new Vector3(5f, 0.6f - ExpOrb.PlayerCenterOffset, 0f);
-        ExpOrb.Spawn(new Vector3(5f, 0.2f, 0f), null, player.transform);
+        ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, 0.2f, 0f), player.transform);
         yield return null;
         yield return null;
     }
