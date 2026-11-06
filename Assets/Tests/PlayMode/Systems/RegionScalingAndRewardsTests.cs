@@ -115,6 +115,44 @@ public class RegionScalingAndRewardsTests
     }
 
     /// <summary>
+    /// 난수 쓰는 순서(2026-11-06 5단계 — 설정·보상을 `EnemySetup`·`EnemyRewards`로 옮기면서 고정): 몹 설정은 엘리트 → 레벨 → 이동속도,
+    /// 처치 보상은 골드 드랍 확률 → 골드 양. 순서가 바뀌면 같은 시드에서 다른 몹·다른 보상이 나온다.
+    /// </summary>
+    [Test]
+    public void SetupAndRewards_UseRandomInTheSameOrder()
+    {
+        var data = ScriptableObject.CreateInstance<EnemyData>();
+        var go = new GameObject("TestOrderMonster");
+        go.AddComponent<SpriteRenderer>();
+        go.AddComponent<CircleCollider2D>().radius = 0.5f;
+        var health = go.AddComponent<EnemyHealth>();
+        var move = go.AddComponent<EnemyMove>();
+
+        Random.InitState(1234);
+        bool elite = Random.value < 0.5f;
+        int levelStep = Random.Range(0, 2);
+        float speed = data.moveSpeed * Random.Range(0.9f, 1.1f);
+        Random.InitState(1234);
+        EnemySetup.Apply(go, data, allowElite: true, eliteChance: 0.5f, shapeSprite: null);
+        Assert.AreEqual(elite, go.GetComponent<EnemyElite>() != null, "엘리트가 첫 난수");
+        Assert.AreEqual(Mathf.Clamp(RegionConfig.RecommendedLevel(RunState.Region) + levelStep, 1, 40), health.Level, "레벨이 둘째");
+        Assert.AreEqual(speed, move.moveSpeed, 1e-5f, "이동속도가 셋째");
+
+        var victim = new GameObject("TestOrderVictim");
+        var victimHealth = victim.AddComponent<EnemyHealth>();
+        int seed = 0;
+        while (true) { Random.InitState(seed); if (Random.value < DifficultyScalingConfig.GoldDropChance) break; seed++; } // 골드가 떨어지는 시드
+        Random.InitState(seed);
+        _ = Random.value; // 드랍 확률
+        int rolled = Random.Range(data.goldMin, data.goldMax + 1);
+        int expectedGold = Mathf.RoundToInt(rolled * DifficultyScalingConfig.RewardMultiplier(RunState.Region) * CombatModifiers.GoldMultiplier);
+        Random.InitState(seed);
+        EnemyRewards.GrantKill(victimHealth, data);
+        Assert.AreEqual(expectedGold, RunState.GoldEarned, "골드 드랍 확률 다음에 양을 굴린다");
+        Object.DestroyImmediate(data);
+    }
+
+    /// <summary>
     /// 보스 처치 보상(2026-11-06 정리 순서 5-2 — `EnemyRewards`로 옮기면서 고정한 특성 테스트): 지역 배율을 곱한 고정 EXP·골드(확률 없음),
     /// 처치 수엔 안 들고 살기엔 든다, 보스 통계와 지역 정복(원본 `onBossKilled` :4282·`killEnemy` 보스 분기).
     /// </summary>
