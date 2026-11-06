@@ -200,3 +200,4 @@ MonoBehaviour:
   burnDuration: 4
   burnTickInterval: 0.5
   burnDamagePerStackPct: 0.08
+  flashMaterial: {fileID: 2100000, guid: 755e32950447ea841a0318c8d55d10e6, type: 2}

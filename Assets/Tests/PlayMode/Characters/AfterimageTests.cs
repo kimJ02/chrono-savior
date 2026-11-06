@@ -50,7 +50,7 @@ public class AfterimageTests
         rb.gravityScale = 0f;
         rb.constraints = RigidbodyConstraints2D.FreezeAll; // 위치는 테스트가 직접 옮긴다(칼날폭풍처럼)
         go.AddComponent<CharacterMover2D>();
-        return go.AddComponent<PlayerAfterimages>();
+        return go.AddComponent<PlayerAfterimages>().Equipped();
     }
 
     [UnityTest]
@@ -132,7 +132,7 @@ public class AfterimageTests
         rb.gravityScale = 0f;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
         go.AddComponent<SpriteRenderer>().sprite = TestSprite();
-        var ai = go.AddComponent<PlayerAfterimages>();
+        var ai = go.AddComponent<PlayerAfterimages>().Equipped();
         var mage = go.AddComponent<MageAttack>().Equipped();
         float startX = go.transform.position.x;
 

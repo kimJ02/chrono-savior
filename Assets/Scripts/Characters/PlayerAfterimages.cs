@@ -46,7 +46,11 @@ namespace ChronoSavior.Characters
         CharacterMover2D mover;
         Rigidbody2D rb;
         Vector3 lastPos;
-        static Material ghostMaterial;
+        [Tooltip("효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
+        [SerializeField] Material ghostMaterial;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources`에서 셰이더를 읽었다).</summary>
+        public Material GhostMaterial { get => ghostMaterial; set => ghostMaterial = value; }
 
         /// <summary>지금 남아 있는 잔상 수(테스트용).</summary>
         public int Count => ghosts.Count;
@@ -109,7 +113,7 @@ namespace ChronoSavior.Characters
         /// <summary>지금 그림 그대로 이 자리에 잔상을 하나 남긴다(원본 `p.afterimages.push({ x, y, f })`).</summary>
         public void Spawn(Vector3 position)
         {
-            if (body == null || body.sprite == null) return;
+            if (body == null || body.sprite == null || ghostMaterial == null) return; // 머티리얼은 씬엔 늘 있다(씬 구성 검증이 본다)
             var sr = pool.Count > 0 ? pool.Pop() : NewGhostRenderer();
             sr.gameObject.SetActive(true);
             sr.transform.SetPositionAndRotation(position, transform.rotation);
@@ -173,23 +177,12 @@ namespace ChronoSavior.Characters
             return c;
         }
 
-        static SpriteRenderer NewGhostRenderer()
+        // 피격 플래시와 같은 머티리얼 — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색(유령 색)으로 칠한다.
+        SpriteRenderer NewGhostRenderer()
         {
             var sr = new GameObject("Afterimage").AddComponent<SpriteRenderer>();
-            var mat = GhostMaterial();
-            if (mat != null) sr.sharedMaterial = mat;
+            sr.sharedMaterial = ghostMaterial;
             return sr;
-        }
-
-        // 피격 플래시와 같은 셰이더 — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색(유령 색)으로 칠한다.
-        static Material GhostMaterial()
-        {
-            if (ghostMaterial == null)
-            {
-                var shader = Resources.Load<Shader>("Shaders/SpriteFlash");
-                if (shader != null) ghostMaterial = new Material(shader) { name = "Afterimage" };
-            }
-            return ghostMaterial;
         }
     }
 }

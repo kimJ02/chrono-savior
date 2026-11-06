@@ -144,6 +144,10 @@ namespace ChronoSavior.Editor
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;
             if (player != null && player.GetComponent<MageChargeFlash>() == null) problems.Add("Player에 MageChargeFlash(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
+            // 효과 에셋은 연결 칸에서 받는다(2026-11-06 3.5-e — 예전엔 Resources 경로로 읽었다)
+            if (player != null && player.TryGetComponent(out MageChargeFlash chargeFlash) && chargeFlash.FlashMaterial == null) problems.Add("Player MageChargeFlash의 머티리얼이 비어 있다");
+            if (player != null && player.TryGetComponent(out PlayerAfterimages afterimages) && afterimages.GhostMaterial == null) problems.Add("Player PlayerAfterimages의 머티리얼이 비어 있다");
+            if (player != null && player.TryGetComponent(out BladeSlashVfx slash) && (slash.Frames == null || slash.Frames.Length == 0 || slash.Frames.Any(f => f == null))) problems.Add("Player BladeSlashVfx의 프레임이 비어 있다");
             // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)
             if (player != null && player.TryGetComponent(out MageAttack mageKit)) CheckProjectilePrefab(mageKit.BoltPrefab, "Player MageAttack.boltPrefab", problems);
             if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit))
@@ -264,6 +268,8 @@ namespace ChronoSavior.Editor
                 if (prefab == null) { problems.Add($"{what} 프리팹이 비어 있다"); return; }
                 if (prefab.GetComponent<ChronoSavior.Enemies.EnemyMove>() == null || prefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() == null)
                     problems.Add($"{what} 프리팹({prefab.name})에 EnemyMove·EnemyHealth가 없다");
+                else if (prefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>().FlashMaterial == null)
+                    problems.Add($"{what} 프리팹({prefab.name})의 피격 깜빡임 머티리얼이 비어 있다");
                 foreach (var b in behaviours)
                 {
                     bool has = prefab.GetComponent(b) != null;

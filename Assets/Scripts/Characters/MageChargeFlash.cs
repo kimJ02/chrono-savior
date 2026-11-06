@@ -20,7 +20,12 @@ namespace ChronoSavior.Characters
         /// <summary>번쩍임 세기 — 몹 피격 플래시(원본 `flash × 0.75`, :4799)와 같게.</summary>
         public const float Strength = 0.75f;
 
-        static Material flashMaterial;
+        [Tooltip("효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
+        [SerializeField] Material flashMaterial;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources`에서 셰이더를 읽어 실행 중에 머티리얼을 만들었다).</summary>
+        public Material FlashMaterial { get => flashMaterial; set => flashMaterial = value; }
+
         MageAttack mage;
         SpriteRenderer body, flashSr;
         int stage;
@@ -62,12 +67,7 @@ namespace ChronoSavior.Characters
             if (flashSr == null)
             {
                 if (flash <= 0f) return;
-                if (flashMaterial == null)
-                {
-                    var shader = Resources.Load<Shader>("Shaders/SpriteFlash");
-                    if (shader == null) return;
-                    flashMaterial = new Material(shader) { name = "MageChargeFlash" };
-                }
+                if (flashMaterial == null) return; // 씬엔 늘 있다(씬 구성 검증이 본다)
                 var go = new GameObject("ChargeFlash");
                 go.transform.SetParent(transform, false);
                 flashSr = go.AddComponent<SpriteRenderer>();

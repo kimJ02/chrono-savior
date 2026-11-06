@@ -45,7 +45,7 @@ public class MageChargeFlashTests
         go.AddComponent<CharacterMover2D>();
         go.AddComponent<PlayerHealth>();
         var mage = go.AddComponent<MageAttack>().Equipped();
-        go.AddComponent<MageChargeFlash>(); // 게임에선 씬의 Player에 같이 놓여 있다(2026-11-05 생성 책임 2-1)
+        go.AddComponent<MageChargeFlash>().Equipped(); // 게임에선 씬의 Player에 같이 놓여 있다(2026-11-05 생성 책임 2-1)
         return mage;
     }
 

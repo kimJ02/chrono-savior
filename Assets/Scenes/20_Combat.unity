@@ -3675,7 +3675,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   art: {fileID: 11400000, guid: efd84d4629dc29a45a32f2fdf1d2ef94, type: 2}
-  spriteHeight: 1
 --- !u!114 &1457870344
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3915,6 +3914,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dc66427639723644bb0acbcd73cefca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: bfa7a6e666f1d8b44ab5572465ce0c4b, type: 3}
+  - {fileID: 21300000, guid: cad289df11baa3241933e4d87a4f8f5d, type: 3}
+  - {fileID: 21300000, guid: ea9778757c0791745b0d849e5921c2a8, type: 3}
+  - {fileID: 21300000, guid: abd29b9dcb2380a43b34e13591b58942, type: 3}
+  - {fileID: 21300000, guid: 07b26e55f6656824b9d983d573c012d5, type: 3}
+  - {fileID: 21300000, guid: 12b2d8b56bac11340b5606582dcefa0b, type: 3}
+  - {fileID: 21300000, guid: 726244b49516ef64ab4999c58c0f955a, type: 3}
+  - {fileID: 21300000, guid: 9bbaddae385d1cb4782976b4e5bb414b, type: 3}
+  - {fileID: 21300000, guid: 30f47d9300ced284f9d553b3b1941201, type: 3}
 --- !u!114 &1457870353
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3927,6 +3936,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2fb4179714db43c6af6c9d549aeb5847, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ghostMaterial: {fileID: 2100000, guid: 755e32950447ea841a0318c8d55d10e6, type: 2}
 --- !u!114 &1457870354
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3939,6 +3949,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f10df5d4e050e524c9e2c6fe0e6154bc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  flashMaterial: {fileID: 2100000, guid: 755e32950447ea841a0318c8d55d10e6, type: 2}
 --- !u!21 &1480207373
 Material:
   serializedVersion: 8

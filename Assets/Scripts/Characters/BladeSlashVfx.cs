@@ -21,12 +21,15 @@ namespace ChronoSavior.Characters
         public const float ForwardOffset = 0.45f;
         /// <summary>그림 크기 배율 — 128px 프레임 = 1유닛, 회전베기 반경 1.05의 지름에 맞춘다.</summary>
         public const float Scale = 2f;
-        const string Folder = "Art/Figma/Vfx/BladeSlash";
 
         struct Play { public SpriteRenderer sr; public float t; public int facing; }
         readonly List<Play> playing = new List<Play>();
         readonly Stack<SpriteRenderer> pool = new Stack<SpriteRenderer>();
-        static Sprite[] frames;
+        [Tooltip("베기 애니메이션 프레임(순서대로) — 지금은 Assets/Resources/Art/Figma/Vfx/BladeSlash 9장. 외주 효과로 바꿀 땐 이 칸만(프레임 수는 자유).")]
+        [SerializeField] Sprite[] frames;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources` 폴더에서 이름순으로 읽었다).</summary>
+        public Sprite[] Frames { get => frames; set => frames = value; }
         static readonly FieldInfo CdTimer = typeof(BladeCombat).GetField("cdTimer", BindingFlags.NonPublic | BindingFlags.Instance);
 
         BladeCombat blade;
@@ -64,8 +67,7 @@ namespace ChronoSavior.Characters
         /// <summary>지금 자리에서 베기 효과 하나를 시작한다.</summary>
         public void Spawn()
         {
-            if (frames == null || frames.Length == 0) frames = LoadFrames();
-            if (frames.Length == 0 || body == null) return;
+            if (frames == null || frames.Length == 0 || body == null) return; // 씬엔 늘 있다(씬 구성 검증이 본다)
             var sr = pool.Count > 0 ? pool.Pop() : new GameObject("BladeSlash").AddComponent<SpriteRenderer>();
             sr.gameObject.SetActive(true);
             sr.sortingLayerID = body.sortingLayerID;
@@ -101,13 +103,6 @@ namespace ChronoSavior.Characters
                 playing[i] = p;
                 Place(i);
             }
-        }
-
-        static Sprite[] LoadFrames()
-        {
-            var all = Resources.LoadAll<Sprite>(Folder);
-            System.Array.Sort(all, (a, b) => string.CompareOrdinal(a.name, b.name));
-            return all;
         }
 
         public void ResetForRun()

@@ -74,7 +74,7 @@ public class HitFeelTests
         sr.color = new Color(0.85f, 0.2f, 0.2f); // Enemy 프리팹 색
         go.AddComponent<CircleCollider2D>().radius = 0.3f;
         var move = go.AddComponent<EnemyMove>();
-        var health = go.AddComponent<EnemyHealth>();
+        var health = go.AddComponent<EnemyHealth>().Equipped(); // 게임의 몹 프리팹과 같은 피격 깜빡임 머티리얼
         typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(move, 0f);
         go.GetComponent<Rigidbody2D>().gravityScale = 0f;
         move.moveSpeed = 0f;
@@ -162,7 +162,7 @@ public class HitFeelTests
         e.TakeDamage(1f, null);
 
         var f = e.FlashRenderer;
-        Assert.IsNotNull(f, "플래시 렌더러가 안 생겼다(셰이더 Resources/Shaders/SpriteFlash 확인)");
+        Assert.IsNotNull(f, "플래시 렌더러가 안 생겼다(머티리얼 Assets/Materials/SpriteFlash 확인)");
         Assert.IsTrue(f.enabled);
         Assert.AreSame(sr.sprite, f.sprite, "몸 모양(같은 그림)으로 덮어야 한다");
         Assert.AreEqual(sr.sortingOrder + 1, f.sortingOrder, "몸 위에 그려야 한다");

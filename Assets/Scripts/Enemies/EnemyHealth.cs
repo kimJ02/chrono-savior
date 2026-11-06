@@ -58,7 +58,11 @@ namespace ChronoSavior.Enemies
         // (1) 흰색 그림(정식 아트)은 곱해도 더 밝아지지 않아 플래시가 안 보였고, (2) 되돌릴 "원래 색"을 Awake에서
         // 잡았는데 그땐 아직 프리팹 색(빨강)이라 — 스포너가 흰색·종류색을 칠하는 건 그 뒤다 — 한 번 맞으면 빨갛게 물들었다.
         SpriteRenderer flashSr;
-        static Material flashMaterial;
+        [Tooltip("피격 깜빡임 효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만. — 몹 프리팹(Enemy_Base, 변형은 물려받음)에 들어 있다.")]
+        [SerializeField] Material flashMaterial;
+
+        /// <summary>프리팹 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources`에서 셰이더를 읽었다).</summary>
+        public Material FlashMaterial { get => flashMaterial; set => flashMaterial = value; }
         ISpawnProtectable spawnProtect;
         EnemyMove mover;
         float flash;
@@ -259,12 +263,7 @@ namespace ChronoSavior.Enemies
             if (sr == null) return;
             if (flashSr == null)
             {
-                if (flashMaterial == null)
-                {
-                    var shader = Resources.Load<Shader>("Shaders/SpriteFlash");
-                    if (shader == null) return;
-                    flashMaterial = new Material(shader) { name = "SpriteFlash" };
-                }
+                if (flashMaterial == null) return; // 몹 프리팹엔 늘 있다(씬 구성 검증이 본다) — 테스트가 맨손으로 만든 몹은 깜빡임 없이
                 var go = new GameObject("HitFlash");
                 go.transform.SetParent(transform, false);
                 flashSr = go.AddComponent<SpriteRenderer>();

@@ -49,6 +49,42 @@ namespace ChronoSavior.Tests.PlayMode
 
         public const string StageArtPath = "Assets/Data/Stages/StageArt_Forest.asset";
 
+        /// <summary>효과 머티리얼(SpriteFlash) — 게임 씬·몹 프리팹이 쓰는 것.</summary>
+        public static Material SpriteFlash => LoadAsset<Material>("Assets/Materials/SpriteFlash.mat");
+
+        /// <summary>섬영 베기 프레임 — 게임 씬 Player의 `BladeSlashVfx`가 쓰는 것과 같은 순서(이름순).</summary>
+        public static Sprite[] BladeSlashFrames
+        {
+            get
+            {
+#if UNITY_EDITOR
+                var guids = UnityEditor.AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Resources/Art/Figma/Vfx/BladeSlash" });
+                var list = new System.Collections.Generic.List<Sprite>();
+                foreach (var g in guids) list.Add(UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>(UnityEditor.AssetDatabase.GUIDToAssetPath(g)));
+                list.Sort((a, b) => string.CompareOrdinal(a.name, b.name));
+                return list.ToArray();
+#else
+                throw new System.NotSupportedException("TestPrefabs는 에디터에서만 쓴다");
+#endif
+            }
+        }
+
+        static T LoadAsset<T>(string path) where T : Object
+        {
+#if UNITY_EDITOR
+            var a = UnityEditor.AssetDatabase.LoadAssetAtPath<T>(path);
+            if (a == null) throw new System.InvalidOperationException("테스트 에셋이 없다: " + path);
+            return a;
+#else
+            throw new System.NotSupportedException("TestPrefabs는 에디터에서만 쓴다");
+#endif
+        }
+
+        public static MageChargeFlash Equipped(this MageChargeFlash flash) { flash.FlashMaterial = SpriteFlash; return flash; }
+        public static PlayerAfterimages Equipped(this PlayerAfterimages ai) { ai.GhostMaterial = SpriteFlash; return ai; }
+        public static BladeSlashVfx Equipped(this BladeSlashVfx vfx) { vfx.Frames = BladeSlashFrames; return vfx; }
+        public static EnemyHealth Equipped(this EnemyHealth health) { health.FlashMaterial = SpriteFlash; return health; }
+
         /// <summary>테스트가 만든 무기·몹에 게임과 같은 탄 프리팹을 끼운다(게임에선 20_Combat의 Player·몹 프리팹에 꽂혀 있다). `AddComponent&lt;MageAttack&gt;().Equipped()`.</summary>
         public static MageAttack Equipped(this MageAttack mage) { mage.BoltPrefab = MageBolt; return mage; }
         public static GunnerAttack Equipped(this GunnerAttack gunner)

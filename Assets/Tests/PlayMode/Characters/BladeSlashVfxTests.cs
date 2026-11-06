@@ -56,7 +56,7 @@ public class BladeSlashVfxTests
         go.AddComponent<PlayerHealth>();
         var blade = go.AddComponent<BladeCombat>();
         go.AddComponent<SpriteRenderer>();
-        var vfx = go.AddComponent<BladeSlashVfx>();
+        var vfx = go.AddComponent<BladeSlashVfx>().Equipped();
         yield return null;
         Assert.AreEqual(0, vfx.Count, "휘두르기 전엔 없다");
 
