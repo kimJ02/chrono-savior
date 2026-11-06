@@ -249,6 +249,7 @@ namespace ChronoSavior.Editor
             if (stage.Catalog == null) problems.Add("스테이지 선택 화면의 몬스터 목록(MonsterCatalog)이 비어 있다");
             else if (catalog != null && stage.Catalog != catalog) problems.Add("스테이지 선택 화면과 스포너가 서로 다른 몬스터 목록을 본다");
             if (catalog == null) return;
+            if (catalog.types == null || catalog.types.Length == 0) { problems.Add("몬스터 목록(MonsterCatalog)에 몹 데이터가 하나도 없다"); return; }
             foreach (ChronoSavior.Core.EnemyType t in System.Enum.GetValues(typeof(ChronoSavior.Core.EnemyType)))
                 if (catalog.types.Count(d => d != null && d.type == t) != 1) problems.Add($"몬스터 목록에 {t} 데이터가 하나가 아니다");
             CheckEnemyPrefabs(catalog, problems);

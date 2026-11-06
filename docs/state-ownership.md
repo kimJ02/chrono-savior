@@ -21,7 +21,7 @@
 
 | 상태 | static | 소유자 | 변경 요청자 | 수명 | 읽는 곳 | 검증 |
 |---|---|---|---|---|---|---|
-| 프로필 `ProfileService.Current`(레벨·골드·캐릭터·지역 진행·아이템·통계…) | 참조만 ✓ | 통째 교체: `SaveService`만(`Replace`). 값 변경: **`PlayerProfile` 메서드**(`SpendDay`·`AddGold`·`AddExp`·`RegisterRegionKill`·`RecordEnemyKill`·`RecordCombo`·`TryUnlockAchievement`(업적 기록 — 조건 판정은 `Achievements.CheckNew`)·`RecordBossKill`(통계 + `MarkBossCleared` — 정복 표시만은 테스트 준비)·`RecordShrineBroken`·`TryPayForPull`·`SetSelectedCharacter`·`TryBuyUpgrade`·`TryLearn*Tier`·`DoRegression`)·뽑힌 아이템은 `ItemInventory.RecordPull` | 전투(보상)·화면(구매·습득·선택) | 세이브 파일 — `GameBoot`가 불러오고 `AutoSave`가 화면이 바뀔 때 저장 | 거의 전부(110곳 — 읽기는 그대로 둔다) | 새 메서드 동작 테스트(`AchievementTests`·`ItemAndGachaTests`)·`DefinedApis` 목록. **직접 대입 예외**: 세이브 이전(`SaveService`)·사냥 시작 실패 롤백(`GameFlow`의 `doomDays` 복원)·에디터 전용 'SP +1' 버튼(`AwakenScreen`, `#if UNITY_EDITOR`)·테스트 준비 |
+| 프로필 `ProfileService.Current`(레벨·골드·캐릭터·지역 진행·아이템·통계…) | 참조만 ✓ | 통째 교체: `SaveService`만(`Replace`). 값 변경: **`PlayerProfile` 메서드**(`SpendDay`·`AddGold`·`AddExp`·`RegisterRegionKill`·`RecordEnemyKill`·`RecordCombo`·`TryUnlockAchievement`(업적 기록 — 조건 판정은 `Achievements.CheckNew`)·`RecordBossKill`(통계 + `MarkBossCleared` — 정복 표시만은 테스트 준비)·`RecordShrineBroken`·`TryPayForPull`·`SetSelectedCharacter`·`TryBuyUpgrade`·`TryLearn*Tier`·`DoRegression`)·뽑힌 아이템은 `ItemInventory.RecordPull` | 전투(보상)·화면(구매·습득·선택) | 세이브 파일 — `GameBoot`가 불러오고 `AutoSave`가 화면이 바뀔 때 저장 | 거의 전부(110곳 — 읽기는 그대로 둔다) | 새 메서드 동작 테스트(`AchievementTests`·`ItemAndGachaTests`)·`DefinedApis` 목록. **직접 대입 예외**: 세이브 이전(`SaveService`)·에디터 전용 'SP +1' 버튼(`AwakenScreen`, `#if UNITY_EDITOR`)·테스트 준비(2026-11-07부터 날짜는 사냥에 들어간 뒤에만 써서 실패 롤백의 `doomDays` 복원이 없어졌다) |
 | 설정 `GameSettings`(전체 화면·해상도·음량) | ✓ | `GameSettings` 속성(PlayerPrefs) | 설정 창 | PlayerPrefs | 소리·화면 | — |
 
 ## 3. 등록소·창구 (켜져 있는 동안만 들어 있다)
@@ -33,14 +33,17 @@
 | `EnemyHealth.Active`·`RunTransient.Active`·`GravityWellZone`·`GunnerDrone`·`GunnerTurret` 목록 | 각 컴포넌트(생길 때 넣고 없어질 때 뺌) | 그 오브젝트가 살아 있는 동안(씬이 내려가면 같이) | 미니맵·필드 정리·스킬 |
 | `PxScreen` 목록·화면별 `instance`(`Open()` 진입점) | 각 화면(상주 씬) | 앱 전체 | UI |
 | `UiModal`(창 깊이) | `PxScreen`만 Push/Pop | 창이 떠 있는 동안 | ESC 처리 |
+| `PixelCanvas.Instance`(UI 판)·`PxScreen.nextOrder`(화면 그리기 순서) | 판·화면 자신(상주 씬) | 앱 전체 | UI |
+| `GameInput`의 전투 키 걸쇠(`latchedVersion`) | `GameInput` 자신 — 화면이 바뀌면(`GameState.Version`) 눌려 있던 키를 새 화면에서 한 번 무시 | 앱 전체 | 캐릭터 입력 |
 
 ## 4. 이벤트 버스
 
-`CombatEvents`·`RunEvents`·`EnemySpawnRequestBus`·`ProfileService.Replaced`·`GameState.Changed`, 그리고 프로필 인스턴스 이벤트 `PlayerProfile.LeveledUp`(`PlayerHealth`가 지금 프로필에 붙는다) — 구독은 `OnEnable`, 해제는 `OnDisable`(대칭). 테스트는 각 `Reset()`으로 비운다. 왕복 뒤 구독자 수는 `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`가 본다.
+`CombatEvents`·`RunEvents`·`EnemySpawnRequestBus`·`ProfileService.Replaced`·`GameState.Changed`(구독자 하나가 던져도 나머지는 받는다 — 2026-11-07), 그리고 프로필 인스턴스 이벤트 `PlayerProfile.LeveledUp`(`PlayerHealth`가 지금 프로필에 붙는다) — 구독은 `OnEnable`, 해제는 `OnDisable`(대칭). 테스트는 각 `Reset()`으로 비운다. 왕복 뒤 구독자 수는 `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`가 본다.
 
 ## 5. 캐시·테스트 전용 (상태라기보다 보관)
 
-- 그림 캐시: `PxArt`(UI 그림·톤·9슬라이스)·`StageVisuals.partials`(잘린 타일)·`Px.Font`·`GravityBurstRing.material` — 같은 입력이면 같은 결과, 지워도 다시 만든다.
+- 그림·데이터 캐시: `PxArt`(UI 그림·톤·9슬라이스)·`StageVisuals.partials`(잘린 타일)·`Px.Font`·`GravityBurstRing.material`·`GravityImpactVfx.frames`·`ItemDatabase.byId`(아이템 id 찾기) — 같은 입력이면 같은 결과, 지워도 다시 만든다.
+- `HitFeel`의 흔들림 세기(`ShakeMag`)·시간·붉어짐 — 위 1절 '타격감' 행(요청형, `BeginField`의 `Reset`).
 - `SaveService.PathOverride` — 테스트가 세이브 경로를 임시 파일로 돌린다(`TestSaveSandbox`). 게임에선 비어 있다.
 - 각 정적 클래스의 `Reset()` — 테스트 격리용(게임 흐름에선 부르지 않는다: `CombatModifiers.ResetForRun`·`HitFeel.Reset`처럼 게임이 부르는 초기화는 위 표의 '수명' 칸).
 

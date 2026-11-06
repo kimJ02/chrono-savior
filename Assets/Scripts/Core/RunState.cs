@@ -15,7 +15,7 @@ namespace ChronoSavior.Core
         Dead,
         /// <summary>제한시간 종료. 원본 `endRun('timeout')`(:4413).</summary>
         Timeout,
-        /// <summary>보스 격파. 원본 `endRun('bossdead')`(:4289) — 보스가 아직 없어 미사용.</summary>
+        /// <summary>보스 격파. 원본 `endRun('bossdead')`(:4289) — 격파 1.6초 뒤 전투 담당(`CombatDirector`)이 요청한다.</summary>
         BossDead,
     }
 

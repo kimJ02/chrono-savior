@@ -52,6 +52,6 @@
 
 - 월드 그림은 **도트 배율이 정수**(가능하면 1)가 되게 그리고 쓴다 — 예: 캐릭터 키 0.5유닛 = 64픽셀(PPU 128, 배율 1).
 - 그림 크기와 판정 크기는 **분리돼 있다**(2026-11-06 3.5-d — 지금 화면 크기를 보존한 채). 최종 그림이 오면 그림 쪽 값(`heights`·`visualHeight`·`bossSize` 등)을 '도트 배율이 정수'가 되게 고른다 — 판정은 건드리지 않는다.
-- **기준점(피벗)은 가운데**로 가져온다(배경·포탈·몹 — `StageVisuals.BackgroundPosition`·`BossPortal.ApplyArt`·스폰 높이가 가운데 피벗을 전제로 계산한다). 지금 그림은 전부 가운데(0.5, 0.5). 다른 피벗이 필요하면 그 계산도 같이 고친다.
+- **기준점(피벗)은 가운데**로 가져온다(배경·포탈·몹 — `StageVisuals.BackgroundPosition`·`BossPortal.ApplyArt`·스폰 높이가 가운데 피벗을 전제로 계산한다). 지금 그림은 전부 가운데(0.5, 0.5) — **예외: 캐릭터 그림(`char_*`)은 (0.5, 35/64)**(`Editor/BuildPrototypeSprites.CharacterPivotY`, Figma처럼 그림 바닥이 타일 윗면보다 3px 아래에 오게, 판정은 그대로). 외주 캐릭터 그림이 오면 이 값을 그 그림 기준으로 다시 정한다. 다른 피벗이 필요하면 그 계산도 같이 고친다.
 - 도트 배율 보고서로 정수가 아닌 곳을 찾는다(지금은 경고만, 최종 그림이 오면 검사로 강화) — **메뉴 `ChronoSavior/도트 배율 보고서`**
   (배치: `-executeMethod ChronoSavior.Editor.DotScaleReport.RunBatch -reportOut <파일>`). 위 2절 표는 이 보고서와 같은 계산이다 — 그림을 바꾼 뒤엔 보고서를 다시 돌릴 것.

@@ -11,7 +11,7 @@ namespace ChronoSavior.Editor
     /// 사용자 지시(2026-09-16): **"캐릭터나 몬스터에 일단 스킨 씌우지 말고 네모 세모 동그라미로만."**
     /// 구워둔 프로토타입 그림(`Assets/Sprites/Prototype/`, 절차는 `docs/prototype-sprites.md`)은
     /// **지우지 않았다** — 파일은 그대로 있고 코드가 참조만 안 한다. 다시 쓰려면
-    /// `BuildEnemyData`의 `sprite` 대입과 `BuildPartAScene`의 주입만 되돌리면 된다.
+    /// 몹은 `BuildEnemyData`의 `sprite` 대입을, 캐릭터는 그림 묶음(`Assets/Data/Characters/CharacterArtSet`)을 되돌리면 된다.
     ///
     /// ## 도형에 뜻을 담는다
     /// 세 도형을 아무렇게나 배정하면 색만 다른 도형 더미가 된다. **플레이어가 다르게 대응해야 하는

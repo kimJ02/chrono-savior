@@ -163,6 +163,7 @@ public class EnemySpawner : MonoBehaviour
     void HandleBossFieldEntered()
     {
         aliveMonsters.RemoveAll(t => t == null); // 방금 지워진 잡몹들을 목록에서도 떨어낸다
+        ForgetDestroyedMonsters();             // 처치 없이 지워진 몹은 Died가 안 오므로 데이터 기억도 여기서 비운다
         waveTimer = minionInterval;
         shrineTimer = Shrine.FirstAt; // 보스전엔 성소가 안 나오지만(:4430) 다음 런을 위해 되돌린다
         aliveShrine = null;
@@ -189,6 +190,13 @@ public class EnemySpawner : MonoBehaviour
         if (move != null) move.SetSpawnProtection(spawnProtectSeconds);
 
         aliveMonsters.Add(monster.transform);
+    }
+
+    void ForgetDestroyedMonsters()
+    {
+        var gone = new List<GameObject>();
+        foreach (var key in spawnedData.Keys) if (key == null) gone.Add(key);
+        foreach (var key in gone) spawnedData.Remove(key);
     }
 
     EnemyData FindData(EnemyType enemyType) => catalog != null ? catalog.Find(enemyType) : null;

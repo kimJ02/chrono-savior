@@ -40,6 +40,7 @@ public class GameFlowTests
         CombatEvents.Reset(); RunEvents.Reset();
         RunTransient.Reset();
         CombatModifiers.Reset();
+        HitFeel.Reset();
         ProfileService.Reset();
     }
 
@@ -409,7 +410,50 @@ public class GameFlowTests
     }
 
     /// <summary>
-    /// 재도전에서 필드 준비가 예외로 실패하면 결과 화면으로 돌아오고, **날짜와 지난 런 기록이 그대로**다(Codex 3단계 종합 리뷰).
+    /// 새 사냥에 들어간 뒤 이전 월드를 내리는 마무리 중(잠금이 아직 걸려 있고 사냥은 진행된다)에 사냥이 끝나면,
+    /// 그 종료를 버리지 않고 잠금이 풀린 뒤 결과 화면으로 간다(2026-11-07 최종 점검 — 예전엔 전환 중이라 무시돼 끝난 사냥이 계속 돌았다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator EndRun_WhileTheOldWorldIsStillUnloading_IsAppliedAfterwards()
+    {
+        var flow = NewController(new GameObject("TestPlayer"));
+        var scenes = (FakeWorldScenes)flow.Scenes;
+        yield return null;
+        flow.EnterLobby();
+        Assert.AreEqual(GameScene.Lobby, GameState.Current);
+
+        scenes.HoldUnloadNext = true; // 사냥에 들어간 뒤 로비 내리기를 붙잡는다
+        flow.StartRun(1, RunMode.Normal);
+        Assert.AreEqual(GameScene.Run, GameState.Current, "새 사냥에는 이미 들어갔다");
+        Assert.IsTrue(flow.IsTransitioning, "이전 월드를 내리는 중");
+
+        flow.EndRun(RunEndReason.Dead);
+        Assert.AreEqual(GameScene.Run, GameState.Current, "마무리 중엔 바로 끝내지 않는다");
+
+        scenes.ReleaseUnload();
+        yield return null;
+        yield return null;
+        Assert.IsFalse(flow.IsTransitioning);
+        Assert.AreEqual(GameScene.Result, GameState.Current, "잠금이 풀리면 미뤄 둔 종료가 적용된다");
+        Assert.AreEqual(RunEndReason.Dead, flow.LastEndReason);
+    }
+
+    /// <summary>
+    /// 화면이 바뀔 때 구독자 하나가 던져도 나머지 구독자는 소식을 받는다(2026-11-07 최종 점검 — 던지면 화면 값만 바뀐 채 전환이 실패로 되돌아가 어긋났다).
+    /// </summary>
+    [Test]
+    public void GameStateChanged_OneThrowingListener_DoesNotStopTheOthers()
+    {
+        bool second = false;
+        GameState.Changed += _ => throw new System.InvalidOperationException("테스트 구독자가 던짐");
+        GameState.Changed += _ => second = true;
+        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("테스트 구독자가 던짐"));
+        GameState.Set(GameState.Current == GameScene.Run ? GameScene.Lobby : GameScene.Run);
+        Assert.IsTrue(second, "던진 구독자 뒤의 구독자도 받는다");
+    }
+
+    /// <summary>
+    /// 재도전에서 필드 준비가 예외로 실패하면 결과 화면으로 돌아오고, **날짜와 지난 런 기록이 그대로**다(Codex 3단계 종합 리뷰 — 2026-11-07부터 날짜는 들어간 뒤에만 쓴다).
     /// </summary>
     [UnityTest]
     public IEnumerator FieldSetupException_RestoresDaysAndThePreviousRun()

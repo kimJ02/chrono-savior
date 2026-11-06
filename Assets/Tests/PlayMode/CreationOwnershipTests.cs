@@ -14,7 +14,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// 새 파일이 `AddComponent`·`new GameObject`·`Instantiate`를 쓰면 이 목록에 담당과 이유를 먼저 적어야 통과한다.
 /// 이 목록이 생성 책임의 **유일한 원본**이다(문서에 따로 옮겨 적지 않는다 — `HANDOFF.md`는 분류와 정책만).
 ///
-/// 대상은 `Assets/Scripts`(실행 코드)뿐 — 에디터 도구·테스트의 생성은 정책 밖이다. 줄 전체가 주석인 줄은 세지 않는다(`WorldLookupTests`와 같은 방식).
+/// 대상은 `Assets/Scripts`(실행 코드)뿐 — 에디터 도구·테스트의 생성은 정책 밖이다. 주석·문자열은 세지 않는다(`SourceScan`)(`WorldLookupTests`와 같은 방식).
 /// 개수는 세지 않는다(호출이 하나 늘 때마다 깨지는 검사는 오래 못 간다) — 새 **담당**이 생기는 것을 막는다.
 /// </summary>
 public class CreationOwnershipTests
@@ -85,10 +85,9 @@ public class CreationOwnershipTests
         ["Core/RunTransient.cs"]           = (Kind.Helper, "RunTransient.Mark — 생성 담당이 런 오브젝트 표식을 붙일 때"),
     };
 
-    static readonly Regex Creation = new Regex(@"\bAddComponent\s*[<(]|\bnew\s+GameObject\s*\(|\bInstantiate\s*\(");
+    static readonly Regex Creation = new Regex(@"\bAddComponent\s*[<(]|\bnew\s+GameObject\s*\(|\bGameObject\s+\w+\s*=\s*new\s*\(|\bInstantiate\s*[<(]");
 
-    static bool Creates(string source) =>
-        source.Split('\n').Any(l => !l.TrimStart().StartsWith("//") && Creation.IsMatch(l));
+    static bool Creates(string source) => Creation.IsMatch(SourceScan.CodeOnly(source)); // 주석·문자열을 뺀 코드 전체(여러 줄에 나눈 호출도)
 
     [Test]
     public void OnlyListedOwners_CreateObjectsOrAttachComponents()

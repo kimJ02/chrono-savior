@@ -9,20 +9,20 @@
 | 무엇 | 바꾸는 곳 | 같이 볼 값 |
 |---|---|---|
 | 스테이지 땅·발판·배경·보스 포탈 그림 | `Assets/Data/Stages/StageArt_Forest`(`StageArtSet`) — 지역이 늘면 에셋을 하나 더 | 배경 배율·보여 줄 범위·풀밭 높이, 포탈 배율(같은 에셋) |
-| 캐릭터 그림(마법사·메카닉·섬영) | `Assets/Data/Characters/CharacterArtSet` | 캐릭터별 색(`tints`)·화면 높이(`heights`, 판정과 따로) |
-| 잡몹 그림 | `Assets/Data/Enemies/<종류>`(`EnemyData.sprite`) — 지금 대부분 임시 도형 | 그림 화면 높이(`visualHeight`, 판정 `colliderRadius`와 따로). ⚠️ `BuildEnemyData`를 다시 돌리면 덮어쓴다 — 그 도구의 값도 같이 고칠 것 |
+| 캐릭터 그림(마법사·메카닉·섬영) | `Assets/Data/Characters/CharacterArtSet` | 캐릭터별 색(`tints`)·화면 높이(`heights`, 판정과 따로). 네 번째 칸(드루이드)은 기획 제외라 비워 둬도 된다(선택 화면에 안 나온다). 지금 캐릭터 그림은 피벗이 가운데가 아니다(`pixel-standard.md` 5절) |
+| 잡몹 그림 | `Assets/Data/Enemies/<종류>`(`EnemyData.sprite`) — 지금 대부분 임시 도형. ⚠ 해골 궁수의 화살은 **궁수 그림·종류색을 그대로 물려받는다**(`EnemySetup.ConfigureTypeBehaviour`) — 궁수 그림을 바꾸면 화살도 바뀐다(따로 그리려면 그때 화살 프리팹 칸을 만든다). 에디터 도구 `BuildEnemyData`는 수치만 다시 쓰고 그림 칸(`sprite`·`visualHeight`)은 새로 만들 때만 채운다(바꾼 그림을 덮어쓰지 않는다) | 그림 화면 높이(`visualHeight`, 판정 `colliderRadius`와 따로). ⚠️ `BuildEnemyData`를 다시 돌리면 덮어쓴다 — 그 도구의 값도 같이 고칠 것 |
 | 보스·성소 그림 | `Assets/Data/Enemies/MonsterCatalog`(`boss`·`shrine`) | 그림 화면 크기(`bossSize`·`shrineSize`, 판정과 따로) |
 | 몹 종류별 구성(행동 부품) | `Assets/Prefabs/Enemies/Enemy_*` | — |
-| 투사체·구슬·드론·포탑 그림 | `Assets/Prefabs/Combat/*`의 `Visual` 자식 그림 | 크기는 쏠 때 코드가 넣는다(판정 상자와 같은 크기) — 그림 비율이 달라지면 확인 |
+| 투사체·구슬·드론·포탑 그림 | `Assets/Prefabs/Combat/*`의 `Visual` 자식 그림 | 크기는 쏠 때 코드가 넣는다(판정 상자와 같은 크기) — 그림 비율이 달라지면 확인. 보스 탄 색은 `Enemy_Boss`의 `Boss.projectileColor` |
 | 타격음 | `00_Persistent` › `Audio`의 `HitSound.clip` | 소리 크기는 설정 창 효과음 값 |
-| 섬영 베기 효과 프레임 | `20_Combat` › `Player`의 `BladeSlashVfx.frames`(이름순) | ⚠ 배율은 코드 상수 `BladeSlashVfx.Scale` = 2 — **지금과 같은 크기·PPU(128×128·128)의 프레임만** 코드 수정 없이 바뀐다. 외주 효과는 크기를 다시 맞춘다 |
+| 섬영 베기 효과 프레임 | `20_Combat` › `Player`의 `BladeSlashVfx.frames`(이름순) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수 — **지금과 같은 크기·PPU(128×128·128)·피벗의 프레임만** 코드 수정 없이 바뀐다. 외주 효과는 이 셋을 다시 맞춘다 |
 | 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeFlash`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
 
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)
 
 | 무엇 | 지금 | 바꿀 방법(그때) |
 |---|---|---|
-| 중력 착탄 폭발·중력장 소용돌이 그림 | `GravityImpactVfx`가 `Resources/Art/Figma/Vfx/GravityImpact`를 **폴더 경로로** 읽는다(소용돌이도 같은 그림). 정적 함수(`MageSkillEffects`)가 그때그때 만들어 그림을 넘길 주인이 없다 | 효과 프리팹으로 만들고, 쏘는 쪽(`MageAttack`)이 들고 넘긴다(투사체와 같은 방식). 크기는 스킬 반경에 맞춰 늘리는 지금 방식을 다시 볼 것(`pixel-standard.md`) |
+| 중력 착탄 폭발·중력장 소용돌이 그림 | `GravityImpactVfx`가 `Resources/Art/Figma/Vfx/GravityImpact`를 **폴더 경로로** 읽는다(소용돌이도 같은 그림, 프레임은 **파일 이름순**·15fps — 번호는 0을 채운 자릿수로). 정적 함수(`MageSkillEffects`)가 그때그때 만들어 그림을 넘길 주인이 없다 | 효과 프리팹으로 만들고, 쏘는 쪽(`MageAttack`)이 들고 넘긴다(투사체와 같은 방식). 크기는 스킬 반경에 맞춰 늘리는 지금 방식을 다시 볼 것(`pixel-standard.md`) |
 | 대붕괴 폭발 고리(원판·선) | `GravityBurstRing`이 `Shader.Find("Sprites/Default")`로 머티리얼을 만들고 메시·선을 코드로 그린다 | 외주 효과가 그림/프레임이면 효과 프리팹으로 교체 |
 | 레이저 구간·설치물 연결선 | `GunnerLaserBeam`·`GunnerAttack`이 `GunnerAttack.bulletSprite`를 코드로 늘려 그린다 | 외주 효과 형식에 맞춰 프리팹/프레임으로 |
 | 처치 연출·화면 흔들림 등 | 코드(`HitFeel`) — 그림 없음 | 필요하면 효과 프리팹 추가 |
@@ -36,6 +36,7 @@
 - 파일 54개 = 전부 쓰인다(코드에 키를 적은 곳 27개 + 변수로 고르는 곳 7곳). 빠진 파일 0(2026-11-06).
 - **제작 상태**(프로젝트에 들어감 / Figma에만 / 제작 중)는 팀원에게 확인해서 아래 표의 '상태' 칸에 채운다 — 지금은 전부 '프로젝트에 있음(임시일 수 있음)'.
 - 9-슬라이스로 늘려 쓰는 그림: `Common/button`(테두리 4px)·`Stage/frame_info`(8px) — 바꿀 때 테두리 두께를 같게.
+- **색으로 칸을 찾는 그림**(바꿀 때 그 색·자리를 지킬 것): `Hud/status_frame`은 빨간 칸(#EA323C)이 체력, 하늘 칸(#0CF1FF)은 빈칸으로 바꿔 그린다(`CombatHud.BuildStatusFrame`, 칸 자리 x 66~188·y 3~14). `Stage/progress`는 빨간 칸의 범위를 읽어 진행도를 채운다(스테이지 선택·결과 화면).
 
 | 키(폴더/파일) | 쓰는 화면 | 상태 |
 |---|---|---|

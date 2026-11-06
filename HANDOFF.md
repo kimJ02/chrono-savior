@@ -16,10 +16,11 @@
 | 2 | 오브젝트 생성 책임 정리(씬 배치 / 기능별 생성 코드) — 일괄 프리팹화는 하지 않음 | ✅ 완료(2026-11-06, 아래 '정리 순서 2') |
 | 3 | 씬 분할 — **1차**(상주 씬 분리) ✅ / **2차**(로비 분리·CombatDirector·씬 전환) 단계 0~4 전부 ✅(2026-11-05) | ✅ 완료 |
 | 3.5 | **에셋 교체 경계 = VFX 대비 사전 작업**(2026-11-06 신설 — 그림·효과·소리는 외주/구매로 갈아끼운다. 도트 재작업은 VFX 납품 뒤, 아래 '중간 점검과 남은 계획') | ✅ 완료(2026-11-06, 로그 (43)~(52) — Codex xhigh 종합 리뷰 통과) |
-| 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 110곳 — 0이 목표가 아니다, 아래 '정리 순서 4·5') | 할 일 |
-| 5 | 큰 클래스 분리(구조 안정 후). 팀원 파일은 팀원 확인 필요 | 할 일 |
+| 4 | 전역 상태 정리(저장·런·설정 경계, `ProfileService.Current` 110곳 — 0이 목표가 아니다, 아래 '정리 순서 4·5') | ✅ 완료(2026-11-06, `docs/state-ownership.md`) |
+| 5 | 큰 클래스 분리(구조 안정 후). 코드는 사용자 총괄이라 팀원 확인 없이(2026-11-06) | ✅ 완료(2026-11-07) |
+| — | **최종 점검**(1~5 전체, Codex xhigh 영역별 5패스 + 기계 점검, 2026-11-07) | 아래 '최종 점검' |
 
-회차 계획(Codex와 영역별 검토): **1 씬·부팅 ✅** / 2 전역 상태·결합 / 3 UI / 4 Systems·Enemies / 5 Characters·Combat·World
+회차 계획(Codex와 영역별 검토): 1 씬·부팅 ✅ / 2 전역 상태·결합 ✅ / 3 UI ✅ / 4 Systems·Enemies ✅ / 5 Characters·Combat·World ✅ — 최종 점검에서 영역별로 한 번 더 봤다.
 
 ## 0단계 규칙(결정 사항)
 
@@ -212,7 +213,7 @@
 기본은 **씬 배치**(씬이 원본)와 **프리팹**(재사용되는 구성). 코드로 짓는 담당과 이유는 `Tests/PlayMode/CreationOwnershipTests`의 목록이 **유일한 원본**이다
 (새 파일이 `AddComponent`·`new GameObject`·`Instantiate`를 쓰면 목록에 분류·이유를 적어야 통과 — 개수는 세지 않고 새 담당이 생기는 것을 막는다). 에디터 도구·테스트의 생성은 정책 밖.
 
-분류: **A** 실행 중 생기는 전투 물체(투사체 3종·구슬·드론·포탑·장판 2) / **B** 몹 조립(기본 프리팹 + 타입 행동 `AddComponent` + `RefreshTypeBehaviour`) /
+분류(**정리 전** 상태 — 결과는 아래 1~4): **A** 실행 중 생기는 전투 물체(투사체 3종·구슬·드론·포탑·장판 2) / **B** 몹 조립(기본 프리팹 + 타입 행동 `AddComponent` + `RefreshTypeBehaviour`) /
 **C** 씬에 놓인 오브젝트가 스스로 부품을 붙임(`MageAttack`→`MageChargeFlash`, `PlayerAttack`→`LineRenderer`+`Shader.Find`, `HitSound`→`AudioSource`+`Resources.Load`) /
 **D** 그림만 있는 효과·풀(판정 없음) / **E** UI 짓기(Figma 좌표 — 화면별 프리팹을 두면 좌표가 두 곳) / **F** 크기 입력으로 그림 깔기(`StageVisuals`). D·E·F는 정당한 코드 생성(이유만 기록).
 
@@ -292,7 +293,7 @@
 |---|---|---|---|---|---|
 | 1 | 생성·파괴 반복 | `Destroy` 60곳, `new GameObject`/`Instantiate` 42곳 | 자주 나오는 것만 `ObjectPool` | 중 | 설계 Codex → 구현 Claude |
 | 2 | 물리 질의 GC | `OverlapCircleAll` 18곳(그중 `BladeCombat.cs` 6곳은 팀원 담당) | 버퍼 재사용 `OverlapCircle(ContactFilter2D, buffer)` | 하 | Claude |
-| 3 | UI 매 프레임 탐색 | `CombatHud.cs:323`(보스), `:401`(미니맵 0.15초마다 전체 탐색) | 캐시 / 등록 목록 | 하 | Claude |
+| 3 | ~~UI 매 프레임 탐색~~ ✅ 해결(2026-11-05 2b) | 보스 체력·미니맵 몹 점은 전투 창구(`WorldView.Combat`)가 등록 목록 `EnemyHealth.Active`에서 읽는다(씬 탐색 없음, 미니맵은 `CombatMinimapView`가 0.15초마다) | — | — | — |
 | 4 | 매 프레임 GetComponent | `EnemyMove.OverlapsTarget()` | 대상 바뀔 때만 캐시 | 하 | Claude |
 | 5 | Draw Call | 이펙트 팩 텍스처가 제각각 | Sprite Atlas | 하~중 | Claude |
 | 6 | UI 캔버스 재구성 | HUD가 한 캔버스 | 자주 바뀌는 HUD 분리 | 중 | 설계 Codex |

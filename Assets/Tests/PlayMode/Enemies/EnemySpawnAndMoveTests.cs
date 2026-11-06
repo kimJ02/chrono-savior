@@ -191,7 +191,7 @@ public class EnemySpawnAndMoveTests
     public IEnumerator EnemyMove_LandsOnPlatform_ViaRealPhysics()
     {
         int groundLayer = LayerMask.NameToLayer("Ground");
-        Assert.AreNotEqual(-1, groundLayer, "Ground 레이어가 없음 — BuildPartAScene.Build()를 한 번도 안 돌린 프로젝트인가?");
+        Assert.AreNotEqual(-1, groundLayer, "Ground 레이어가 없음 — ProjectSettings/TagManager의 8번 레이어(CLAUDE.md 레이어 표)를 확인");
 
         var platformGO = new GameObject("TestPlatform");
         platformGO.layer = groundLayer;

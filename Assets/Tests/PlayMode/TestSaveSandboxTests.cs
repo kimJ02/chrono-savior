@@ -21,8 +21,9 @@ public class TestSaveSandboxTests
     {
         Assert.IsNotNull(TestSaveSandbox.Path, "SetUpFixture가 안 돌았다");
         Assert.AreEqual(TestSaveSandbox.Path, SaveService.SavePath, "지금 세이브 경로가 안전장치 경로가 아니다");
-        StringAssert.DoesNotStartWith(Path.GetFullPath(Application.persistentDataPath), Path.GetFullPath(SaveService.SavePath),
-            "세이브가 진짜 위치로 간다");
+        // 폴더 경계까지 비교한다(이름이 같은 접두어로 시작하는 옆 폴더를 진짜 위치로 오인하지 않게)
+        string real = Path.GetFullPath(Application.persistentDataPath).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        StringAssert.DoesNotStartWith(real, Path.GetFullPath(SaveService.SavePath), "세이브가 진짜 위치로 간다");
     }
 
     [Test]
@@ -35,13 +36,29 @@ public class TestSaveSandboxTests
             .SelectMany(f =>
             {
                 var values = assign.Matches(File.ReadAllText(f)).Cast<Match>().Select(m => m.Groups[1].Value.Trim()).ToArray();
-                var bad = values.Where(v => v == "null").Select(_ => $"{Path.GetFileName(f)}: PathOverride = null(진짜 경로가 된다 — TestSaveSandbox.Path로 되돌릴 것)").ToList();
+                var bad = values.Where(v => Regex.IsMatch(v, @"\bnull\b")).Select(_ => $"{Path.GetFileName(f)}: PathOverride = null(진짜 경로가 된다 — TestSaveSandbox.Path로 되돌릴 것)").ToList();
                 if (values.Length > 0 && !values.Contains("TestSaveSandbox.Path"))
                     bad.Add($"{Path.GetFileName(f)}: 세이브 경로를 바꾸고 안전장치 경로로 되돌리지 않는다");
                 return bad;
             })
             .ToArray();
         CollectionAssert.IsEmpty(problems);
+    }
+
+    /// <summary>
+    /// 안전장치(`TestSaveSandbox`, NUnit `SetUpFixture`)는 **그 네임스페이스의 테스트에만** 걸린다 — 모든 테스트 파일이 같은 네임스페이스에 있어야
+    /// 새 테스트가 안전장치 밖에서 진짜 세이브를 건드리지 않는다(2026-11-07 최종 점검).
+    /// </summary>
+    [Test]
+    public void EveryTestFile_IsInTheSandboxedNamespace()
+    {
+        string root = Path.Combine(Application.dataPath, "Tests");
+        string ns = typeof(TestSaveSandbox).Namespace;
+        var outside = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
+            .Where(f => !Regex.IsMatch(File.ReadAllText(f), @"^\s*namespace\s+" + Regex.Escape(ns) + @"\s*[{;]", RegexOptions.Multiline))
+            .Select(Path.GetFileName)
+            .ToArray();
+        CollectionAssert.IsEmpty(outside, $"이 파일들은 {ns} 밖이라 세이브 안전장치가 안 걸린다");
     }
 }
 

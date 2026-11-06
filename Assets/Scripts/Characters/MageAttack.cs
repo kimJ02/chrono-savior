@@ -122,7 +122,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     /// <summary>
     /// 사냥이 끝나거나 로비로 나가는 순간 즉시 차지를 취소한다 — 아래 <see cref="Update"/>의
     /// IsRunning 가드만으로는 "차지 중에 죽어서 Run을 벗어난" 경우 로비에 반투명 차지 표시
-    /// (<see cref="chargeIndicator"/>)가 그대로 남는 걸 못 막는다(Update 자체가 멈추니 그걸
+    /// (차지 깜빡임 <see cref="MageChargeFlash"/>)가 그대로 남는 걸 못 막는다(Update 자체가 멈추니 그걸
     /// 꺼 줄 코드도 같이 멈춘다). 다음 StartRun의 ResetForRun이 결국 정리하긴 하지만, 그 사이
     /// 로비에 떠 있는 걸 막으려고 전환 즉시 처리한다.
     /// </summary>

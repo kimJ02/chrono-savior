@@ -26,6 +26,7 @@ namespace ChronoSavior.UI
 
         AudioSource source;
         float lastTime = -10f;
+        readonly System.Random pitchRandom = new System.Random();
 
         /// <summary>지금까지 낸 소리 수(테스트용).</summary>
         public int Played { get; private set; }
@@ -53,7 +54,8 @@ namespace ChronoSavior.UI
             float vol = BaseVolume * GameSettings.SfxVolume / GameSettings.VolumeMax;
             if (vol <= 0f) return;
             lastTime = now;
-            source.pitch = Random.Range(0.92f, 1.08f);
+            // 음높이 흔들기는 따로 둔 난수로 — 전투가 쓰는 `UnityEngine.Random`을 소리가 나는지·음량 설정에 따라 한 칸씩 당기지 않게(2026-11-07)
+            source.pitch = 0.92f + (float)pitchRandom.NextDouble() * 0.16f;
             source.PlayOneShot(clip, vol);
             Played++;
         }

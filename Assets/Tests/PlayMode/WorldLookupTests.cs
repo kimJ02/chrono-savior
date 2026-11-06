@@ -21,14 +21,12 @@ public class WorldLookupTests
         ["UI/Pixel/PixelCanvas.cs"] = (1, "EnsureEventSystem — 씬 없이 판을 만드는 테스트·캡처에서만 EventSystem이 이미 있는지 본다(게임 씬엔 놓여 있다)"),
     };
 
-    static readonly Regex WorldLookup = new Regex(@"\bCamera\.main\b|\b(FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag)\b|GameObject\.Find\s*\(");
+    static readonly Regex WorldLookup = new Regex(@"\bCamera\.main\b|\b(FindFirstObjectByType|FindAnyObjectByType|FindObjectsByType|FindObjectOfType|FindObjectsOfType|FindGameObjectWithTag|FindGameObjectsWithTag|FindWithTag)\b|GameObject\s*\.\s*Find\s*\(|\bResources\s*\.\s*FindObjectsOfTypeAll\b");
 
     /// <summary>
-    /// **줄 전체가 주석인 줄**(`//`·`///`로 시작)만 세지 않는다 — 예전 방식을 설명하는 글이 걸리지 않게. 코드 뒤에 붙은 주석과 블록 주석(`/* */`)은 센다
-    /// (그런 자리에는 옛 API 이름을 쓰지 말 것 — 단순하게 두려고 C# 구문 분석은 안 한다).
+    /// **주석·문자열은 세지 않는다**(`SourceScan.CodeOnly` — 예전 방식을 설명하는 글이 걸리지 않게). 코드 전체에서 찾으므로 호출을 여러 줄에 나눠 써도 걸린다.
     /// </summary>
-    static int CountLookups(string source) =>
-        source.Split('\n').Where(l => !l.TrimStart().StartsWith("//")).Sum(l => WorldLookup.Matches(l).Count);
+    static int CountLookups(string source) => WorldLookup.Matches(SourceScan.CodeOnly(source)).Count; // 주석·문자열을 뺀 코드 전체
 
     [Test]
     public void RuntimeCode_DoesNotSearchTheScene()

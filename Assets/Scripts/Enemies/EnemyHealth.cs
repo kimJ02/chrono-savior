@@ -11,10 +11,10 @@ namespace ChronoSavior.Enemies
     /// 피해량 계산(치명타·난수 변동) 자체는 공격 쪽(`Combat.DamageCalculator`)이 담당한다 — 원본도
     /// `dealDamage` 안에서 공격자 스탯으로 먼저 계산한 뒤 대상 체력을 깎는 순서다.
     ///
-    /// 아직 빠진 것(`docs/original-parity.md` 참고): 콤보 적립, 출혈·처형, 슬라임 분열,
-    /// 데미지 숫자 팝업·파티클·hitstop. 사망 시 골드·경험치 지급은 <see cref="Died"/> 이벤트로
-    /// 트랙 A(`Systems`)가 구독해서 처리한다(`docs/sprints/03-growth-curve-worksplit.md` 참고) — 이 클래스 자체는
-    /// 보상을 계산하지 않는다(Enemies 도메인이 Core.ProfileService 이상을 몰라야 하므로).
+    /// 피해 경로에서 콤보 적립(`CombatModifiers.AddCombo`)과 히트스톱 요청(`CombatEvents.RequestHitstop`)도 한다.
+    /// 분열은 `EnemySplitOnDeath`(프리팹 부품), 사망 시 골드·경험치는 <see cref="Died"/> 이벤트를 구독한 스포너가
+    /// `Systems/EnemyRewards`로 지급한다 — 이 클래스 자체는 보상을 계산하지 않는다(Enemies 도메인이 Systems를 몰라야 하므로).
+    /// 원본과 아직 다른 것은 `docs/original-parity.md`.
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SpriteRenderer))]

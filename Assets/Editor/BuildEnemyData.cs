@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using ChronoSavior.Core;
@@ -105,6 +106,15 @@ namespace ChronoSavior.Editor
         [MenuItem("ChronoSavior/Build Enemy Data")]
         public static void Build()
         {
+            // 종류별 프리팹이 하나라도 없으면 아무것도 쓰지 않고 멈춘다 — 일부만 바뀐 데이터가 저장되지 않게(2026-11-07 최종 점검).
+            var missingPrefabs = Rows.Where(r => AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFor(r.type)) == null)
+                                     .Select(r => $"{r.type}: {PrefabFor(r.type)}").ToArray();
+            if (missingPrefabs.Length > 0)
+            {
+                Debug.LogError("[BuildEnemyData] 프리팹이 없어 멈춘다(아무것도 바꾸지 않았다): " + string.Join(", ", missingPrefabs));
+                return;
+            }
+
             Directory.CreateDirectory(DataFolder);
             BuildPrototypeSprites.Apply(); // 스프라이트 import 설정을 먼저 맞춘다
 
@@ -125,19 +135,23 @@ namespace ChronoSavior.Editor
                 asset.goldMax = row.goldMax;
                 asset.knockbackMultiplier = row.knockbackMul;
                 asset.colliderRadius = RadiusFor(row.h);
-                asset.visualHeight = asset.colliderRadius * 2f; // 지금 임시 그림은 판정 지름과 같은 높이로 보인다 — 외주 그림이 오면 그림에 맞춰 바꾼다
                 asset.color = row.color;
                 // ⚠️ 프로토타입 그림은 **정식 아트가 들어온 종류만** 교체한다 — 아래 SpriteEnabledTypes 참고.
                 // 나머지는 사용자 지시(2026-09-16) "일단 스킨 씌우지 말고 네모 세모 동그라미로만"가
                 // 아직 유효해서 도형+색을 그대로 쓴다. 전부 되돌리려면 이 줄을 조건 없이
                 // `BuildPrototypeSprites.Load(SpriteNameFor(row.type))`로 바꾸면 된다
                 // (구운 파일은 `Assets/Sprites/Prototype/`에 그대로 있다).
-                asset.sprite = SpriteEnabledTypes.Contains(row.type)
-                    ? BuildPrototypeSprites.Load(SpriteNameFor(row.type))
-                    : null;
+                // **그림 칸(`sprite`·`visualHeight`)은 새로 만들 때만 채운다**(2026-11-07) — 외주 그림으로 바꾼 뒤 이 도구를 다시 돌려도
+                // 바꾼 그림과 그 화면 높이를 덮어쓰지 않게(`docs/asset-swap-points.md`). 수치(체력·속도·판정 등)는 원본 표가 원본이라 늘 다시 쓴다.
+                if (created)
+                {
+                    asset.sprite = SpriteEnabledTypes.Contains(row.type)
+                        ? BuildPrototypeSprites.Load(SpriteNameFor(row.type))
+                        : null;
+                    asset.visualHeight = asset.colliderRadius * 2f; // 지금 임시 그림은 판정 지름과 같은 높이로 보인다 — 외주 그림이 오면 그림에 맞춰 바꾼다
+                }
                 asset.shape = row.shape;
                 asset.prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabFor(row.type));
-                if (asset.prefab == null) Debug.LogError($"[BuildEnemyData] {row.type} 프리팹이 없다: {PrefabFor(row.type)}");
                 asset.originalWidthPx = row.w;
                 asset.originalHeightPx = row.h;
 

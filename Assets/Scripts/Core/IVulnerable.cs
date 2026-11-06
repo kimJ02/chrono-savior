@@ -19,9 +19,8 @@ namespace ChronoSavior.Core
         /// <summary>
         /// 중력점에 노출된 시간을 누적한다. 임계치를 넘으면 **구현체가** 취약을 건다.
         ///
-        /// ⚠️ 원본의 `gravityExpose`는 **줄어들지 않는다** — 스폰 시 0으로 시작해서 중력점 안에 있는
-        /// 동안 계속 더해지기만 한다(`:3817`). 즉 한 번 임계치를 넘긴 적은 그 뒤로 중력점에 닿을
-        /// 때마다 곧바로 다시 취약해진다. 감쇠를 넣으면 중력 빌드의 후반 체감이 달라진다.
+        /// 스폰 시 0으로 시작해 중력점 안에 있는 동안 더해지고(`:3817`), 벗어나면 초당 0.35씩 빠진다
+        /// (원본 `gravityExpose = max(0, gravityExpose - dt*0.35)` `:1727` — 구현체 `EnemyHealth.Update`).
         /// </summary>
         void AddGravityExposure(float exposure);
 

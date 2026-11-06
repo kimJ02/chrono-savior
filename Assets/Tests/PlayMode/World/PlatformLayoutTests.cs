@@ -12,7 +12,7 @@ namespace ChronoSavior.Tests.PlayMode
 
 /// <summary>
 /// **실제 맵 발판 배치**로 발판이 제대로 동작하는지(2026-10-24 사용자 "플랫폼 제대로 잘 작동하는지 확인").
-/// 다른 발판 테스트(`PhysicsAndMageTests` 등)는 테스트용 발판 하나로 잰다 — 여기는 `BuildPartAScene`이 씬에 만드는 것과
+/// 다른 발판 테스트(`PhysicsAndMageTests` 등)는 테스트용 발판 하나로 잰다 — 여기는 `20_Combat` 씬에 놓인 것과
 /// 똑같이 땅 + `FieldLayout.NormalPlatforms` 15개 + `BossPlatforms` 3개를 만들고 Figma 타일(`StageVisuals`)까지 깐 뒤,
 /// 진짜 `CharacterMover2D`로 착지·점프 통과·아래키 통과·가장자리 낙하를 잰다.
 /// </summary>
@@ -34,7 +34,7 @@ public class PlatformLayoutTests
         int layer = LayerMask.NameToLayer("Ground");
         Assert.AreNotEqual(-1, layer, "Ground 레이어가 없다");
 
-        // BuildPartAScene.BuildGround 그대로
+        // 씬 `20_Combat`의 Ground와 같은 구성
         ground = new GameObject("Ground") { layer = layer };
         var gcol = ground.AddComponent<BoxCollider2D>();
         gcol.size = new Vector2(FieldBounds.MaxX - FieldBounds.MinX, FieldLayout.PlatformThickness * 2f);
@@ -63,7 +63,7 @@ public class PlatformLayoutTests
         FieldLayout.SetBossArena(false);
     }
 
-    /// <summary>BuildPartAScene.BuildPlatformSet 그대로.</summary>
+    /// <summary>씬 `20_Combat`의 `PlatformSet`과 같은 구성.</summary>
     static GameObject BuildSet(string name, float[,] table, bool boss, int layer)
     {
         var parent = new GameObject(name);

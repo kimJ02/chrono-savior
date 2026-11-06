@@ -275,7 +275,7 @@ public class SkillSlotTests
         rb.gravityScale = 0f;
         var mage = go.AddComponent<MageAttack>().Equipped();
         var gunner = go.AddComponent<GunnerAttack>().Equipped();
-        var rig = go.AddComponent<PlayerRig>(); // 키트를 전부 붙인 뒤에(BuildPartAScene과 같은 순서)
+        var rig = go.AddComponent<PlayerRig>(); // 키트를 전부 붙인 뒤에(씬 `20_Combat`의 Player와 같은 순서)
         yield return null;
 
         Assert.AreSame(mage, rig.CurrentKit as MageAttack);

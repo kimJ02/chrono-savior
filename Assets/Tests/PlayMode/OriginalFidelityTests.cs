@@ -43,6 +43,7 @@ public class OriginalFidelityTests
 
     static void ResetStatics()
     {
+        HitFeel.Reset();
         CombatModifiers.Reset();
         CombatEvents.Reset(); RunEvents.Reset();
         RunState.Reset();
@@ -401,6 +402,7 @@ public class OriginalFidelityTests
             ("RecordCombo",                "PlayerProfile.cs"),    // CombatModifiers.AddCombo
             ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
             ("TryUnlockAchievement",       "PlayerProfile.cs"),    // Achievements.CheckNew
+            ("SpinCooldownLeft",           "BladeCombat.cs"),      // BladeSlashVfx(2026-11-07 — 예전엔 비공개 필드를 리플렉션으로 읽었다)
             // 책임별 분리(2026-11-06 5단계) — 스포너가 부르는 몹 설정·보상
             ("EnemySetup.Apply",           "EnemySetup.cs"),       // EnemySpawner.ApplyEnemyData(이름이 흔해 클래스까지 적는다)
             ("SetupShrine",                "EnemySetup.cs"),       // EnemySpawner.SpawnShrine
@@ -422,7 +424,7 @@ public class OriginalFidelityTests
             foreach (var file in scriptFiles)
             {
                 if (Path.GetFileName(file) == declaredIn) continue;
-                if (File.ReadAllText(file).Contains(api)) { used = true; break; }
+                if (SourceScan.CodeOnly(File.ReadAllText(file)).Contains(api)) { used = true; break; } // 주석·문자열 속 언급은 호출이 아니다
             }
             if (!used) unwired.Add($"{declaredIn}의 {api} — 정의만 있고 부르는 곳이 없다");
         }

@@ -241,6 +241,9 @@ namespace ChronoSavior.Characters
         /// </summary>
         public SkillSlotState AttackSlot => SkillSlotState.Cooldown(cdTimer, SpinCd);
 
+        /// <summary>회전베기(Z)의 남은 쿨다운(초) — 베기 효과(`BladeSlashVfx`)가 '방금 베었다'를 알아채는 데 쓴다(예전엔 비공개 필드를 리플렉션으로 읽었다).</summary>
+        public float SpinCooldownLeft => cdTimer;
+
         /// <summary>
         /// X 칸 — 원본은 갈래가 칼날폭풍(`conv`)이면 `p.stormCd / S.cd`, 아니면 `p.focusCd / F.cd`(:6341~:6345).
         /// 갈래가 없을 때도 원본처럼 집중 쪽을 읽는다(그땐 0이라 빈 칸).

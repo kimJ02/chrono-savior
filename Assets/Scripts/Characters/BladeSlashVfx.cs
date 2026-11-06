@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 using ChronoSavior.Core;
 
@@ -30,7 +29,6 @@ namespace ChronoSavior.Characters
 
         /// <summary>씬 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources` 폴더에서 이름순으로 읽었다).</summary>
         public Sprite[] Frames { get => frames; set => frames = value; }
-        static readonly FieldInfo CdTimer = typeof(BladeCombat).GetField("cdTimer", BindingFlags.NonPublic | BindingFlags.Instance);
 
         BladeCombat blade;
         SpriteRenderer body;
@@ -56,8 +54,8 @@ namespace ChronoSavior.Characters
             // 로비·타이틀로 나가면 남은 베기 그림을 지운다(시간이 멈춰 그 자리에 굳어 남는다 — 잔상과 같은 문제).
             if (playing.Count > 0 && (GameState.Current == GameScene.Lobby || GameState.Current == GameScene.Title)) ResetForRun();
             Age(dt);
-            if (blade == null || CdTimer == null) return;
-            float cd = (float)CdTimer.GetValue(blade);
+            if (blade == null) return;
+            float cd = blade.SpinCooldownLeft; // 베면 쿨다운이 다시 찬다 — 그 순간을 본다
             bool swung = cd > lastCd + 0.0001f;
             lastCd = cd;
             if (swung && dt > 0f && GameState.Current == GameScene.Run && ProfileService.Current.character == CharacterId.Blade)

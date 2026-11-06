@@ -1,5 +1,10 @@
 # 분업안 (living document)
 
+> ⚠️ **2026-11-04~07 구조 정리 스프린트에서 파일·씬 이름이 바뀌었다** — 아래 표·소유권 문구는 그 전(~10/02) 기록이라 옛 이름이 남아 있다.
+> 읽을 때 바꿔 읽을 것: `Scenes/CombatCore.unity` → `00_Persistent`·`10_Lobby`·`20_Combat` 3씬 · `Editor/BuildPartAScene.cs`(씬을 코드로 만들던 도구) → **삭제**, 씬 파일이 원본(`Editor/SceneSetupValidator`가 검사만) ·
+> `Systems/RunController` → `Systems/GameFlow`(흐름) + `Systems/CombatDirector`(전투) · `UI/LobbyScreen`·`UiTheme` 등 옛 IMGUI 화면 → **삭제**, Figma `UI/Screens/*`(`PxScreen`) ·
+> `Enemy_Oni.prefab` → `Prefabs/Enemies/Enemy_Base`(+ 종류별 프리팹). 진행 상태 칸(예: "섬영 진행 중")도 그때 기준이다 — 지금 상태는 `PROGRESS.md`.
+
 > **이 파일이 분업의 유일한 출처다.** 채팅에서 정한 분업은 여기 적히기 전까지 존재하지 않는 것으로 친다.
 > 형식 규칙은 `CLAUDE.md` "분업안 — 작성 위치와 형식". 완료 항목은 지우지 말고 `✅`로 표시한다.
 

@@ -114,7 +114,7 @@ namespace ChronoSavior.Systems
 
         /// <summary>
         /// 원본 `startRun(region, mode)`(project_test.html:4293). 전투 씬을 새로 불러와(재도전도 — 지금 전투 씬은 멈췄다가 새 씬이 뜨면 내린다)
-        /// **불러오기가 성공한 뒤에만** 날짜 차감 → 런 상태 → 필드 준비(<see cref="CombatDirector.BeginField"/>) → 사냥 화면 → 시간 흐름.
+        /// **불러오기가 성공한 뒤에만** 런 상태 → 필드 준비(<see cref="CombatDirector.BeginField"/>) → 날짜 차감 → 사냥 화면 → 시간 흐름.
         /// 실패하면 이전 화면·월드로 되돌리고 <paramref name="done"/>에 false를 준다. 받아들이지 않으면(전환 중) false를 돌려준다.
         /// </summary>
         /// <param name="spendDay">스테이지에 들어갈 때마다 멸망까지 하루가 준다(사용자 결정 2026-10-24) — 에디터 디버그 진입만 false.</param>
@@ -127,13 +127,9 @@ namespace ChronoSavior.Systems
                     Debug.LogError("[GameFlow] 전투 씬을 불러왔는데 전투 담당(CombatDirector)이 없다");
                     return false;
                 }
-                var profile = ProfileService.Current;
-                int daysBefore = profile.doomDays;
                 var runBefore = RunState.Capture();
                 try
                 {
-                    // 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(그건 이 함수를 안 거친다).
-                    if (spendDay && mode == RunMode.Normal) profile.SpendDay();
                     RunState.Begin(region, mode);
                     hitstopLeft = 0f;
                     hitstopCooldown = 0f;
@@ -141,12 +137,13 @@ namespace ChronoSavior.Systems
                 }
                 catch
                 {
-                    // 필드 준비가 예외로 실패하면 깎은 날짜와 런 상태를 돌려준다 — 전환이 이전 화면으로 되돌린다
-                    // (들어가지 못한 사냥에 하루를 쓰지 않고, 결과 화면이면 지난 런 기록이 그대로 보이게). 새 전투 씬의 필드는 씬째 내려간다.
-                    profile.doomDays = daysBefore; // 롤백 — 깎기 전 값을 그대로 되돌린다(직접 대입 예외, `docs/state-ownership.md`)
+                    // 필드 준비가 예외로 실패하면 런 상태를 돌려준다 — 전환이 이전 화면으로 되돌린다(결과 화면이면 지난 런 기록이 그대로 보이게).
+                    // 새 전투 씬의 필드는 씬째 내려간다.
                     RunState.Restore(runBefore);
                     throw;
                 }
+                // 날짜는 들어가는 데 성공한 사냥만 쓴다(그래서 되돌릴 일이 없다). 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(이 함수를 안 거친다).
+                if (spendDay && mode == RunMode.Normal) ProfileService.Current.SpendDay();
                 GameState.Set(GameScene.Run);
                 Time.timeScale = 1f;
                 return true;
@@ -190,6 +187,8 @@ namespace ChronoSavior.Systems
         IEnumerator Transition(string nextScene, bool normalArena, System.Func<bool> enter, System.Action<bool> done)
         {
             GameState.SetTransitioning(true);
+            enteredThisTransition = false;
+            pendingEnd = null;
             var old = CurrentWorld;
             float timeScaleBefore = Time.timeScale;
             bool bossArenaBefore = FieldLayout.IsBossArena;
@@ -237,6 +236,7 @@ namespace ChronoSavior.Systems
             }
 
             CurrentWorld = fresh;
+            enteredThisTransition = true;
             // 예전 전환에서 못 내린 월드(꺼진 채 남은 것)가 있으면 이번에 다시 내려 본다 — 이번에 못 내린 건 다음 전환에.
             var earlier = stranded.ToArray();
             stranded.Clear();
@@ -253,8 +253,15 @@ namespace ChronoSavior.Systems
                 ReportUnload(old, unload);
             }
             GameState.SetTransitioning(false);
+            enteredThisTransition = false;
             done?.Invoke(true);
+            // 마무리하는 동안 사냥이 끝났으면(사망·시간 초과) 이제 끝낸다.
+            if (pendingEnd is RunEndReason ended) { pendingEnd = null; EndRun(ended); }
         }
+
+        /// <summary>이번 전환이 새 화면에 이미 들어갔는지 — 그 뒤 이전 월드를 내리는 동안 들어온 사냥 종료는 <see cref="pendingEnd"/>로 미룬다.</summary>
+        bool enteredThisTransition;
+        RunEndReason? pendingEnd;
 
         /// <summary>내리지 못해 꺼진 채 남은 월드 — 다음 전환이 성공할 때 다시 내려 본다.</summary>
         readonly System.Collections.Generic.List<WorldHandle> stranded = new System.Collections.Generic.List<WorldHandle>();
@@ -334,7 +341,13 @@ namespace ChronoSavior.Systems
         /// </summary>
         public void EndRun(RunEndReason reason)
         {
-            if (IsTransitioning || RunState.Over) return;
+            if (RunState.Over) return;
+            if (IsTransitioning)
+            {
+                // 새 사냥에 이미 들어갔고 이전 월드를 내리는 마무리 중이면(그동안 사냥은 진행된다) 잊지 않고 잠금이 풀린 뒤 끝낸다.
+                if (enteredThisTransition && GameState.Current == GameScene.Run && pendingEnd == null) pendingEnd = reason;
+                return;
+            }
             RunState.MarkOver();
             LastEndReason = reason;
             hitstopLeft = 0f; // 히트스톱 중에 멈추면 그게 timeScale을 다시 1로 되돌려버린다

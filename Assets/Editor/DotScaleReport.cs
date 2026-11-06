@@ -81,7 +81,7 @@ namespace ChronoSavior.Editor
 
             // 몹 — EnemySetup.ApplySize: 데이터 그림(또는 임시 도형)을 visualHeight에 맞춰 늘린다(엘리트 ×EliteScale)
             var catalog = AssetDatabase.FindAssets("t:MonsterCatalog").Select(g => AssetDatabase.LoadAssetAtPath<MonsterCatalog>(AssetDatabase.GUIDToAssetPath(g))).FirstOrDefault();
-            if (catalog != null)
+            if (catalog != null && catalog.types != null)
             {
                 foreach (var data in catalog.types.Where(d => d != null))
                 {

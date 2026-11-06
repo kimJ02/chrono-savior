@@ -43,12 +43,21 @@ namespace ChronoSavior.Tests.PlayMode
         /// <summary>참이면 다음 내리기 하나를 실패시킨다(기록하지 않는다 — 그 월드는 남아 있다).</summary>
         public bool FailUnloadNext;
 
+        /// <summary>참이면 다음 내리기 하나를 끝내지 않고 붙잡아 둔다 — 새 화면에 들어간 뒤 마무리 중의 동작을 볼 때. <see cref="ReleaseUnload"/>로 끝낸다.</summary>
+        public bool HoldUnloadNext;
+        WorldSceneOp heldUnload;
+        WorldHandle heldUnloadWorld;
+
         public WorldSceneOp Unload(WorldHandle world)
         {
             if (FailUnloadNext) { FailUnloadNext = false; return WorldSceneOp.Failed("테스트가 내리기를 실패시킴: " + world); }
+            if (HoldUnloadNext) { HoldUnloadNext = false; heldUnload = new WorldSceneOp(); heldUnloadWorld = world; return heldUnload; }
             Unloaded.Add(world);
             return WorldSceneOp.Done(world);
         }
+
+        /// <summary>붙잡아 둔 내리기를 끝낸다(성공).</summary>
+        public void ReleaseUnload() { if (heldUnload == null) return; Unloaded.Add(heldUnloadWorld); heldUnload.Complete(heldUnloadWorld); heldUnload = null; }
         public void Activate(WorldHandle world) => Active = world;
         public void SetRunning(WorldHandle world, bool running) => Running.Add((world, running));
     }

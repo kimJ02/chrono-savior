@@ -5,7 +5,7 @@ namespace ChronoSavior.Characters
 {
 /// <summary>
 /// 이동 컨트롤러. 실제 Physics2D(Rigidbody2D 동적 바디 + 콜라이더 충돌 해석) 기반 — 전역 중력은
-/// BuildPartAScene에서 Physics2D.gravity = (0, -26)로 설정(원본 2600px/s² → 26, 100px=1유닛 축척).
+/// `ProjectSettings/Physics2DSettings`의 Gravity (0, -26)(원본 2600px/s² → 26, 100px=1유닛 축척).
 ///
 /// X는 화살표 키로 직접 속도를 넣어 자유 이동(원본 `updatePlayerCommon`의 bow/gunner 분기가
 /// `p.vx = mx * CONFIG.player.moveSpeed`로 가속 없는 즉시 속도라 그대로 이식 — 참고로 블레이드

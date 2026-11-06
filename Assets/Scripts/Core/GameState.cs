@@ -11,10 +11,10 @@ namespace ChronoSavior.Core
     /// 게임이 지금 어느 화면에 있는지. 원본 `state.scene`과 그 게임루프 분기
     /// (`frame()`: `if (state.scene !== 'run' || run.over) dt = 0`, project_test.html:7169)를 옮긴 것이다.
     ///
-    /// **모든 런타임 갱신은 <see cref="IsRunning"/>이 true일 때만 돈다.** 원본은 게임 전체가 한 개의
-    /// `frame()` 루프라 `dt=0`으로 한 번에 멈출 수 있지만, 우리는 컴포넌트마다 `Update()`가 따로 돌기 때문에
-    /// 각 컴포넌트가 스스로 확인해야 한다 — 적·스폰·투사체·장판 전부 `Update()` 첫 줄에
-    /// `if (!GameState.IsRunning) return;`을 넣는다(`docs/worksplit.md` 공유 계약).
+    /// **시간은 `Time.timeScale`로 멈춘다**(바꾸는 곳은 `Systems/GameFlow` 하나 — 일시정지·결과·로비·타이틀·히트스톱에 0).
+    /// 원본은 게임 전체가 한 개의 `frame()` 루프라 `dt=0`으로 한 번에 멈추는데, 우리 쪽은 `Time.deltaTime`·물리를 쓰는
+    /// 갱신(이동·타이머·투사체·장판)이 같은 방식으로 저절로 멈춘다. 다만 `Update()` 자체는 계속 돌므로
+    /// **시간과 상관없이 일을 하는 갱신(키 입력·겹침 판정)은 <see cref="IsRunning"/>을 스스로 확인한다**(예: `GameInput`의 전투 키).
     ///
     /// `FieldBounds`/`ProfileService`와 같은 정적 클래스 — 씬에서 오브젝트를 찾아다닐 필요가 없다.
     /// </summary>
@@ -49,7 +49,15 @@ namespace ChronoSavior.Core
             Previous = Current;
             Current = scene;
             Version++;
-            Changed?.Invoke(scene);
+            // 구독자 하나가 던져도 다른 구독자와 화면 전환은 계속된다 — 던지면 화면 값은 이미 바뀐 채 전환만 실패로 되돌아가
+            // 상태가 어긋난다(2026-11-07 최종 점검). 예외는 그대로 기록한다(테스트는 기록된 예외로 실패한다).
+            var handlers = Changed;
+            if (handlers == null) return;
+            foreach (System.Action<GameScene> h in handlers.GetInvocationList())
+            {
+                try { h(scene); }
+                catch (System.Exception e) { UnityEngine.Debug.LogException(e); }
+            }
         }
 
         /// <summary>

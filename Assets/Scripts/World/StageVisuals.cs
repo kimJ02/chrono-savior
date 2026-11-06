@@ -13,7 +13,7 @@ namespace ChronoSavior.World
     /// - **땅**(`Ground`): 선(LineRenderer)을 끄고 64px 타일(원본 32px을 Figma처럼 2배) 세 줄 — 맨 위가 풀, 아래는 흙.
     ///   타일은 한 장씩 놓는다(<see cref="TileStrip"/>).
     /// - **발판**(`PlatformSet` 아래 `Platform_*`): 선을 끄고 16px 풀 타일(Figma가 32px을 반으로 줄인 그림).
-    ///   발판 오브젝트의 자식이라 보스 무대로 바뀔 때(`PlatformSet.Activate`) 같이 켜지고 꺼진다.
+    ///   발판 오브젝트의 자식이라 보스 무대로 바뀔 때(전투 담당 `CombatDirector`가 무대에 맞는 `PlatformSet`을 켜고 끈다) 같이 켜지고 꺼진다.
     /// - **배경**: 원본 640×360을 정수 3배로 깔고 카메라를 따라가되 천천히 움직인다(시차). 카메라가 필드 끝에서 끝까지
     ///   가도 그림 가장자리가 안 보이게, 카메라 위치를 그림 안쪽 범위로 옮겨 계산한다(<see cref="BackgroundRawCenter"/>).
     /// - **보스 포탈**: 그림 묶음의 포탈 그림으로 바꾼다 — <see cref="BossPortal.ApplyArt"/>.

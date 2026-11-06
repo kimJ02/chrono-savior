@@ -107,6 +107,7 @@ namespace ChronoSavior.Core
             achieved.Add(id);
             return true;
         }
+
         /// <summary>지금까지 회귀한 횟수. 원본 `meta.regressions` — 회귀 장벽 계산의 기준이다.</summary>
         public int regressions = 0;
 
