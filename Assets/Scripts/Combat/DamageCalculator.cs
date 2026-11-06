@@ -41,9 +41,8 @@ namespace ChronoSavior.Combat
         /// 아이템 항(`itemPow`)은 아이템 시스템이 아직 없어서 빠져 있고 기본값 1.2만 쓴다.
         ///
         /// 이 배수는 **대상이 알고 있는 값**이라 여기서 곱하지 않고 `EnemyHealth`가 피해를 받을 때 곱한다
-        /// (`DamageCalculator`는 대상 참조가 없는 순수 계산기다). 원본은 곱셈을 전부 모은 뒤 한 번만
-        /// 반올림하는데 우리는 굴림 → 반올림 → 배수 → 반올림이라 **드물게 1 차이가 날 수 있다** —
-        /// 대상별로 굴림을 다시 하려면 10곳의 호출부가 전부 대상을 알아야 해서 그쪽이 더 나빴다.
+        /// (`DamageCalculator`는 대상 참조가 없는 순수 계산기다). 원본처럼 곱셈을 전부 모은 뒤 **한 번만** 반올림한다 —
+        /// <see cref="Roll"/>은 반올림 전 값을 돌려주고 `EnemyHealth`가 대상 배수를 곱한 뒤 `max(1, round)`(2026-11-07 최종 점검, 예전엔 두 번 반올림).
         /// </summary>
         public const float VulnerableMultiplier = 1.2f;
 
@@ -54,19 +53,19 @@ namespace ChronoSavior.Combat
         /// 스탯이 있는 호출자(`MageProjectile` 등)는 `Core.PlayerStatCalculator.ComputeCritChance()`를
         /// 넘겨서 강화가 반영되게 한다.
         /// </summary>
-        public static int Roll(float baseDamage, float critChance, out bool isCrit)
+        public static float Roll(float baseDamage, float critChance, out bool isCrit)
         {
             isCrit = Random.value < critChance;
             float variance = Random.Range(VarianceMin, VarianceMax);
             // 원본 `dmgMultAll()`(project_test.html:1296) — 콤보 × 살기 × 성소.
             // 대상과 무관한 항이라 여기서 곱한다(대상에 달린 취약·레벨 페널티는 EnemyHealth가 맡는다).
             float raw = baseDamage * CombatModifiers.DamageMultiplier * variance * (isCrit ? CritMultiplier : 1f);
-            return Mathf.Max(1, Mathf.RoundToInt(raw)); // 원본 max(1, round(...))
+            return raw; // 반올림은 맞는 쪽이 대상 배수까지 곱한 뒤 한 번(`EnemyHealth`, 원본 `max(1, round(...))` — 2026-11-07)
         }
 
-        public static int Roll(float baseDamage, out bool isCrit) => Roll(baseDamage, BaseCritChance, out isCrit);
+        public static float Roll(float baseDamage, out bool isCrit) => Roll(baseDamage, BaseCritChance, out isCrit);
 
         /// <summary>치명타 여부가 필요 없을 때 쓰는 간편 버전.</summary>
-        public static int Roll(float baseDamage) => Roll(baseDamage, out _);
+        public static float Roll(float baseDamage) => Roll(baseDamage, out _);
     }
 }

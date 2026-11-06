@@ -160,6 +160,10 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
 
     void Update()
     {
+        // 시간이 멈춘 동안(일시정지·결과·히트스톱 — timeScale 0)엔 아무것도 안 한다. 원본은 그동안 `updateRun` 자체를 안 부른다
+        // (`frame()`의 `dt = 0` → `if (dt > 0) updateRun(dt)` :7168~7171) — 안 막으면 멈춘 화면에서 겹친 몹이 접촉 피해를 준다(2026-11-07 최종 점검).
+        if (Time.deltaTime <= 0f) return;
+
         // 원본은 스폰 보호 중이면 적 갱신을 통째로 건너뛴다 — 주석 그대로 "상호 무적: 움직이지도,
         // 때리지도, 맞지도 않는다"(project_test.html:4022~4023). 예전엔 타이머만 깎고 이동·접촉은
         // 그대로 돌아서, 무적인 몹이 플레이어를 때릴 수 있었다(원본과 다름 — 스프린트 2에서 수정).
@@ -222,9 +226,11 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         //
         // 종류 전용 이동 스크립트가 있으면 수평 속도를 그쪽이 정한다(원본 updateEnemies의 타입별 mvx).
         // 성소가 살아 있는 동안 적은 더 빨라진다(원본 `e.speed * (buffed ? eMs : 1)`, :4040).
+        // 보호 중엔 행동 부품도 부르지 않는다 — 부르면 궁수 사격·멧돼지 돌진 같은 상태가 보호 중에 진행된다
+        // (원본 `if (e.spawnInvuln > 0) { ...; continue; }`는 AI 전체를 건너뛴다 :4023, 2026-11-07 최종 점검).
         float buffedSpeed = moveSpeed * CombatModifiers.EnemyMoveSpeedMultiplier;
-        float ownSpeed = motion != null
-            ? motion.GetHorizontalSpeed(Time.fixedDeltaTime, target, buffedSpeed)
+        float ownSpeed = IsSpawnProtected ? 0f
+            : motion != null ? motion.GetHorizontalSpeed(Time.fixedDeltaTime, target, buffedSpeed)
             : dir * buffedSpeed;
         float vx = IsSpawnProtected ? 0f : ownSpeed + knockbackX; // 원본 `e.vx + e.kbx`
 

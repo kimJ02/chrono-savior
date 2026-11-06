@@ -195,7 +195,7 @@ namespace ChronoSavior.Core
             chainTimeLeft = ChainKillWindow;
 
             if (ChainKills < ChainKillMin || isBoss) return 0;
-            return Mathf.RoundToInt(ChainKills * (4f + enemyLevel * 2f) * GoldMultiplier);
+            return (int)JsMath.Round(ChainKills * (4f + enemyLevel * 2f) * GoldMultiplier); // 원본 `Math.round`(:1832)
         }
 
         /// <summary>성소를 부쉈을 때. 원본 `player.shrineBuffT = CONFIG.shrine.buffDur`(project_test.html:1798).</summary>

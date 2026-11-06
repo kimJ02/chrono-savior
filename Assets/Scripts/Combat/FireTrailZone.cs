@@ -50,7 +50,7 @@ namespace ChronoSavior.Combat
                     var target = col.GetComponent<IDamageable>();
                     if (target != null && !target.IsDead)
                     {
-                        int dmg = DamageCalculator.Roll(atk * damageMult * power, 0f, out _); // 원본 noCrit(isBurnTick)
+                        float dmg = DamageCalculator.Roll(atk * damageMult * power, 0f, out _); // 원본 noCrit(isBurnTick)
                         target.TakeTickDamage(dmg); // 원본 kb:0 + isBurnTick(히트스톱 없음)
                     }
                 }

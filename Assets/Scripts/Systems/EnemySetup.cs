@@ -41,6 +41,7 @@ public static class EnemySetup
             // 회귀 장벽 — 권장 회귀에 모자란 지역이면 몹이 훨씬 단단해진다(원본 `rebirthWallHpMult` :975).
             hp *= RegressionConfig.WallEnemyHp(regionLv, ProfileService.Current.regressions);
             if (elite) hp *= DifficultyScalingConfig.EliteHpMult;
+            hp = JsMath.Round(hp); // 원본 `hp: Math.round(base.hp * hpMul)`(:3958) — 배수를 다 곱한 뒤 한 번
             // 필드만 바꾸면 이미 실행된 Awake가 세팅한 CurrentHp엔 반영 안 되는 이 프로젝트 단골
             // 함정이 있어(EnemyHealth 참고) 반드시 SetMaxHp()를 통해서 바꾼다.
             health.SetMaxHp(hp);
@@ -57,7 +58,7 @@ public static class EnemySetup
             float dmg = DifficultyScalingConfig.ScaledDmg(baseDmg, regionLv);
             dmg *= RegressionConfig.WallEnemyDamage(regionLv, ProfileService.Current.regressions); // 원본 :976
             if (elite) dmg *= DifficultyScalingConfig.EliteDmgMult;
-            move.attackPower = dmg;
+            move.attackPower = JsMath.Round(dmg); // 원본 `dmg: Math.round(...)`(:3959)
             // 원본 `speed: base.speed * rand(0.9, 1.1)`(project_test.html:3960) — 같은 종이라도 마리마다
             // 걸음이 조금씩 다르다. 이게 없으면 한 웨이브가 통째로 한 덩어리로 몰려온다.
             if (data != null) move.moveSpeed = data.moveSpeed * Random.Range(0.9f, 1.1f);
@@ -104,7 +105,7 @@ public static class EnemySetup
         var health = go.GetComponent<EnemyHealth>();
         if (health != null)
         {
-            health.SetMaxHp(Shrine.HpForLevel(level));
+            health.SetMaxHp(JsMath.Round(Shrine.HpForLevel(level))); // 원본 `Math.round(hp * hpGrow^(lv-1))`(:4001)
             health.SetLevel(level);
         }
 
@@ -124,7 +125,7 @@ public static class EnemySetup
         if (health != null)
         {
             // 보스도 회귀 장벽을 받는다(원본 `spawnBoss`의 `rebirthWallHpMult(r)` :4159).
-            health.SetMaxHp(Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, ProfileService.Current.regressions));
+            health.SetMaxHp(JsMath.Round(Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, ProfileService.Current.regressions))); // 원본 `Math.round(...)`(:4159)
             health.SetLevel(Boss.LevelForRegion(region));
             health.knockbackMultiplier = Boss.KnockbackMultiplier; // 거의 안 밀린다
         }
@@ -132,8 +133,8 @@ public static class EnemySetup
         var move = go.GetComponent<EnemyMove>();
         if (move != null)
         {
-            move.attackPower = Boss.DamageForRegion(region)
-                               * RegressionConfig.WallEnemyDamage(region, ProfileService.Current.regressions);
+            move.attackPower = JsMath.Round(Boss.DamageForRegion(region)
+                                            * RegressionConfig.WallEnemyDamage(region, ProfileService.Current.regressions)); // 원본 `Math.round(...)`(:4165)
             move.moveSpeed = Boss.MoveSpeed;
         }
 

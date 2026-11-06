@@ -152,7 +152,7 @@ namespace ChronoSavior.Enemies
                 float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
                 float raw = atk * burnDamagePerStackPct * burnStacks;
                 // 화상 틱은 원본이 noCrit·noHitstop·kb:0으로 넘긴다 — 여기선 크리티컬 확률 0, 넉백 0.
-                int dmg = DamageCalculator.Roll(raw, 0f, out _);
+                float dmg = DamageCalculator.Roll(raw, 0f, out _);
                 burnTick = true; // 화상 틱은 타격 소리를 안 낸다(EnemyTickDamaged에서 빠짐)
                 try { TakeTickDamage(dmg); }
                 finally { burnTick = false; }
@@ -198,14 +198,14 @@ namespace ChronoSavior.Enemies
             finally { inTickDamage = false; } // 중간에 죽어서 예외가 나도 플래그가 남지 않게
         }
 
-        public void TakeDamageWithKnockback(float amount, GameObject source, float knockbackDirSign, float knockbackSpeedOverride,
+        public float TakeDamageWithKnockback(float amount, GameObject source, float knockbackDirSign, float knockbackSpeedOverride,
                                             float hitstop = HitFeel.HitstopHit)
         {
-            if (IsDead) return;
+            if (IsDead) return 0f;
             // 원본은 `dealDamage` 진입 즉시 스폰 무적을 확인하고 0을 반환한다(project_test.html:1659).
             // 공격 스크립트(MageProjectile)도 별도로 확인하는데, 그건 **관통 카운트를 소모하지 않기 위해서**라
             // 역할이 다르다 — 여기 검사는 "어떤 경로로 들어온 피해든 무적이면 무효"를 보장한다.
-            if (spawnProtect != null && spawnProtect.IsSpawnProtected) return;
+            if (spawnProtect != null && spawnProtect.IsSpawnProtected) return 0f;
 
             // 대상에 달린 배수 두 개를 여기서 곱한다(`DamageCalculator`는 대상 참조가 없다).
             //  - `vulnMult` — 취약한 적은 받는 피해 ×1.2 (원본 :1663)
@@ -216,8 +216,7 @@ namespace ChronoSavior.Enemies
             // 원본 `vulnMult = 1.2 + itemPow('vuln')`(:1663) — 각인을 가지면 취약이 더 아프다.
             if (IsVulnerable) mult *= DamageCalculator.VulnerableMultiplier + ProfileService.Current.items.Pow("vuln");
             mult *= CombatModifiers.LevelFactor(ProfileService.Current.level, Level, isBoss);
-            if (!Mathf.Approximately(mult, 1f))
-                amount = Mathf.Max(1f, Mathf.Round(amount * mult));
+            amount = Mathf.Max(1f, JsMath.Round(amount * mult)); // 원본 `max(1, round(...))` — 배수가 1이어도 여기서 한 번(굴림은 반올림 전 값을 넘긴다)
 
             // 원본은 `dealDamage` 안에서 조건 없이 `addCombo()`를 부른다(:1682) — 화상 틱도 포함이다.
             CombatModifiers.AddCombo();
@@ -246,6 +245,7 @@ namespace ChronoSavior.Enemies
                 ApplyVulnerable(MageSpecConfig.VulnerableDuration);
 
             if (CurrentHp <= 0f) Die();
+            return amount; // 실제로 준 피해(원본 `dealDamage`의 반환값)
         }
 
         /// <summary>지금 플래시 세기(1 → 0). 테스트·연출이 읽는다.</summary>

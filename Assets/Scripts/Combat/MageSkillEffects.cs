@@ -37,7 +37,7 @@ namespace ChronoSavior.Combat
                 if (target == null || target.IsDead) continue;
 
                 hit = true;
-                int dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
+                float dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
                 float dir = Mathf.Sign(col.transform.position.x - playerPos.x);
                 if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                 target.TakeDamageWithKnockback(dmg, null, dir, 2.60f, HitFeel.HitstopSkill); // 원본 kb:260, hitstop: skill(:1987)
@@ -83,7 +83,7 @@ namespace ChronoSavior.Combat
                 if (target == null || target.IsDead) continue;
 
                 hitCount++;
-                int dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
+                float dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
                 float dir = Mathf.Sign(col.transform.position.x - pos.x);
                 if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                 target.TakeDamageWithKnockback(dmg, null, dir, MageSpecConfig.GravityImpactKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:2036)
@@ -168,7 +168,7 @@ namespace ChronoSavior.Combat
 
                 foreach (var (col, target) in primaryTargets)
                 {
-                    int dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
+                    float dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
                     float dir = Mathf.Sign(col.transform.position.x - cx.x);
                     if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                     // 원본 `hitstop: critical ? CONFIG.hitstop.skill : 0.03`(:2112)
@@ -191,7 +191,7 @@ namespace ChronoSavior.Combat
                         var target = col.GetComponent<IDamageable>();
                         if (target == null || target.IsDead) continue;
 
-                        int dmg2 = DamageCalculator.Roll(atk * dmgMult * MageSpecConfig.CollapseCriticalRingDamageMult, critChance, out _);
+                        float dmg2 = DamageCalculator.Roll(atk * dmgMult * MageSpecConfig.CollapseCriticalRingDamageMult, critChance, out _);
                         // 원본은 이 2차 링에 kbDir을 지정하지 않는다 — 기본값(플레이어 위치 기준)을 그대로 쓴다(:2120).
                         float dir = Mathf.Sign(col.transform.position.x - playerPos.x);
                         if (Mathf.Approximately(dir, 0f)) dir = playerFacing;

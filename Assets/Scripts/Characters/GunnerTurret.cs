@@ -105,7 +105,7 @@ namespace ChronoSavior.Characters
             foreach (var e in GunnerTargets.Query(c, Range + GunnerTargets.QueryMargin))
             {
                 if (Vector2.Distance(e.center, c) >= Range + e.width / 2f) continue;
-                int dmg = DamageCalculator.Roll(atk * DamageMult, 0f, out _); // 원본 noCrit
+                float dmg = DamageCalculator.Roll(atk * DamageMult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                            // 원본 kb:0 + noHitstop
             }
         }

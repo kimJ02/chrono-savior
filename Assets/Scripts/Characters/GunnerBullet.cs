@@ -142,19 +142,18 @@ namespace ChronoSavior.Characters
             // 원본은 스폰 무적 대상을 hitSet에 아예 안 넣는다 — 관통도 안 깎이고 무적이 풀리면 다시 걸린다.
             var protectable = other.GetComponent<ISpawnProtectable>();
             if (protectable != null && protectable.IsSpawnProtected) return;
+            // 죽은 적은 건너뛴다 — 관통도 충전 스택도 안 쓴다(원본 `if (e.dead || e.spawnInvuln > 0) continue`, 2026-11-07).
+            var target = other.GetComponent<IDamageable>();
+            if (target == null || target.IsDead) return;
             if (!alreadyHit.Add(other)) return;
 
-            var target = other.GetComponent<IDamageable>();
-            if (target != null && !target.IsDead)
-            {
-                // 치명타·±10% 난수는 적중할 때마다 새로 굴린다(원본 dealDamage).
-                float critChance = PlayerStatCalculator.ComputeCritChance(ProfileService.Current);
-                int dmg = DamageCalculator.Roll(damage, critChance, out _);
-                // 넉백 방향은 **지금** 진행 방향(유도탄은 휘면서 바뀐다) — 원본 `kbDir: Math.sign(w.vx)`.
-                if (rb != null && Mathf.Abs(rb.linearVelocity.x) > 1e-4f)
-                    knockbackDirSign = rb.linearVelocity.x > 0f ? 1f : -1f;
-                target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
-            }
+            // 치명타·±10% 난수는 적중할 때마다 새로 굴린다(원본 dealDamage).
+            float critChance = PlayerStatCalculator.ComputeCritChance(ProfileService.Current);
+            float dmg = DamageCalculator.Roll(damage, critChance, out _);
+            // 넉백 방향은 **지금** 진행 방향(유도탄은 휘면서 바뀐다) — 원본 `kbDir: Math.sign(w.vx)`.
+            if (rb != null && Mathf.Abs(rb.linearVelocity.x) > 1e-4f)
+                knockbackDirSign = rb.linearVelocity.x > 0f ? 1f : -1f;
+            target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
 
             // 원본 `if (w.stackOnHit) addGunnerStack(w.stackOnHit)`(:3722) — 갈래가 없으면 AddStack이 무시한다.
             if (stackOnHit > 0 && stackOwner != null) stackOwner.AddStack(stackOnHit);

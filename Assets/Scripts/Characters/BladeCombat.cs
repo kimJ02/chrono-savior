@@ -454,15 +454,14 @@ namespace ChronoSavior.Characters
                 var target = col.GetComponent<IDamageable>();
                 if (target == null || target.IsDead) continue;
 
-                int dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
+                float dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
 
                 // 원본 kbDir: sign(e.x - p.x) || p.facing (:2489) — 정확히 겹친 경우만 facing으로 대체.
                 float dirSign = Mathf.Sign(col.transform.position.x - transform.position.x);
                 if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
 
-                target.TakeDamageWithKnockback(dmg, gameObject, dirSign, SpinKnockback);
-
-                totalDealt += dmg;
+                // 흡혈은 **실제로 준 피해**의 합으로(원본 `totalDmg += dealDamage(...)` :2493 — 대상 배수·반올림 뒤)
+                totalDealt += target.TakeDamageWithKnockback(dmg, gameObject, dirSign, SpinKnockback);
                 anyHit = true;
             }
 
@@ -622,7 +621,7 @@ namespace ChronoSavior.Characters
                     var target = c.GetComponent<IDamageable>();
                     if (target == null || target.IsDead) continue;
 
-                    int rolled = DamageCalculator.Roll(dmg, 0f, out _); // 원본 noCrit(:2564)
+                    float rolled = DamageCalculator.Roll(dmg, 0f, out _); // 원본 noCrit(:2564)
                     target.TakeTickDamage(rolled); // 원본 kb:0 + noHitstop(:2564)
                 }
             }
@@ -660,7 +659,7 @@ namespace ChronoSavior.Characters
                         var target = c.GetComponent<IDamageable>();
                         if (target == null || target.IsDead) continue;
 
-                        int dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
+                        float dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
                         float dirSign = Mathf.Sign(c.transform.position.x - transform.position.x);
                         if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
                         target.TakeDamageWithKnockback(dmg, gameObject, dirSign, FocusT4RipKnockback);
@@ -943,7 +942,7 @@ namespace ChronoSavior.Characters
                 var target = c.GetComponent<IDamageable>();
                 if (target == null || target.IsDead) continue;
 
-                int dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
+                float dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
                 float dirSign = Mathf.Sign(c.transform.position.x - transform.position.x);
                 if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
                 target.TakeDamageWithKnockback(dmg, gameObject, dirSign, StormLandKnockback);
@@ -1017,7 +1016,7 @@ namespace ChronoSavior.Characters
                     float dmgMult = StormFallDmgMult * SpeedDamageMultiplier(CurrentSpeedRatio()); // S.fallDmg*bladeDmgMult() (:2732)
                     float baseDamage = PlayerStatCalculator.ComputeAtk(profile) * dmgMult;
                     float critChance = PlayerStatCalculator.ComputeCritChance(profile);
-                    int dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
+                    float dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
                     float dirSign = Mathf.Sign(f.col.transform.position.x - transform.position.x);
                     if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
                     target.TakeDamageWithKnockback(dmg, gameObject, dirSign, StormFallKnockback);

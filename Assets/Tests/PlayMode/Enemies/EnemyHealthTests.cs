@@ -193,8 +193,8 @@ public class EnemyHealthTests
     }
 
     /// <summary>
-    /// 데미지 계산식(`Combat.DamageCalculator`) — 원본 `max(1, round(base × rand(0.9,1.1) × crit))`.
-    /// 난수라 개별 값이 아니라 범위·최소값·치명타 발생을 통계로 확인한다.
+    /// 데미지 굴림(`Combat.DamageCalculator`) — 원본 `base × rand(0.9,1.1) × crit`(반올림 전 값 — 반올림과 최소 1은 맞는 쪽이 대상 배수까지 곱한 뒤 한 번, 아래 테스트).
+    /// 난수라 개별 값이 아니라 범위·치명타 발생을 통계로 확인한다.
     /// </summary>
     [Test]
     public void DamageCalculator_StaysInVarianceRange_AndCritsOccur()
@@ -203,18 +203,37 @@ public class EnemyHealthTests
         int critCount = 0;
         for (int i = 0; i < 2000; i++)
         {
-            int dmg = DamageCalculator.Roll(baseDmg, out bool crit);
+            float dmg = DamageCalculator.Roll(baseDmg, out bool crit);
             if (crit) critCount++;
             // 비치명타 하한 90, 치명타 상한 100×1.1×1.7 = 187
-            Assert.GreaterOrEqual(dmg, 89, "피해가 -10% 하한보다 낮다");
-            Assert.LessOrEqual(dmg, 188, "피해가 치명타 상한보다 높다");
+            Assert.GreaterOrEqual(dmg, 90f - 0.001f, "피해가 -10% 하한보다 낮다");
+            Assert.LessOrEqual(dmg, 187f + 0.001f, "피해가 치명타 상한보다 높다");
         }
         // 기대 10%(2000회 중 200회). 난수 편차를 넉넉히 잡아 5~17% 범위면 통과.
         Assert.Greater(critCount, 100, $"치명타가 거의 안 나온다({critCount}/2000) — 확률 10% 적용 확인 필요");
         Assert.Less(critCount, 340, $"치명타가 너무 자주 나온다({critCount}/2000)");
 
-        // 최소 피해 1 보장(원본 max(1, ...))
-        Assert.GreaterOrEqual(DamageCalculator.Roll(0.01f), 1, "최소 피해 1이 보장되지 않는다");
+    }
+
+    /// <summary>
+    /// 피해는 맞는 쪽에서 **대상 배수까지 곱한 뒤 한 번** 반올림하고 최소 1(원본 `max(1, round(... × vulnMult × lvF ...))` :1664,
+    /// 반올림은 JS `Math.round` — .5는 위로). 2026-11-07 최종 점검 전엔 굴림에서 한 번, 배수 뒤 한 번 두 번 반올림했다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Damage_IsRoundedOnceAtTheEnd_AndAtLeastOne()
+    {
+        var enemy = new GameObject("TestRoundEnemy");
+        enemy.AddComponent<SpriteRenderer>();
+        var health = enemy.AddComponent<EnemyHealth>();
+        health.SetMaxHp(1000f);
+        health.SetLevel(1);
+        yield return null;
+
+        health.TakeTickDamage(10.5f);                        // .5는 위로(짝수 쪽이 아니라) → 11
+        Assert.AreEqual(1000f - 11f, health.CurrentHp, 1e-4f);
+        health.TakeTickDamage(0.01f);                        // 최소 1
+        Assert.AreEqual(1000f - 12f, health.CurrentHp, 1e-4f);
+        Object.Destroy(enemy);
     }
 }
 

@@ -160,7 +160,7 @@ public class CombatModifierTests
         Assert.AreEqual(0, CombatModifiers.RegisterKillForChain(enemyLevel: 3, isBoss: false), "2번째도 없음");
 
         int bonus = CombatModifiers.RegisterKillForChain(enemyLevel: 3, isBoss: false);
-        Assert.AreEqual(Mathf.RoundToInt(3 * (4f + 3 * 2f) * CombatModifiers.GoldMultiplier), bonus);
+        Assert.AreEqual((int)JsMath.Round(3 * (4f + 3 * 2f) * CombatModifiers.GoldMultiplier), bonus);
     }
 
     /// <summary>0.8초가 지나면 연쇄가 끊기고 다시 1부터 센다.</summary>

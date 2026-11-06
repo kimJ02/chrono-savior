@@ -227,7 +227,7 @@ namespace ChronoSavior.Characters
                 }
                 if (dist >= Width + e.width * GunnerSpecConfig.BeamEnemyWidthFactor) continue;
 
-                int dmg = DamageCalculator.Roll(atk * mult, crit, out _);
+                float dmg = DamageCalculator.Roll(atk * mult, crit, out _);
                 e.damageable.TakeTickDamage(dmg);
                 kit.AddStack(1);
             }

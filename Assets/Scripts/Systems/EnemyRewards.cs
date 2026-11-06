@@ -40,7 +40,7 @@ public static class EnemyRewards
         int goldMax = data != null ? data.goldMax : 10;
 
         // 수행의 굴레 — 경험치 획득 배수(원본 `expMultAll()` :1305).
-        int expGained = Mathf.RoundToInt(baseExp * sc * CombatModifiers.ExpMultiplier);
+        int expGained = (int)JsMath.Round(baseExp * sc * CombatModifiers.ExpMultiplier); // 원본 `Math.round`(.5는 위로, :1814)
         ProfileService.Current.AddExp(expGained);
         int goldGained = 0;
 
@@ -49,7 +49,7 @@ public static class EnemyRewards
         {
             int rolled = Random.Range(goldMin, goldMax + 1); // Random.Range(int)는 상한이 배타적이라 +1
             // 원본 `goldMultAll()`(:1304) — 콤보가 재화도 늘린다.
-            goldGained = Mathf.RoundToInt(rolled * sc * CombatModifiers.GoldMultiplier);
+            goldGained = (int)JsMath.Round(rolled * sc * CombatModifiers.GoldMultiplier); // 원본 `Math.round`(:1818)
             ProfileService.Current.AddGold(goldGained);
         }
 
@@ -78,8 +78,8 @@ public static class EnemyRewards
     {
         float sc = DifficultyScalingConfig.RewardMultiplier(region);
 
-        int exp = Mathf.RoundToInt(Boss.RewardExp * sc);
-        int gold = Mathf.RoundToInt(Boss.RewardGold * sc); // 보스는 확률 무시하고 항상 드랍(:1818)
+        int exp = (int)JsMath.Round(Boss.RewardExp * sc);
+        int gold = (int)JsMath.Round(Boss.RewardGold * sc); // 보스는 확률 무시하고 항상 드랍(:1818)
         ProfileService.Current.AddExp(exp);
         ProfileService.Current.AddGold(gold);
         RunState.RegisterReward(gold, exp);

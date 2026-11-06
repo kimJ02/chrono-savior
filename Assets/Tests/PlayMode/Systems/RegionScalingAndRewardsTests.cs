@@ -148,7 +148,7 @@ public class RegionScalingAndRewardsTests
             Random.InitState(seed);
             _ = Random.value; // 드랍 확률
             int rolled = Random.Range(data.goldMin, data.goldMax + 1);
-            int expectedGold = Mathf.RoundToInt(rolled * DifficultyScalingConfig.RewardMultiplier(RunState.Region) * CombatModifiers.GoldMultiplier);
+            int expectedGold = (int)JsMath.Round(rolled * DifficultyScalingConfig.RewardMultiplier(RunState.Region) * CombatModifiers.GoldMultiplier);
             Random.InitState(seed);
             EnemyRewards.GrantKill(victimHealth, data);
             Assert.AreEqual(expectedGold, RunState.GoldEarned, "골드 드랍 확률 다음에 양을 굴린다");
@@ -172,8 +172,8 @@ public class RegionScalingAndRewardsTests
 
         EnemyRewards.GrantBossKill(2);
 
-        Assert.AreEqual(Mathf.RoundToInt(Boss.RewardGold * sc), RunState.GoldEarned);
-        Assert.AreEqual(Mathf.RoundToInt(Boss.RewardExp * sc), RunState.ExpEarned);
+        Assert.AreEqual((int)JsMath.Round(Boss.RewardGold * sc), RunState.GoldEarned);
+        Assert.AreEqual((int)JsMath.Round(Boss.RewardExp * sc), RunState.ExpEarned);
         Assert.AreEqual(RunState.GoldEarned, ProfileService.Current.gold, "골드는 프로필에도 들어간다");
         Assert.AreEqual(0, RunState.Kills, "보스는 처치 수에 안 든다");
         Assert.AreEqual(1, RunState.Fury, "보스도 살기엔 든다");
@@ -206,10 +206,11 @@ public class RegionScalingAndRewardsTests
         // 3지역은 권장 회귀 1회다 — 시간 회귀 0회로 들어가면 **회귀 장벽**이 몹 체력 ×2.8, 피해 ×1.45로
         // 얹힌다(원본 `rebirthWallHpMult` :975). 지역 배율만 기대하면 여기서 어긋난다.
         int regressions = ProfileService.Current.regressions;
-        float expectedHp = DifficultyScalingConfig.ScaledHp(OniBaseHp, 3)
-                           * RegressionConfig.WallEnemyHp(3, regressions);
-        float expectedDmg = DifficultyScalingConfig.ScaledDmg(OniBaseDmg, 3)
-                            * RegressionConfig.WallEnemyDamage(3, regressions);
+        // 원본은 배수를 다 곱한 뒤 반올림한다(`Math.round(base.hp * hpMul)` :3958) — 2026-11-07부터 같다.
+        float expectedHp = JsMath.Round(DifficultyScalingConfig.ScaledHp(OniBaseHp, 3)
+                                        * RegressionConfig.WallEnemyHp(3, regressions));
+        float expectedDmg = JsMath.Round(DifficultyScalingConfig.ScaledDmg(OniBaseDmg, 3)
+                                         * RegressionConfig.WallEnemyDamage(3, regressions));
         Assert.AreEqual(expectedHp, health.MaxHp, 0.01f, "3지역 체력 스케일링(DifficultyScalingConfig.ScaledHp(OniBaseHp, 3))이 안 맞는다");
         Assert.AreEqual(expectedDmg, move.attackPower, 0.01f, "3지역 공격력 스케일링(DifficultyScalingConfig.ScaledDmg(OniBaseDmg, 3))이 안 맞는다");
         // SetMaxHp()를 거쳤다면 CurrentHp도 같이 갱신돼야 한다(안 그러면 이 프로젝트 단골 함정 재발).
@@ -281,7 +282,7 @@ public class RegionScalingAndRewardsTests
         yield return null;
 
         Assert.AreEqual(1, RunState.Kills, "죽였는데 이번 런 처치 수가 안 올랐다");
-        int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1));
+        int expectedExp = (int)JsMath.Round(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1));
         Assert.AreEqual(expectedExp, ProfileService.Current.exp, "1지역(sc=1) 고블린 처치 EXP는 OniBaseExp 그대로여야 한다");
     }
 
@@ -313,7 +314,7 @@ public class RegionScalingAndRewardsTests
         }
 
         Assert.AreEqual(kills, RunState.Kills);
-        int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1)) * kills;
+        int expectedExp = (int)JsMath.Round(OniBaseExp * DifficultyScalingConfig.RewardMultiplier(1)) * kills;
         Assert.AreEqual(expectedExp, ProfileService.Current.exp, $"40마리 전부 1지역(sc=1)이라 EXP는 결정적이어야 한다(OniBaseExp×{kills})");
         Assert.Greater(ProfileService.Current.gold, 0, $"{kills}마리 죽였는데 골드가 한 번도 안 드랍됐다(DifficultyScalingConfig.GoldDropChance 확률상 사실상 불가능) — 확률 로직 확인 필요");
     }
@@ -378,8 +379,8 @@ public class RegionScalingAndRewardsTests
 
         var health = enemy.GetComponent<EnemyHealth>();
         var move = enemy.GetComponent<EnemyMove>();
-        Assert.AreEqual(OniBaseHp * DifficultyScalingConfig.EliteHpMult, health.MaxHp, 0.01f);
-        Assert.AreEqual(OniBaseDmg * DifficultyScalingConfig.EliteDmgMult, move.attackPower, 0.01f);
+        Assert.AreEqual(JsMath.Round(OniBaseHp * DifficultyScalingConfig.EliteHpMult), health.MaxHp, 0.01f);   // 원본도 반올림(:3958)
+        Assert.AreEqual(JsMath.Round(OniBaseDmg * DifficultyScalingConfig.EliteDmgMult), move.attackPower, 0.01f);
         Assert.AreEqual(0.5f * DifficultyScalingConfig.EliteScale, move.WorldRadius, 0.01f);
 
         Object.DestroyImmediate(oni);
@@ -422,7 +423,7 @@ public class RegionScalingAndRewardsTests
             yield return null;
         }
 
-        int expectedExp = Mathf.RoundToInt(OniBaseExp * DifficultyScalingConfig.EliteRewardMult) * kills;
+        int expectedExp = (int)JsMath.Round(OniBaseExp * DifficultyScalingConfig.EliteRewardMult) * kills;
         Assert.AreEqual(expectedExp, ProfileService.Current.exp, "엘리트 EXP가 ×5가 아니다");
         // 최소 굴림(5)×5배×12마리 = 300. 확률 드랍이었다면 12번 전부 나올 확률은 0.75^12 ≈ 3%.
         Assert.GreaterOrEqual(ProfileService.Current.gold, 5 * 5 * kills,

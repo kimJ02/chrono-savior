@@ -254,9 +254,12 @@ namespace ChronoSavior.Systems
             }
             GameState.SetTransitioning(false);
             enteredThisTransition = false;
+            // 마무리하는 동안 사냥이 끝났으면(사망·시간 초과) 완료 알림보다 **먼저** 끝낸다 — 알림을 받은 쪽이 곧바로 다른 전환을 시작하거나
+            // 던져도 미뤄 둔 종료가 사라지지 않게.
+            var ended = pendingEnd;
+            pendingEnd = null;
+            if (ended is RunEndReason reason) EndRun(reason);
             done?.Invoke(true);
-            // 마무리하는 동안 사냥이 끝났으면(사망·시간 초과) 이제 끝낸다.
-            if (pendingEnd is RunEndReason ended) { pendingEnd = null; EndRun(ended); }
         }
 
         /// <summary>이번 전환이 새 화면에 이미 들어갔는지 — 그 뒤 이전 월드를 내리는 동안 들어온 사냥 종료는 <see cref="pendingEnd"/>로 미룬다.</summary>

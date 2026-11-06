@@ -169,6 +169,9 @@ public class MageProjectile : MonoBehaviour
         // — pierce도 안 깎이고, 무적이 풀린 뒤 다시 판정에 걸릴 수 있다. 그대로 이식.
         var protectable = other.GetComponent<ISpawnProtectable>();
         if (protectable != null && protectable.IsSpawnProtected) return;
+        // 죽은 적은 건너뛴다 — 관통을 안 쓰고 중력탄도 안 터진다(원본 `if (e.dead || e.spawnInvuln > 0) continue`, 2026-11-07).
+        var target = other.GetComponent<IDamageable>();
+        if (target == null || target.IsDead) return;
         if (!alreadyHit.Add(other)) return;
 
         if (gravityOrb)
@@ -179,24 +182,20 @@ public class MageProjectile : MonoBehaviour
             return;
         }
 
-        var target = other.GetComponent<IDamageable>();
-        if (target != null && !target.IsDead)
+        // 치명타·±10% 난수는 적중할 때마다 새로 굴린다(원본 dealDamage, 관통 시 각 대상 별도 판정).
+        float critChance = PlayerStatCalculator.ComputeCritChance(ProfileService.Current);
+        float dmg = DamageCalculator.Roll(damage, critChance, out _);
+        // 원본 kbDir: sign(w.vx), kb: 140 (project_test.html:3679) — 시전자 위치가 아니라 투사체 진행 방향.
+        target.TakeDamageWithKnockback(dmg, null, hitKnockbackDirSign, 1.40f);
+
+        if (explosive)
         {
-            // 치명타·±10% 난수는 적중할 때마다 새로 굴린다(원본 dealDamage, 관통 시 각 대상 별도 판정).
-            float critChance = PlayerStatCalculator.ComputeCritChance(ProfileService.Current);
-            int dmg = DamageCalculator.Roll(damage, critChance, out _);
-            // 원본 kbDir: sign(w.vx), kb: 140 (project_test.html:3679) — 시전자 위치가 아니라 투사체 진행 방향.
-            target.TakeDamageWithKnockback(dmg, null, hitKnockbackDirSign, 1.40f);
+            int stacks = charged ? 2 : 1; // 원본 `const stacks = w.charged ? 2 : 1`(:3678)
+            other.GetComponent<IElementAfflictable>()?.ApplyBurn(stacks);
 
-            if (explosive)
-            {
-                int stacks = charged ? 2 : 1; // 원본 `const stacks = w.charged ? 2 : 1`(:3678)
-                other.GetComponent<IElementAfflictable>()?.ApplyBurn(stacks);
-
-                // 원본(project_test.html:3680) — 충전됐거나 3티어 이상이면 관통 여부와 무관하게 착탄마다 폭발.
-                if (charged || tier >= 3)
-                    MageSkillEffects.SpawnFireExplosion(transform.position, tier, explosionPower, casterPos, casterFacing);
-            }
+            // 원본(project_test.html:3680) — 충전됐거나 3티어 이상이면 관통 여부와 무관하게 착탄마다 폭발.
+            if (charged || tier >= 3)
+                MageSkillEffects.SpawnFireExplosion(transform.position, tier, explosionPower, casterPos, casterFacing);
         }
 
         // 원본 `w.pierceLeft--; if (w.pierceLeft <= 0) remove = true;`(project_test.html:3683-3684).

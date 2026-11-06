@@ -17,7 +17,7 @@ public class StateOwnershipTests
 {
     const string Owner = "Systems/GameFlow.cs";
 
-    static readonly Regex StateWrite = new Regex(@"\bTime\s*\.\s*timeScale\s*(?:[-+*/]?=(?!=)|\+\+|--)|(?:\+\+|--)\s*Time\s*\.\s*timeScale\b|\bGameState\s*\.\s*(Set|SetTransitioning)\s*\(");
+    static readonly Regex StateWrite = new Regex(@"\bTime\s*\.\s*timeScale\s*(?:[-+*/%]?=(?!=)|\+\+|--)|(?:\+\+|--)\s*Time\s*\.\s*timeScale\b|\bGameState\s*\.\s*(Set|SetTransitioning)\s*\(");
 
     static int CountWrites(string source) => StateWrite.Matches(SourceScan.CodeOnly(source)).Count; // 주석·문자열을 뺀 코드 전체
 

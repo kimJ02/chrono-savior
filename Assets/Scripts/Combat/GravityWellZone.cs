@@ -172,7 +172,7 @@ namespace ChronoSavior.Combat
                 {
                     if (target.IsDead) continue;
                     float mult = MageSpecConfig.GravityTickDamageMult(Tier, Stack, nearBonus);
-                    int dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
+                    float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                     target.TakeTickDamage(dmg); // 원본 kb:0 + isBurnTick(히트스톱 없음)
                 }
             }

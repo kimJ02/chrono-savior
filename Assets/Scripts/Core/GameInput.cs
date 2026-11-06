@@ -37,6 +37,9 @@ namespace ChronoSavior.Core
         static bool CombatKey(int index, bool down)
         {
             if (!GameState.IsRunning) return false;
+            // 히트스톱(사냥 중 timeScale 0) 동안 **누른 순간**은 버린다 — 원본은 멈춘 동안 갱신을 건너뛰고 프레임 끝에
+            // 눌림(`Input.pressed`)을 비운다(:7168·:1019). 누르고 있는 것(held)은 그대로 — 막으면 차지 중인 키가 뗀 것처럼 보인다(2026-11-07).
+            if (down && Time.timeScale <= 0f) return false;
             if (latchedVersion != GameState.Version)
             {
                 latchedVersion = GameState.Version;

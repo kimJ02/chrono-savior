@@ -220,6 +220,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
     /// <summary>즉시 순간이동(원본 불길 이동 X 스킬, `p.x=toX;p.y=toY;p.vx=0;p.vy=0`, project_test.html:2148).</summary>
     public void Teleport(Vector3 position)
     {
+        CancelDropThrough(); // 옛 자리에서 통과 중이던 발판이 새 자리에서도 무시되지 않게(2026-11-07 최종 점검)
         // `rb.position`만 바꾸면 `transform`은 **다음 물리 스텝에야** 따라온다 — 그 사이에 위치를 읽는
         // 쪽(카메라, 같은 프레임의 다른 스크립트, 런 시작 직후 판정)은 옛 좌표를 본다. 실제로
         // 런 시작 리셋에서 플레이어가 한 프레임 동안 엉뚱한 자리에 남아 있는 걸로 드러났다.

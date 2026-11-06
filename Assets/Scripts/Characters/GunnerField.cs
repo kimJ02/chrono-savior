@@ -185,7 +185,7 @@ namespace ChronoSavior.Characters
 
                 hit = true;
                 float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3);
-                int dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
+                float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                       // 원본 kb:0 + noHitstop
             }
             return hit;

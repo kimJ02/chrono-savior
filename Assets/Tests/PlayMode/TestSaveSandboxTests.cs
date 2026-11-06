@@ -55,10 +55,20 @@ public class TestSaveSandboxTests
         string root = Path.Combine(Application.dataPath, "Tests");
         string ns = typeof(TestSaveSandbox).Namespace;
         var outside = Directory.GetFiles(root, "*.cs", SearchOption.AllDirectories)
-            .Where(f => !Regex.IsMatch(File.ReadAllText(f), @"^\s*namespace\s+" + Regex.Escape(ns) + @"\s*[{;]", RegexOptions.Multiline))
+            .Where(f => !AllTypesInside(SourceScan.CodeOnly(File.ReadAllText(f)), ns))
             .Select(Path.GetFileName)
             .ToArray();
         CollectionAssert.IsEmpty(outside, $"이 파일들은 {ns} 밖이라 세이브 안전장치가 안 걸린다");
+    }
+
+    /// <summary>파일의 namespace 선언이 전부 <paramref name="ns"/>이고, 그 첫 선언보다 앞에 형식 선언이 없는지(주석·문자열은 뺀 코드로).</summary>
+    static bool AllTypesInside(string code, string ns)
+    {
+        var decls = Regex.Matches(code, @"\bnamespace\s+([\w.]+)");
+        if (decls.Count == 0) return false;
+        if (decls.Cast<Match>().Any(m => m.Groups[1].Value != ns)) return false;
+        string head = code.Substring(0, decls[0].Index);
+        return !Regex.IsMatch(head, @"\b(class|struct|interface|enum|record)\s+\w+");
     }
 }
 

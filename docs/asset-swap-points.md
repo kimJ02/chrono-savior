@@ -10,7 +10,7 @@
 |---|---|---|
 | 스테이지 땅·발판·배경·보스 포탈 그림 | `Assets/Data/Stages/StageArt_Forest`(`StageArtSet`) — 지역이 늘면 에셋을 하나 더 | 배경 배율·보여 줄 범위·풀밭 높이, 포탈 배율(같은 에셋) |
 | 캐릭터 그림(마법사·메카닉·섬영) | `Assets/Data/Characters/CharacterArtSet` | 캐릭터별 색(`tints`)·화면 높이(`heights`, 판정과 따로). 네 번째 칸(드루이드)은 기획 제외라 비워 둬도 된다(선택 화면에 안 나온다). 지금 캐릭터 그림은 피벗이 가운데가 아니다(`pixel-standard.md` 5절) |
-| 잡몹 그림 | `Assets/Data/Enemies/<종류>`(`EnemyData.sprite`) — 지금 대부분 임시 도형. ⚠ 해골 궁수의 화살은 **궁수 그림·종류색을 그대로 물려받는다**(`EnemySetup.ConfigureTypeBehaviour`) — 궁수 그림을 바꾸면 화살도 바뀐다(따로 그리려면 그때 화살 프리팹 칸을 만든다). 에디터 도구 `BuildEnemyData`는 수치만 다시 쓰고 그림 칸(`sprite`·`visualHeight`)은 새로 만들 때만 채운다(바꾼 그림을 덮어쓰지 않는다) | 그림 화면 높이(`visualHeight`, 판정 `colliderRadius`와 따로). ⚠️ `BuildEnemyData`를 다시 돌리면 덮어쓴다 — 그 도구의 값도 같이 고칠 것 |
+| 잡몹 그림 | `Assets/Data/Enemies/<종류>`(`EnemyData.sprite`) — 지금 대부분 임시 도형. ⚠ 해골 궁수의 화살은 **궁수 그림·종류색을 그대로 물려받는다**(`EnemySetup.ConfigureTypeBehaviour`) — 궁수 그림을 바꾸면 화살도 바뀐다(따로 그리려면 그때 화살 프리팹 칸을 만든다). 에디터 도구 `BuildEnemyData`는 수치만 다시 쓰고 그림 칸(`sprite`·`visualHeight`)은 새로 만들 때만 채운다(바꾼 그림을 덮어쓰지 않는다) | 그림 화면 높이(`visualHeight`, 판정 `colliderRadius`와 따로) |
 | 보스·성소 그림 | `Assets/Data/Enemies/MonsterCatalog`(`boss`·`shrine`) | 그림 화면 크기(`bossSize`·`shrineSize`, 판정과 따로) |
 | 몹 종류별 구성(행동 부품) | `Assets/Prefabs/Enemies/Enemy_*` | — |
 | 투사체·구슬·드론·포탑 그림 | `Assets/Prefabs/Combat/*`의 `Visual` 자식 그림 | 크기는 쏠 때 코드가 넣는다(판정 상자와 같은 크기) — 그림 비율이 달라지면 확인. 보스 탄 색은 `Enemy_Boss`의 `Boss.projectileColor` |

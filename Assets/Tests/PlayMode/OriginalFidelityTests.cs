@@ -402,6 +402,7 @@ public class OriginalFidelityTests
             ("RecordCombo",                "PlayerProfile.cs"),    // CombatModifiers.AddCombo
             ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
             ("TryUnlockAchievement",       "PlayerProfile.cs"),    // Achievements.CheckNew
+            ("JsMath.Round",               "JsMath.cs"),           // 원본 Math.round(.5는 위로) — 몹 수치·피해·보상(2026-11-07)
             ("SpinCooldownLeft",           "BladeCombat.cs"),      // BladeSlashVfx(2026-11-07 — 예전엔 비공개 필드를 리플렉션으로 읽었다)
             // 책임별 분리(2026-11-06 5단계) — 스포너가 부르는 몹 설정·보상
             ("EnemySetup.Apply",           "EnemySetup.cs"),       // EnemySpawner.ApplyEnemyData(이름이 흔해 클래스까지 적는다)

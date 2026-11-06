@@ -445,11 +445,21 @@ public class GameFlowTests
     public void GameStateChanged_OneThrowingListener_DoesNotStopTheOthers()
     {
         bool second = false;
-        GameState.Changed += _ => throw new System.InvalidOperationException("테스트 구독자가 던짐");
-        GameState.Changed += _ => second = true;
-        LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("테스트 구독자가 던짐"));
-        GameState.Set(GameState.Current == GameScene.Run ? GameScene.Lobby : GameScene.Run);
-        Assert.IsTrue(second, "던진 구독자 뒤의 구독자도 받는다");
+        System.Action<GameScene> thrower = _ => throw new System.InvalidOperationException("테스트 구독자가 던짐");
+        System.Action<GameScene> listener = _ => second = true;
+        GameState.Changed += thrower;
+        GameState.Changed += listener;
+        try
+        {
+            LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("테스트 구독자가 던짐"));
+            GameState.Set(GameState.Current == GameScene.Run ? GameScene.Lobby : GameScene.Run);
+            Assert.IsTrue(second, "던진 구독자 뒤의 구독자도 받는다");
+        }
+        finally
+        {
+            GameState.Changed -= thrower;
+            GameState.Changed -= listener;
+        }
     }
 
     /// <summary>
