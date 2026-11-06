@@ -24,7 +24,6 @@ public class CombatMinimapViewTests
     {
         arenaBefore = FieldLayout.IsBossArena;
         FieldLayout.SetBossArena(false);
-        WorldView.Reset();
         parent = new GameObject("TestMinimapParent", typeof(RectTransform));
     }
 
@@ -64,6 +63,8 @@ public class CombatMinimapViewTests
         map.Refresh(Vector2.zero, new[] { new Vector2(5f, 0f) }, null);
         Assert.AreEqual(1, Shown("Enemy"));
 
+        // 전역 등록(WorldView)은 건드리지 않는다 — 지우면 다른 테스트의 월드 상태가 깨진다. 전투 씬이 떠 있으면 이 경우를 볼 수 없어 건너뛴다.
+        Assume.That(WorldView.Combat, Is.Null, "전투 씬이 없을 때의 동작이라 전투 창구가 비어 있어야 한다");
         map.ForgetEnemies();
         map.Refresh(Vector2.zero, null, null); // null = 전투 창구에서 읽기 — 전투 씬이 없다
         Assert.AreEqual(0, Shown("Enemy"), "전투 씬이 없으면 지난 몹 점을 남기지 않는다");
