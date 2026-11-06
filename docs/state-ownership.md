@@ -9,7 +9,7 @@
 
 | 상태 | static | 소유자(바꾸는 코드) | 변경 요청자 | 수명·초기화 | 읽는 곳 | 검증 |
 |---|---|---|---|---|---|---|
-| 화면 상태 `GameState`(Current·Previous·IsTransitioning) | ✓ | `GameFlow`만 | 화면 버튼·전투 사건(이벤트로) | 앱 전체. 테스트만 `Reset` | 화면 전부·전투 | `StateOwnershipTests`(소스 검사) |
+| 화면 상태 `GameState`(Current·Previous·IsTransitioning·전환 횟수 `Version`) | ✓ | `GameFlow`만 | 화면 버튼·전투 사건(이벤트로) | 앱 전체. 테스트만 `Reset` | 화면 전부·전투 | `StateOwnershipTests`(소스 검사) |
 | 시간 정지 `Time.timeScale` | (엔진) | `GameFlow`만 | 히트스톱 요청(`CombatEvents.RequestHitstop`) | — | 엔진 | `StateOwnershipTests` |
 | 런 기록 `RunState`(지역·모드·남은 시간·처치·살기·보상·끝남) | ✓ | `RunState` 메서드 | `GameFlow`(시작·끝·되돌리기)·`CombatDirector`(시간·보스 필드)·`EnemySpawner`·`Shrine`·`ExpOrb`(처치·보상)·`PlayerHealth`(죽은 원인) | `GameFlow.StartRun`의 `Begin`(실패하면 `Restore`) | HUD·결과 화면·전투 | 런 사이클 테스트 |
 | 보스 무대 `FieldLayout.IsBossArena` + 필드 좌표 `FieldBounds` | ✓ | `FieldLayout.SetBossArena` 한 경로 | `GameFlow`(로비 = 일반 무대)·`CombatDirector`(보스 필드) | 전환 실패면 `GameFlow`가 되돌림 | 스폰·카메라·발판·화면 | `MinX`·`GroundY` 상수, `MaxX`는 읽기 전용(`SetMaxX`는 `SetBossArena`만) — 무대 전환 테스트 |
@@ -21,7 +21,7 @@
 
 | 상태 | static | 소유자 | 변경 요청자 | 수명 | 읽는 곳 | 검증 |
 |---|---|---|---|---|---|---|
-| 프로필 `ProfileService.Current`(레벨·골드·캐릭터·지역 진행·아이템·통계…) | 참조만 ✓ | 통째 교체: `SaveService`만(`Replace`). 값 변경: **`PlayerProfile` 메서드**(`SpendDay`·`AddGold`·`AddExp`·`RegisterRegionKill`·`RecordBossKill`·`RecordShrineBroken`·`TryPayForPull`·`SetSelectedCharacter`·`TryBuyUpgrade`·`TryLearn*Tier`·`DoRegression`)·뽑힌 아이템은 `ItemInventory.RecordPull` | 전투(보상)·화면(구매·습득·선택) | 세이브 파일 — `GameBoot`가 불러오고 `AutoSave`가 화면이 바뀔 때 저장 | 거의 전부(110곳 — 읽기는 그대로 둔다) | 새 메서드 동작 테스트(`AchievementTests`·`ItemAndGachaTests`)·`DefinedApis` 목록. **직접 대입 예외**: 세이브 이전(`SaveService`)·사냥 시작 실패 롤백(`GameFlow`의 `doomDays` 복원)·에디터 전용 'SP +1' 버튼(`AwakenScreen`, `#if UNITY_EDITOR`)·테스트 준비 |
+| 프로필 `ProfileService.Current`(레벨·골드·캐릭터·지역 진행·아이템·통계…) | 참조만 ✓ | 통째 교체: `SaveService`만(`Replace`). 값 변경: **`PlayerProfile` 메서드**(`SpendDay`·`AddGold`·`AddExp`·`RegisterRegionKill`·`RecordBossKill`(통계 + `MarkBossCleared` — 정복 표시만은 테스트 준비)·`RecordShrineBroken`·`TryPayForPull`·`SetSelectedCharacter`·`TryBuyUpgrade`·`TryLearn*Tier`·`DoRegression`)·뽑힌 아이템은 `ItemInventory.RecordPull` | 전투(보상)·화면(구매·습득·선택) | 세이브 파일 — `GameBoot`가 불러오고 `AutoSave`가 화면이 바뀔 때 저장 | 거의 전부(110곳 — 읽기는 그대로 둔다) | 새 메서드 동작 테스트(`AchievementTests`·`ItemAndGachaTests`)·`DefinedApis` 목록. **직접 대입 예외**: 세이브 이전(`SaveService`)·사냥 시작 실패 롤백(`GameFlow`의 `doomDays` 복원)·에디터 전용 'SP +1' 버튼(`AwakenScreen`, `#if UNITY_EDITOR`)·테스트 준비 |
 | 설정 `GameSettings`(전체 화면·해상도·음량) | ✓ | `GameSettings` 속성(PlayerPrefs) | 설정 창 | PlayerPrefs | 소리·화면 | — |
 
 ## 3. 등록소·창구 (켜져 있는 동안만 들어 있다)
@@ -36,7 +36,7 @@
 
 ## 4. 이벤트 버스
 
-`CombatEvents`·`RunEvents`·`EnemySpawnRequestBus`·`ProfileService.Replaced`·`GameState.Changed` — 구독은 `OnEnable`, 해제는 `OnDisable`(대칭). 테스트는 각 `Reset()`으로 비운다.
+`CombatEvents`·`RunEvents`·`EnemySpawnRequestBus`·`ProfileService.Replaced`·`GameState.Changed`, 그리고 프로필 인스턴스 이벤트 `PlayerProfile.LeveledUp`(`PlayerHealth`가 지금 프로필에 붙는다) — 구독은 `OnEnable`, 해제는 `OnDisable`(대칭). 테스트는 각 `Reset()`으로 비운다. 왕복 뒤 구독자 수는 `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`가 본다.
 
 ## 5. 캐시·테스트 전용 (상태라기보다 보관)
 
@@ -46,7 +46,7 @@
 
 ## 6. 정리할 것 (4-1~4-5)
 
-- ✅ 왕복 수명(4-5): 로비 → 사냥 → 로비 뒤 로비 창구·카메라 기준점은 남고, 전투 창구·담당 등록·몹·중력장·드론·포탑·런 오브젝트는 비며, 정적 이벤트 구독자 수가 왕복 전과 같다 — `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`. `RunState`·`CombatModifiers` 변경 API는 검토만(이미 사건 이름 메서드뿐).
+- ✅ 왕복 수명(4-5): 로비 → 사냥 → 로비 뒤 로비 창구·카메라 기준점은 남고, 전투 창구·담당 등록·몹·중력장·드론·포탑·런 오브젝트는 비며, 정적 이벤트·프로필 이벤트 구독자 수가 왕복 전과 같다 — `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`. `RunState`·`CombatModifiers` 변경 API는 검토만(이미 사건 이름 메서드뿐).
 
 - ✅ `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1).
 - ✅ `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2). 난이도·보상은 `RunState.Region`을 직접 읽는다.

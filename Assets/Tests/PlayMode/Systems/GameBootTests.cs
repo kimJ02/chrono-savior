@@ -206,7 +206,7 @@ public class GameBootTests
     /// <summary>
     /// 로비 → 사냥 → 로비 왕복 뒤 상태별 기대값(2026-11-06 정리 순서 4-5, `docs/state-ownership.md`).
     /// 로비에 남아야 하는 것: 로비 창구·카메라 기준점. 전투 씬과 같이 사라져야 하는 것: 전투 창구·담당 등록,
-    /// 몹·중력장·드론·포탑 목록, 그리고 **이벤트 구독**(전투 쪽 구독자가 남으면 내려간 오브젝트를 붙잡고 있는 것 — 개수가 왕복 전과 같아야 한다).
+    /// 몹·중력장·드론·포탑 목록, 그리고 **이벤트 구독**(정적 버스·프로필 이벤트 — 전투 쪽 구독자가 남으면 내려간 오브젝트를 붙잡고 있는 것 — 개수가 왕복 전과 같아야 한다).
     /// </summary>
     [UnityTest]
     public IEnumerator LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState()
@@ -236,19 +236,28 @@ public class GameBootTests
         Assert.AreEqual(lobbySubscribers, SubscriberCounts(), "이벤트 구독이 왕복 전과 같다 — 전투 쪽 구독이 남았다");
     }
 
-    /// <summary>정적 이벤트마다 지금 구독자 수(이름=수). 필드형 이벤트는 같은 이름의 숨은 필드에 대리자가 있다.</summary>
+    /// <summary>
+    /// 이벤트마다 지금 구독자 수(이름=수) — 정적 이벤트 버스 전부와 지금 프로필의 이벤트(`LeveledUp`, 전투의 `PlayerHealth`가 구독).
+    /// 필드형 이벤트는 같은 이름의 숨은 필드에 대리자가 있다.
+    /// </summary>
     static string SubscriberCounts()
     {
-        var types = new[] { typeof(CombatEvents), typeof(RunEvents), typeof(EnemySpawnRequestBus), typeof(GameState) };
+        const System.Reflection.BindingFlags Hidden = System.Reflection.BindingFlags.NonPublic;
         var parts = new List<string>();
-        foreach (var t in types)
-            foreach (var e in t.GetEvents(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public))
+        void Count(System.Type t, object owner)
+        {
+            var scope = owner == null ? System.Reflection.BindingFlags.Static : System.Reflection.BindingFlags.Instance;
+            foreach (var e in t.GetEvents(scope | System.Reflection.BindingFlags.Public))
             {
-                var field = t.GetField(e.Name, System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+                var field = t.GetField(e.Name, scope | Hidden);
                 Assert.IsNotNull(field, $"{t.Name}.{e.Name}의 대리자 필드를 못 찾았다");
-                var d = field.GetValue(null) as System.Delegate;
+                var d = field.GetValue(owner) as System.Delegate;
                 parts.Add($"{t.Name}.{e.Name}={(d == null ? 0 : d.GetInvocationList().Length)}");
             }
+        }
+        foreach (var t in new[] { typeof(CombatEvents), typeof(RunEvents), typeof(EnemySpawnRequestBus), typeof(GameState), typeof(ProfileService) })
+            Count(t, null);
+        Count(typeof(PlayerProfile), ProfileService.Current);
         return string.Join(", ", parts);
     }
 
