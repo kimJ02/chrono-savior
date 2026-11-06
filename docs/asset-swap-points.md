@@ -29,9 +29,27 @@
 
 ## UI (팀원 제작 중 — 따로)
 
-- UI 그림은 `Assets/Resources/Art/Figma/UI/`를 **경로 문자열로** 읽는다(`UI/Pixel/PxArt.Get("…")` 64곳, 글꼴 `Px.Font` = `Resources/Fonts/DNFBitBitv2`). 화면 코드 `Build()`가 Figma 좌표로 짓는다.
-- 지금 상태: 프로젝트에 들어간 것 / Figma에만 있는 것 / 제작 중인 것이 섞여 있다. **같은 파일 이름으로 덮어쓰면** 코드 수정 없이 바뀐다(경로가 같으면).
-- 교체 방식(경로 유지 vs 데이터 에셋)은 UI 그림이 정리된 뒤 정한다. UI 기준은 월드와 별도(640×360 판·100 PPU, `pixel-standard.md` 3절).
+**교체 방식(2026-11-06 Codex 합의)**: 지금처럼 **경로 키 유지** — `UI/Pixel/PxArt.Get("키")`가 `Assets/Resources/Art/Figma/UI/<키>.png`를 읽는 한곳이라,
+**같은 키(같은 폴더·파일 이름)로 덮어쓰면 코드 수정 없이 바뀐다.** 새 그림이 필요하면 그 화면에서 키를 추가하고 이 표를 고친다.
+화면 배치(Figma 좌표)는 각 화면의 `Build()` 코드에 그대로 둔다 — 그림 교체와 배치 변경은 따로 한다. UI 기준은 월드와 별도(640×360 판·**100 PPU**·Point 필터, `pixel-standard.md` 3절).
+
+- 파일 54개 = 전부 쓰인다(코드에 키를 적은 곳 27개 + 변수로 고르는 곳 7곳). 빠진 파일 0(2026-11-06).
+- **제작 상태**(프로젝트에 들어감 / Figma에만 / 제작 중)는 팀원에게 확인해서 아래 표의 '상태' 칸에 채운다 — 지금은 전부 '프로젝트에 있음(임시일 수 있음)'.
+- 9-슬라이스로 늘려 쓰는 그림: `Common/button`(테두리 4px)·`Stage/frame_info`(8px) — 바꿀 때 테두리 두께를 같게.
+
+| 키(폴더/파일) | 쓰는 화면 | 상태 |
+|---|---|---|
+| `Common/button` · `button_long` · `button_small` · `cursor` · `icon_frame` · `title_plate` · `window_frame` | 거의 모든 화면(공용) | 확인 필요 |
+| `Title/background` · `Title/logo` | 타이틀 | 확인 필요 |
+| `Hud/portrait` · `slot_frame` · `status_frame` · `boss_bar` · `icon_attack` · `icon_jump` · `icon_skill` · `boss_warning` | 전투 HUD(아이콘은 칸 순서로 고름) · 초상은 캐릭터 선택·각성도 · `boss_warning`은 로비 던전 건물 | 확인 필요 |
+| `Icons/close` · `exit` · `flag` · `gear` · `play` · `shard` · `shard_dark` · `skull` · `star` · `weapon_blades` · `weapon_hammer` · `weapon_hat` · `weapon_spanner` | 창 닫기·일시정지 메뉴·캐릭터 선택(무기)·로비 건물·시간 회귀 등(표에서 고름) | 확인 필요 |
+| `Awaken/node_open` · `node_learned` · `node_locked` · `skill_window` · `stat_window` | 각성(스킬트리) | 확인 필요 |
+| `Skills/mage_explosion_1~5` · `Skills/mage_gravity_1~5` | 각성 스킬 아이콘(`"Skills/mage_explosion_" + 층`) — 메카닉·섬영 아이콘은 아직 없음 | 확인 필요 |
+| `Stage/frame_info` · `frame_list` · `boss_frame` · `mob_frame` · `progress` | 스테이지 선택 · `frame_info`는 로비 건물·캐릭터 선택도 · `progress`는 결과 화면도 | 확인 필요 |
+| `Pause/band` | 일시정지 | 확인 필요 |
+| `Regression/frame` | 시간 회귀 | 확인 필요 |
+| `Relic/panel` · `Relic/slot` | 유물 개방(뽑기) | 확인 필요 |
+| 글꼴 `Assets/Resources/Fonts/DNFBitBitv2` | 모든 화면(`UI/Pixel/Px.Font`) | 확인 필요 |
 
 ## 바꾼 뒤 확인
 

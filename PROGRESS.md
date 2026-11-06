@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (50)** — **[나] 3.5-g: UI 그림 목록 + 교체 방식 결정 (`feature/asset-seams`, 문서만).** Codex 합의 — **경로 키 유지**(`PxArt.Get("키")` 한곳이라 같은 키로 덮어쓰면 코드 수정 없이 교체, UiArtSet은 원본이 둘이 되고 64곳을 고쳐 과함),
+  화면 배치(Figma 좌표 `Build()`)는 그대로. `docs/asset-swap-points.md` UI 절: 파일 54개 전부 사용(변수로 고르는 아이콘 포함)·빠진 파일 0·9-슬라이스 테두리·글꼴, 제작 상태 칸은 팀원 확인 필요. **3.5 a~g 끝.**
 - **2026-11-06 (49)** — **[나] 3.5-f: 도트 배율 보고서 (`feature/asset-seams`, 에디터 도구만).** `Editor/DotScaleReport`(메뉴 `ChronoSavior/도트 배율 보고서`, 배치 `RunBatch -reportOut`) — 그림 묶음·캐릭터·몹(엘리트 포함)·보스/성소·효과의
   도트 배율(`128 × 화면 크기 ÷ 그림 픽셀`)을 표로, 정수가 아니면 ⚠(지금은 경고만, 임시 도형은 따로 표시). 결과가 `docs/pixel-standard.md` 2절 표와 같다. 최종 그림이 오면 '정수가 아니면 실패'로 강화.
 - **2026-11-06 (48)** — **[나] 3.5-e: 효과 에셋을 연결 칸으로 + 교체 지점 표 (`feature/asset-seams`, PlayMode 474/474, 씬 검증 통과, Codex 통과).** 씬·프리팹이 주인인 효과 — 피격(`EnemyHealth`, `Enemy_Base`)·차지(`MageChargeFlash`)·잔상(`PlayerAfterimages`) 머티리얼은
