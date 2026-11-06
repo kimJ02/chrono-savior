@@ -121,7 +121,7 @@ namespace ChronoSavior.Characters
             if (scale <= 0f) return;
             transform.localScale = new Vector3(scale, scale, 1f);
 
-            // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 — 반지름을 역으로 나눠 판정 반지름을 맞춘다(적 쪽 `EnemySpawner.ApplySize`와 같은 방식).
+            // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 — 반지름을 역으로 나눠 판정 반지름을 맞춘다(적 쪽 `EnemySetup.ApplySize`와 같은 방식).
             var col = GetComponent<CircleCollider2D>();
             if (col != null) col.radius = EntitySizeConfig.PlayerRadius / scale;
         }

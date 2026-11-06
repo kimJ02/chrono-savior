@@ -539,6 +539,48 @@ public class GameBootTests
         Assert.AreEqual(RigidbodyType2D.Kinematic, shrine.GetComponent<Rigidbody2D>().bodyType);
     }
 
+    /// <summary>
+    /// 보스·성소가 받는 수치와 크기(2026-11-06 정리 순서 5-1 — 이 설정을 `EnemySetup`으로 옮기면서 고정한 특성 테스트).
+    /// 보스: 지역 배율 × 회귀 장벽 체력·공격, 레벨, 넉백 배율, 속도. 성소: 지역 기준 레벨(±1)의 체력, 스폰 보호.
+    /// 둘 다 그림은 몬스터 목록의 크기(`bossSize`·`shrineSize`), 판정은 원본 가로·세로 중 작은 쪽의 반지름.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator BossAndShrine_GetTheirStatsAndSizes()
+    {
+        yield return ToRun();
+        var spawner = InScene<EnemySpawner>(GameFlow.CombatScene).Single();
+        var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+        int region = RunState.Region, regressions = ProfileService.Current.regressions;
+
+        typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
+        var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
+        var bossHealth = boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        var bossMove = boss.GetComponent<ChronoSavior.Enemies.EnemyMove>();
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions), bossHealth.MaxHp, 0.01f);
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), bossHealth.Level);
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.KnockbackMultiplier, bossHealth.knockbackMultiplier, 0.0001f);
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.DamageForRegion(region) * RegressionConfig.WallEnemyDamage(region, regressions), bossMove.attackPower, 0.01f);
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.MoveSpeed, bossMove.moveSpeed, 0.0001f);
+        AssertSize(boss.gameObject, spawner.Catalog.bossSize, Mathf.Min(EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight) / 2f);
+
+        typeof(EnemySpawner).GetMethod("SpawnShrine", flags).Invoke(spawner, null);
+        var shrine = Object.FindFirstObjectByType<ChronoSavior.Enemies.Shrine>();
+        var shrineHealth = shrine.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        int baseLevel = RegionConfig.RecommendedLevel(region);
+        Assert.That(shrineHealth.Level, Is.InRange(baseLevel, baseLevel + 1), "성소 레벨은 지역 기준 +0~1");
+        Assert.AreEqual(ChronoSavior.Enemies.Shrine.HpForLevel(shrineHealth.Level), shrineHealth.MaxHp, 0.01f);
+        Assert.IsTrue(shrine.GetComponent<ChronoSavior.Enemies.EnemyMove>().IsSpawnProtected, "성소는 세워지자마자 잠깐 보호된다");
+        AssertSize(shrine.gameObject, spawner.Catalog.shrineSize, Mathf.Min(EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight) / 2f);
+    }
+
+    static void AssertSize(GameObject go, Vector2 visual, float hitRadius)
+    {
+        var size = go.GetComponent<SpriteRenderer>().bounds.size;
+        Assert.AreEqual(visual.x, size.x, 0.01f, $"{go.name} 그림 가로");
+        Assert.AreEqual(visual.y, size.y, 0.01f, $"{go.name} 그림 세로");
+        Assert.AreEqual(hitRadius, go.GetComponent<CircleCollider2D>().radius * go.transform.localScale.x, 0.001f, $"{go.name} 판정 반지름");
+    }
+
     /// <summary>스테이지 그림(땅·배경)은 지금 월드에 하나 — 로비와 전투가 각자 자기 그림을 갖고, 같이 떠 있지 않는다.</summary>
     [UnityTest]
     public IEnumerator StageVisuals_OnePerCurrentWorld()

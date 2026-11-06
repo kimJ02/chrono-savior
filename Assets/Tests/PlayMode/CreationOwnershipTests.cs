@@ -50,7 +50,8 @@ public class CreationOwnershipTests
         ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐, 그림은 소용돌이 효과(D)가 따로. 값은 MageSpecConfig. 마법사 스킬이 연다"),
 
         // B. 몹 조립
-        ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 종류별 프리팹(EnemyData.prefab·MonsterCatalog)에서 세운다. 실행 중 붙이는 건 스폰 때 확률로 정해지는 엘리트 표식(EnemyElite)뿐"),
+        ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 종류별 프리팹(EnemyData.prefab·MonsterCatalog)에서 세운다"),
+        ["Systems/EnemySetup.cs"]          = (Kind.EnemyAssembly, "세운 몹을 데이터로 완성한다 — 실행 중 붙이는 건 스폰 때 확률로 정해지는 엘리트 표식(EnemyElite)뿐(2026-11-06 5-1, 스포너에서 떼어 냄)"),
 
         // C. 스스로 부품 붙이기 — 2-1에서 전부 씬 배치로 옮겼다(MageChargeFlash·HitSound 소리 장치·로비 CameraAnchor, 안 쓰던 PlayerAttack 삭제). 새로 생기면 안 된다.
 

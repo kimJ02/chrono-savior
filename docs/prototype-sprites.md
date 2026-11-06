@@ -72,7 +72,7 @@
 
 이 보정을 빼면 둘 중 하나는 반드시 어긋난다 — 그림이 히트박스보다 작아 보이거나(맞았는데 안 맞은 것 같음),
 플레이어 쪽은 지면 판정·발판 착지가 통째로 틀어진다.
-(`EnemySpawner.ApplySize`, `PlayerRig.ApplySprite`)
+(`EnemySetup.ApplySize`, `PlayerRig.ApplySprite`)
 
 ## 알려진 한계
 
