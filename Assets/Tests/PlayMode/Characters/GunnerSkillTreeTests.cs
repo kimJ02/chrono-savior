@@ -63,7 +63,7 @@ public class GunnerSkillTreeTests
         // 이동기가 Awake에서 gravityScale을 1로 되돌리므로 그 뒤에 다시 고정한다 — 판정 기준점이 흔들리지 않게.
         rb.gravityScale = 0f;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
-        var g = go.AddComponent<GunnerAttack>();
+        var g = go.AddComponent<GunnerAttack>().Equipped();
         SetBuild(branch, tier);
         return g;
     }
@@ -232,12 +232,12 @@ public class GunnerSkillTreeTests
         var target = NewEnemy(new Vector3(8f, 2.2f, 0f), 0.3f);
         yield return new WaitForFixedUpdate();
 
-        GunnerBullet.Spawn(new Vector3(5f, 0.88f, 0f), new Vector2(13.2f, 0f), 10f, 1, 0.8f, 1f, null, Color.white);
+        GunnerBullet.Spawn(TestPrefabs.GunnerBullet, new Vector3(5f, 0.88f, 0f), new Vector2(13.2f, 0f), 10f, 1, 0.8f, 1f, Color.white);
         float t = 0f;
         while (t < 0.6f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
         Assert.IsFalse(Damaged(target), "유도 없는 총알이 비스듬한 적을 맞혔다 — 기준 조건이 틀렸다");
 
-        GunnerBullet.Spawn(new Vector3(5f, 0.88f, 0f), new Vector2(13.2f, 0f), 10f, 1, 0.8f, 1f, null, Color.white,
+        GunnerBullet.Spawn(TestPrefabs.GunnerBullet, new Vector3(5f, 0.88f, 0f), new Vector2(13.2f, 0f), 10f, 1, 0.8f, 1f, Color.white,
             homing: true, seekRange: 4.2f, turnRate: 12f);
         t = 0f;
         while (t < 0.6f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }

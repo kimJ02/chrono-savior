@@ -55,7 +55,7 @@ public class BossDefeatCarryOverTests
 
         // 실제 보스 사망과 같은 두 이벤트: 스포너의 보스 격파 알림 + 처치 알림(보스 컴포넌트가 붙은 적).
         var boss = new GameObject("TestBoss");
-        boss.AddComponent<Boss>().enabled = false; // 행동은 필요 없다 — "보스인 적"이라는 표식만 쓴다
+        boss.AddComponent<Boss>().Equipped().enabled = false; // 행동은 필요 없다 — "보스인 적"이라는 표식만 쓴다
         boss.GetComponent<EnemyMove>().enabled = false;
         RunEvents.RaiseBossDefeated();
         CombatEvents.RaiseEnemyKilled(boss);

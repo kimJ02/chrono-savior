@@ -17,30 +17,22 @@ namespace ChronoSavior.Enemies
         float damage;
         float life;
 
-        public static EnemyBolt Spawn(Vector3 pos, Vector2 velocity, float damage, float life, Sprite sprite, Color color)
+        // 구성은 프리팹(Assets/Prefabs/Combat/EnemyBolt)에 있다(2026-11-05 생성 책임 2-3) — 18×18px 판정 상자·리지드바디·그림 자식(기본 그림 = 기본 몹 그림).
+        [SerializeField] Rigidbody2D rb;
+        [SerializeField] SpriteRenderer visualRenderer;
+
+        /// <summary>
+        /// 탄 하나를 쏜다 — 쏘는 쪽(해골 궁수·보스)이 들고 있는 프리팹을 세운다. 프리팹이 없으면 오류.
+        /// <paramref name="sprite"/>가 있으면 그림을 갈아 끼운다(해골 궁수는 자기 그림을 줄여 쏜다), 없으면 프리팹 그림.
+        /// </summary>
+        public static EnemyBolt Spawn(EnemyBolt prefab, Vector3 pos, Vector2 velocity, float damage, float life, Sprite sprite, Color color)
         {
-            var go = new GameObject("EnemyBolt");
-            // 런이 끝나거나 새로 시작하면 사라져야 한다(원본 `projectiles = []`/`zones = []`, :4318).
-            go.AddComponent<RunTransient>();
-            go.transform.position = pos;
-
-            var visual = new GameObject("Visual");
-            visual.transform.SetParent(go.transform, false);
-            visual.transform.localScale = Vector3.one * (HalfSize * 2f);
-            var sr = visual.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.color = color;
-            sr.sortingOrder = 3;
-
-            var col = go.AddComponent<BoxCollider2D>();
-            col.isTrigger = true;
-            col.size = new Vector2(HalfSize * 2f, HalfSize * 2f);
-
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            rb.linearVelocity = velocity;
-
-            var bolt = go.AddComponent<EnemyBolt>();
+            if (prefab == null) { Debug.LogError("[EnemyBolt] 적 탄 프리팹이 없다 — 쏘는 몹의 boltPrefab을 확인"); return null; }
+            var bolt = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
+            bolt.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
+            if (sprite != null) bolt.visualRenderer.sprite = sprite;
+            bolt.visualRenderer.color = color;
+            bolt.rb.linearVelocity = velocity;
             bolt.damage = damage;
             bolt.life = life;
             return bolt;

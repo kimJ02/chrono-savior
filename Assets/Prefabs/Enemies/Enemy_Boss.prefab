@@ -81,5 +81,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 944021b7b5219d24996bbcdce3a5ac3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  projectileSprite: {fileID: 0}
+  boltPrefab: {fileID: 5777854372518711861, guid: 54b11fb5b098afb4980f6a69a85f6e61, type: 3}
   projectileColor: {r: 0.78, g: 0.42, b: 1, a: 1}

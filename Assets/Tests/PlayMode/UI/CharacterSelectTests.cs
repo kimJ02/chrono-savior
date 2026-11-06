@@ -56,8 +56,8 @@ public class CharacterSelectTests
         player.AddComponent<CircleCollider2D>();
         player.AddComponent<Rigidbody2D>().gravityScale = 0f;
         player.AddComponent<CharacterMover2D>();
-        player.AddComponent<MageAttack>();
-        player.AddComponent<GunnerAttack>();
+        player.AddComponent<MageAttack>().Equipped();
+        player.AddComponent<GunnerAttack>().Equipped();
         var rig = player.AddComponent<PlayerRig>();
 
         var screen = pc.GetComponent<CharacterSelectScreen>();

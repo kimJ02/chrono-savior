@@ -62,7 +62,7 @@ public class SkillSlotTests
         go.AddComponent<CharacterMover2D>();
         rb.gravityScale = 0f;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
-        var g = go.AddComponent<GunnerAttack>();
+        var g = go.AddComponent<GunnerAttack>().Equipped();
         g.ResetForRun(); // 사냥 시작처럼 — 설치기는 부품 1개를 쥐고 시작한다
         return g;
     }
@@ -196,7 +196,7 @@ public class SkillSlotTests
         var profile = ProfileService.Current;
         profile.mageBranch = MageBranch.Explosion;
         profile.mageTier = 1;
-        var mage = new GameObject("TestMage").AddComponent<MageAttack>(); // 이동기가 없으면 순간이동만 건너뛴다
+        var mage = new GameObject("TestMage").AddComponent<MageAttack>().Equipped(); // 이동기가 없으면 순간이동만 건너뛴다
         yield return null;
 
         Assert.IsFalse(mage.SkillSlot.Cooling);
@@ -273,8 +273,8 @@ public class SkillSlotTests
         var rb = go.AddComponent<Rigidbody2D>();
         go.AddComponent<CharacterMover2D>();
         rb.gravityScale = 0f;
-        var mage = go.AddComponent<MageAttack>();
-        var gunner = go.AddComponent<GunnerAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
+        var gunner = go.AddComponent<GunnerAttack>().Equipped();
         var rig = go.AddComponent<PlayerRig>(); // 키트를 전부 붙인 뒤에(BuildPartAScene과 같은 순서)
         yield return null;
 

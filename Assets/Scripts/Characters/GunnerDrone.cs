@@ -35,7 +35,6 @@ namespace ChronoSavior.Characters
         public Collider2D Target { get; private set; }
 
         GunnerAttack owner;
-        Sprite bulletSprite;
         float fireTimer;
         float scanTimer;
         bool removed;
@@ -71,7 +70,6 @@ namespace ChronoSavior.Characters
 
                 var d = go.AddComponent<GunnerDrone>();
                 d.owner = owner;
-                d.bulletSprite = sprite;
                 d.Tier = tier;
                 d.Side = side;
                 d.Life = GunnerSpecConfig.DroneLife(tier, stackSpend);
@@ -156,9 +154,9 @@ namespace ChronoSavior.Characters
             dir /= len;
 
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
-            GunnerBullet.Spawn(pos, dir * GunnerSpecConfig.DroneBulletSpeed(Tier), atk * DamageMult,
+            GunnerBullet.Spawn(owner != null ? owner.BulletPrefab : null, pos, dir * GunnerSpecConfig.DroneBulletSpeed(Tier), atk * DamageMult,
                 GunnerSpecConfig.DroneBulletPierce(Tier), GunnerSpecConfig.DroneBulletLife,
-                GunnerSpecConfig.DroneBulletSize(Tier), bulletSprite, GunnerAttack.LaserColor,
+                GunnerSpecConfig.DroneBulletSize(Tier), GunnerAttack.LaserColor,
                 homing: GunnerSpecConfig.DroneBulletHoming(Tier), seekRange: Range,
                 turnRate: GunnerSpecConfig.DroneBulletTurnRate(Tier), stackOwner: null, stackOnHit: 0);
         }

@@ -142,6 +142,9 @@ namespace ChronoSavior.Editor
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;
             if (player != null && player.GetComponent<MageChargeFlash>() == null) problems.Add("Player에 MageChargeFlash(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
+            // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)
+            if (player != null && player.TryGetComponent(out MageAttack mageKit)) CheckProjectilePrefab(mageKit.BoltPrefab, "Player MageAttack.boltPrefab", problems);
+            if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit)) CheckProjectilePrefab(gunnerKit.BulletPrefab, "Player GunnerAttack.bulletPrefab", problems);
             if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
             var portal = One<BossPortal>(combat, problems);
             if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");
@@ -272,6 +275,10 @@ namespace ChronoSavior.Editor
                 Check(d.prefab, $"{d.type}", expected);
             }
             Check(catalog.bossPrefab, "보스", typeof(ChronoSavior.Enemies.Boss));
+            if (catalog.bossPrefab != null && catalog.bossPrefab.TryGetComponent(out ChronoSavior.Enemies.Boss bossKit)) CheckProjectilePrefab(bossKit.BoltPrefab, "보스 프리팹 Boss.boltPrefab", problems);
+            var shooterData = catalog.Find(ChronoSavior.Core.EnemyType.Shooter);
+            if (shooterData != null && shooterData.prefab != null && shooterData.prefab.TryGetComponent(out ChronoSavior.Enemies.EnemyShooterMotion shooterKit))
+                CheckProjectilePrefab(shooterKit.BoltPrefab, "해골 궁수 프리팹 EnemyShooterMotion.boltPrefab", problems);
             if (catalog.bossPrefab != null && catalog.bossPrefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() is { isBoss: false })
                 problems.Add("보스 프리팹의 EnemyHealth.isBoss가 꺼져 있다(레벨 페널티 하한이 보스 값이 아니게 된다)");
             Check(catalog.shrinePrefab, "성소", typeof(ChronoSavior.Enemies.Shrine));
@@ -281,6 +288,20 @@ namespace ChronoSavior.Editor
                 var rb = catalog.shrinePrefab.GetComponent<Rigidbody2D>();
                 if (rb != null && (rb.bodyType != RigidbodyType2D.Kinematic || rb.gravityScale != 0f)) problems.Add("성소 프리팹은 움직이지 않는 구조물(Kinematic·중력 0)이어야 한다");
             }
+        }
+
+        /// <summary>
+        /// 탄 프리팹 — 비어 있지 않고, 프리팹 안의 직렬화 참조(리지드바디·판정·그림 자식)가 전부 이어져 있고, 런이 끝나면 사라지는 표식(RunTransient)이 있다.
+        /// 구성이 프리팹에 있으니 참조 하나가 끊기면 실행 중에야 터진다 — 여기서 미리 잡는다.
+        /// </summary>
+        static void CheckProjectilePrefab(Component prefab, string what, List<string> problems)
+        {
+            if (prefab == null) { problems.Add($"{what}가 비어 있다"); return; }
+            if (prefab.GetComponent<ChronoSavior.Core.RunTransient>() == null) problems.Add($"{what}({prefab.name})에 RunTransient가 없다 — 런이 끝나도 남는다");
+            var so = new SerializedObject(prefab);
+            for (var it = so.GetIterator(); it.NextVisible(true);)
+                if (it.propertyType == SerializedPropertyType.ObjectReference && it.name != "m_Script" && it.objectReferenceValue == null)
+                    problems.Add($"{what}({prefab.name})의 {it.name} 참조가 비어 있다");
         }
 
         /// <summary>

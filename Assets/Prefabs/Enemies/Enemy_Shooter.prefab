@@ -85,5 +85,6 @@ MonoBehaviour:
   muzzleForward: 0.14
   muzzleHeight: 0.28
   aimHeightOffset: 0.3
+  boltPrefab: {fileID: 5777854372518711861, guid: 54b11fb5b098afb4980f6a69a85f6e61, type: 3}
   boltSprite: {fileID: 0}
   boltColor: {r: 0.78, g: 0.42, b: 1, a: 1}

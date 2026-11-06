@@ -36,7 +36,7 @@ public class CharacterKitTests
         var rb = go.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         go.AddComponent<CharacterMover2D>();
-        go.AddComponent<MageAttack>();
+        go.AddComponent<MageAttack>().Equipped();
         go.AddComponent<PlayerRig>();   // 키트를 전부 붙인 뒤에 추가해야 Awake가 전부 찾는다
         return go;
     }

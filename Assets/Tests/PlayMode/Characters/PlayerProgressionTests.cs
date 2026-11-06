@@ -197,7 +197,7 @@ public class PlayerProgressionTests
         var go = new GameObject("TestCaster");
         go.AddComponent<Rigidbody2D>().gravityScale = 0f;
         go.AddComponent<CircleCollider2D>();
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         yield return null;
 
         float baseDmgBefore = mage.baseDamage;

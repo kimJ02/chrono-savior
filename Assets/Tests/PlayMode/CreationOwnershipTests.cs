@@ -40,9 +40,9 @@ public class CreationOwnershipTests
     static readonly Dictionary<string, (Kind kind, string why)> Owners = new Dictionary<string, (Kind, string)>
     {
         // A. 전투 물체 — 각 클래스의 정적 생성 함수가 본체·그림 자식·판정·RunTransient를 짓는다
-        ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — GunnerAttack이 쏜다"),
-        ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — MageAttack이 쏜다"),
-        ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "해골 궁수 화염탄 — EnemyShooterMotion이 쏜다"),
+        ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다"),
+        ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다"),
+        ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 처치 때 스포너 쪽에서 떨군다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — GunnerAttack이 띄운다"),
         ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — GunnerAttack이 세운다"),

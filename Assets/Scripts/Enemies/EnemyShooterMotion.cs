@@ -30,7 +30,14 @@ namespace ChronoSavior.Enemies
         [Tooltip("조준점 보정. 원본은 플레이어 y-30을 노린다.")]
         public float aimHeightOffset = 0.30f;
 
-        public Sprite boltSprite;                                    // 씬 빌더/스포너가 꽂아준다
+        [Tooltip("화염탄 프리팹(Assets/Prefabs/Combat/EnemyBolt) — Enemy_Shooter 프리팹에 들어 있다.")]
+        [SerializeField] EnemyBolt boltPrefab;
+
+        /// <summary>프리팹 검증과 테스트가 읽고 넣는다.</summary>
+        public EnemyBolt BoltPrefab { get => boltPrefab; set => boltPrefab = value; }
+
+        [Tooltip("탄 그림 — 스포너가 이 몹의 그림을 넣는다(비어 있으면 프리팹 그림).")]
+        public Sprite boltSprite;
         public Color boltColor = new Color(0.78f, 0.42f, 1f);
 
         float shootTimer;
@@ -82,7 +89,7 @@ namespace ChronoSavior.Enemies
             // 피해량은 이 몹의 접촉 피해와 같은 값을 쓴다(원본 `dmg: e.dmg`) — 지역 배율이 이미 반영돼 있다.
             // 성소 버프(×1.3)도 원본이 여기서 같이 곱한다(`:4098`).
             float dmg = mover.attackPower * Core.CombatModifiers.EnemyDamageMultiplier;
-            EnemyBolt.Spawn(origin, dir * boltSpeed, dmg, boltLife, boltSprite, boltColor);
+            EnemyBolt.Spawn(boltPrefab, origin, dir * boltSpeed, dmg, boltLife, boltSprite, boltColor);
         }
     }
 }

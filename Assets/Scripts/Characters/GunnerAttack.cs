@@ -41,7 +41,14 @@ namespace ChronoSavior.Characters
         /// <summary>원본 y: `p.y - 38`(:2199) — **발**에서 0.38 위(<see cref="FeetPosition"/>, <see cref="PlayerBody"/>).</summary>
         const float MuzzleHeight = 0.38f;
 
-        public Sprite bulletSprite;              // 런타임 AssetDatabase 호출을 피하려고 씬 빌더가 꽂아준다
+        [Tooltip("메카닉 탄 프리팹(Assets/Prefabs/Combat/GunnerBullet) — 이 무기와 드론이 쏜다.")]
+        [SerializeField] GunnerBullet bulletPrefab;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다. 드론도 이 프리팹으로 쏜다.</summary>
+        public GunnerBullet BulletPrefab { get => bulletPrefab; set => bulletPrefab = value; }
+
+        [Tooltip("레이저·드론·설치기·연결선 그림(탄 프리팹의 그림과 같은 그림).")]
+        public Sprite bulletSprite;
         public Color bulletColor = new Color(1f, 0.92f, 0.63f);
 
         CharacterMover2D mover;
@@ -232,9 +239,9 @@ namespace ChronoSavior.Characters
             Vector3 spawnPos = new Vector3(feet.x + facing * MuzzleForward, feet.y + MuzzleHeight, 0f);
             Vector2 velocity = new Vector2(facing * BulletSpeed, 0f);
 
-            GunnerBullet.Spawn(spawnPos, velocity, baseDamage,
+            GunnerBullet.Spawn(bulletPrefab, spawnPos, velocity, baseDamage,
                 GunnerSpecConfig.BulletPierce(laserTier), GunnerSpecConfig.BulletLife(laserTier),
-                GunnerSpecConfig.BulletSize(laserTier), bulletSprite, laserTier > 0 ? LaserColor : bulletColor,
+                GunnerSpecConfig.BulletSize(laserTier), laserTier > 0 ? LaserColor : bulletColor,
                 homing: GunnerSpecConfig.BulletHoming(laserTier),
                 seekRange: GunnerSpecConfig.BulletSeekRange(laserTier),
                 turnRate: GunnerSpecConfig.BulletTurnRate(laserTier),

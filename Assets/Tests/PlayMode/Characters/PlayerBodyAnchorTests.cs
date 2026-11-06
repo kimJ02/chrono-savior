@@ -65,7 +65,7 @@ public class PlayerBodyAnchorTests
         go.AddComponent<CharacterMover2D>();
         rb.gravityScale = 0f; // 이동기가 Awake에서 1로 되돌리므로 그 뒤에 다시 고정
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
 
         var oni = new GameObject("TestEnemy");
         oni.tag = "Enemy";

@@ -3706,6 +3706,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cooldown: 0.24
   baseDamage: 8.2
+  bulletPrefab: {fileID: 315880859750246320, guid: 431c0be5792f7b946b029b2590ea00f2, type: 3}
   bulletSprite: {fileID: 21300000, guid: 53195ca095df4ff43b5d349553399683, type: 3}
   bulletColor: {r: 1, g: 0.92, b: 0.63, a: 1}
 --- !u!114 &1457870346
@@ -3730,7 +3731,7 @@ MonoBehaviour:
   projectileRange: 8.8
   chargeMoveSlow: 0.5
   nearestEnemySearchRadius: 6.2
-  boltSprite: {fileID: 21300000, guid: 53195ca095df4ff43b5d349553399683, type: 3}
+  boltPrefab: {fileID: 9216100264330590141, guid: 22fe891056ab0de4495c60e7b46ae526, type: 3}
   boltColor: {r: 0.55, g: 0.8, b: 1, a: 1}
 --- !u!114 &1457870347
 MonoBehaviour:

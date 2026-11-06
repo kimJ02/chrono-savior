@@ -228,7 +228,7 @@ public class MageSkillTreeTests
 
         var go = new GameObject("TestMageCaster");
         go.transform.position = new Vector3(2f, 0.36f, 0f);
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var fireMethod = typeof(MageAttack).GetMethod("Fire", BindingFlags.NonPublic | BindingFlags.Instance);
 
         var direct = NewEnemy(new Vector3(3f, 0.36f, 0f));
@@ -256,7 +256,7 @@ public class MageSkillTreeTests
 
         var go = new GameObject("TestMageCaster");
         go.transform.position = new Vector3(2f, 0.36f, 0f);
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var fireMethod = typeof(MageAttack).GetMethod("Fire", BindingFlags.NonPublic | BindingFlags.Instance);
 
         var enemy = NewEnemy(new Vector3(3f, 0.36f, 0f));

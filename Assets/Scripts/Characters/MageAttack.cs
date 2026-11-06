@@ -90,7 +90,12 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     public float chargeMoveSlow = 0.5f;    // 원본 chargeSlow
     public float nearestEnemySearchRadius = 6.2f; // 원본 nearestEnemy(maxDist=620px)(project_test.html:2155)
 
-    public Sprite boltSprite;              // 런타임 AssetDatabase 호출을 피하려고 씬 빌더가 미리 꽂아준다
+    [Tooltip("마탄 프리팹(Assets/Prefabs/Combat/MageBolt).")]
+    [SerializeField] MageProjectile boltPrefab;
+
+    /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+    public MageProjectile BoltPrefab { get => boltPrefab; set => boltPrefab = value; }
+
     public Color boltColor = new Color(0.55f, 0.8f, 1f);
 
     CharacterMover2D mover;
@@ -233,7 +238,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         // 똑바로 쏠 때도 바라보는 쪽에서 나간다 — 예전엔 조준의 x 부호를 써서 수직 조준이면 늘 오른쪽에서 나갔다.
         // 높이는 몸 중심에서 재면 키 0.5짜리 고블린 머리 위로 지나간다(발 기준, PlayerBody).
         Vector3 spawnPos = new Vector3(feet.x + facing * 0.26f, feet.y + 0.36f, 0f);
-        MageProjectile.Spawn(spawnPos, aim * spd, dmg, pierce, life, sizeMul, boltSprite, boltColor,
+        MageProjectile.Spawn(boltPrefab, spawnPos, aim * spd, dmg, pierce, life, sizeMul, boltColor,
             inf, charged, explosive, explosionPower, gravityOrb, chargeK, tier, transform.position, facing);
     }
 

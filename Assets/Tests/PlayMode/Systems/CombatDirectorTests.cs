@@ -165,7 +165,7 @@ public class CombatDirectorTests
 
         // 실제 보스 사망과 같은 두 알림 — 처치 연출은 담당(KillFeel) → 히트스톱 요청(CombatEvents) → 흐름(GameFlow.Hitstop) 경로를 탄다.
         var boss = new GameObject("TestBoss");
-        boss.AddComponent<Boss>().enabled = false; // "보스인 적"이라는 표식만 쓴다
+        boss.AddComponent<Boss>().Equipped().enabled = false; // "보스인 적"이라는 표식만 쓴다
         boss.GetComponent<EnemyMove>().enabled = false;
         RunEvents.RaiseBossDefeated();
         CombatEvents.RaiseEnemyKilled(boss);

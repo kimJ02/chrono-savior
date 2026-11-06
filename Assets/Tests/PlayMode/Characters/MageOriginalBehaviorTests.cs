@@ -80,7 +80,7 @@ public class MageOriginalBehaviorTests
     }
 
     static MageProjectile SpawnBolt(Vector2 pos, Vector2 velocity, bool explosive, bool gravityOrb, int tier) =>
-        MageProjectile.Spawn(pos, velocity, damage: 5f, pierce: 2, life: 1.0f, sizeMul: 1f, sprite: null, color: Color.white,
+        MageProjectile.Spawn(TestPrefabs.MageBolt, pos, velocity, damage: 5f, pierce: 2, life: 1.0f, sizeMul: 1f, color: Color.white,
             infinitePierce: false, charged: false, explosive: explosive, explosionPower: 0.26f, gravityOrb: gravityOrb,
             gravityCharge: 0f, tier: tier, casterPos: pos, casterFacing: 1);
 
@@ -94,7 +94,7 @@ public class MageOriginalBehaviorTests
         go.AddComponent<CharacterMover2D>();
         rb.gravityScale = 0f;
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
-        return go.AddComponent<MageAttack>();
+        return go.AddComponent<MageAttack>().Equipped();
     }
 
     static void Call(object obj, string method, params object[] args)

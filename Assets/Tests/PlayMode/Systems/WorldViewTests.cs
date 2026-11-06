@@ -80,7 +80,7 @@ public class WorldViewTests
         go.AddComponent<Rigidbody2D>().gravityScale = 0f;
         go.AddComponent<CharacterMover2D>();
         go.AddComponent<PlayerHealth>();
-        go.AddComponent<MageAttack>();
+        go.AddComponent<MageAttack>().Equipped();
         go.AddComponent<PlayerRig>();
         return go;
     }

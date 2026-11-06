@@ -69,7 +69,12 @@ namespace ChronoSavior.Enemies
         /// <summary>원본 `lv = regionBaseLv(r) + 2`(`:4157`) — 잡몹보다 2레벨 높다.</summary>
         public static int LevelForRegion(int region) => RegionConfig.RecommendedLevel(region) + 2;
 
-        public Sprite projectileSprite;
+        [Tooltip("보스 탄·충격파 프리팹(Assets/Prefabs/Combat/EnemyBolt) — Enemy_Boss 프리팹에 들어 있다. 그림은 프리팹 그림(기본 몹 그림).")]
+        [SerializeField] EnemyBolt boltPrefab;
+
+        /// <summary>프리팹 검증과 테스트가 읽고 넣는다.</summary>
+        public EnemyBolt BoltPrefab { get => boltPrefab; set => boltPrefab = value; }
+
         public Color projectileColor = new Color(0.78f, 0.42f, 1f);
 
         State state = State.Idle;
@@ -187,8 +192,8 @@ namespace ChronoSavior.Enemies
             foreach (int dir in new[] { -1, 1 })
             {
                 Vector3 origin = new Vector3(transform.position.x + dir * 0.5f, y, 0f);
-                EnemyBolt.Spawn(origin, new Vector2(dir * SlamShockSpeed, 0f),
-                                dmg * SlamShockDamageMult, SlamShockLife, projectileSprite, projectileColor);
+                EnemyBolt.Spawn(boltPrefab, origin, new Vector2(dir * SlamShockSpeed, 0f),
+                                dmg * SlamShockDamageMult, SlamShockLife, null, projectileColor);
             }
 
             // 원본 `rectsOverlap(b.x - 150, groundY - slamH, 300, slamH, ...)` — 좌우 1.5유닛, 높이 1.5유닛.
@@ -215,7 +220,7 @@ namespace ChronoSavior.Enemies
                 // 원본 `baseA + (i - (count-1)/2) * spread` — 가운데를 중심으로 좌우 대칭.
                 float a = baseAngle + (i - (SpitCount - 1) / 2f) * SpitSpread;
                 var v = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * SpitSpeed;
-                EnemyBolt.Spawn(origin, v, dmg, SpitLife, projectileSprite, projectileColor);
+                EnemyBolt.Spawn(boltPrefab, origin, v, dmg, SpitLife, null, projectileColor);
             }
         }
 

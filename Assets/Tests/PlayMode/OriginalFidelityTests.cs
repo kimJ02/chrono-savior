@@ -242,7 +242,7 @@ public class OriginalFidelityTests
         // 보스·성소는 몬스터 목록의 프리팹으로 세운다(2026-11-05 생성 책임 2-2) — 게임의 Enemy_Boss·Enemy_Shrine처럼 부품을 넣은 꺼진 원본.
         var catalog = ScriptableObject.CreateInstance<MonsterCatalog>();
         catalog.types = new EnemyData[0];
-        catalog.bossPrefab = TestEnemyPrefab(prefab, "TestBossPrefab", go => { go.AddComponent<Boss>(); go.GetComponent<EnemyHealth>().isBoss = true; });
+        catalog.bossPrefab = TestEnemyPrefab(prefab, "TestBossPrefab", go => { go.AddComponent<Boss>().Equipped(); go.GetComponent<EnemyHealth>().isBoss = true; });
         catalog.shrinePrefab = TestEnemyPrefab(prefab, "TestShrinePrefab", go => { go.AddComponent<Shrine>(); go.GetComponent<EnemyMove>().isStructure = true; });
 
         var go = new GameObject("TestSpawner");
@@ -346,7 +346,7 @@ public class OriginalFidelityTests
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         go.AddComponent<Rigidbody2D>().gravityScale = 0f;
         go.AddComponent<CharacterMover2D>();
-        var gunner = go.AddComponent<GunnerAttack>();
+        var gunner = go.AddComponent<GunnerAttack>().Equipped();
         yield return null;
 
         float before = gunner.cooldown;

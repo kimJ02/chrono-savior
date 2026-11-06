@@ -36,7 +36,7 @@ public class GunnerAttackTests
         go.AddComponent<CircleCollider2D>().radius = 0.5f;
         go.AddComponent<Rigidbody2D>().gravityScale = 0f;
         go.AddComponent<CharacterMover2D>();
-        go.AddComponent<GunnerAttack>();
+        go.AddComponent<GunnerAttack>().Equipped();
         return go;
     }
 

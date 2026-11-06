@@ -88,7 +88,7 @@ public class MovementFidelityTests
     public IEnumerator MageAttack_Charging_HalvesMoveSpeed()
     {
         var go = NewGroundedPlayer(new Vector3(2.2f, FieldBounds.GroundY + 0.5f, 0f));
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var mover = go.GetComponent<CharacterMover2D>();
         var chargingField = typeof(MageAttack).GetField("charging", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.IsNotNull(chargingField);

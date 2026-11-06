@@ -207,7 +207,7 @@ public class EnemyTypeBehaviourTests
     public void Shooter_KeepsDistanceBand()
     {
         var enemy = NewEnemy(Vector3.zero);
-        var shooter = enemy.AddComponent<EnemyShooterMotion>();
+        var shooter = enemy.AddComponent<EnemyShooterMotion>().Equipped();
         var target = NewTarget(Vector3.zero);
 
         target.transform.position = new Vector3(1f, 0f, 0f);  // keepMin(3)보다 가깝다
@@ -227,7 +227,7 @@ public class EnemyTypeBehaviourTests
     public void Shooter_FiresOnlyWhileHoldingRange()
     {
         var enemy = NewEnemy(Vector3.zero);
-        var shooter = enemy.AddComponent<EnemyShooterMotion>();
+        var shooter = enemy.AddComponent<EnemyShooterMotion>().Equipped();
         var target = NewTarget(new Vector3(1f, 0f, 0f)); // 너무 가까워서 물러나는 중
 
         for (int i = 0; i < 40; i++) shooter.GetHorizontalSpeed(0.1f, target.transform, 0.55f);

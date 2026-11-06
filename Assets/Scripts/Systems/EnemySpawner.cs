@@ -357,12 +357,8 @@ public class EnemySpawner : MonoBehaviour
         // 원본 w:130 h:150(`:721`) — 고블린(42×46)의 3배쯤 되는 덩치다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(0.78f, 0.42f, 1f); // 원본 colors.soul '#c86aff'
-        // 탄환 스프라이트는 **그림을 갈아끼우기 전**의 원형을 쓴다 — 보스 그림을 그대로 쓰면
-        // 화면을 가리는 거대한 탄이 날아간다.
-        Sprite bolt = sr != null ? sr.sprite : null;
+        // 보스 탄은 탄 프리팹의 그림(기본 몹 그림)을 쓴다 — 보스 그림을 그대로 쓰면 화면을 가리는 거대한 탄이 날아간다(Enemy_Boss의 Boss.boltPrefab).
         FitToWorldSize(go, catalog.boss, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
-
-        if (go.TryGetComponent(out Boss boss)) boss.projectileSprite = bolt;
 
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
         // 넣으면 보스전 상한(4) 한 자리를 보스가 먹어 잡몹이 3마리만 나온다.

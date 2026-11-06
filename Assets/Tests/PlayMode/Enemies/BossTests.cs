@@ -54,7 +54,7 @@ public class BossTests
         var move = go.AddComponent<EnemyMove>();
         var health = go.AddComponent<EnemyHealth>();
         health.isBoss = true;
-        var boss = go.AddComponent<Boss>();
+        var boss = go.AddComponent<Boss>().Equipped();
         go.SetActive(true);
         typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance)
                          .SetValue(move, 0f);

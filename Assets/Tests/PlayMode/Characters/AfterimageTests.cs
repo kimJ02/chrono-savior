@@ -133,7 +133,7 @@ public class AfterimageTests
         rb.constraints = RigidbodyConstraints2D.FreezeAll;
         go.AddComponent<SpriteRenderer>().sprite = TestSprite();
         var ai = go.AddComponent<PlayerAfterimages>();
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         float startX = go.transform.position.x;
 
         typeof(MageAttack).GetMethod("TeleportTowards", BindingFlags.NonPublic | BindingFlags.Instance)

@@ -56,36 +56,25 @@ public class MageProjectile : MonoBehaviour
     Vector2 casterPos;
     int casterFacing;
 
-    Rigidbody2D rb;
+    // 구성은 프리팹(Assets/Prefabs/Combat/MageBolt)에 있다(2026-11-05 생성 책임 2-3) — 판정 상자·리지드바디·그림 자식. 크기·속도·색은 쏠 때 넣는다.
+    [SerializeField] Rigidbody2D rb;
+    [SerializeField] BoxCollider2D box;
+    [SerializeField] Transform visualTf;
+    [SerializeField] SpriteRenderer visualRenderer;
     readonly HashSet<Collider2D> alreadyHit = new HashSet<Collider2D>();
 
-    public static MageProjectile Spawn(Vector3 pos, Vector2 velocity, float damage, int pierce, float life, float sizeMul,
-        Sprite sprite, Color color, bool infinitePierce, bool charged, bool explosive, float explosionPower,
+    /// <summary>마탄 하나를 쏜다 — 쏘는 쪽(<see cref="MageAttack"/>)이 들고 있는 프리팹을 세우고 이번 발의 값을 넣는다. 프리팹이 없으면 오류.</summary>
+    public static MageProjectile Spawn(MageProjectile prefab, Vector3 pos, Vector2 velocity, float damage, int pierce, float life, float sizeMul,
+        Color color, bool infinitePierce, bool charged, bool explosive, float explosionPower,
         bool gravityOrb, float gravityCharge, int tier, Vector2 casterPos, int casterFacing)
     {
-        var go = new GameObject("MageBolt");
-        // 런이 끝나거나 새로 시작하면 사라져야 한다(원본 `projectiles = []`/`zones = []`, :4318).
-        go.AddComponent<RunTransient>();
-        go.transform.position = pos;
-
-        var visual = new GameObject("Visual");
-        visual.transform.SetParent(go.transform, false);
-        visual.transform.localScale = Vector3.one * (BaseHalfWidth * 2f * sizeMul);
-        var sr = visual.AddComponent<SpriteRenderer>();
-        sr.sprite = sprite;
-        sr.color = gravityOrb ? new Color(0.78f, 0.42f, 1f) : color;
-        sr.sortingOrder = 3;
-
-        var col = go.AddComponent<BoxCollider2D>();
-        col.isTrigger = true;
-        col.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
-
-        var rb = go.AddComponent<Rigidbody2D>();
-        rb.gravityScale = 0f;
-        rb.linearVelocity = velocity;
-
-        var proj = go.AddComponent<MageProjectile>();
-        proj.rb = rb;
+        if (prefab == null) { Debug.LogError("[MageProjectile] 마탄 프리팹이 없다 — MageAttack의 boltPrefab을 확인"); return null; }
+        var proj = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
+        proj.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
+        proj.visualTf.localScale = Vector3.one * (BaseHalfWidth * 2f * sizeMul);
+        proj.visualRenderer.color = gravityOrb ? new Color(0.78f, 0.42f, 1f) : color;
+        proj.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
+        proj.rb.linearVelocity = velocity;
         proj.damage = damage;
         proj.pierceLeft = pierce;
         proj.life = life;

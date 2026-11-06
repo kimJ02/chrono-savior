@@ -175,9 +175,9 @@ public class EnemyHealthTests
         enemy.GetComponent<Rigidbody2D>().gravityScale = 0f;
         var health = enemy.GetComponent<EnemyHealth>();
 
-        ChronoSavior.Characters.MageProjectile.Spawn(
+        ChronoSavior.Characters.MageProjectile.Spawn(TestPrefabs.MageBolt,
             new Vector3(0.5f, 0.36f, 0f), new Vector2(6f, 0f),
-            damage: 9f, pierce: 2, life: 1f, sizeMul: 1f, sprite: null, color: Color.white,
+            damage: 9f, pierce: 2, life: 1f, sizeMul: 1f, color: Color.white,
             infinitePierce: false, charged: false, explosive: false, explosionPower: 0f,
             gravityOrb: false, gravityCharge: 0f, tier: 0,
             casterPos: new Vector3(0f, 0.36f, 0f), casterFacing: 1);

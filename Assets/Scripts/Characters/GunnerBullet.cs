@@ -40,44 +40,33 @@ namespace ChronoSavior.Characters
         float turnRate;
         GunnerAttack stackOwner;
         int stackOnHit;
-        Rigidbody2D rb;
-        Transform visualTf;
+        // 구성은 프리팹(Assets/Prefabs/Combat/GunnerBullet)에 있다(2026-11-05 생성 책임 2-3) — 판정 상자·리지드바디·그림 자식. 크기·속도·색은 쏠 때 넣는다.
+        [SerializeField] Rigidbody2D rb;
+        [SerializeField] BoxCollider2D box;
+        [SerializeField] Transform visualTf;
+        [SerializeField] SpriteRenderer visualRenderer;
         Collider2D homingTarget;
         readonly HashSet<Collider2D> alreadyHit = new HashSet<Collider2D>();
 
         /// <summary>지금 유도 중인 적(테스트·디버그용).</summary>
         public Collider2D HomingTarget => homingTarget;
 
-        public static GunnerBullet Spawn(Vector3 pos, Vector2 velocity, float damage, int pierce, float life,
-            float sizeMul, Sprite sprite, Color color,
+        /// <summary>
+        /// 탄 하나를 쏜다 — 쏘는 쪽(메카닉 무기·드론)이 들고 있는 프리팹을 세우고 이번 발의 값을 넣는다. 프리팹이 없으면 오류(조용히 안 쏘지 않게).
+        /// 판정(<see cref="box"/>)과 그림(<see cref="visualTf"/>)을 따로 두는 건 스케일이 이중으로 곱해지는 걸 막으려고(MageProjectile과 같은 이유).
+        /// </summary>
+        public static GunnerBullet Spawn(GunnerBullet prefab, Vector3 pos, Vector2 velocity, float damage, int pierce, float life,
+            float sizeMul, Color color,
             bool homing = false, float seekRange = 0f, float turnRate = 0f,
             GunnerAttack stackOwner = null, int stackOnHit = 0)
         {
-            var go = new GameObject("GunnerBullet");
-            // 런이 끝나거나 새로 시작하면 사라져야 한다(원본 `projectiles = []`/`zones = []`, :4318).
-            go.AddComponent<RunTransient>();
-            go.transform.position = pos;
-
-            // 판정과 비주얼을 분리해서 스케일이 이중으로 곱해지는 걸 막는다(MageProjectile과 같은 이유).
-            var visual = new GameObject("Visual");
-            visual.transform.SetParent(go.transform, false);
-            visual.transform.localScale = new Vector3(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul, 1f);
-            var sr = visual.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.color = color;
-            sr.sortingOrder = 3;
-
-            var col = go.AddComponent<BoxCollider2D>();
-            col.isTrigger = true;
-            col.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
-
-            var rb = go.AddComponent<Rigidbody2D>();
-            rb.gravityScale = 0f;
-            rb.linearVelocity = velocity;
-
-            var bullet = go.AddComponent<GunnerBullet>();
-            bullet.rb = rb;
-            bullet.visualTf = visual.transform;
+            if (prefab == null) { Debug.LogError("[GunnerBullet] 탄 프리팹이 없다 — 쏘는 쪽(GunnerAttack)의 bulletPrefab을 확인"); return null; }
+            var bullet = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
+            bullet.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
+            bullet.visualTf.localScale = new Vector3(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul, 1f);
+            bullet.visualRenderer.color = color;
+            bullet.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
+            bullet.rb.linearVelocity = velocity;
             bullet.damage = damage;
             bullet.pierceLeft = pierce;
             bullet.life = life;

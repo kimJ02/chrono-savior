@@ -36,8 +36,8 @@ public class PlayerRigProfileSyncTests
         go.AddComponent<CharacterMover2D>();
         rb.gravityScale = 0f;
         // 키트를 전부 붙인 뒤에 PlayerRig를 붙여야 Awake에서 찾는다(BuildPartAScene과 같은 순서).
-        var mage = go.AddComponent<MageAttack>();
-        var gunner = go.AddComponent<GunnerAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
+        var gunner = go.AddComponent<GunnerAttack>().Equipped();
         var rig = go.AddComponent<PlayerRig>();
         return (rig, mage, gunner);
     }

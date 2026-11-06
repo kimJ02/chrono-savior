@@ -55,8 +55,8 @@ public class CharacterArtTests
         var col = go.AddComponent<CircleCollider2D>();
         go.AddComponent<Rigidbody2D>().gravityScale = 0f;
         go.AddComponent<CharacterMover2D>();
-        go.AddComponent<MageAttack>();
-        go.AddComponent<GunnerAttack>();
+        go.AddComponent<MageAttack>().Equipped();
+        go.AddComponent<GunnerAttack>().Equipped();
         var rig = go.AddComponent<PlayerRig>(); // 키트를 다 붙인 뒤에(Awake에서 찾는다)
 
         var art = ScriptableObject.CreateInstance<CharacterArtSet>();

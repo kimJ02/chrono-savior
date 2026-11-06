@@ -123,7 +123,7 @@ public class PhysicsAndMageTests
     public IEnumerator Fire_FullCharge_IsFasterAndPiercesMore_ThanNoCharge()
     {
         var go = new GameObject("MageTestCaster");
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var fireMethod = typeof(MageAttack).GetMethod("Fire", BindingFlags.NonPublic | BindingFlags.Instance);
         Assert.IsNotNull(fireMethod);
 
@@ -162,7 +162,7 @@ public class PhysicsAndMageTests
     public IEnumerator Projectile_PiercesExactlyBasePierceCountThenDespawns()
     {
         var go = new GameObject("MageTestCaster");
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var fireMethod = typeof(MageAttack).GetMethod("Fire", BindingFlags.NonPublic | BindingFlags.Instance);
 
         // 스프린트 2부터 관통은 "죽인 수"가 아니라 "때린 수"로 소모된다(원본도 동일 — 체력이 남아도 pierce는 깎임).
@@ -209,7 +209,7 @@ public class PhysicsAndMageTests
     {
         var go = new GameObject("MageTestCaster");
         go.transform.position = new Vector3(2.2f, 0.36f, 0f); // 원본 스폰 X 그대로
-        var mage = go.AddComponent<MageAttack>();
+        var mage = go.AddComponent<MageAttack>().Equipped();
         var fireMethod = typeof(MageAttack).GetMethod("Fire", BindingFlags.NonPublic | BindingFlags.Instance);
 
         fireMethod.Invoke(mage, new object[] { 0f, ProfileService.Current.mageBranch, ProfileService.Current.mageTier }); // 무차지 → life = range/speed = 8.8/10.8 ≈ 0.8148초
