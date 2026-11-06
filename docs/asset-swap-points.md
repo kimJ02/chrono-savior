@@ -38,4 +38,4 @@
 1. 메뉴 `ChronoSavior/씬 구성 검증` — 빈 칸·빠진 연결을 잡는다.
 2. PlayMode 테스트 전체.
 3. 캡처 도구(`CaptureStagePreview`·`CaptureUiPreview`)로 `docs/baseline-2026-11-06/`과 나란히 비교.
-4. 도트가 어색하면 `pixel-standard.md`의 배율 표를 다시 계산한다.
+4. 메뉴 `ChronoSavior/도트 배율 보고서`로 새 그림의 도트 배율을 본다(정수가 아니면 ⚠) — 기준은 `pixel-standard.md`.

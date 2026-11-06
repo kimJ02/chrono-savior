@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (49)** — **[나] 3.5-f: 도트 배율 보고서 (`feature/asset-seams`, 에디터 도구만).** `Editor/DotScaleReport`(메뉴 `ChronoSavior/도트 배율 보고서`, 배치 `RunBatch -reportOut`) — 그림 묶음·캐릭터·몹(엘리트 포함)·보스/성소·효과의
+  도트 배율(`128 × 화면 크기 ÷ 그림 픽셀`)을 표로, 정수가 아니면 ⚠(지금은 경고만, 임시 도형은 따로 표시). 결과가 `docs/pixel-standard.md` 2절 표와 같다. 최종 그림이 오면 '정수가 아니면 실패'로 강화.
 - **2026-11-06 (48)** — **[나] 3.5-e: 효과 에셋을 연결 칸으로 + 교체 지점 표 (`feature/asset-seams`, PlayMode 474/474, 씬 검증 통과, Codex 통과).** 씬·프리팹이 주인인 효과 — 피격(`EnemyHealth`, `Enemy_Base`)·차지(`MageChargeFlash`)·잔상(`PlayerAfterimages`) 머티리얼은
   공유 에셋 `Assets/Materials/SpriteFlash`(예전 `Resources.Load<Shader>` + 실행 중 `new Material`), 섬영 베기 프레임은 Player의 `BladeSlashVfx.frames`(예전 `Resources.LoadAll` 폴더). 비면 효과를 건너뛰고 검증기가 잡는다.
   정적 함수가 만드는 효과(중력 착탄·소용돌이·폭발 고리·레이저 구간)는 **`docs/asset-swap-points.md`**에 '실제 효과가 오면 효과 프리팹 + 쏘는 쪽이 넘김'으로. 이 표가 '무엇을 바꾸려면 어디를'의 한곳(UI는 팀원 제작 중이라 따로).
