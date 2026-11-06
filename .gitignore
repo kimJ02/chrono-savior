@@ -57,3 +57,8 @@ crashlytics-build.properties
 # Unity 테스트 실행기가 남기는 임시 씬(실행이 중간에 끊기면 남는다)
 /[Aa]ssets/InitTestScene*.unity
 /[Aa]ssets/InitTestScene*.unity.meta
+
+# ===== 라이선스 이펙트 그림 — git 밖(공개 저장소라 팩 내용물 재배포 금지, HANDOFF.md 0-3) =====
+# 메뉴 ChronoSavior/VFX 팩 가져오기가 원본 zip에서 쓰는 프레임만 여기 푼다. 무엇을 쓰는지는 Editor/VfxPackImporter의 목록이 원본.
+/[Aa]ssets/[Rr]esources/[Vv]fx/
+/[Aa]ssets/[Rr]esources/[Vv]fx.meta
