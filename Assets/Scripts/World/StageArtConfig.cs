@@ -31,7 +31,6 @@ namespace ChronoSavior.World
 
         public const float CameraSmoothTimeY = 0.2f;
 
-        /// <summary>1스테이지 배경은 Figma가 원본 640×360을 1.66배로 잘라 넣었다 — 선명하게 정수 3배로 깐다.</summary>
-        public const int BackgroundScale = 3;
+        // 배경 배율·보여 줄 범위는 그 그림에 딸린 값이라 스테이지 그림 묶음(`StageArtSet`)에 있다(2026-11-06 — 예전엔 여기 BackgroundScale = 3).
     }
 }

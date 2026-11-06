@@ -93,14 +93,14 @@ public class StageVisualsTests
         {
             FieldLayout.SetBossArena(boss);
             float minX = FieldBounds.MinX + StageArtConfig.ViewHalfWidth, maxX = FieldBounds.MaxX - StageArtConfig.ViewHalfWidth;
-            float halfWRaw = StageArtConfig.ViewHalfWidth * StageArtConfig.PixelsPerUnit / StageArtConfig.BackgroundScale;
-            float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / StageArtConfig.BackgroundScale;
+            float halfWRaw = StageArtConfig.ViewHalfWidth * StageArtConfig.PixelsPerUnit / (float)TestPrefabs.StageArt.backgroundScale;
+            float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / (float)TestPrefabs.StageArt.backgroundScale;
             for (int i = 0; i <= 10; i++)
             for (int j = 0; j <= 10; j++)
             {
                 float x = Mathf.Lerp(minX, maxX, i / 10f);
                 float y = Mathf.Lerp(CameraFollow2D.MinY, CameraFollow2D.MaxY, j / 10f);
-                Vector2 c = StageVisuals.BackgroundRawCenter(x, y);
+                Vector2 c = StageVisuals.BackgroundRawCenter(TestPrefabs.StageArt, x, y);
                 Assert.GreaterOrEqual(c.x - halfWRaw, -0.01f, $"왼쪽 가장자리가 보인다 (카메라 {x:F2},{y:F2})");
                 Assert.LessOrEqual(c.x + halfWRaw, 640.01f, $"오른쪽 가장자리가 보인다 (카메라 {x:F2},{y:F2})");
                 Assert.GreaterOrEqual(c.y - halfHRaw, -0.01f, $"위 가장자리가 보인다 (카메라 {x:F2},{y:F2})");
@@ -113,8 +113,8 @@ public class StageVisualsTests
     public void Background_GrassLineSitsOnGround_WhenStandingOnGround()
     {
         float camY = CameraFollow2D.MinY;
-        Vector2 c = StageVisuals.BackgroundRawCenter(StageArtConfig.ViewHalfWidth, camY);
-        float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / StageArtConfig.BackgroundScale;
+        Vector2 c = StageVisuals.BackgroundRawCenter(TestPrefabs.StageArt, StageArtConfig.ViewHalfWidth, camY);
+        float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / (float)TestPrefabs.StageArt.backgroundScale;
         float groundRawY = (c.y - halfHRaw) + (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw;
         Assert.AreEqual(181.8f, groundRawY, 0.05f, "그림 속 풀밭이 우리 지면 높이에 안 온다");
     }
@@ -135,6 +135,7 @@ public class StageVisualsTests
         boss.SetActive(false); // 실제 씬처럼 보스 무대는 꺼진 채 시작
 
         var visuals = new GameObject("StageVisuals").AddComponent<StageVisuals>();
+        visuals.Art = TestPrefabs.StageArt; // 게임 씬과 같은 그림 묶음
         // 실제 씬에선 직렬화 참조(2026-11-05 2b — 예전엔 이름·타입으로 씬을 뒤졌다)
         visuals.Ground = ground.transform;
         visuals.PlatformSets = new[] { normal.GetComponent<PlatformSet>(), boss.GetComponent<PlatformSet>() };
@@ -168,7 +169,7 @@ public class StageVisualsTests
         var bg = visuals.transform.Find("Background");
         Assert.IsNotNull(bg);
         Assert.AreEqual(StageVisuals.BackgroundOrder, bg.GetComponent<SpriteRenderer>().sortingOrder);
-        Assert.AreEqual((float)StageArtConfig.BackgroundScale, bg.localScale.x, 1e-6f, "배경이 정수배가 아니다");
+        Assert.AreEqual((float)TestPrefabs.StageArt.backgroundScale, bg.localScale.x, 1e-6f, "배경이 정수배가 아니다");
     }
 
     const float Px = 1f / StageArtConfig.PixelsPerUnit; // 1픽셀
@@ -204,11 +205,12 @@ public class StageVisualsTests
     [Test]
     public void FigmaArt_IsImportedPixelExact()
     {
-        AssertSprite("ground_top", 64f, new Vector2(0.5f, 0.5f));
-        AssertSprite("ground_dirt", 64f, new Vector2(0.5f, 0.5f));
-        AssertSprite("platform_tile", 128f, new Vector2(0.125f, 0.125f));
-        AssertSprite("bg_forest", 128f, new Vector2(5f, 2.8125f));
-        AssertSprite("portal", 128f, new Vector2(0.25f, 0.5f));
+        var set = TestPrefabs.StageArt; // 게임 씬의 StageVisuals가 쓰는 그림 묶음
+        AssertSprite(set.groundTop, "ground_top", 64f, new Vector2(0.5f, 0.5f));
+        AssertSprite(set.groundDirt, "ground_dirt", 64f, new Vector2(0.5f, 0.5f));
+        AssertSprite(set.platformTile, "platform_tile", 128f, new Vector2(0.125f, 0.125f));
+        AssertSprite(set.background, "bg_forest", 128f, new Vector2(5f, 2.8125f));
+        AssertSprite(set.portal, "portal", 128f, new Vector2(0.25f, 0.5f));
     }
 
     [Test]
@@ -219,24 +221,25 @@ public class StageVisualsTests
         go.transform.localScale = new Vector3(0.7f, 1.56f, 1f); // 예전 흰 원을 문 모양으로 늘린 배율
         go.AddComponent<SpriteRenderer>();
         var portal = go.AddComponent<BossPortal>();
-        var art = Resources.Load<Sprite>(StageVisuals.ArtFolder + "portal");
+        var set = TestPrefabs.StageArt;
+        var art = set.portal;
 
-        portal.ApplyArt(art);
+        portal.ApplyArt(art, set.portalScale);
 
         var sr = go.GetComponent<SpriteRenderer>();
         Assert.AreSame(art, sr.sprite);
         Assert.AreEqual(new Vector3(1.5f, 1.5f, 1f), go.transform.localScale, "포탈 1.5배(사용자 결정 2026-10-24)");
-        Assert.AreEqual(FieldBounds.GroundY, go.transform.position.y - art.bounds.size.y * BossPortal.ArtScale / 2f, 1e-4f,
+        Assert.AreEqual(FieldBounds.GroundY, go.transform.position.y - art.bounds.size.y * set.portalScale / 2f, 1e-4f,
             "포탈이 땅 위에 안 서 있다");
         Assert.AreEqual(FieldLayout.BossPortalX, go.transform.position.x, 1e-4f);
         Assert.AreEqual(Color.white, portal.unlockedColor, "열린 포탈은 그림 색 그대로(밝기만 깜빡) — 보라를 곱하면 탁해진다");
         Assert.AreEqual(BossPortal.LockedArtColor, portal.lockedColor);
     }
 
-    static void AssertSprite(string name, float ppu, Vector2 size)
+    static void AssertSprite(Sprite s, string name, float ppu, Vector2 size)
     {
-        var s = Resources.Load<Sprite>(StageVisuals.ArtFolder + name);
         Assert.IsNotNull(s, name + " 그림이 없다");
+        Assert.AreEqual(name, s.name, "그림 묶음의 칸에 다른 그림이 들어갔다");
         Assert.AreEqual(ppu, s.pixelsPerUnit, 1e-4f, name + " 픽셀/유닛");
         Assert.AreEqual(FilterMode.Point, s.texture.filterMode, name + "이 흐리게(Bilinear) 들어왔다");
         Assert.AreEqual(size.x, s.bounds.size.x, 1e-4f, name + " 가로 크기");

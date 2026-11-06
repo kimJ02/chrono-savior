@@ -32,6 +32,23 @@ namespace ChronoSavior.Tests.PlayMode
         public static GunnerTurret GunnerTurret => Load<GunnerTurret>("GunnerTurret");
         public static ChronoSavior.Systems.ExpOrb ExpOrb => Load<ChronoSavior.Systems.ExpOrb>("ExpOrb");
 
+        /// <summary>1스테이지(숲) 그림 묶음 — 게임 씬의 `StageVisuals`가 쓰는 에셋.</summary>
+        public static ChronoSavior.World.StageArtSet StageArt
+        {
+            get
+            {
+#if UNITY_EDITOR
+                var a = UnityEditor.AssetDatabase.LoadAssetAtPath<ChronoSavior.World.StageArtSet>(StageArtPath);
+                if (a == null) throw new System.InvalidOperationException("스테이지 그림 묶음이 없다: " + StageArtPath);
+                return a;
+#else
+                throw new System.NotSupportedException("TestPrefabs는 에디터에서만 쓴다");
+#endif
+            }
+        }
+
+        public const string StageArtPath = "Assets/Data/Stages/StageArt_Forest.asset";
+
         /// <summary>테스트가 만든 무기·몹에 게임과 같은 탄 프리팹을 끼운다(게임에선 20_Combat의 Player·몹 프리팹에 꽂혀 있다). `AddComponent&lt;MageAttack&gt;().Equipped()`.</summary>
         public static MageAttack Equipped(this MageAttack mage) { mage.BoltPrefab = MageBolt; return mage; }
         public static GunnerAttack Equipped(this GunnerAttack gunner)

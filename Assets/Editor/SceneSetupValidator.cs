@@ -156,6 +156,7 @@ namespace ChronoSavior.Editor
             if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");
             if (director != null && director.BossPortal != portal) problems.Add("CombatDirector.BossPortal이 이 씬의 BossPortal이 아니다 — 전투 화면에 포탈 안내·미니맵 점이 안 나온다");
             var visuals = One<StageVisuals>(combat, problems);
+            CheckStageArt(visuals, combat.name, problems);
             if (visuals != null)
             {
                 var groundGo = combat.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");
@@ -297,6 +298,19 @@ namespace ChronoSavior.Editor
         }
 
         /// <summary>
+        /// 스테이지 그림 묶음(`StageArtSet`, 2026-11-06 에셋 교체 경계) — `StageVisuals`가 그림을 경로가 아니라 이 에셋에서 받으므로, 칸이 비면 실행 중에야 안 보인다. 여기서 미리 잡는다.
+        /// </summary>
+        static void CheckStageArt(StageVisuals visuals, string sceneName, List<string> problems)
+        {
+            if (visuals == null) return; // 없는 건 One<StageVisuals>가 잡는다
+            var art = visuals.Art;
+            if (art == null) { problems.Add($"{sceneName} StageVisuals의 그림 묶음(StageArtSet)이 비어 있다"); return; }
+            if (art.groundTop == null || art.groundDirt == null || art.platformTile == null || art.background == null || art.portal == null)
+                problems.Add($"{sceneName} 그림 묶음({art.name})에 빈 칸이 있다(땅 윗면·흙·발판·배경·포탈)");
+            if (art.backgroundScale < 1) problems.Add($"{sceneName} 그림 묶음({art.name})의 배경 배율이 1보다 작다");
+        }
+
+        /// <summary>
         /// 탄 프리팹 — 비어 있지 않고, 프리팹 안의 직렬화 참조(리지드바디·판정·그림 자식)가 전부 이어져 있고, 런이 끝나면 사라지는 표식(RunTransient)이 있다.
         /// 구성이 프리팹에 있으니 참조 하나가 끊기면 실행 중에야 터진다 — 여기서 미리 잡는다.
         /// </summary>
@@ -354,6 +368,7 @@ namespace ChronoSavior.Editor
             var ground = lobby.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");
             if (ground == null || ground.GetComponent<BoxCollider2D>() == null) problems.Add("10_Lobby에 Ground(BoxCollider2D — 땅 그림 크기 입력)가 없다");
             var visuals = One<StageVisuals>(lobby, problems);
+            CheckStageArt(visuals, lobby.name, problems);
             if (visuals != null)
             {
                 if (ground == null || visuals.Ground != ground.transform) problems.Add("10_Lobby StageVisuals.Ground가 이 씬의 Ground가 아니다");

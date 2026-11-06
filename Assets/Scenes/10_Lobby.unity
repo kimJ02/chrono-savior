@@ -554,6 +554,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed47ef84921e4652a5b8d85cf321c0eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  art: {fileID: 11400000, guid: 2ce623f907d08fc489e14026e85647bb, type: 2}
   ground: {fileID: 1354175749}
   platformSets: []
   portal: {fileID: 0}

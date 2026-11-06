@@ -16,25 +16,24 @@ namespace ChronoSavior.World
     ///   발판 오브젝트의 자식이라 보스 무대로 바뀔 때(`PlatformSet.Activate`) 같이 켜지고 꺼진다.
     /// - **배경**: 원본 640×360을 정수 3배로 깔고 카메라를 따라가되 천천히 움직인다(시차). 카메라가 필드 끝에서 끝까지
     ///   가도 그림 가장자리가 안 보이게, 카메라 위치를 그림 안쪽 범위로 옮겨 계산한다(<see cref="BackgroundRawCenter"/>).
-    /// - **보스 포탈**: Figma 포탈 그림(1배)으로 바꾼다 — <see cref="BossPortal.ApplyArt"/>.
-    /// 그림은 `Resources/Art/Figma/Stage1/`(가져오기 설정은 `Editor/FigmaArtImporter`).
+    /// - **보스 포탈**: 그림 묶음의 포탈 그림으로 바꾼다 — <see cref="BossPortal.ApplyArt"/>.
+    /// 그림은 **스테이지 그림 묶음(<see cref="StageArtSet"/>)에서 직렬화로** 받는다(2026-11-06 에셋 교체 경계 — 예전엔 `Resources/Art/Figma/Stage1/`을 경로 문자열로 읽었다).
+    /// 그림을 바꿀 땐 그 에셋만 바꾼다. 그림 파일 가져오기 설정은 `Editor/FigmaArtImporter`.
     /// </summary>
     [DefaultExecutionOrder(100)] // 카메라(`CameraFollow2D.LateUpdate`)가 움직인 뒤에 배경을 맞춘다
     public class StageVisuals : MonoBehaviour
     {
-        public const string ArtFolder = "Art/Figma/Stage1/";
         public const int BackgroundOrder = -100;
         public const int GroundOrder = -5;
         public const int GroundRows = 3;
 
-        // 배경 원본(640×360) 안에서 카메라 중심이 가리킬 수 있는 범위(원본 px). 3배라 화면 반폭 = 160px, 반높이 ≈ 90px.
-        // 가로는 Figma가 보여준 부분(가운데 원본 x≈397)을 중심으로 좌우 끝까지 여유를 두고,
-        // 세로는 땅에 섰을 때 그림 속 풀밭(원본 y≈182)이 우리 지면 높이에 오게 맞춘다.
-        const float RawW = 640f, RawH = 360f;
-        const float RawCenterXLeft = 190f, RawCenterXRight = 450f;
-        const float RawGrassY = 181.8f;
+        [Tooltip("이 스테이지의 그림 묶음(Assets/Data/Stages/) — 땅·발판·배경·포탈 그림과 그 그림에 딸린 배율·범위.")]
+        [SerializeField] StageArtSet art;
 
-        [Header("같은 씬(20_Combat)의 판정 상자 — 그 위에 그림을 깐다")]
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public StageArtSet Art { get => art; set => art = value; }
+
+        [Header("같은 씬의 판정 상자 — 그 위에 그림을 깐다")]
         [Tooltip("땅(LineRenderer가 그려진 판정 상자).")]
         [SerializeField] Transform ground;
         [Tooltip("발판 세트(일반·보스) — 그 아래 Platform_* 마다 타일을 깐다.")]
@@ -54,16 +53,14 @@ namespace ChronoSavior.World
         /// <summary>씬에 있는 땅·발판·카메라에 그림을 붙인다. 두 번 불러도 한 번만 깐다.</summary>
         public void Build()
         {
-            var top = Resources.Load<Sprite>(ArtFolder + "ground_top");
-            var dirt = Resources.Load<Sprite>(ArtFolder + "ground_dirt");
-            var plat = Resources.Load<Sprite>(ArtFolder + "platform_tile");
-            var bg = Resources.Load<Sprite>(ArtFolder + "bg_forest");
-            var portalArt = Resources.Load<Sprite>(ArtFolder + "portal");
-            if (top == null || dirt == null || plat == null || bg == null)
+            // 포탈 그림은 포탈이 있는 씬(전투)에서만 필요하다 — 로비엔 포탈이 없다.
+            if (art == null || art.groundTop == null || art.groundDirt == null || art.platformTile == null || art.background == null
+                || (portal != null && art.portal == null))
             {
-                Debug.LogWarning("[StageVisuals] 1스테이지 그림을 못 찾았다 — Resources/" + ArtFolder);
+                Debug.LogError("[StageVisuals] 스테이지 그림 묶음(StageArtSet)이 비었거나 칸이 빠졌다 — 메뉴 ChronoSavior/씬 구성 검증", this);
                 return;
             }
+            Sprite top = art.groundTop, dirt = art.groundDirt, plat = art.platformTile, bg = art.background;
 
             if (ground != null) BuildGround(ground.gameObject, top, dirt);
 
@@ -75,7 +72,7 @@ namespace ChronoSavior.World
 
             if (background == null) BuildBackground(bg);
 
-            if (portalArt != null && portal != null) portal.ApplyArt(portalArt);
+            if (portal != null) portal.ApplyArt(art.portal, art.portalScale);
         }
 
         void BuildGround(GameObject ground, Sprite top, Sprite dirt)
@@ -153,7 +150,7 @@ namespace ChronoSavior.World
         {
             var go = new GameObject("Background");
             go.transform.SetParent(transform, false);
-            go.transform.localScale = new Vector3(StageArtConfig.BackgroundScale, StageArtConfig.BackgroundScale, 1f);
+            go.transform.localScale = new Vector3(art.backgroundScale, art.backgroundScale, 1f);
             var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = bg;
             sr.sortingOrder = BackgroundOrder;
@@ -167,16 +164,17 @@ namespace ChronoSavior.World
             var cam = CameraFollow2D.CurrentCamera; // 카메라는 다른 씬(00_Persistent)이라 등록으로 읽는다
             if (cam == null) return;
             Vector3 c = cam.transform.position;
-            background.position = BackgroundPosition(c.x, c.y);
+            background.position = BackgroundPosition(art, c.x, c.y);
         }
 
         /// <summary>카메라 중심이 (camX, camY)일 때 배경 그림의 위치(그림 가운데 기준).</summary>
-        public static Vector3 BackgroundPosition(float camX, float camY)
+        public static Vector3 BackgroundPosition(StageArtSet art, float camX, float camY)
         {
-            Vector2 raw = BackgroundRawCenter(camX, camY);
-            float k = StageArtConfig.BackgroundScale / (float)StageArtConfig.PixelsPerUnit; // 원본 1px = 유닛
-            float dx = (raw.x - RawW / 2f) * k;
-            float dy = -(raw.y - RawH / 2f) * k; // 그림은 위에서 아래로, 월드는 아래에서 위로
+            Vector2 raw = BackgroundRawCenter(art, camX, camY);
+            var rect = art.background.rect;
+            float k = art.backgroundScale / art.background.pixelsPerUnit; // 원본 1px = 유닛
+            float dx = (raw.x - rect.width / 2f) * k;
+            float dy = -(raw.y - rect.height / 2f) * k; // 그림은 위에서 아래로, 월드는 아래에서 위로
             return new Vector3(camX - dx, camY - dy, 0f);
         }
 
@@ -184,17 +182,17 @@ namespace ChronoSavior.World
         /// 카메라 중심이 가리키는 배경 원본의 점(px, 왼쪽 위 기준). 카메라가 움직일 수 있는 범위 전체를 그림 안쪽 범위로
         /// 비례해 옮기므로, 어디에 있어도 화면에 그림 가장자리가 안 걸린다.
         /// </summary>
-        public static Vector2 BackgroundRawCenter(float camX, float camY)
+        public static Vector2 BackgroundRawCenter(StageArtSet art, float camX, float camY)
         {
             float halfW = StageArtConfig.ViewHalfWidth, halfH = StageArtConfig.ViewHalfHeight;
             float minX = Core.FieldBounds.MinX + halfW, maxX = Core.FieldBounds.MaxX - halfW;
             float tx = maxX > minX ? Mathf.InverseLerp(minX, maxX, camX) : 0.5f;
-            float u = Mathf.Lerp(RawCenterXLeft, RawCenterXRight, tx);
+            float u = Mathf.Lerp(art.backgroundViewLeftPx, art.backgroundViewRightPx, tx);
 
             // 땅에 섰을 때(카메라 최저) 그림 속 풀밭이 지면 높이에 오게: 지면은 화면 아래에서 GroundScreenFraction.
-            float pxPerUnitRaw = StageArtConfig.PixelsPerUnit / (float)StageArtConfig.BackgroundScale;
+            float pxPerUnitRaw = art.background.pixelsPerUnit / art.backgroundScale;
             float halfHRaw = halfH * pxPerUnitRaw;
-            float vLow = RawGrassY - (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw + halfHRaw;
+            float vLow = art.backgroundGrassYPx - (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw + halfHRaw;
             float vHigh = halfHRaw; // 맨 위 발판에 섰을 때 — 그림 윗변이 화면 윗변
             float minY = CameraFollow2D.MinY, maxY = CameraFollow2D.MaxY;
             float ty = maxY > minY ? Mathf.InverseLerp(minY, maxY, camY) : 0f;
