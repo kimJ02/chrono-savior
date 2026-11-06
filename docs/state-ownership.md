@@ -44,11 +44,11 @@
 - `SaveService.PathOverride` — 테스트가 세이브 경로를 임시 파일로 돌린다(`TestSaveSandbox`). 게임에선 비어 있다.
 - 각 정적 클래스의 `Reset()` — 테스트 격리용(게임 흐름에선 부르지 않는다: `CombatModifiers.ResetForRun`·`HitFeel.Reset`처럼 게임이 부르는 초기화는 위 표의 '수명' 칸).
 
-## 6. 정리할 것 (4-1~4-5)
+## 6. 4단계에서 정리한 것 (4-1~4-5, 전부 완료)
 
 - ✅ 왕복 수명(4-5): 로비 → 사냥 → 로비 뒤 로비 창구·카메라 기준점은 남고, 전투 창구·담당 등록·몹·중력장·드론·포탑·런 오브젝트는 비며, 정적 이벤트·프로필 이벤트 구독자 수가 왕복 전과 같다 — `GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`. `RunState`·`CombatModifiers` 변경 API는 검토만(이미 사건 이름 메서드뿐).
 
-- ✅ `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1). 재점검에서 **사냥 준비가 실패하면 지난 원정 값까지 지워지는** 문제가 나와 `RunState.MaxCombo`로 옮겼다(런 기록이라 `Begin`이 지우고 `Restore`가 되돌린다).
+- ✅ (옛 필드) `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1). 재점검에서 **사냥 준비가 실패하면 지난 원정 값까지 지워지는** 문제가 나와 `RunState.MaxCombo`로 옮겼다(런 기록이라 `Begin`이 지우고 `Restore`가 되돌린다).
 - ✅ `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2). 난이도·보상은 `RunState.Region`을 직접 읽는다.
 - ✅ `FieldBounds.MinX`·`MaxX`·`GroundY`가 public 가변 필드 → `MinX`·`GroundY`는 상수, `MaxX`는 읽기 전용 + `SetMaxX`(4-3).
 - ✅ 재점검(2026-11-06)에서 지역 변수를 거친 통계 쓰기 2곳을 더 찾았다(처음 전수 조사가 `ProfileService.Current.x`·`profile.x` 꼴만 봤다): 평생 최고 콤보(`CombatModifiers`) → `RecordCombo`, 누적 처치·정예(`EnemySpawner`) → `RecordEnemyKill`. 업적 기록(`Achievements.CheckNew`의 `achieved.Add`) → `TryUnlockAchievement`. 새로 찾을 땐 `var stats = …` 같은 별칭과 **제외 목록에 넣은 Core 파일**도 같이 검색할 것.
