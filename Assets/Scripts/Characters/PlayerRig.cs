@@ -37,8 +37,6 @@ namespace ChronoSavior.Characters
 
         /// <summary>씬 검증(`Editor/SceneSetupValidator`)·캡처 도구·테스트가 읽고 넣는다.</summary>
         public CharacterArtSet Art { get => art; set => art = value; }
-        [Tooltip("그림 높이(월드 유닛). 콜라이더 지름도 이 값에 맞춰진다 — 기본값은 Core.EntitySizeConfig.")]
-        public float spriteHeight = EntitySizeConfig.PlayerHeight;
 
         readonly List<ICharacterKit> kits = new List<ICharacterKit>();
         CharacterMover2D mover;
@@ -50,9 +48,6 @@ namespace ChronoSavior.Characters
             sr = GetComponent<SpriteRenderer>();
             // 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)는 씬의 Player에 붙어 있다(2026-11-05 — 예전엔 씬을 다시
             // 굽지 않으려고 여기서 붙였다). 씬 검사(`Editor/SceneSetupValidator`)가 빠졌는지 본다.
-            // 덩치의 단일 출처는 Core.EntitySizeConfig다 — 씬에는 컴포넌트를 붙인 시점의 값(예: 1.0)이
-            // 직렬화돼 남아 있어서, 상수만 바꾸면 씬을 다시 굽기 전까지 실제 게임에 반영되지 않았다.
-            spriteHeight = EntitySizeConfig.PlayerHeight;
             kits.Clear();
             kits.AddRange(GetComponents<ICharacterKit>());
 
@@ -120,19 +115,15 @@ namespace ChronoSavior.Characters
             // 정식 아트(색이 이미 칠해진 그림)로 바꾸면 그 캐릭터 색을 흰색으로 두면 된다(`CharacterArtSet.tints`).
             sr.color = art.TintOf(id);
 
-            float scale = EntitySizeConfig.ScaleToHeight(sprite, spriteHeight); // 로비 아바타와 같은 계산
+            // 그림 크기와 판정 크기는 **따로 정한다**(2026-11-06 3.5-d) — 그림 높이는 그림 에셋(`CharacterArtSet.HeightOf`, 그림을 바꿀 땐 그것만),
+            // 판정 지름은 `EntitySizeConfig.PlayerHeight`(게임 규칙 — 그림을 바꿔도 안 바뀐다). 지금 임시 그림은 둘이 같다(그림 높이 = 판정 지름).
+            float scale = EntitySizeConfig.ScaleToHeight(sprite, art.HeightOf(id)); // 로비 아바타와 같은 계산
             if (scale <= 0f) return;
-
-            // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 —
-            // 그래서 반지름을 역으로 나눠 원하는 월드 반지름을 맞춘다(적 쪽 `EnemySpawner.ApplySize`와 같은 방식).
-            //
-            // 예전엔 **기존 월드 반지름을 그대로 유지**했는데, 그러면 `spriteHeight`를 키워도
-            // 그림만 커지고 히트박스는 그대로라 "보이는 곳을 때렸는데 안 맞는" 상태가 된다.
-            // 지금은 그림 높이가 곧 지름이다.
             transform.localScale = new Vector3(scale, scale, 1f);
 
+            // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 — 반지름을 역으로 나눠 판정 반지름을 맞춘다(적 쪽 `EnemySpawner.ApplySize`와 같은 방식).
             var col = GetComponent<CircleCollider2D>();
-            if (col != null) col.radius = (spriteHeight / 2f) / scale;
+            if (col != null) col.radius = EntitySizeConfig.PlayerRadius / scale;
         }
 
         void ApplySelection(CharacterId id, bool notifyPrevious)

@@ -50,6 +50,10 @@ namespace ChronoSavior.Core
         [Header("몸집")]
         [Tooltip("원형 콜라이더 반지름. 원본은 사각형(w×h)이라 1:1 대응이 없어서, **고블린을 현재 값(0.5)에 고정**하고 나머지는 원본 높이 비율로 환산했다(예: 오우거 h=80 → 0.5×80/46≈0.87).")]
         public float colliderRadius = 0.5f;
+        [Tooltip("그림의 화면 높이(월드 유닛) — 판정(colliderRadius)과 따로 정한다(2026-11-06 3.5-d). 그림을 바꾸면 이것만 맞춘다. " +
+                 "지금 임시 그림은 판정 지름과 같다(BuildEnemyData가 colliderRadius×2로 굽는다). 엘리트는 둘 다 EliteScale배. " +
+                 "0(비어 있음)이면 판정 지름을 쓴다 — 실제 데이터의 빈 칸은 씬 구성 검증이 알린다.")]
+        public float visualHeight;
         public Color color = new Color(0.85f, 0.2f, 0.2f);
 
         /// <summary>

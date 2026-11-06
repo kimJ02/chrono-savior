@@ -304,6 +304,46 @@ public class EnemySpawnAndMoveTests
     }
 
     /// <summary>
+    /// 몹의 그림 높이(`EnemyData.visualHeight`)와 판정 반지름(`EnemyData.colliderRadius`)은 따로다(2026-11-06 3.5-d) — 그림을 키워도 판정은 그대로다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator SpawnedEnemy_ArtHeight_AndHitbox_AreIndependent()
+    {
+        var prefab = new GameObject("TestMonsterPrefab") { tag = "Enemy" };
+        prefab.AddComponent<SpriteRenderer>().sprite = Sprite.Create(new Texture2D(32, 32), new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f), 100f);
+        prefab.AddComponent<CircleCollider2D>().radius = 0.5f;
+        prefab.AddComponent<EnemyMove>();
+        prefab.AddComponent<EnemyHealth>();
+
+        var data = ScriptableObject.CreateInstance<EnemyData>();
+        data.type = EnemyType.Grunt;
+        data.colliderRadius = 0.25f;
+        data.visualHeight = 1.0f; // 판정 지름(0.5)의 두 배로 그림만
+        var catalog = ScriptableObject.CreateInstance<MonsterCatalog>();
+        catalog.types = new[] { data };
+
+        var spawnerGO = new GameObject("TestSpawner");
+        var spawner = spawnerGO.AddComponent<EnemySpawner>();
+        spawner.monsterPrefab = prefab;
+        spawner.Catalog = catalog;
+        spawner.eliteChanceOverride = 0f;
+        int before = Object.FindObjectsByType<EnemyMove>(FindObjectsSortMode.None).Length;
+        EnemySpawnRequestBus.Request(new Vector2(5f, FieldBounds.GroundY + 0.5f), EnemyType.Grunt, 0.1f);
+        var spawned = System.Linq.Enumerable.First(Object.FindObjectsByType<EnemyMove>(FindObjectsSortMode.None), m => m.gameObject != prefab);
+        Assert.AreEqual(before + 1, Object.FindObjectsByType<EnemyMove>(FindObjectsSortMode.None).Length);
+
+        Assert.AreEqual(1.0f, spawned.GetComponent<SpriteRenderer>().bounds.size.y, 1e-3f, "그림은 데이터의 그림 높이로");
+        Assert.AreEqual(0.25f, spawned.WorldRadius, 1e-4f, "판정 반지름은 그림과 상관없이 데이터 값");
+
+        Object.Destroy(spawned.gameObject);
+        Object.Destroy(prefab);
+        Object.Destroy(spawnerGO);
+        Object.DestroyImmediate(catalog);
+        Object.DestroyImmediate(data);
+        yield return null;
+    }
+
+    /// <summary>
     /// 원본 spawnInvuln(스폰 직후 2초 무적) — 몹이 무적 상태를 내보이고(`ISpawnProtectable`), 시간이 지나면 풀린다.
     /// 공격마다 이 상태를 보고 건너뛰는 것은 각 공격의 테스트가 본다(예전엔 쓰지 않는 범용 근접 공격으로 봤다 — 2026-11-05 삭제).
     /// </summary>

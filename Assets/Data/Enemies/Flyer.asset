@@ -23,6 +23,7 @@ MonoBehaviour:
   goldMax: 6
   knockbackMultiplier: 1
   colliderRadius: 0.18478261
+  visualHeight: 0.36956522
   color: {r: 0.56, g: 0.85, b: 1, a: 1}
   sprite: {fileID: 21300000, guid: b5e6490650b4af14c9a1fb12818b58cf, type: 3}
   shape: 2

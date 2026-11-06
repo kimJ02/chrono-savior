@@ -29,6 +29,12 @@ namespace ChronoSavior.Core
         [Tooltip("성소 그림. 비어 있으면 프리팹의 기본 스프라이트를 색만 칠해서 쓴다.")]
         public Sprite shrine;
 
+        [Tooltip("보스 그림의 화면 크기(가로·세로, 월드 유닛) — 판정(Core.EntitySizeConfig.BossWidth/Height)과 따로(2026-11-06 3.5-d). 그림을 바꾸면 이것만. 지금은 원본 크기 1.30×1.50.")]
+        public Vector2 bossSize = new Vector2(1.30f, 1.50f);
+
+        [Tooltip("성소 그림의 화면 크기(가로·세로, 월드 유닛) — 판정과 따로. 지금은 원본 크기 0.64×0.96.")]
+        public Vector2 shrineSize = new Vector2(0.64f, 0.96f);
+
         /// <summary>그 종류의 데이터 — 없으면 null.</summary>
         public EnemyData Find(EnemyType type)
         {

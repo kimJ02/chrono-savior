@@ -1,7 +1,9 @@
 namespace ChronoSavior.Core
 {
     /// <summary>
-    /// 화면에 보이는 **덩치**를 한곳에서 정한다 — 플레이어 · 몹 · 성소 · 보스.
+    /// **판정 덩치**(게임 규칙)를 한곳에서 정한다 — 플레이어 · 몹 · 성소 · 보스.
+    /// 그림의 화면 크기는 2026-11-06(3.5-d)부터 그림 데이터가 따로 정한다(`CharacterArtSet.heights`·`EnemyData.visualHeight`·`MonsterCatalog.bossSize/shrineSize`) —
+    /// 외주 그림으로 바꿔도 판정은 그대로다. 지금 임시 그림은 판정과 같은 크기로 보이게 맞춰 두었다.
     ///
     /// ## 왜 한곳에 모으나
     /// 덩치는 세 군데에 흩어져 있었다: 몹은 `BuildEnemyData`가 굽는 `EnemyData.colliderRadius`,

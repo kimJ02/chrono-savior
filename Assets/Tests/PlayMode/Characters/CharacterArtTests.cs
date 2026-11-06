@@ -46,7 +46,36 @@ public class CharacterArtTests
         Object.DestroyImmediate(art);
     }
 
-    /// <summary>캐릭터가 바뀌면 그 캐릭터의 그림·색으로 갈아입고, 그림 높이가 콜라이더 지름이 되게 맞춘다.</summary>
+    /// <summary>
+    /// 그림의 화면 높이(그림 에셋)와 판정 크기(`EntitySizeConfig`)는 따로다(2026-11-06 3.5-d) — 그림 높이를 바꿔도, 픽셀 수·PPU가 다른 그림으로 바꿔도
+    /// 판정 반지름은 그대로다(외주 그림으로 갈아끼울 때 게임이 바뀌지 않게).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Player_ArtHeight_AndHitbox_AreIndependent()
+    {
+        var go = new GameObject("TestPlayer");
+        var sr = go.AddComponent<SpriteRenderer>();
+        var col = go.AddComponent<CircleCollider2D>();
+        go.AddComponent<Rigidbody2D>().gravityScale = 0f;
+        go.AddComponent<CharacterMover2D>();
+        go.AddComponent<MageAttack>().Equipped();
+        go.AddComponent<GunnerAttack>().Equipped();
+        var rig = go.AddComponent<PlayerRig>();
+
+        var art = ScriptableObject.CreateInstance<CharacterArtSet>();
+        art.sprites[(int)CharacterId.Gunner] = Sprite.Create(new Texture2D(16, 96), new Rect(0, 0, 16, 96), new Vector2(0.5f, 0f), 128f); // 다른 크기·PPU
+        art.heights[(int)CharacterId.Gunner] = 0.8f; // 그림만 키운다
+        rig.Art = art;
+        ProfileService.Current.character = CharacterId.Gunner;
+        yield return null;
+        yield return null;
+
+        Assert.AreEqual(0.8f, sr.bounds.size.y, 1e-4f, "그림은 그림 에셋의 높이로 보인다");
+        Assert.AreEqual(EntitySizeConfig.PlayerRadius, col.radius * go.transform.lossyScale.x, 1e-4f, "판정 반지름은 그림과 상관없이 그대로");
+        Object.DestroyImmediate(art);
+    }
+
+    /// <summary>캐릭터가 바뀌면 그 캐릭터의 그림·색으로 갈아입고, (그림 높이가 비어 있으면 판정 높이로) 그림 높이가 콜라이더 지름이 되게 맞춘다.</summary>
     [UnityTest]
     public IEnumerator Player_WearsTheSelectedCharactersArt()
     {

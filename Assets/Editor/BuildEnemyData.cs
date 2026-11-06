@@ -125,6 +125,7 @@ namespace ChronoSavior.Editor
                 asset.goldMax = row.goldMax;
                 asset.knockbackMultiplier = row.knockbackMul;
                 asset.colliderRadius = RadiusFor(row.h);
+                asset.visualHeight = asset.colliderRadius * 2f; // 지금 임시 그림은 판정 지름과 같은 높이로 보인다 — 외주 그림이 오면 그림에 맞춰 바꾼다
                 asset.color = row.color;
                 // ⚠️ 프로토타입 그림은 **정식 아트가 들어온 종류만** 교체한다 — 아래 SpriteEnabledTypes 참고.
                 // 나머지는 사용자 지시(2026-09-16) "일단 스킨 씌우지 말고 네모 세모 동그라미로만"가

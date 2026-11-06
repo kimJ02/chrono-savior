@@ -281,8 +281,11 @@ namespace ChronoSavior.Editor
                     _ => null,
                 };
                 Check(d.prefab, $"{d.type}", expected);
+                if (d.visualHeight <= 0f) problems.Add($"{d.type} 데이터의 그림 높이(visualHeight)가 비어 있다");
             }
             Check(catalog.bossPrefab, "보스", typeof(ChronoSavior.Enemies.Boss));
+            if (catalog.bossSize.x <= 0f || catalog.bossSize.y <= 0f || catalog.shrineSize.x <= 0f || catalog.shrineSize.y <= 0f)
+                problems.Add("몬스터 목록의 보스·성소 그림 크기가 비어 있다");
             if (catalog.bossPrefab != null && catalog.bossPrefab.TryGetComponent(out ChronoSavior.Enemies.Boss bossKit)) CheckProjectilePrefab(bossKit.BoltPrefab, "보스 프리팹 Boss.boltPrefab", problems);
             var shooterData = catalog.Find(ChronoSavior.Core.EnemyType.Shooter);
             if (shooterData != null && shooterData.prefab != null && shooterData.prefab.TryGetComponent(out ChronoSavior.Enemies.EnemyShooterMotion shooterKit))
@@ -347,6 +350,9 @@ namespace ChronoSavior.Editor
             if (art == null) { problems.Add("Player의 캐릭터 그림(CharacterArtSet)이 비어 있다"); return; }
             if (art.sprites == null || art.sprites.Length != ChronoSavior.Core.CharacterArtSet.Count || art.tints == null || art.tints.Length != ChronoSavior.Core.CharacterArtSet.Count)
                 problems.Add($"캐릭터 그림 배열 길이가 캐릭터 수({ChronoSavior.Core.CharacterArtSet.Count})와 다르다");
+            // 그림의 화면 높이(2026-11-06 3.5-d) — 판정과 따로 정하는 값이라 비면 조용히 판정 높이로 떨어진다. 실제 에셋은 다 채운다.
+            if (art.heights == null || art.heights.Length != ChronoSavior.Core.CharacterArtSet.Count || art.heights.Any(h => h <= 0f))
+                problems.Add("캐릭터 그림의 화면 높이(heights)가 캐릭터마다 채워져 있지 않다");
             foreach (var kit in player.GetComponents<ICharacterKit>())
                 if (art.SpriteOf(kit.Character) == null) problems.Add($"캐릭터 그림에 {kit.Character} 그림이 없다(키트는 있다)");
             // 로비 캐릭터 선택은 프로필만 바꾸고 Player가 따라간다 — 고를 수 있는 캐릭터는 키트가 있어야 한다(없으면 PlayerRig가 프로필을 되돌려 고른 게 무시된다).

@@ -314,7 +314,7 @@ public class EnemySpawner : MonoBehaviour
         // 원본 w:64 h:96(`:698`) — 고블린(42×46)의 두 배 높이인 세로로 긴 구조물이다.
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(1f, 0.54f, 0.42f); // 원본 colors.soul '#ff8a6a'
-        FitToWorldSize(go, catalog.shrine, EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight);
+        FitToWorldSize(go, catalog.shrine, catalog.shrineSize, Mathf.Min(EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight) / 2f);
 
         aliveShrine = go.transform;
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
@@ -361,7 +361,7 @@ public class EnemySpawner : MonoBehaviour
         var sr = go.GetComponent<SpriteRenderer>();
         if (sr != null) sr.color = new Color(0.78f, 0.42f, 1f); // 원본 colors.soul '#c86aff'
         // 보스 탄은 탄 프리팹의 그림(기본 몹 그림)을 쓴다 — 보스 그림을 그대로 쓰면 화면을 가리는 거대한 탄이 날아간다(Enemy_Boss의 Boss.boltPrefab).
-        FitToWorldSize(go, catalog.boss, EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight);
+        FitToWorldSize(go, catalog.boss, catalog.bossSize, Mathf.Min(EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight) / 2f);
 
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
         // 넣으면 보스전 상한(4) 한 자리를 보스가 먹어 잡몹이 3마리만 나온다.
@@ -378,9 +378,12 @@ public class EnemySpawner : MonoBehaviour
     ///
     /// 콜라이더가 같은 GameObject에 있어 `localScale`이 물리에도 걸리므로, 반지름은 역으로 나눠
     /// 월드 반지름을 따로 맞춘다(`ApplySize`가 잡몹에게 하는 것과 같은 계산).
+    /// **그림 크기(<paramref name="visualSize"/>, 몬스터 목록)와 판정 반지름(<paramref name="hitRadius"/>, `EntitySizeConfig`)은 따로 받는다**(2026-11-06 3.5-d).
+    /// 원형 판정은 원본 크기의 가로/세로 중 **작은 쪽**에 맞춘다 — 큰 쪽에 맞추면 그림 밖까지 맞는다.
     /// </summary>
-    static void FitToWorldSize(GameObject go, Sprite sprite, float worldWidth, float worldHeight)
+    static void FitToWorldSize(GameObject go, Sprite sprite, Vector2 visualSize, float hitRadius)
     {
+        float worldWidth = visualSize.x, worldHeight = visualSize.y;
         var sr = go.GetComponent<SpriteRenderer>();
 
         // 그림이 있으면 그림 크기를 기준으로, 없으면 프리팹의 기본 스프라이트를 기준으로 늘린다.
@@ -391,10 +394,9 @@ public class EnemySpawner : MonoBehaviour
         var scale = new Vector3(worldWidth / size.x, worldHeight / size.y, 1f);
         go.transform.localScale = scale;
 
-        // 원형 콜라이더라 가로/세로 중 **작은 쪽**에 맞춘다 — 큰 쪽에 맞추면 그림 밖까지 맞는다.
         var col = go.GetComponent<CircleCollider2D>();
         if (col != null && Mathf.Abs(scale.x) > 0.0001f)
-            col.radius = (Mathf.Min(worldWidth, worldHeight) / 2f) / scale.x;
+            col.radius = hitRadius / scale.x;
 
         if (sprite != null && sr != null)
         {
@@ -629,12 +631,11 @@ public class EnemySpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 종류별 몸집(`EnemyData.colliderRadius`)과 엘리트 확대(원본 `w: base.w * sizeMul`, `:3954`)를
-    /// **`transform.localScale`로** 적용한다. 콜라이더 반지름만 바꾸면 스프라이트는 그대로라
-    /// 오우거가 "보이는 것보다 훨씬 넓게 때리는" 몹이 된다 — 눈에 안 보이는 종류의 어긋남이라
-    /// 굳이 스케일 쪽으로 통일했다(<see cref="EnemyMove.WorldRadius"/> 참고).
+    /// 종류별 **그림 크기**(`EnemyData.visualHeight`)와 **판정 크기**(`EnemyData.colliderRadius`)를 각각 적용한다 — 엘리트는 둘 다 확대
+    /// (원본 `w: base.w * sizeMul`, `:3954`). 둘은 따로 정한다(2026-11-06 3.5-d): 그림을 바꿀 땐 그림 높이만, 판정은 게임 규칙이라 그림과 상관없다.
+    /// 지금 임시 그림은 둘이 같다(그림 높이 = 판정 지름 — 예전 '보이는 것보다 넓게 때리는 오우거' 문제를 막으려고 맞춰 둔 값, `BuildEnemyData`).
     ///
-    /// 스폰 지점 Y는 프리팹 반지름(고블린 0.5) 기준으로 이미 계산돼 있으므로, 커진 만큼 들어올려
+    /// 스폰 지점 Y는 프리팹 반지름(고블린 0.5) 기준으로 이미 계산돼 있으므로, 판정이 커진 만큼 들어올려
     /// 발을 지면/발판에 맞춘다. 안 그러면 큰 몹이 지면에 파묻힌 채 물리에 밀려 튀어오른다.
     /// </summary>
     void ApplySize(GameObject monster, EnemyData data, bool elite)
@@ -645,21 +646,20 @@ public class EnemySpawner : MonoBehaviour
         float prefabWorldRadius = col.radius * monster.transform.localScale.x; // 고블린 기준 0.5
         if (prefabWorldRadius <= 0f) return;
 
-        float wantRadius = (data != null ? data.colliderRadius : prefabWorldRadius)
-                           * (elite ? DifficultyScalingConfig.EliteScale : 1f);
+        float eliteMul = elite ? DifficultyScalingConfig.EliteScale : 1f;
+        float wantRadius = (data != null ? data.colliderRadius : prefabWorldRadius) * eliteMul;       // 판정
+        float wantHeight = (data != null && data.visualHeight > 0f ? data.visualHeight : wantRadius / eliteMul * 2f) * eliteMul;  // 그림(비어 있으면 판정 지름)
 
-        // ── 크기를 정하는 두 조건을 동시에 맞춘다 ──────────────────────────────
-        // 콜라이더와 스프라이트가 **같은 GameObject**에 있어서 `localScale`이 둘 다에 걸린다.
-        // 그래서 스케일 하나로 그림 크기를 맞추고, 콜라이더는 `radius`를 역으로 나눠 보정한다:
+        // ── 콜라이더와 스프라이트가 **같은 GameObject**에 있어서 `localScale`이 둘 다에 걸린다 ──
+        // 스케일 하나로 그림 높이를 맞추고, 콜라이더는 `radius`를 역으로 나눠 판정 반지름을 맞춘다:
         //   월드 반지름 = radius × scale  →  radius = 원하는반지름 / scale
-        // 이렇게 안 하면 둘 중 하나는 반드시 어긋난다(그림이 히트박스보다 작거나, 그 반대).
         // **렌더러에 실제로 꽂혀 있는 스프라이트**의 높이로 계산한다. 예전엔 `data.sprite`만 봤는데,
         // 그러면 도형 스프라이트로 갈아끼운 경우(지금 기본 경로)에 이 분기를 안 타서 프리팹 내장
         // 스프라이트 크기를 전제로 스케일이 잡혔다 — 덩치가 조용히 틀어지는 종류의 버그다.
         float scale = 1f;
         var sr = monster.GetComponent<SpriteRenderer>();
         float spriteHeight = sr != null && sr.sprite != null ? sr.sprite.bounds.size.y : 0f;
-        if (spriteHeight > 0.0001f) scale = (wantRadius * 2f) / spriteHeight;
+        if (spriteHeight > 0.0001f) scale = wantHeight / spriteHeight;
         else scale = wantRadius / prefabWorldRadius; // 스프라이트가 없으면 콜라이더 기준으로
 
         monster.transform.localScale = new Vector3(scale, scale, 1f);

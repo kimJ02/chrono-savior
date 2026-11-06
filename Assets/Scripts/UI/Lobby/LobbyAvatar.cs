@@ -43,7 +43,7 @@ namespace ChronoSavior.UI
             if (sprite == null) return; // 그림이 없으면 지금 그림 그대로(전투의 Player와 같은 규칙)
             sr.sprite = sprite;
             sr.color = art.TintOf(id);
-            float scale = EntitySizeConfig.ScaleToHeight(sprite, EntitySizeConfig.PlayerHeight);
+            float scale = EntitySizeConfig.ScaleToHeight(sprite, art.HeightOf(id)); // 전투의 플레이어와 같은 그림 높이(CharacterArtSet)
             if (scale > 0f) transform.localScale = new Vector3(scale, scale, 1f);
         }
     }
