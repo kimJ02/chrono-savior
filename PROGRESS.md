@@ -227,6 +227,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (62)** — **[나] 정리 순서 5(책임별 분리) 시작 — 계획 (`feature/responsibility-split`, 문서만).** Codex와 상의: 처음 안(스포너는 배치 계산만)이 약해 코드를 읽고 다시 물어 **`EnemySpawner`를 개체 설정(`EnemySetup`)·처치 보상(`EnemyRewards`)·배치(`EnemySpawnPlacement`)로** 나누기로. `CombatHud`는 미니맵만, `BladeCombat`은 의존 표를 보고 판정. 새 컴포넌트 없이 정적 클래스 → 씬 연결 그대로. 계획은 `HANDOFF.md` 4.5.
 - **2026-11-06 (61)** — **[나] 4단계 재점검(사용자 요청 — '문제점을 다 짚었나') 반영 (`feature/state-ownership`, PlayMode 477/477).** Codex xhigh 재점검이 **병합 보류**로 짚은 것: ① 재도전 사냥 준비가 실패하면 결과 화면의 지난 원정 최고 콤보가 0이 됨(4-1이 만든 회귀 — 콤보 초기화가 준비보다 먼저, 되돌리기는 날짜·런 기록만) → 최고 콤보를 `RunState.MaxCombo`로 옮겨 `Begin`이 지우고 `Restore`가 되돌린다(`GameFlowTests.FieldSetupException_…`에 확인 추가). ② 지역 변수를 거친 프로필 통계 쓰기 2곳이 남아 있었음(처음 조사 정규식이 놓침) → `PlayerProfile.RecordCombo`·`RecordEnemyKill`. ③ 문서의 '직접 대입 예외가 전부'라는 문구·`EnemySpawner`의 옛 트랙 경계 주석 정정. 왕복 테스트는 몹 대기 10초, 카메라는 로비 씬의 기준점 객체로 비교.
   재확인에서 업적 기록(`Achievements.CheckNew`의 `achieved.Add`)도 직접 쓰기로 짚혀 `PlayerProfile.TryUnlockAchievement`로(테스트 `TryUnlockAchievement_RecordsOnce`, 478/478).
 - **2026-11-06 (60)** — **[나] 정리 순서 4(상태 소유권) 완료 — Codex xhigh 종합 리뷰 '통과 — 병합 가능'**(PlayMode 477/477, 씬 검증 통과, 진짜 세이브 해시 그대로). `HANDOFF.md` 4 ✅, `CLAUDE.md`·지금 상태 갱신.
