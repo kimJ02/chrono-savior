@@ -45,10 +45,17 @@ namespace ChronoSavior.Combat
             return player;
         }
 
-        /// <summary>프레임을 처음부터 재생한다.</summary>
+        /// <summary>프레임을 처음부터 재생한다. 프레임이 없으면 아무것도 보이지 않고 곧바로 끝난다(사라진다).</summary>
         public void Play(Sprite[] sequence, float framesPerSecond, bool repeat, float fadeOutSeconds, Color tint)
         {
             sr = GetComponent<SpriteRenderer>();
+            if (sequence == null || sequence.Length == 0)
+            {
+                frames = null;
+                Finished = true;
+                Destroy(gameObject);
+                return;
+            }
             frames = sequence;
             fps = Mathf.Max(0.01f, framesPerSecond);
             loop = repeat;

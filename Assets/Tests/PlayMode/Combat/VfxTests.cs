@@ -22,6 +22,8 @@ public class VfxTests
     {
         foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
             if (go != null && (go.name.StartsWith("Test") || go.name.StartsWith("Vfx_"))) Object.Destroy(go);
+        foreach (var o in made) if (o != null) Object.Destroy(o); // 테스트가 만든 텍스처·스프라이트
+        made.Clear();
         RunTransient.Reset();
     }
 
@@ -57,12 +59,17 @@ public class VfxTests
             Assert.Greater(frames.Length, 0, $"{key}: 프레임이 없다 — 팩을 다시 가져올 것");
             for (int i = 0; i < frames.Length; i++)
                 Assert.AreEqual($"frame_{i:000}", frames[i].name, $"{key}: 프레임 이름·순서");
-            var path = UnityEditor.AssetDatabase.GetAssetPath(frames[0]);
-            var importer = (UnityEditor.TextureImporter)UnityEditor.AssetImporter.GetAtPath(path);
-            Assert.AreEqual(FilterMode.Point, importer.filterMode, $"{key}: 필터");
-            Assert.IsFalse(importer.mipmapEnabled, $"{key}: 밉맵");
-            Assert.AreEqual(UnityEditor.TextureImporterCompression.Uncompressed, importer.textureCompression, $"{key}: 압축");
-            Assert.AreEqual(128f, importer.spritePixelsPerUnit, $"{key}: PPU(월드와 같은 128)");
+            foreach (var frame in frames)
+            {
+                var path = UnityEditor.AssetDatabase.GetAssetPath(frame);
+                var importer = (UnityEditor.TextureImporter)UnityEditor.AssetImporter.GetAtPath(path);
+                Assert.AreEqual(FilterMode.Point, importer.filterMode, $"{path}: 필터");
+                Assert.IsFalse(importer.mipmapEnabled, $"{path}: 밉맵");
+                Assert.AreEqual(UnityEditor.TextureImporterCompression.Uncompressed, importer.textureCompression, $"{path}: 압축");
+                Assert.AreEqual(128f, importer.spritePixelsPerUnit, $"{path}: PPU(월드와 같은 128)");
+            }
+            var size = frames[0].rect.size;
+            Assert.IsTrue(frames.All(f => f.rect.size == size), $"{key}: 프레임 크기가 제각각이다");
         }
     }
 #endif
@@ -76,10 +83,26 @@ public class VfxTests
         Assert.IsNull(VfxPlayer.Spawn("mage/no_such_effect", Vector3.zero, 1f, 12f, 6), "그림이 없으면 세우지 않는다(부르는 쪽이 임시 그림)");
     }
 
-    static Sprite[] SyntheticFrames(int n)
+    readonly System.Collections.Generic.List<Object> made = new System.Collections.Generic.List<Object>();
+
+    Sprite[] SyntheticFrames(int n)
     {
         var tex = new Texture2D(4, 4);
-        return Enumerable.Range(0, n).Select(i => Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 128f)).ToArray();
+        made.Add(tex);
+        var sprites = Enumerable.Range(0, n).Select(i => Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 128f)).ToArray();
+        made.AddRange(sprites);
+        return sprites;
+    }
+
+    /// <summary>프레임 없이 재생하라고 하면 예외 없이 곧바로 사라진다.</summary>
+    [UnityTest]
+    public IEnumerator Player_WithNoFrames_JustDisappears()
+    {
+        var player = new GameObject("TestVfxEmpty", typeof(SpriteRenderer)).AddComponent<VfxPlayer>();
+        player.Play(new Sprite[0], 12f, false, 0f, Color.white);
+        Assert.IsTrue(player.Finished);
+        yield return null;
+        Assert.IsTrue(player == null, "빈 재생이 남아 있다");
     }
 
     /// <summary>한 번 재생은 프레임을 넘기다 끝나면 사라지고, 끝 무렵엔 투명해진다(fadeOut). 반복 재생은 계속 돈다.</summary>

@@ -32,13 +32,14 @@ namespace ChronoSavior.Editor
         sealed class Source
         {
             public string Key, Pack, Path;
-            public int Cell, Row, Columns; // 시트일 때만(Cell > 0)
+            /// <summary>시트일 때만(Cell &gt; 0): 칸 크기, **위에서 0부터 센** 줄 번호, 그 줄의 프레임 수(뒤쪽 빈 칸 제외 — 다르면 오류).</summary>
+            public int Cell, Row, Frames;
             public bool IsSheet => Cell > 0;
         }
 
         static Source Frames(string key, string pack, string folder) => new Source { Key = key, Pack = pack, Path = folder };
-        static Source Sheet(string key, string pack, string sheet, int cell, int row, int columns) =>
-            new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Columns = columns };
+        static Source Sheet(string key, string pack, string sheet, int cell, int row, int frames) =>
+            new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Frames = frames };
 
         /// <summary>쓰는 효과 목록(2026-11-07 초안 — 효과를 입히며 고른다, `HANDOFF.md` 2절).</summary>
         static IEnumerable<Source> Manifest()
@@ -62,9 +63,9 @@ namespace ChronoSavior.Editor
                 }
             yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_yellow");
             yield return Frames(VfxKeys.MechanicRelayHead, Projectiles, "PNG/pj4_plasma_ball_small_blue");
-            // 살수 — Slash vol2 시트는 96칸, 한 줄 건너 하나씩(1·3·5줄이 무속성)
-            yield return Sheet(VfxKeys.AssassinSlash1, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 1, 7);
-            yield return Sheet(VfxKeys.AssassinSlash2, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 3, 7);
+            // 살수 — Slash vol2 시트는 96칸 7열, 효과가 한 줄 건너 하나씩 있다(위에서 0부터 세어 1·3·5줄이 무속성, 프레임 5·6·7장)
+            yield return Sheet(VfxKeys.AssassinSlash1, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 1, 5);
+            yield return Sheet(VfxKeys.AssassinSlash2, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 3, 6);
             yield return Sheet(VfxKeys.AssassinSlash3, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 5, 7);
             yield return Frames(VfxKeys.AssassinHeartbeat, Gigapack, "PNG/Sci-fi/scifi_heartbeat_fast_001/scifi_heartbeat_fast_001_large_yellow");
             yield return Frames(VfxKeys.AssassinSplatter, Gigapack, "PNG/Splatters/directional_splatter_001/directional_splatter_001_small_red");
@@ -93,51 +94,75 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(problems.Count == 0 ? 0 : 1);
         }
 
-        /// <summary>가져온다. 돌려주는 건 문제 목록(비면 성공).</summary>
+        /// <summary>
+        /// 가져온다. 돌려주는 건 문제 목록(비면 성공). **목록 전부를 먼저 읽고 검증한 뒤에만 쓴다** — 하나라도 문제가 있으면 아무 키도 바꾸지 않는다
+        /// (옛 그림과 새 그림이 섞이지 않게, 그때까지 있던 `Resources/Vfx`는 그대로 남는다).
+        /// </summary>
         public static List<string> Import(string packFolder)
         {
             var problems = new List<string>();
             var zips = Directory.Exists(packFolder) ? Directory.GetFiles(packFolder, "*.zip") : new string[0];
             var opened = new Dictionary<string, ZipArchive>();
+            var ready = new List<(string key, List<byte[]> frames)>();
             try
             {
                 foreach (var src in Manifest())
                 {
                     if (!opened.TryGetValue(src.Pack, out var zip))
                     {
-                        string file = zips.FirstOrDefault(z => Path.GetFileName(z).StartsWith(src.Pack, System.StringComparison.OrdinalIgnoreCase));
-                        zip = file != null ? ZipFile.OpenRead(file) : null;
+                        zip = OpenPack(zips, src.Pack, problems);
                         opened[src.Pack] = zip;
                     }
-                    if (zip == null) { problems.Add($"{src.Key}: 팩 zip이 없다 — '{src.Pack}…'.zip"); continue; }
+                    if (zip == null) { problems.Add($"{src.Key}: 팩을 못 열었다 — '{src.Pack}…'.zip"); continue; }
                     var frames = src.IsSheet ? SliceSheet(zip, src, problems) : ReadFrames(zip, src, problems);
-                    if (frames == null || frames.Count == 0) continue; // 문제는 위에서 적었다 — 그 키는 바꾸지 않는다
-                    Write(src.Key, frames);
+                    if (frames != null && frames.Count > 0) ready.Add((src.Key, frames));
                 }
             }
             finally
             {
                 foreach (var z in opened.Values) z?.Dispose();
             }
-            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
-            VfxFrames.ClearCache();
+
+            if (problems.Count == 0)
+            {
+                foreach (var (key, frames) in ready) Write(key, frames);
+                AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+                VfxFrames.ClearCache();
+            }
             foreach (var p in problems) Debug.LogError("[VfxPackImporter] " + p);
-            Debug.Log($"[VfxPackImporter] 끝 — 문제 {problems.Count}건");
+            Debug.Log(problems.Count == 0 ? $"[VfxPackImporter] {ready.Count}개 키를 가져왔다" : $"[VfxPackImporter] 문제 {problems.Count}건 — 아무것도 바꾸지 않았다");
             return problems;
         }
+
+        /// <summary>이름이 그 팩으로 시작하는 zip이 **정확히 하나**여야 연다(둘이면 어느 쪽인지 모른다). 깨진 zip도 문제로 알린다.</summary>
+        static ZipArchive OpenPack(string[] zips, string pack, List<string> problems)
+        {
+            var matches = zips.Where(z => Path.GetFileName(z).StartsWith(pack, System.StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (matches.Length != 1)
+            {
+                problems.Add(matches.Length == 0 ? $"'{pack}…'.zip이 없다" : $"'{pack}…'.zip이 {matches.Length}개다 — 하나만 두세요: {string.Join(", ", matches.Select(Path.GetFileName))}");
+                return null;
+            }
+            try { return ZipFile.OpenRead(matches[0]); }
+            catch (System.Exception e) { problems.Add($"{Path.GetFileName(matches[0])}: zip을 못 읽었다 — {e.Message}"); return null; }
+        }
+
+        /// <summary>zip 안 경로를 비교용으로 — 구분자 `/`, 앞에 `/`를 붙이고 소문자로(팩 최상위 폴더가 있든 없든 같은 방식으로 찾게).</summary>
+        static string Norm(string path) => "/" + path.Replace('\\', '/').TrimStart('/').ToLowerInvariant();
 
         static readonly Regex FrameName = new Regex(@"(?:frame|_)(\d+)\.png$", RegexOptions.IgnoreCase);
 
         /// <summary>프레임 폴더의 PNG를 번호순으로. 팩 최상위 폴더 이름은 건너뛰고 그 아래 경로로 찾는다.</summary>
         static List<byte[]> ReadFrames(ZipArchive zip, Source src, List<string> problems)
         {
-            string dir = "/" + src.Path.Trim('/') + "/";
+            string dir = Norm(src.Path).TrimEnd('/') + "/";
             var hits = new List<(int n, ZipArchiveEntry e)>();
             foreach (var e in zip.Entries)
             {
-                int at = e.FullName.IndexOf(dir, System.StringComparison.Ordinal);
+                string full = Norm(e.FullName);
+                int at = full.IndexOf(dir, System.StringComparison.Ordinal);
                 if (at < 0) continue;
-                string rest = e.FullName.Substring(at + dir.Length);
+                string rest = full.Substring(at + dir.Length);
                 if (rest.Contains("/")) continue;
                 var m = FrameName.Match(rest);
                 if (m.Success) hits.Add((int.Parse(m.Groups[1].Value), e));
@@ -149,7 +174,7 @@ namespace ChronoSavior.Editor
         /// <summary>시트의 한 줄을 칸 크기로 잘라 앞에서부터(뒤쪽 빈 칸은 버린다).</summary>
         static List<byte[]> SliceSheet(ZipArchive zip, Source src, List<string> problems)
         {
-            var entry = zip.Entries.FirstOrDefault(e => e.FullName.EndsWith("/" + src.Path, System.StringComparison.Ordinal));
+            var entry = zip.Entries.FirstOrDefault(e => Norm(e.FullName).EndsWith(Norm(src.Path), System.StringComparison.Ordinal));
             if (entry == null) { problems.Add($"{src.Key}: 시트가 없다 — {src.Pack}/{src.Path}"); return null; }
             var sheet = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             try
@@ -158,7 +183,7 @@ namespace ChronoSavior.Editor
                 int y = sheet.height - (src.Row + 1) * src.Cell; // 텍스처는 아래가 0
                 if (y < 0) { problems.Add($"{src.Key}: 시트 {src.Row}줄이 없다"); return null; }
                 var cells = new List<byte[]>();
-                for (int c = 0; c < src.Columns && (c + 1) * src.Cell <= sheet.width; c++)
+                for (int c = 0; (c + 1) * src.Cell <= sheet.width; c++)
                 {
                     var cell = new Texture2D(src.Cell, src.Cell, TextureFormat.RGBA32, false);
                     cell.SetPixels(sheet.GetPixels(c * src.Cell, y, src.Cell, src.Cell));
@@ -169,7 +194,7 @@ namespace ChronoSavior.Editor
                 }
                 while (cells.Count > 0 && cells[cells.Count - 1] == null) cells.RemoveAt(cells.Count - 1);
                 if (cells.Any(c => c == null)) { problems.Add($"{src.Key}: 중간에 빈 칸이 있다(시트 줄을 확인)"); return null; }
-                if (cells.Count == 0) { problems.Add($"{src.Key}: 시트 {src.Row}줄이 비었다"); return null; }
+                if (cells.Count != src.Frames) { problems.Add($"{src.Key}: 시트 {src.Row}줄(위에서 0부터)의 프레임이 {cells.Count}장 — {src.Frames}장이어야 한다"); return null; }
                 return cells;
             }
             finally { Object.DestroyImmediate(sheet); }
