@@ -60,16 +60,21 @@ namespace ChronoSavior.Tests.PlayMode
         {
             get
             {
-                var frames = new Sprite[9];
-                for (int i = 0; i < frames.Length; i++)
+                // 한 번만 만들어 공유한다 — 부를 때마다 만들면 텍스처·그림이 테스트 내내 쌓인다(Codex 지적). 씬을 바꿔도 남게 HideAndDontSave.
+                if (slashFrames != null && System.Array.TrueForAll(slashFrames, f => f != null)) return slashFrames;
+                slashFrames = new Sprite[9];
+                for (int i = 0; i < slashFrames.Length; i++)
                 {
-                    var tex = new Texture2D(128, 128) { filterMode = FilterMode.Point };
-                    frames[i] = Sprite.Create(tex, new Rect(0, 0, 128, 128), new Vector2(0.5f, 0.5f), 128f);
-                    frames[i].name = $"TestSlash_{i:00}";
+                    var tex = new Texture2D(128, 128) { filterMode = FilterMode.Point, hideFlags = HideFlags.HideAndDontSave };
+                    slashFrames[i] = Sprite.Create(tex, new Rect(0, 0, 128, 128), new Vector2(0.5f, 0.5f), 128f);
+                    slashFrames[i].name = $"TestSlash_{i:00}";
+                    slashFrames[i].hideFlags = HideFlags.HideAndDontSave;
                 }
-                return frames;
+                return slashFrames;
             }
         }
+
+        static Sprite[] slashFrames;
 
         static T LoadAsset<T>(string path) where T : Object
         {
