@@ -62,12 +62,6 @@ namespace ChronoSavior.Core
         public static int Combo { get; private set; }
         /// <summary>콤보가 끊기기까지 남은 시간. 원본 `combo.t`.</summary>
         public static float ComboTimeLeft { get; private set; }
-        /// <summary>
-        /// **이번 원정**의 최고 콤보 — 결과 화면 '원정 통계'(Figma가 추가한 통계 — 원본 결과 화면엔 콤보 표시가 없다). 원정마다 <see cref="ResetForRun"/>이 지운다(2026-11-06 —
-        /// 예전엔 테스트용 `Reset`만 지워서 결과 화면에 그 세션 전체의 최고가 보였다). 업적용 **평생** 최고는 프로필 `stats.maxCombo`(원본 `meta.stats.maxCombo` :1623)가 따로 쌓는다.
-        /// </summary>
-        public static int MaxCombo { get; private set; }
-
         /// <summary>연쇄 처치 카운트. 원본 `run.chainN`.</summary>
         public static int ChainKills { get; private set; }
         static float chainTimeLeft;
@@ -164,10 +158,8 @@ namespace ChronoSavior.Core
         {
             Combo++;
             ComboTimeLeft = ComboWindow;
-            if (Combo > MaxCombo) MaxCombo = Combo;
-            // 업적('연격의 미학')이 보는 건 세션이 아니라 **영구 기록**이라 프로필에도 남긴다.
-            var stats = ProfileService.Current.stats;
-            if (Combo > stats.maxCombo) stats.maxCombo = Combo;
+            RunState.NoteCombo(Combo);                    // 이번 원정 최고(결과 화면)
+            ProfileService.Current.RecordCombo(Combo);    // 평생 최고(업적 '연격의 미학')
         }
 
         /// <summary>원본 `updateCombo(dt)`(project_test.html:1630) + 연쇄 처치 창 감소.</summary>
@@ -219,7 +211,6 @@ namespace ChronoSavior.Core
         public static void ResetForRun()
         {
             Combo = 0;
-            MaxCombo = 0;
             ComboTimeLeft = 0f;
             ChainKills = 0;
             chainTimeLeft = 0f;

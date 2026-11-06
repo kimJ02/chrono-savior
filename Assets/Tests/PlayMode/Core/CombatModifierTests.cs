@@ -62,7 +62,7 @@ public class CombatModifierTests
         CombatModifiers.Tick(CombatModifiers.ComboWindow + 0.1f);
 
         Assert.AreEqual(0, CombatModifiers.Combo);
-        Assert.AreEqual(5, CombatModifiers.MaxCombo);
+        Assert.AreEqual(5, RunState.MaxCombo);
     }
 
     /// <summary>
@@ -74,12 +74,13 @@ public class CombatModifierTests
     {
         ProfileService.Reset(); // 이 테스트는 프로필 통계도 본다(다른 테스트가 쌓은 값 없이)
         for (int i = 0; i < 7; i++) CombatModifiers.AddCombo();
-        Assert.AreEqual(7, CombatModifiers.MaxCombo);
+        Assert.AreEqual(7, RunState.MaxCombo);
 
-        CombatModifiers.ResetForRun(); // 새 원정
-        Assert.AreEqual(0, CombatModifiers.MaxCombo, "새 원정인데 지난 원정 최고 콤보가 남았다");
+        RunState.Begin(1, RunMode.Normal); // 새 원정 — 실제 순서대로 런 기록 다음 전투 배수(`GameFlow.StartRun` → `CombatDirector.BeginField`)
+        CombatModifiers.ResetForRun();
+        Assert.AreEqual(0, RunState.MaxCombo, "새 원정인데 지난 원정 최고 콤보가 남았다");
         for (int i = 0; i < 3; i++) CombatModifiers.AddCombo();
-        Assert.AreEqual(3, CombatModifiers.MaxCombo, "결과 화면엔 이번 원정 최고(3)가 보여야 한다");
+        Assert.AreEqual(3, RunState.MaxCombo, "결과 화면엔 이번 원정 최고(3)가 보여야 한다");
         Assert.AreEqual(7, ProfileService.Current.stats.maxCombo, "평생 최고는 프로필에 그대로");
     }
 

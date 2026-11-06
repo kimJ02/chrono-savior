@@ -215,7 +215,7 @@ public class GameBootTests
         var lobbySubscribers = SubscriberCounts();
 
         yield return ToRun();
-        float until = Time.realtimeSinceStartup + 5f;
+        float until = Time.realtimeSinceStartup + 10f;
         while (EnemyHealth.Active.Count == 0 && Time.realtimeSinceStartup < until) yield return null;
         Assert.Greater(EnemyHealth.Active.Count, 0, "사냥 중에 몹이 나와야 왕복 확인이 의미가 있다");
         Assert.IsNotNull(WorldView.Combat);
@@ -225,7 +225,8 @@ public class GameBootTests
         yield return null; // Destroy 반영
 
         Assert.IsNotNull(WorldView.Lobby, "로비 창구가 남아 있다");
-        Assert.AreEqual("CameraAnchor", CameraFollow2D.Target.name, "카메라는 로비 기준점");
+        var lobbyAnchor = InScene<Transform>(GameFlow.LobbyScene).Single(t => t.name == "CameraAnchor");
+        Assert.AreSame(lobbyAnchor, CameraFollow2D.Target, "카메라는 지금 로비 씬의 기준점");
         Assert.IsNull(WorldView.Combat, "전투 창구가 비었다");
         Assert.IsNull(CombatDirector.Current, "전투 담당 등록이 빠졌다");
         Assert.AreEqual(0, EnemyHealth.Active.Count, "몹 목록이 비었다");

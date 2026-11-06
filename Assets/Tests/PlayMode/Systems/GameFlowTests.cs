@@ -421,6 +421,7 @@ public class GameFlowTests
         rc.StartRun(2, RunMode.Normal);
         RunState.RegisterKill(false);
         RunState.RegisterReward(50, 7);
+        RunState.NoteCombo(9);
         rc.EndRun(RunEndReason.Timeout);
         int days = ProfileService.Current.doomDays;
 
@@ -436,6 +437,7 @@ public class GameFlowTests
         Assert.AreEqual(2, RunState.Region, "지난 런 기록이 그대로");
         Assert.AreEqual(1, RunState.Kills);
         Assert.AreEqual(50, RunState.GoldEarned);
+        Assert.AreEqual(9, RunState.MaxCombo, "결과 화면의 지난 원정 최고 콤보가 지워졌다");
         Assert.IsTrue(RunState.Over);
     }
 

@@ -255,10 +255,10 @@
    `ProfileService.Current`는 0이 목표가 아니다 — 규칙이 있는 쓰기(날짜 차감·보상·골드 소비·캐릭터 선택·스킬 습득)만 소유 API로. 완료: 쓰기 규칙·테스트가 있고 동작 불변(전부 주입·정적 제거는 완료 조건이 아니다).
    **진행 계획(2026-11-06 Codex 합의, 커밋 순서대로)** — 쓰기 주체는 하나로 모으되 모든 쓰기를 `GameFlow`나 새 범용 관리자에 몰지 않는다(상태가 자기 변경을 책임지고, 사건 발생자가 의미 있는 메서드를 부른다):
    - ✅ 4-0 상태 표 `docs/state-ownership.md`(분류·static·소유자·변경 요청자·수명/초기화·읽기·검증). `StateOwnershipTests`를 범용으로 키우지 않는다.
-   - ✅ 4-1 `CombatModifiers.MaxCombo` = **이번 원정 최고 콤보**로 확정·런마다 초기화(결과 화면 '원정 통계' — Figma 추가 통계라 원본 버그 수정이 아니라 프로젝트 통계 의미 바로잡기. 평생 최고는 프로필 `stats.maxCombo`).
+   - ✅ 4-1 `CombatModifiers.MaxCombo` = **이번 원정 최고 콤보**로 확정·런마다 초기화(결과 화면 '원정 통계' — Figma 추가 통계라 원본 버그 수정이 아니라 프로젝트 통계 의미 바로잡기. 평생 최고는 프로필 `stats.maxCombo`). 재점검 뒤 `RunState.MaxCombo`로 옮김 — 사냥 준비 실패 때 `Restore`가 지난 원정 값을 지키게.
    - ✅ 4-2 읽는 곳 없는 `RunProgress.TotalKills`·`RegionLv` 별칭 삭제(`RunState.Region` 직접). 테스트에서만 쓰던 `DifficultyScalingConfig.KillsPerRegionLevel`도 삭제.
    - ✅ 4-3 `FieldBounds` public 가변 필드 → 읽기 전용(쓰기는 `FieldLayout` 한 경로). `MinX`·`GroundY`는 아무도 안 바꿔 `const`, `MaxX`는 `{ get; private set; }` + `SetMaxX`(`InternalsVisibleTo`는 Core 내부 전체를 열어 과함 — Codex 합의).
-   - ✅ 4-4 프로필 쓰기 중 규칙 있는 것만 `PlayerProfile` API로 — 캐릭터 선택 검증, 뽑기 재화 차감·통계, `stats.shrines/bosses++`(의미 있는 메서드, 범용 `SetStat` 금지). 각성 화면 'SP +1 테스트 버튼'은 이미 `#if UNITY_EDITOR`라 예외로 기록만. 결과: `SetSelectedCharacter`·`RecordBossKill`·`RecordShrineBroken`·`TryPayForPull` + `ItemInventory.RecordPull`(Codex 합의 — Core는 키트를 모르니 선택 검증은 화면·`PlayerRig`).
+   - ✅ 4-4 프로필 쓰기 중 규칙 있는 것만 `PlayerProfile` API로 — 캐릭터 선택 검증, 뽑기 재화 차감·통계, `stats.shrines/bosses++`(의미 있는 메서드, 범용 `SetStat` 금지). 각성 화면 'SP +1 테스트 버튼'은 이미 `#if UNITY_EDITOR`라 예외로 기록만. 결과: `SetSelectedCharacter`·`RecordBossKill`·`RecordShrineBroken`·`RecordEnemyKill`·`RecordCombo`(재점검에서 찾은 별칭 경유 쓰기)·`TryPayForPull` + `ItemInventory.RecordPull`(Codex 합의 — Core는 키트를 모르니 선택 검증은 화면·`PlayerRig`).
    - ✅ 4-5 `RunState`·`CombatModifiers`의 변경 API 정리(검토 결과 바꿀 것 없음 — 값은 전부 `private set`, 바꾸는 길은 사건 이름 메서드뿐. `SetShrineActive`는 성소가 매 프레임 자기 상태를 알리는 것) + 로비↔전투 왕복 수명 테스트(`GameBootTests.LobbyRunLobby_RoundTrip_LeavesOnlyLobbyState`, **상태별 기대값** — 로비엔 `WorldView.Lobby`가 남아야 하고, 내려간 전투의 등록·구독·런 오브젝트는 없어야). `HitFeel`은 요청형 그대로.
    규칙 기록만: `CombatDirector.Current`·`WorldView`·`CameraFollow2D`·UI 화면 등록·이벤트 버스·캐시·`GameSettings`·`UiModal`·`SaveService.PathOverride`(누수 증거가 있을 때만 고친다).
 4. **5 책임별 분리**: 실제로 서로 다른 책임이 얽힌 클래스만 — 분리 전후 유지할 동작·확인 방법을 먼저. 후보 `EnemySpawner`(웨이브·개체 설정·보상)·`CombatHud`(독립 표시 영역)·`BladeCombat`(1025줄). `PlayerProfile`은 응집돼 있으면 유지.

@@ -205,6 +205,16 @@ namespace ChronoSavior.Core
             MarkBossCleared(region);
         }
 
+        /// <summary>콤보가 올랐다 — 평생 최고 콤보(`stats.maxCombo`, 업적 '연격의 미학')를 갱신한다. 원본 `meta.stats.maxCombo`(project_test.html:1623).</summary>
+        public void RecordCombo(int combo) { if (combo > stats.maxCombo) stats.maxCombo = combo; }
+
+        /// <summary>일반 몹을 잡았다(성소·보스 제외) — 누적 처치·정예 처치 통계(업적). 원본 `meta.stats.totalKills++`·`elites++`.</summary>
+        public void RecordEnemyKill(bool elite)
+        {
+            stats.totalKills++;
+            if (elite) stats.elites++;
+        }
+
         /// <summary>성소를 부쉈다 — 업적 통계(`stats.shrines`). 원본 `meta.stats.shrines++`(project_test.html:1808).</summary>
         public void RecordShrineBroken() => stats.shrines++;
 

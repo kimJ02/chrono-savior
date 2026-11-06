@@ -85,6 +85,15 @@ public class AchievementTests
 
         p.RecordShrineBroken();
         Assert.AreEqual(1, p.stats.shrines);
+
+        p.RecordEnemyKill(elite: false);
+        p.RecordEnemyKill(elite: true);
+        Assert.AreEqual(2, p.stats.totalKills);
+        Assert.AreEqual(1, p.stats.elites);
+
+        p.RecordCombo(5);
+        p.RecordCombo(3);
+        Assert.AreEqual(5, p.stats.maxCombo, "평생 최고 콤보가 줄었다");
     }
 
     /// <summary>시간 회귀 자체도 업적이다 — 시간 회귀 직후 확인하면 잡힌다.</summary>

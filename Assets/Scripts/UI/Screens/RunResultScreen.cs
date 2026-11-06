@@ -99,7 +99,7 @@ namespace ChronoSavior.UI
             cause.enabled = dead;
             if (dead) cause.text = $"붕괴 원인: {CauseOf(RunState.DeathSource)}의 공격에 시간선이 무너졌다 — 재화는 그대로 남는다";
 
-            statsText.text = $"최대 콤보  {CombatModifiers.MaxCombo}\n토벌  {p.RegionKills(s)}/{RunState.RegionKillTarget}\n멸망까지  {p.doomDays}일";
+            statsText.text = $"최대 콤보  {RunState.MaxCombo}\n토벌  {p.RegionKills(s)}/{RunState.RegionKillTarget}\n멸망까지  {p.doomDays}일";
 
             long need = PlayerProfile.RequiredExp(p.level);
             float ratio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;

@@ -397,6 +397,9 @@ public class OriginalFidelityTests
             ("SetSelectedCharacter",       "PlayerProfile.cs"),    // 캐릭터 선택 화면·PlayerRig
             ("RecordBossKill",             "PlayerProfile.cs"),    // EnemySpawner(보스 격파)
             ("RecordShrineBroken",         "PlayerProfile.cs"),    // Shrine
+            ("RecordEnemyKill",            "PlayerProfile.cs"),    // EnemySpawner
+            ("RecordCombo",                "PlayerProfile.cs"),    // CombatModifiers.AddCombo
+            ("NoteCombo",                  "RunState.cs"),         // CombatModifiers.AddCombo
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
         };

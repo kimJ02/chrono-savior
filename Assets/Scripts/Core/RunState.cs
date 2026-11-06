@@ -63,6 +63,16 @@ namespace ChronoSavior.Core
         public static int GoldEarned { get; private set; }
         public static long ExpEarned { get; private set; } // 27레벨부터 구슬 하나가 `int`를 넘는다(`PlayerProfile.RequiredExp`)
 
+        /// <summary>
+        /// **이번 원정**의 최고 콤보 — 결과 화면 '원정 통계'(Figma가 추가한 통계 — 원본 결과 화면엔 콤보 표시가 없다). <see cref="Begin"/>이 지우고
+        /// 보스 필드로 넘어가도 이어진다. 사냥 준비가 실패하면 <see cref="Restore"/>가 지난 원정 값을 되돌린다(2026-11-06 4단계 — 예전엔 `CombatModifiers`에 있어
+        /// 준비 실패 때 지워졌다). 평생 최고는 프로필 `stats.maxCombo`(`PlayerProfile.RecordCombo`).
+        /// </summary>
+        public static int MaxCombo { get; private set; }
+
+        /// <summary>콤보가 올랐다(`CombatModifiers.AddCombo`) — 이번 원정 최고를 갱신한다.</summary>
+        public static void NoteCombo(int combo) { if (combo > MaxCombo) MaxCombo = combo; }
+
         /// <summary>런이 끝났는지. 원본 `run.over` — true면 갱신도 추가 피해도 멈춘다(:1881, :7169).</summary>
         public static bool Over { get; private set; }
 
@@ -78,6 +88,7 @@ namespace ChronoSavior.Core
             Fury = 0;
             GoldEarned = 0;
             ExpEarned = 0;
+            MaxCombo = 0;
             Over = false;
         }
 
@@ -133,7 +144,7 @@ namespace ChronoSavior.Core
         /// <summary>런 상태 전체의 사본 — 사냥에 들어가다 실패하면 들어가기 전(예: 결과 화면의 지난 런)으로 되돌릴 때(`GameFlow.StartRun`, 2026-11-05 씬 분할 2차).</summary>
         public readonly struct Snapshot
         {
-            internal readonly int region, kills, fury, gold;
+            internal readonly int region, kills, fury, gold, maxCombo;
             internal readonly RunMode mode;
             internal readonly float timeLeft, elapsed;
             internal readonly GameObject deathSource;
@@ -141,20 +152,20 @@ namespace ChronoSavior.Core
             internal readonly bool over;
 
             internal Snapshot(int region, RunMode mode, float timeLeft, float elapsed, GameObject deathSource,
-                              int kills, int fury, int gold, long exp, bool over)
+                              int kills, int fury, int gold, long exp, int maxCombo, bool over)
             {
                 this.region = region; this.mode = mode; this.timeLeft = timeLeft; this.elapsed = elapsed; this.deathSource = deathSource;
-                this.kills = kills; this.fury = fury; this.gold = gold; this.exp = exp; this.over = over;
+                this.kills = kills; this.fury = fury; this.gold = gold; this.exp = exp; this.maxCombo = maxCombo; this.over = over;
             }
         }
 
         public static Snapshot Capture() =>
-            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, Over);
+            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, MaxCombo, Over);
 
         public static void Restore(Snapshot s)
         {
             Region = s.region; Mode = s.mode; TimeLeft = s.timeLeft; Elapsed = s.elapsed; DeathSource = s.deathSource;
-            Kills = s.kills; Fury = s.fury; GoldEarned = s.gold; ExpEarned = s.exp; Over = s.over;
+            Kills = s.kills; Fury = s.fury; GoldEarned = s.gold; ExpEarned = s.exp; MaxCombo = s.maxCombo; Over = s.over;
         }
     }
 }

@@ -30,8 +30,8 @@ namespace ChronoSavior.Systems
 /// 스프린트 2(성장곡선 검증, `docs/sprints/03-growth-curve-worksplit.md` 트랙 A) — 스폰 직후 지역
 /// (<see cref="RunState.Region"/>, 예전 '가상 지역 레벨' `RunProgress`는 2026-11-06 삭제)에 따라 몹 체력/공격력을 스케일링하고, 그 몹이 죽으면
 /// 처치 보상(골드+EXP)을 지급한다. 둘 다 이 스포너가 몹 프리팹을 다루는 유일한 지점이라
-/// 자연스럽게 여기서 담당한다(트랙 A/B 경계 — `Core/PlayerProfile.cs`·`Characters/` 전체는
-/// 트랙 B 소유라 손대지 않는다). **스케일링/보상 수치는 전부 `Core/DifficultyScalingConfig`에
+/// 자연스럽게 여기서 담당한다(당시 스프린트 2의 트랙 A/B 경계였다 — 지금은 프로필 값을 `PlayerProfile` 메서드로만 바꾼다,
+/// `docs/state-ownership.md`). **스케일링/보상 수치는 전부 `Core/DifficultyScalingConfig`에
 /// 모아뒀다** — 이 파일엔 매직넘버를 두지 않는다(2026-09-08 "0. 착수 전 필독" 추가 — 원본
 /// 밸런스가 완전히 정리된 게 아니라 나중에 직접 조정할 가능성이 높아서, 그때 로직 코드를
 /// 뒤지지 않고 숫자만 한 파일에서 바꾸게 하려는 목적).
@@ -703,9 +703,7 @@ public class EnemySpawner : MonoBehaviour
 
         bool elite = enemy.GetComponent<EnemyElite>() != null;
 
-        var stats = ProfileService.Current.stats;
-        stats.totalKills++;
-        if (elite) stats.elites++;
+        ProfileService.Current.RecordEnemyKill(elite);
 
         // 결과 화면·HUD가 읽는 이번 런 집계. 원본도 `run.kills`와 누적 통계를 따로 센다(:1857).
         RunState.RegisterKill(isBoss: false);
