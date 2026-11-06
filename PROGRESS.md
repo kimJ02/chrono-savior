@@ -227,6 +227,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (47)** — **[나] 3.5-d: 그림 크기와 판정 크기 분리 (`feature/asset-seams`, PlayMode 474/474, 씬 검증 통과, Codex 통과).** 그림의 화면 크기를 **월드 유닛으로 그림 데이터에** —
+  `CharacterArtSet.heights`(지금 0.5)·`EnemyData.visualHeight`(지금 판정 지름 — `BuildEnemyData`, 비면 판정 지름)·`MonsterCatalog.bossSize/shrineSize`(1.3×1.5·0.64×0.96). 판정은 `EntitySizeConfig`·`colliderRadius` 그대로(콜라이더는 배율 역보정 유지).
+  `PlayerRig.spriteHeight` 삭제. 지금 화면 크기 그대로(기준 캡처 바이트 동일). 테스트: 그림 높이·PPU를 바꿔도 판정 불변(플레이어·몹). 그림을 자식으로 떼는 구조 변경·VFX 크기는 보류(Codex: 지금은 불필요).
 - **2026-11-06 (46)** — **[나] 3.5-c: 타격음 검증이 특정 파일을 요구하지 않게 (`feature/asset-seams`, PlayMode 472/472, 씬 검증 통과).** 검증기는 클립이 연결됐는지·소리 장치 설정만 본다. 테스트만 쓰던 `HitSound.ClipPath` 삭제 —
   테스트는 `AudioClip.Create`로 만든 짧은 소리를 넣는다(파일 존재 테스트 1개 삭제 → 472). 외주·구매 소리를 어디에 둬도 된다.
 - **2026-11-06 (45)** — **[나] 3.5-b: 스테이지 그림 묶음 `StageArtSet` (`feature/asset-seams`, PlayMode 473/473, 씬 검증 통과, Codex 통과).** `World/StageArtSet`(땅 윗면·흙·발판·배경·포탈 + 그 그림에 딸린 숫자:
