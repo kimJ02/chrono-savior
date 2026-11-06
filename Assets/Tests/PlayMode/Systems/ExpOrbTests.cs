@@ -44,6 +44,19 @@ public class ExpOrbTests
     }
 
     /// <summary>
+    /// 구슬은 원본 색 보라 `#c9a2ff`로 보인다(원본 colors '#c9a2ff', 2026-11-06 사용자 결정 — 예전엔 임시 흰 원이 그대로 흰색이었다).
+    /// 세운 구슬의 그림 색을 본다(프리팹 색이 그대로 나오는지).
+    /// </summary>
+    [Test]
+    public void Orb_IsOriginalPurple()
+    {
+        var orb = ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, 1f, 0f), null);
+        var sr = orb.GetComponentInChildren<SpriteRenderer>();
+        Assert.AreEqual(new Color(0xc9 / 255f, 0xa2 / 255f, 1f, 1f), sr.color);
+        Object.DestroyImmediate(orb.gameObject);
+    }
+
+    /// <summary>
     /// 획득 경험치는 **현재 레벨의 필요 경험치 25%**다(원본 `:4466`) — 고정값이 아니라 비율이라
     /// 레벨이 올라도 구슬 하나의 가치가 같이 커진다. 고정값으로 바꾸면 후반에 무의미해진다.
     /// </summary>

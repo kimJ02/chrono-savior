@@ -45,7 +45,7 @@ namespace ChronoSavior.Systems
         float baseY;
         Transform player;
 
-        // 구성은 프리팹(Assets/Prefabs/Combat/ExpOrb)에 있다(2026-11-06 생성 책임 2-3) — 그림 자식(구운 보라 구슬 그림, 색 흰색 — 그림에 이미 칠해져 있다)·RunTransient.
+        // 구성은 프리팹(Assets/Prefabs/Combat/ExpOrb)에 있다(2026-11-06 생성 책임 2-3) — 그림 자식·RunTransient. 지금 그림은 임시 흰 원이라 **원본 보라 `#c9a2ff`를 색으로 칠한다**(2026-11-06 사용자 결정 — 예전엔 흰색으로 보였다). 보라가 칠해진 최종 그림이 오면 색을 흰색으로.
         [SerializeField] SpriteRenderer visualRenderer;
 
         /// <summary>
