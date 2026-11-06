@@ -44,8 +44,8 @@ public class CreationOwnershipTests
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 처치 때 스포너 쪽에서 떨군다"),
-        ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — GunnerAttack이 띄운다"),
-        ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — GunnerAttack이 세운다"),
+        ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
+        ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
         ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판(판정·수명) — 마법사 스킬이 깐다"),
         ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장(판정·수명) — 마법사 스킬이 연다"),
 

@@ -367,11 +367,11 @@ public class GunnerSkillTreeTests
     public IEnumerator TurretUlt_OverLimit_RemovesOldest()
     {
         var g = NewGunner(new Vector3(12f, 0.5f, 0f), GunnerBranch.Installer, 1);
-        var first = GunnerTurret.Spawn(new Vector2(4f, 0.5f), 1, null);
+        var first = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(4f, 0.5f), 1);
         yield return new WaitForSeconds(0.1f);
-        GunnerTurret.Spawn(new Vector2(6f, 0.5f), 1, null);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(6f, 0.5f), 1);
         yield return new WaitForSeconds(0.1f);
-        GunnerTurret.Spawn(new Vector2(8f, 0.5f), 1, null);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(8f, 0.5f), 1);
         yield return null;
 
         g.AddStack(10); // 부품 +1
@@ -383,7 +383,7 @@ public class GunnerSkillTreeTests
     [UnityTest]
     public IEnumerator Turret_DamagesOnlyEnemiesWithinRange()
     {
-        GunnerTurret.Spawn(new Vector2(10f, 0.5f), 1, null); // 판정 중심 (10, 0.68), 1층 반경 1.36
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(10f, 0.5f), 1); // 판정 중심 (10, 0.68), 1층 반경 1.36
         var inside = NewEnemy(new Vector3(11.2f, 0.68f, 0f));   // 1.2 < 1.36+0.5
         var outside = NewEnemy(new Vector3(12.2f, 0.68f, 0f));  // 2.2 > 1.86
         yield return new WaitForSeconds(1.2f);                   // 1층 틱 0.48초
@@ -398,8 +398,8 @@ public class GunnerSkillTreeTests
     public IEnumerator Field_TwoLinkedTurrets_DamageEnemyOnLink()
     {
         NewGunner(new Vector3(20f, 0.5f, 0f), GunnerBranch.Installer, 1);
-        GunnerTurret.Spawn(new Vector2(5f, 0.5f), 1, null);
-        GunnerTurret.Spawn(new Vector2(8.6f, 0.5f), 1, null); // 3.6 ≤ 링크 한도 3.70
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(5f, 0.5f), 1);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(8.6f, 0.5f), 1); // 3.6 ≤ 링크 한도 3.70
         // 링크 선(y=0.74) 위, 두 설치기 반경(1.36+0.2) 밖
         var onLink = NewEnemy(new Vector3(6.8f, 0.74f, 0f), 0.2f);
         yield return new WaitForSeconds(1.0f); // 장판 틱 0.38초
@@ -411,8 +411,8 @@ public class GunnerSkillTreeTests
     public IEnumerator Field_TurretsTooFarApart_NoLinkDamage()
     {
         NewGunner(new Vector3(20f, 0.5f, 0f), GunnerBranch.Installer, 1);
-        GunnerTurret.Spawn(new Vector2(5f, 0.5f), 1, null);
-        GunnerTurret.Spawn(new Vector2(9.0f, 0.5f), 1, null); // 4.0 > 링크 한도 3.70
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(5f, 0.5f), 1);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(9.0f, 0.5f), 1); // 4.0 > 링크 한도 3.70
         var mid = NewEnemy(new Vector3(7.0f, 0.74f, 0f), 0.2f);
         yield return new WaitForSeconds(1.0f);
 
@@ -423,9 +423,9 @@ public class GunnerSkillTreeTests
     public IEnumerator Field_ClosedTriangle_DamagesEnemyInside()
     {
         NewGunner(new Vector3(20f, 0.5f, 0f), GunnerBranch.Installer, 1);
-        GunnerTurret.Spawn(new Vector2(5f, 0.5f), 1, null);
-        GunnerTurret.Spawn(new Vector2(8.6f, 0.5f), 1, null);
-        GunnerTurret.Spawn(new Vector2(6.8f, 3.62f), 1, null); // 세 변 모두 ≈3.6 ≤ 3.70 → 닫힌 삼각형
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(5f, 0.5f), 1);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(8.6f, 0.5f), 1);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(6.8f, 3.62f), 1); // 세 변 모두 ≈3.6 ≤ 3.70 → 닫힌 삼각형
         // 무게중심 — 링크에서 1.04, 설치기 판정 중심에서 2.0 이상 떨어져 장판 "내부"로만 맞는다
         var inside = NewEnemy(new Vector3(6.8f, 1.78f, 0f), 0.2f);
         yield return new WaitForSeconds(1.0f);
@@ -436,9 +436,9 @@ public class GunnerSkillTreeTests
     [UnityTest]
     public IEnumerator FieldPoints_FlatRowOfThree_LiftsMiddlePoint()
     {
-        var a = GunnerTurret.Spawn(new Vector2(5f, 0.5f), 1, null);
-        var b = GunnerTurret.Spawn(new Vector2(6.5f, 0.5f), 1, null);
-        var c = GunnerTurret.Spawn(new Vector2(8f, 0.5f), 1, null);
+        var a = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(5f, 0.5f), 1);
+        var b = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(6.5f, 0.5f), 1);
+        var c = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(8f, 0.5f), 1);
         yield return null;
 
         var pts = GunnerField.FieldPoints(new List<GunnerTurret> { a, b, c });

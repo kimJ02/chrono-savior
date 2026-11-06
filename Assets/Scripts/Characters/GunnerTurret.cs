@@ -44,31 +44,22 @@ namespace ChronoSavior.Characters
         /// (원본 `y: p.y`, <see cref="GunnerAttack.FeetPosition"/>)이라 <paramref name="playerFeet"/>로 받는다.
         /// 개수 한도 초과 시 가장 오래된 것을 치우는 건 호출하는 쪽(<see cref="GunnerAttack"/>, 원본 `tryGunnerSkill`) 몫이다.
         /// </summary>
-        public static GunnerTurret Place(Vector2 playerFeet, int facing, int tier, Sprite sprite)
+        public static GunnerTurret Place(GunnerTurret prefab, Vector2 playerFeet, int facing, int tier)
         {
             float x = Mathf.Clamp(playerFeet.x + facing * GunnerSpecConfig.TurretPlaceForward,
                 FieldBounds.MinX + GunnerSpecConfig.TurretEdgeMargin, FieldBounds.MaxX - GunnerSpecConfig.TurretEdgeMargin);
-            return Spawn(new Vector2(x, playerFeet.y), tier, sprite);
+            return Spawn(prefab, new Vector2(x, playerFeet.y), tier);
         }
 
-        /// <summary>정해진 자리에 바로 세운다(<see cref="Place"/>가 위치 계산 뒤 부른다 — 테스트도 직접 쓴다).</summary>
-        public static GunnerTurret Spawn(Vector2 pos, int tier, Sprite sprite)
+        /// <summary>
+        /// 정해진 자리에 바로 세운다(<see cref="Place"/>가 위치 계산 뒤 부른다 — 테스트도 직접 쓴다). 세우는 쪽(<see cref="GunnerAttack"/>)이 들고 있는 프리팹
+        /// (Assets/Prefabs/Combat/GunnerTurret — 그림 자식·RunTransient, 2026-11-06 생성 책임 2-3)을 세우고 이번 층의 값을 넣는다. 프리팹이 없으면 오류.
+        /// </summary>
+        public static GunnerTurret Spawn(GunnerTurret prefab, Vector2 pos, int tier)
         {
-            var go = new GameObject("GunnerTurret");
-            // 런이 끝나거나 새로 시작하면 사라져야 한다(원본 `zones = []`, :4318).
-            go.AddComponent<RunTransient>();
-            go.transform.position = pos;
-
-            var visual = new GameObject("Visual");
-            visual.transform.SetParent(go.transform, false);
-            visual.transform.localPosition = new Vector3(0f, GunnerSpecConfig.TurretCenterHeight, 0f);
-            visual.transform.localScale = Vector3.one * 0.36f;
-            var sr = visual.AddComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.color = GunnerAttack.LaserColor;
-            sr.sortingOrder = 3;
-
-            var t = go.AddComponent<GunnerTurret>();
+            if (prefab == null) { Debug.LogError("[GunnerTurret] 포탑 프리팹이 없다 — GunnerAttack의 turretPrefab을 확인"); return null; }
+            var t = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `zones = []`, :4318)
+            t.name = prefab.name;
             t.Tier = tier;
             t.Life = GunnerSpecConfig.TurretLife(tier);
             t.TickInterval = GunnerSpecConfig.TurretTick(tier);

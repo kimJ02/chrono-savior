@@ -28,10 +28,18 @@ namespace ChronoSavior.Tests.PlayMode
         public static GunnerBullet GunnerBullet => Load<GunnerBullet>("GunnerBullet");
         public static MageProjectile MageBolt => Load<MageProjectile>("MageBolt");
         public static EnemyBolt EnemyBolt => Load<EnemyBolt>("EnemyBolt");
+        public static GunnerDrone GunnerDrone => Load<GunnerDrone>("GunnerDrone");
+        public static GunnerTurret GunnerTurret => Load<GunnerTurret>("GunnerTurret");
 
         /// <summary>테스트가 만든 무기·몹에 게임과 같은 탄 프리팹을 끼운다(게임에선 20_Combat의 Player·몹 프리팹에 꽂혀 있다). `AddComponent&lt;MageAttack&gt;().Equipped()`.</summary>
         public static MageAttack Equipped(this MageAttack mage) { mage.BoltPrefab = MageBolt; return mage; }
-        public static GunnerAttack Equipped(this GunnerAttack gunner) { gunner.BulletPrefab = GunnerBullet; return gunner; }
+        public static GunnerAttack Equipped(this GunnerAttack gunner)
+        {
+            gunner.BulletPrefab = GunnerBullet;
+            gunner.DronePrefab = GunnerDrone;
+            gunner.TurretPrefab = GunnerTurret;
+            return gunner;
+        }
         public static EnemyShooterMotion Equipped(this EnemyShooterMotion shooter) { shooter.BoltPrefab = EnemyBolt; return shooter; }
         public static Boss Equipped(this Boss boss) { boss.BoltPrefab = EnemyBolt; return boss; }
     }

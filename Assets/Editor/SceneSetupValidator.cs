@@ -144,7 +144,12 @@ namespace ChronoSavior.Editor
             if (player != null && player.GetComponent<MageChargeFlash>() == null) problems.Add("Player에 MageChargeFlash(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
             // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)
             if (player != null && player.TryGetComponent(out MageAttack mageKit)) CheckProjectilePrefab(mageKit.BoltPrefab, "Player MageAttack.boltPrefab", problems);
-            if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit)) CheckProjectilePrefab(gunnerKit.BulletPrefab, "Player GunnerAttack.bulletPrefab", problems);
+            if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit))
+            {
+                CheckProjectilePrefab(gunnerKit.BulletPrefab, "Player GunnerAttack.bulletPrefab", problems);
+                CheckProjectilePrefab(gunnerKit.DronePrefab, "Player GunnerAttack.dronePrefab", problems);
+                CheckProjectilePrefab(gunnerKit.TurretPrefab, "Player GunnerAttack.turretPrefab", problems);
+            }
             if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
             var portal = One<BossPortal>(combat, problems);
             if (portal != null && portal.Player != playerTf) problems.Add("BossPortal.Player가 이 씬의 Player가 아니다 — 포탈에 다가가도 반응이 없다");

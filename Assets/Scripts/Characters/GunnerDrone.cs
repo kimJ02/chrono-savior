@@ -43,8 +43,10 @@ namespace ChronoSavior.Characters
         /// 원본 `summonLaserDrone(tier, stackSpend)` — 기존 드론을 전부 치우고 새로 소환한다(5층은 2기).
         /// 소모한 충전 스택 1개당 지속시간 +0.32초. 높이는 원본처럼 캐릭터 **발**에서 잰다(`p.y - 78`).
         /// </summary>
-        public static void Summon(GunnerAttack owner, int tier, int stackSpend, Sprite sprite)
+        /// <remarks>드론 구성(그림 자식·RunTransient)은 프리팹(Assets/Prefabs/Combat/GunnerDrone, 2026-11-06 생성 책임 2-3)에 있다 — 소환하는 쪽(<see cref="GunnerAttack"/>)이 넘긴다. 없으면 오류.</remarks>
+        public static void Summon(GunnerDrone prefab, GunnerAttack owner, int tier, int stackSpend)
         {
+            if (prefab == null) { Debug.LogError("[GunnerDrone] 드론 프리팹이 없다 — GunnerAttack의 dronePrefab을 확인"); return; }
             foreach (var d in new List<GunnerDrone>(Active)) d.Remove();
 
             int facing = owner.Facing;
@@ -53,22 +55,11 @@ namespace ChronoSavior.Characters
             for (int i = 0; i < count; i++)
             {
                 int side = i == 0 ? -1 : 1;
-                var go = new GameObject("GunnerDrone");
-                // 런이 끝나거나 새로 시작하면 사라져야 한다(원본 `zones = []`, :4318).
-                go.AddComponent<RunTransient>();
-                go.transform.position = feet + new Vector2(
+                Vector2 pos = feet + new Vector2(
                     -facing * GunnerSpecConfig.DroneSpawnBack + side * GunnerSpecConfig.DroneSpawnSide,
                     GunnerSpecConfig.DroneSpawnHeight + i * GunnerSpecConfig.DroneSpawnHeightStep);
-
-                var visual = new GameObject("Visual");
-                visual.transform.SetParent(go.transform, false);
-                visual.transform.localScale = Vector3.one * 0.26f;
-                var sr = visual.AddComponent<SpriteRenderer>();
-                sr.sprite = sprite;
-                sr.color = GunnerAttack.LaserColor;
-                sr.sortingOrder = 3;
-
-                var d = go.AddComponent<GunnerDrone>();
+                var d = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `zones = []`, :4318)
+                d.name = prefab.name;
                 d.owner = owner;
                 d.Tier = tier;
                 d.Side = side;

@@ -227,6 +227,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (38)** — **[나] 2-3b: 메카닉 드론·포탑 프리팹화 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과, Codex 통과).** `Assets/Prefabs/Combat/GunnerDrone`·`GunnerTurret`(그림 자식·RunTransient),
+  `GunnerDrone.Summon(prefab, …)`·`GunnerTurret.Spawn/Place(prefab, …)`, `GunnerAttack.dronePrefab`·`turretPrefab`(Player). 드론의 탄은 주인의 탄 프리팹. `bulletSprite`는 레이저 구간·연결선 그림(그림만 있는 효과)용으로만 남음.
 - **2026-11-06 (37)** — **[나] 2-3a: 투사체 3종 프리팹화 (`feature/creation-ownership`, PlayMode 472/472, 씬 검증 통과, Codex 통과).** `Assets/Prefabs/Combat/GunnerBullet`·`MageBolt`·`EnemyBolt`
   (판정 상자·리지드바디·그림 자식·RunTransient를 프리팹에, 크기·색·속도는 쏠 때). `Spawn(prefab, …)`이 첫 인자로 프리팹을 받고(없으면 오류), 쏘는 쪽이 직렬화로 들고 넘긴다 —
   `GunnerAttack.bulletPrefab`(드론도 이걸로)·`MageAttack.boltPrefab`(Player, 20_Combat)·`EnemyShooterMotion`·`Boss.boltPrefab`(몹 프리팹). 그림 필드 `MageAttack.boltSprite`·`Boss.projectileSprite` 삭제.

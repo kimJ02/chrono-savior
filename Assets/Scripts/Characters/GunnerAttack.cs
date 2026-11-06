@@ -47,7 +47,17 @@ namespace ChronoSavior.Characters
         /// <summary>씬 검증과 테스트가 읽고 넣는다. 드론도 이 프리팹으로 쏜다.</summary>
         public GunnerBullet BulletPrefab { get => bulletPrefab; set => bulletPrefab = value; }
 
-        [Tooltip("레이저·드론·설치기·연결선 그림(탄 프리팹의 그림과 같은 그림).")]
+        [Tooltip("레이저 드론 프리팹(Assets/Prefabs/Combat/GunnerDrone) — X(충전 갈래).")]
+        [SerializeField] GunnerDrone dronePrefab;
+        [Tooltip("설치 포탑 프리팹(Assets/Prefabs/Combat/GunnerTurret) — X(설치 갈래).")]
+        [SerializeField] GunnerTurret turretPrefab;
+
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public GunnerDrone DronePrefab { get => dronePrefab; set => dronePrefab = value; }
+        /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
+        public GunnerTurret TurretPrefab { get => turretPrefab; set => turretPrefab = value; }
+
+        [Tooltip("레이저 구간·설치물 연결선 그림(그림만 있는 효과 — 코드가 깐다).")]
         public Sprite bulletSprite;
         public Color bulletColor = new Color(1f, 0.92f, 0.63f);
 
@@ -291,7 +301,7 @@ namespace ChronoSavior.Characters
                 // 충전 스택은 소환하는 순간 전부 드론 지속시간으로 바뀐다(`consumeGunnerStacks`).
                 int stackSpend = Stacks;
                 Stacks = 0;
-                GunnerDrone.Summon(this, tier, stackSpend, bulletSprite);
+                GunnerDrone.Summon(dronePrefab, this, tier, stackSpend);
                 HitFeel.Shake(3f + tier * 0.5f, 0.14f); // 원본 :2401
                 ultCdTimer = ultCdMax = GunnerSpecConfig.DroneUltCooldown(tier) * cdMult;
                 return;
@@ -310,7 +320,7 @@ namespace ChronoSavior.Characters
                 oldest?.Remove();
             }
             // 원본 `placeGunnerTurret`는 `y: p.y` — 발 높이(바닥)에 놓는다.
-            GunnerTurret.Place(FeetPosition, Facing, tier, bulletSprite);
+            GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier);
             HitFeel.Shake(2f + tier * 0.4f, 0.1f); // 원본 :2416
             ultCdTimer = ultCdMax = GunnerSpecConfig.TurretUltCooldown(tier) * cdMult;
         }
