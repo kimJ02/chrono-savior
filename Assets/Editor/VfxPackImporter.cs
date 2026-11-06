@@ -96,7 +96,8 @@ namespace ChronoSavior.Editor
 
         /// <summary>
         /// 가져온다. 돌려주는 건 문제 목록(비면 성공). **목록 전부를 먼저 읽고 검증한 뒤에만 쓴다** — 하나라도 문제가 있으면 아무 키도 바꾸지 않는다
-        /// (옛 그림과 새 그림이 섞이지 않게, 그때까지 있던 `Resources/Vfx`는 그대로 남는다).
+        /// (옛 그림과 새 그림이 섞이지 않게, 그때까지 있던 `Resources/Vfx`는 그대로 남는다). 쓰는 도중 디스크 오류가 나면 일부 키만 바뀔 수 있다 —
+        /// 그땐 다시 가져오면 된다(원본 zip이 원본이라 잃는 건 없다).
         /// </summary>
         public static List<string> Import(string packFolder)
         {
@@ -168,7 +169,11 @@ namespace ChronoSavior.Editor
                 if (m.Success) hits.Add((int.Parse(m.Groups[1].Value), e));
             }
             if (hits.Count == 0) { problems.Add($"{src.Key}: 프레임이 없다 — {src.Pack}/{src.Path}"); return null; }
-            return hits.OrderBy(h => h.n).Select(h => ReadAll(h.e)).ToList();
+            hits.Sort((x, y) => x.n.CompareTo(y.n));
+            // 번호가 이어져야 한다(0000부터든 _1부터든) — 중간 프레임이 빠진 zip을 짧은 애니메이션으로 받아들이지 않게
+            for (int k = 1; k < hits.Count; k++)
+                if (hits[k].n != hits[k - 1].n + 1) { problems.Add($"{src.Key}: 프레임 번호가 끊겼다({hits[k - 1].n} 다음 {hits[k].n}) — {src.Pack}/{src.Path}"); return null; }
+            return hits.Select(h => ReadAll(h.e)).ToList();
         }
 
         /// <summary>시트의 한 줄을 칸 크기로 잘라 앞에서부터(뒤쪽 빈 칸은 버린다).</summary>
