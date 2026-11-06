@@ -12,7 +12,7 @@
 | 화면 상태 `GameState`(Current·Previous·IsTransitioning) | ✓ | `GameFlow`만 | 화면 버튼·전투 사건(이벤트로) | 앱 전체. 테스트만 `Reset` | 화면 전부·전투 | `StateOwnershipTests`(소스 검사) |
 | 시간 정지 `Time.timeScale` | (엔진) | `GameFlow`만 | 히트스톱 요청(`CombatEvents.RequestHitstop`) | — | 엔진 | `StateOwnershipTests` |
 | 런 기록 `RunState`(지역·모드·남은 시간·처치·살기·보상·끝남) | ✓ | `RunState` 메서드 | `GameFlow`(시작·끝·되돌리기)·`CombatDirector`(시간·보스 필드)·`EnemySpawner`·`Shrine`·`ExpOrb`(처치·보상)·`PlayerHealth`(죽은 원인) | `GameFlow.StartRun`의 `Begin`(실패하면 `Restore`) | HUD·결과 화면·전투 | 런 사이클 테스트 |
-| 보스 무대 `FieldLayout.IsBossArena` + 필드 좌표 `FieldBounds` | ✓ | `FieldLayout.SetBossArena` 한 경로 | `GameFlow`(로비 = 일반 무대)·`CombatDirector`(보스 필드) | 전환 실패면 `GameFlow`가 되돌림 | 스폰·카메라·발판·화면 | 4-3에서 `FieldBounds` 쓰기 막기 |
+| 보스 무대 `FieldLayout.IsBossArena` + 필드 좌표 `FieldBounds` | ✓ | `FieldLayout.SetBossArena` 한 경로 | `GameFlow`(로비 = 일반 무대)·`CombatDirector`(보스 필드) | 전환 실패면 `GameFlow`가 되돌림 | 스폰·카메라·발판·화면 | `MinX`·`GroundY` 상수, `MaxX`는 읽기 전용(`SetMaxX`는 `SetBossArena`만) — 무대 전환 테스트 |
 | 전투 배수 `CombatModifiers`(콤보·연쇄·성소 버프·원정 최고 콤보) | ✓ | `CombatModifiers` 메서드 | `EnemyHealth`(피해)·`EnemySpawner`(처치)·`Shrine`(버프)·`CombatDirector`(시간) | `CombatDirector.BeginField`의 `ResetForRun` | 피해 계산·HUD·결과 화면 | 4-1(최고 콤보 초기화) |
 | 타격감 `HitFeel`(흔들림·붉어짐) | ✓ | `HitFeel` 메서드(요청형) | 전투 쪽 여러 곳(`Shake` 요청) | `BeginField`의 `Reset` | 카메라·HUD | — |
 | 전투 담당 등록 `CombatDirector.Current` | ✓ | `CombatDirector` 자신(OnEnable/OnDisable) | — | 전투 씬이 켜져 있는 동안 | `GameFlow` | 씬 전환 테스트 |
@@ -48,5 +48,5 @@
 
 - ✅ `CombatModifiers.MaxCombo`가 런마다 안 지워져 결과 화면 '원정 통계 최대 콤보'가 세션 전체 최고가 된다 → 원정마다 초기화(4-1).
 - ✅ `RunProgress.TotalKills`는 세기만 하고 읽는 곳이 없다, `RunProgress.RegionLv`는 `RunState.Region`의 별칭 → 삭제(4-2). 난이도·보상은 `RunState.Region`을 직접 읽는다.
-- `FieldBounds.MinX`·`MaxX`·`GroundY`가 public 가변 필드 → 읽기 전용(4-3).
+- ✅ `FieldBounds.MinX`·`MaxX`·`GroundY`가 public 가변 필드 → `MinX`·`GroundY`는 상수, `MaxX`는 읽기 전용 + `SetMaxX`(4-3).
 - 프로필 직접 대입: 캐릭터 선택(`PlayerRig`·`CharacterSelectScreen`), 뽑기 재화·통계(`GachaService`), `stats.shrines++`(`Shrine`)·`stats.bosses++`(`EnemySpawner`), 각성 화면 'SP +1 테스트 버튼'(`level++`) → 의미 있는 `PlayerProfile` 메서드로(4-4).

@@ -10,9 +10,17 @@ namespace ChronoSavior.Core
     /// </summary>
     public static class FieldBounds
     {
-        public static float MinX = 0f;
-        public static float MaxX = 26f;
-        public static float GroundY = 0f;
+        public const float MinX = 0f;
+        public const float GroundY = 0f;
+
+        /// <summary>
+        /// 필드 오른쪽 끝. 무대(일반·보스)마다 다르다 — 바꾸는 곳은 `World.FieldLayout.SetBossArena` 한 곳뿐이다
+        /// (발판 목록과 같이 바뀌어야 해서. 2026-11-06 public 필드였던 것을 읽기 전용으로).
+        /// </summary>
+        public static float MaxX { get; private set; } = 26f;
+
+        /// <summary>`FieldLayout.SetBossArena`만 부른다 — 무대를 바꾸려면 그쪽을 쓸 것.</summary>
+        public static void SetMaxX(float maxX) => MaxX = maxX;
 
         public static float ClampX(float x) => Mathf.Clamp(x, MinX, MaxX);
 

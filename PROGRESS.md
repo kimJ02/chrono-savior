@@ -227,6 +227,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-06 (57)** — **[나] 4-3: `FieldBounds`를 읽기 전용으로 (`feature/state-ownership`, PlayMode 473/473).** public 가변 필드였다 — 아무도 안 바꾸는 `MinX`·`GroundY`는 `const`, 무대마다 다른 `MaxX`는 읽기 전용 속성 + `SetMaxX`(부르는 곳은 `FieldLayout.SetBossArena` 하나, 직접 대입은 컴파일 에러). 동작 같음.
 - **2026-11-06 (56)** — **[나] 4-2: 쓰이지 않는 `RunProgress` 삭제 (`feature/state-ownership`, PlayMode 473/473).** `TotalKills`는 세기만 하고 읽는 곳이 없었고 `RegionLv`는 `RunState.Region`의 별칭이었다 — `EnemySpawner`가 `RunState.Region`을 직접 읽는다(동작 같음). 테스트에서만 쓰던 `DifficultyScalingConfig.KillsPerRegionLevel`도 삭제.
   위임만 확인하던 `RegionLv_FollowsRunRegion_NotKillCount` 테스트 삭제(474→473), 처치 수 확인은 `RunState.Kills`로. 테스트 클래스 이름 `RunProgressAndRewardsTests` → `RegionScalingAndRewardsTests`.
 - **2026-11-06 (55)** — **[나] 4-1: 결과 화면 '최대 콤보'를 원정마다 (`feature/state-ownership`, PlayMode 474/474).** `CombatModifiers.MaxCombo`를 `ResetForRun`이 지운다(예전엔 테스트용 `Reset`만 지워 결과 화면에 그 세션 전체 최고가 보였다).

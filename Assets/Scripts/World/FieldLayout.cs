@@ -77,7 +77,7 @@ namespace ChronoSavior.World
         public static void SetBossArena(bool boss)
         {
             IsBossArena = boss;
-            Core.FieldBounds.MaxX = boss ? BossMapWidth : NormalMapWidth;
+            Core.FieldBounds.SetMaxX(boss ? BossMapWidth : NormalMapWidth);
         }
 
         // 원본 buildSpawnPoints()의 바닥 그리드: `for (let x=260; x<mapW-160; x+=380) {x, y:groundY, w:300}`
