@@ -18,6 +18,16 @@
 | 섬영 베기 효과 프레임 | `20_Combat` › `Player`의 `BladeSlashVfx.frames`(이름순) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수 — **지금과 같은 크기·PPU(128×128·128)·피벗의 프레임만** 코드 수정 없이 바뀐다. 외주 효과는 이 셋을 다시 맞춘다 |
 | 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeFlash`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
 
+## 라이선스 이펙트(구매·무료 팩) — git 밖, 키로 (2026-11-07)
+
+공개 저장소라 팩 그림은 커밋하지 않는다(`HANDOFF.md` 0-3, 약관 `docs/vfx-credits.md`). **월드 그림은 직렬화 참조**라는 위 원칙의 예외다.
+
+| 무엇 | 바꾸는 곳 | 같이 볼 값 |
+|---|---|---|
+| 어느 팩의 어느 프레임을 쓰나 | `Assets/Editor/VfxPackImporter`의 목록(코드) → 메뉴 `ChronoSavior/VFX 팩 가져오기`로 다시 푼다 | 키 이름은 `Combat/VfxKeys` 상수(목록과 어긋나면 컴파일 에러) |
+| 그림 파일 | `Assets/Resources/Vfx/<키>/frame_000…`(git 밖) | 가져오기 설정은 `VfxImportSettings`(Point·무압축·밉맵 없음·PPU 128 — 배율 1 = 그림 한 픽셀이 격자 한 칸) |
+| 재생 | 실행 코드는 `Combat/VfxFrames.Get(키)`(없으면 빈 배열 → 지금 임시 그림)·`Combat/VfxPlayer`(단순 재생기) | 위치·크기·언제는 그 효과의 담당 코드 |
+
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)
 
 | 무엇 | 지금 | 바꿀 방법(그때) |

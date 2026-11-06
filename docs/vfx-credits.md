@@ -27,4 +27,18 @@ Pixel Art Effects
 
 | 키 | 팩 | 원본 |
 |---|---|---|
-| (아직 없음) | | |
+| `mage/charge_large·charge_small` | Gigapack | Sci-fi/scifi_charge_up_001 (large·small, yellow) |
+| `mage/fire_projectile` | Projectiles Pack 4 | pj4_plasma_ball_small_red (화염탄 대체 후보) |
+| `mage/fire_trail·fire_trail_small` | Pixel Fire | fire asset red / Group 4 - 1·Group 4 - 3 |
+| `mage/gravity_orb_small·large` | Projectiles Pack 4 | pj4_dark_matter (small·large, violet) |
+| `mage/fire_explosion` | Gigapack | Explosions/symmetrical_explosion_004_large_orange |
+| `mage/gravity_explosion` | Gigapack | Explosions/stylized_explosion_002_large_violet |
+| `mechanic/laser_*` | Projectiles Pack 4 | pj4_laser_beam_A (small·large, blue) origin·center·impact × start·loop·end |
+| `mechanic/pellet` | Projectiles Pack 4 | pj4_energy_pellet_small_yellow |
+| `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (후보) |
+| `assassin/slash_1~3` | Slash Vol 2 | spritesheet_96x96 1·3·5줄(무속성) |
+| `assassin/heartbeat` | Gigapack | Sci-fi/scifi_heartbeat_fast_001_large_yellow |
+| `assassin/splatter` | Gigapack | Splatters/directional_splatter_001_small_red |
+| `assassin/smoke` | Gigapack | Smoke Bursts/looping_smoke_burst_002_small_gray |
+
+목록은 효과를 입히며 바뀐다 — 바뀌면 이 표도 같이(원본은 `Editor/VfxPackImporter`).

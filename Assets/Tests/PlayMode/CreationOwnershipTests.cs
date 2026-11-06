@@ -65,6 +65,7 @@ public class CreationOwnershipTests
         ["Combat/GravityBurstRing.cs"]     = (Kind.VisualEffect, "중력 폭발 고리(원판 메시·선)"),
         ["Combat/GravityImpactVfx.cs"]     = (Kind.VisualEffect, "중력 착탄 그림"),
         ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력 소용돌이 그림"),
+        ["Combat/VfxPlayer.cs"]            = (Kind.VisualEffect, "라이선스 이펙트(키로 불러온 프레임)를 한 번·반복 재생하는 단순 재생기 — 그림만, 판정 없음(2026-11-07 VFX 스프린트)"),
 
         // E. UI 짓기
         ["UI/Pixel/Px.cs"]                 = (Kind.UiBuild, "UI 노드 공용 생성(Image·Text·외곽선·버튼) — 모든 화면이 여기로 짓는다"),
