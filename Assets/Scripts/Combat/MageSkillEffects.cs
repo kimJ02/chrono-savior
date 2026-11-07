@@ -46,7 +46,23 @@ namespace ChronoSavior.Combat
                 afflictable?.ApplyBurn(burnStacks);
             }
             HitFeel.Shake(hit ? 7f : 4f, 0.18f); // 원본 :1992
+            ShowExplosion(VfxKeys.MageFireExplosion, pos, r);
             return hit;
+        }
+
+        /// <summary>폭발 그림 재생 속도(팩 기본)와 정렬(캐릭터·적 앞, 대붕괴 고리(5) 아래 — CLAUDE.md 예약표 4).</summary>
+        public const float ExplosionFps = 15f;
+        public const int ExplosionSortingOrder = 4;
+
+        /// <summary>
+        /// 폭발 그림을 한 번(2026-11-07 VFX 스프린트 — 원본엔 폭발 그림이 없다, 판정과 무관). 크기는 판정 지름(반경 × 2)에 가장 가까운 **정수** 배율
+        /// (96px 그림 = 0.75유닛 → 화염 폭발 3~6배) — 그림 테두리와 판정 경계는 몇 픽셀 어긋날 수 있다(도트 배율 정수 우선). 그림이 없으면 아무것도 안 한다.
+        /// </summary>
+        static VfxPlayer ShowExplosion(string key, Vector2 pos, float radius)
+        {
+            var frames = VfxFrames.Get(key);
+            if (frames.Length == 0) return null;
+            return VfxPlayer.Spawn(key, pos, VfxPlayer.WholeScale(radius * 2f, frames[0]), ExplosionFps, ExplosionSortingOrder);
         }
 
         /// <summary>

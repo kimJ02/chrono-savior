@@ -110,12 +110,9 @@ public class MageProjectile : MonoBehaviour
             visualRenderer.color = fallbackColor;
             return;
         }
-        visualTf.localScale = Vector3.one * ArtScale(hitWidth, frames[0].bounds.size.x);
+        visualTf.localScale = Vector3.one * VfxPlayer.WholeScale(hitWidth, frames[0]);
         visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
     }
-
-    /// <summary>판정 폭(유닛)에 가장 가까운 정수 배율 — 그림 한 장의 폭(유닛)으로 나눠 반올림, 최소 1.</summary>
-    public static int ArtScale(float hitWidth, float artWidth) => Mathf.Max(1, Mathf.RoundToInt(hitWidth / artWidth));
 
     void Update()
     {

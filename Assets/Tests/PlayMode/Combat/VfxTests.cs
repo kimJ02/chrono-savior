@@ -94,6 +94,30 @@ public class VfxTests
         return sprites;
     }
 
+    /// <summary>정수 배율 — 목표 폭에 가장 가까운 정수, 최소 1(24px·PPU 128 = 0.1875유닛).</summary>
+    [Test]
+    public void WholeScale_IsNearestWholeNumber()
+    {
+        var tex = new Texture2D(24, 24);
+        made.Add(tex);
+        var frame = Sprite.Create(tex, new Rect(0, 0, 24, 24), new Vector2(0.5f, 0.5f), 128f);
+        made.Add(frame);
+        Assert.AreEqual(2, VfxPlayer.WholeScale(0.4f, frame));
+        Assert.AreEqual(5, VfxPlayer.WholeScale(0.9f, frame));
+        Assert.AreEqual(1, VfxPlayer.WholeScale(0.05f, frame), "최소 1");
+    }
+
+    /// <summary>바깥에서 곱한 투명도(수명을 담당이 들고 있는 반복 재생용)가 색에 반영된다.</summary>
+    [Test]
+    public void Alpha_MultipliesTheColor()
+    {
+        var player = new GameObject("TestVfxAlpha", typeof(SpriteRenderer)).AddComponent<VfxPlayer>();
+        player.Play(SyntheticFrames(2), 10f, true, 0f, new Color(1f, 0.5f, 0.5f, 0.8f));
+        player.Alpha = 0.5f;
+        Assert.AreEqual(0.4f, player.GetComponent<SpriteRenderer>().color.a, 1e-4f);
+        Assert.AreEqual(0.5f, player.GetComponent<SpriteRenderer>().color.g, 1e-4f, "색은 그대로");
+    }
+
     /// <summary>프레임 없이 재생하라고 하면 예외 없이 곧바로 사라진다.</summary>
     [UnityTest]
     public IEnumerator Player_WithNoFrames_JustDisappears()

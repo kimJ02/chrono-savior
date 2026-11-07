@@ -85,15 +85,6 @@ public class MageChargeVfxTests
         Assert.AreEqual(MageChargeVfx.GravityTint, MageChargeVfx.AuraTint(MageBranch.Gravity));
     }
 
-    /// <summary>탄 그림 배율은 판정 폭에 가장 가까운 정수(최소 1).</summary>
-    [Test]
-    public void BoltArtScale_IsNearestWholeNumber()
-    {
-        Assert.AreEqual(2, MageProjectile.ArtScale(0.4f, 0.1875f));
-        Assert.AreEqual(5, MageProjectile.ArtScale(0.9f, 0.1875f));
-        Assert.AreEqual(1, MageProjectile.ArtScale(0.1f, 0.375f), "최소 1");
-    }
-
     /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>
     [Test]
     public void Bolt_ShowsBranchArt_HitboxUnchanged()

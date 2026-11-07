@@ -18,11 +18,28 @@ namespace ChronoSavior.Combat
         float t;
         SpriteRenderer sr;
         Color baseColor = Color.white;
+        float alpha = 1f;
 
         /// <summary>지금 보여 주는 프레임 번호(테스트용).</summary>
         public int Frame { get; private set; }
         /// <summary>한 번 재생이 끝났는지(반복 재생은 늘 false).</summary>
         public bool Finished { get; private set; }
+
+        /// <summary>
+        /// 바깥에서 곱하는 투명도 0~1 — 수명을 그 효과의 담당이 들고 있는 반복 재생(예: 불길 장판이 끝나 갈 때 흐려짐)용. 기본 1.
+        /// </summary>
+        public float Alpha
+        {
+            get => alpha;
+            set { alpha = Mathf.Clamp01(value); if (frames != null && frames.Length > 0) Show(Frame, CurrentFade()); }
+        }
+
+        /// <summary>
+        /// 그림을 `targetWidth`(유닛)에 가장 가깝게 보이게 하는 **정수** 배율(최소 1) — 도트 배율을 정수로 지키려고(`docs/pixel-standard.md`).
+        /// 판정 크기는 그대로 두고 그림만 이 배율로 그린다.
+        /// </summary>
+        public static int WholeScale(float targetWidth, Sprite frame) =>
+            frame == null ? 1 : Mathf.Max(1, Mathf.RoundToInt(targetWidth / frame.bounds.size.x));
 
         /// <summary>
         /// 그 키의 효과를 세운다. 그림이 없으면 null — 부르는 쪽은 지금 임시 그림으로 그린다.
@@ -81,15 +98,17 @@ namespace ChronoSavior.Combat
                 Destroy(gameObject);
                 return;
             }
-            float alpha = fadeOut > 0f ? Mathf.Clamp01((Duration - t) / fadeOut) : 1f;
-            Show(i, alpha);
+            Show(i, CurrentFade());
         }
 
-        void Show(int index, float alpha)
+        /// <summary>한 번 재생이 끝나 갈 때의 투명도(fadeOut) — 반복 재생은 1.</summary>
+        float CurrentFade() => !loop && fadeOut > 0f ? Mathf.Clamp01((Duration - t) / fadeOut) : 1f;
+
+        void Show(int index, float fade)
         {
             Frame = index;
             sr.sprite = frames[index];
-            sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * alpha);
+            sr.color = new Color(baseColor.r, baseColor.g, baseColor.b, baseColor.a * fade * alpha);
         }
     }
 }

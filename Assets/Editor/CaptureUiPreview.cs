@@ -216,6 +216,22 @@ namespace ChronoSavior.Editor
             }
             Render(pc, cam, outDir, "mage_bolts", 1920, 1080, 3f);
             Clear();
+
+            // 3. 불길(텔레포트 경로 — 발 높이 + 0.28에 5곳) + 화염 폭발(3차, 가운데 프레임)
+            float feet = FieldBounds.GroundY;
+            for (int i = 0; i <= 4; i++)
+                made.Add(ChronoSavior.Combat.FireTrailZone.Spawn(new Vector2(4.2f + i * 0.45f, feet + ChronoSavior.Combat.MageSpecConfig.TeleportFlameLineHeight), 1, 1f).gameObject);
+            float fr = ChronoSavior.Combat.MageSpecConfig.FireExplosionRadius(3);
+            var fireFrames = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageFireExplosion);
+            if (fireFrames.Length > 0)
+            {
+                var boom = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageFireExplosion, new Vector2(9f, feet + 0.6f),
+                    ChronoSavior.Combat.VfxPlayer.WholeScale(fr * 2f, fireFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                boom.Play(fireFrames.Skip(4).ToArray(), 15f, false, 0f, Color.white);
+                made.Add(boom.gameObject);
+            }
+            Render(pc, cam, outDir, "mage_fire", 1920, 1080, 3f);
+            Clear();
             Debug.Log("[CaptureUiPreview] 마법사 이펙트 저장: " + outDir);
             EditorApplication.Exit(0);
         }

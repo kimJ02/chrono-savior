@@ -46,7 +46,7 @@ public class CreationOwnershipTests
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
         ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
-        ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐이고 에디터에서 조정할 그림·판정 부품이 없다(값은 MageSpecConfig). 마법사 스킬이 깐다"),
+        ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐이고 에디터에서 조정할 판정 부품이 없다(값은 MageSpecConfig). 불꽃 그림은 키로 불러온 라이선스 프레임이라 자식 재생기로(2026-11-07). 마법사 스킬이 깐다"),
         ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐, 그림은 소용돌이 효과(D)가 따로. 값은 MageSpecConfig. 마법사 스킬이 연다"),
 
         // B. 몹 조립

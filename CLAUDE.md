@@ -175,14 +175,18 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | Player | 플레이어(Unity 기본 제공) |
 | Enemy | 적 전체 — 공격 판정이 이 태그로 대상을 고른다 |
 
-**렌더 정렬 순서(`sortingOrder`)** — 지금 코드에 매직넘버로 흩어져 있다(-1·3·4·5). 새 값을 쓰기 전에 여기 적을 것:
+**렌더 정렬 순서(`sortingOrder`)** — 새 값을 쓰기 전에 여기 적을 것(2026-11-07 실제 코드에 맞춰 고침 — 예전 표는 바닥을 -1로 적고 있었다):
 | 값 | 용도 |
 |---|---|
-| -1 | 바닥·발판 |
-| 0 | 캐릭터·적(기본) |
+| -100 | 배경(`StageVisuals.BackgroundOrder`) |
+| -5 | 땅·발판 타일(`StageVisuals.GroundOrder`) |
+| -3 | 중력장 그림(필드 효과 — 캐릭터·적 뒤) |
+| -2 | 불길 장판 그림(`FireTrailZone.FlameSortingOrder`) |
+| -1 | 몸 바로 뒤: 잔상·마법사 차지 오라(몸 정렬 − 1) |
+| 0 | 캐릭터·적(기본) — 몸 바로 앞(+1)은 피격·완충 깜빡임, 베기 효과 |
 | 3 | 투사체 |
-| 4 | 차지 인디케이터 |
-| 5 | 공격 판정 표시(링) |
+| 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`) |
+| 5 | 공격 판정 표시(링)·대붕괴 고리 |
 
 ### 테스트
 - `Rigidbody2D`/`Collider2D`가 얽힌 로직(이동·공격 판정·발판 등)은 PlayMode 테스트 필수.
