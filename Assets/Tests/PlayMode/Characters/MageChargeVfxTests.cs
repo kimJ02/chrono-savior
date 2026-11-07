@@ -13,7 +13,7 @@ namespace ChronoSavior.Tests.PlayMode
 /// 마법사 차지 — 2026-10-25 사용자: "차지 단계마다 플레이어가 깜빡이게, 마법진은 없애"와 "로비 들어갔을 때 스킬이 한 번 써진다".
 /// 단계는 원본 강화탄(50%)·완충(99%) 문턱. 사냥 중이 아니면 차지를 쏘지 않는다(메뉴의 Z "확인"이 로비에서 탄으로 나가던 버그).
 /// </summary>
-public class MageChargeFlashTests
+public class MageChargeVfxTests
 {
     static readonly FieldInfo Charging = typeof(MageAttack).GetField("charging", BindingFlags.NonPublic | BindingFlags.Instance);
     static readonly FieldInfo ChargeT = typeof(MageAttack).GetField("chargeT", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -45,23 +45,92 @@ public class MageChargeFlashTests
         go.AddComponent<CharacterMover2D>();
         go.AddComponent<PlayerHealth>();
         var mage = go.AddComponent<MageAttack>().Equipped();
-        go.AddComponent<MageChargeFlash>().Equipped(); // 게임에선 씬의 Player에 같이 놓여 있다(2026-11-05 생성 책임 2-1)
+        go.AddComponent<MageChargeVfx>().Equipped(); // 게임에선 씬의 Player에 같이 놓여 있다(2026-11-05 생성 책임 2-1)
         return mage;
+    }
+
+    /// <summary>차지 오라(2026-11-07 VFX): 차지하는 동안만 보이고, 크기는 월드 배율 1로 고정, 색은 갈래마다. 그림이 없는 클론은 생략.</summary>
+    [Test]
+    public void ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale()
+    {
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeLarge), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
+        ProfileService.Current.mageBranch = MageBranch.Gravity;
+        var mage = NewMage();
+        mage.transform.localScale = new Vector3(0.8f, 0.8f, 1f); // 씬의 Player처럼 1이 아닌 배율
+        var vfx = mage.GetComponent<MageChargeVfx>();
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.AuraVisible, "차지 전엔 안 보인다");
+
+        Charging.SetValue(mage, true);
+        ChargeT.SetValue(mage, 0.1f);
+        vfx.Refresh(0.016f);
+        Assert.IsTrue(vfx.AuraVisible, "차지하는 동안 보인다");
+        var aura = mage.transform.Find("ChargeAura");
+        Assert.AreEqual(1f, aura.lossyScale.x, 1e-4f, "크기 고정 — 월드 배율 1(도트 배율 1)");
+        ChargeT.SetValue(mage, 1f);
+        vfx.Refresh(0.016f);
+        Assert.AreEqual(1f, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
+        Assert.AreEqual(MageChargeVfx.GravityTint, aura.GetComponent<SpriteRenderer>().color, "중력 갈래는 보라");
+
+        Charging.SetValue(mage, false);
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.AuraVisible, "차지가 끝나면 사라진다");
+    }
+
+    [Test]
+    public void ChargeAura_TintPerBranch()
+    {
+        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.None), "빌드 없음은 그림 그대로");
+        Assert.AreEqual(MageChargeVfx.FireTint, MageChargeVfx.AuraTint(MageBranch.Explosion));
+        Assert.AreEqual(MageChargeVfx.GravityTint, MageChargeVfx.AuraTint(MageBranch.Gravity));
+    }
+
+    /// <summary>탄 그림 배율은 판정 폭에 가장 가까운 정수(최소 1).</summary>
+    [Test]
+    public void BoltArtScale_IsNearestWholeNumber()
+    {
+        Assert.AreEqual(2, MageProjectile.ArtScale(0.4f, 0.1875f));
+        Assert.AreEqual(5, MageProjectile.ArtScale(0.9f, 0.1875f));
+        Assert.AreEqual(1, MageProjectile.ArtScale(0.1f, 0.375f), "최소 1");
+    }
+
+    /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>
+    [Test]
+    public void Bolt_ShowsBranchArt_HitboxUnchanged()
+    {
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageFireProjectile), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
+        MageProjectile Bolt(bool explosive, bool gravity) => MageProjectile.Spawn(TestPrefabs.MageBolt, new Vector3(5f, 3f, 0f), Vector2.zero, 1f, 1, 5f, 1.9f,
+            Color.cyan, false, false, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
+
+        foreach (var (explosive, gravity, key) in new[] { (true, false, ChronoSavior.Combat.VfxKeys.MageFireProjectile), (false, true, ChronoSavior.Combat.VfxKeys.MageGravityOrbSmall) })
+        {
+            var bolt = Bolt(explosive, gravity);
+            Assert.AreEqual(new Vector2(0.4f * 1.9f, 0.3f * 1.9f), bolt.GetComponent<BoxCollider2D>().size, "판정 상자는 그대로");
+            var player = bolt.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>();
+            Assert.IsNotNull(player, $"{key} 그림이 돈다");
+            float s = player.transform.localScale.x;
+            Assert.AreEqual(Mathf.Round(s), s, 1e-4f, "정수 배율");
+            CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(key), player.GetComponent<SpriteRenderer>().sprite, "그 갈래의 그림");
+        }
+
+        var plain = Bolt(false, false);
+        Assert.IsNull(plain.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>(), "0차 탄은 예전 원 그림");
+        Assert.AreEqual(Color.cyan, plain.GetComponentInChildren<SpriteRenderer>().color);
     }
 
     [Test]
     public void OnlyFullCharge_Flashes()
     {
-        Assert.AreEqual(0, MageChargeFlash.StageAt(0.5f), "강화탄(50%)에선 안 번쩍인다(사용자 \"풀차징 되면 한 번만\")");
-        Assert.AreEqual(0, MageChargeFlash.StageAt(0.98f));
-        Assert.AreEqual(1, MageChargeFlash.StageAt(0.99f), "원본 완충 `chargeK >= 0.99`");
+        Assert.AreEqual(0, MageChargeVfx.StageAt(0.5f), "강화탄(50%)에선 안 번쩍인다(사용자 \"풀차징 되면 한 번만\")");
+        Assert.AreEqual(0, MageChargeVfx.StageAt(0.98f));
+        Assert.AreEqual(1, MageChargeVfx.StageAt(0.99f), "원본 완충 `chargeK >= 0.99`");
     }
 
     [Test]
     public void FlashesOnce_AtFullCharge_NotEveryFrame()
     {
         var mage = NewMage();
-        var flash = mage.GetComponent<MageChargeFlash>();
+        var flash = mage.GetComponent<MageChargeVfx>();
         Assert.IsNotNull(flash, "MageAttack이 깜빡임을 붙인다");
         Charging.SetValue(mage, true);
 

@@ -87,7 +87,7 @@ namespace ChronoSavior.Tests.PlayMode
 #endif
         }
 
-        public static MageChargeFlash Equipped(this MageChargeFlash flash) { flash.FlashMaterial = SpriteFlash; return flash; }
+        public static MageChargeVfx Equipped(this MageChargeVfx flash) { flash.FlashMaterial = SpriteFlash; return flash; }
         public static PlayerAfterimages Equipped(this PlayerAfterimages ai) { ai.GhostMaterial = SpriteFlash; return ai; }
         public static BladeSlashVfx Equipped(this BladeSlashVfx vfx) { vfx.Frames = BladeSlashFrames; return vfx; }
         public static EnemyHealth Equipped(this EnemyHealth health) { health.FlashMaterial = SpriteFlash; return health; }

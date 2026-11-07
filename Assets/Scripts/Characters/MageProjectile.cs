@@ -71,8 +71,8 @@ public class MageProjectile : MonoBehaviour
         if (prefab == null) { Debug.LogError("[MageProjectile] 마탄 프리팹이 없다 — MageAttack의 boltPrefab을 확인"); return null; }
         var proj = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
         proj.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
-        proj.visualTf.localScale = Vector3.one * (BaseHalfWidth * 2f * sizeMul);
-        proj.visualRenderer.color = gravityOrb ? new Color(0.78f, 0.42f, 1f) : color;
+        proj.ShowArt(gravityOrb ? VfxKeys.MageGravityOrbSmall : explosive ? VfxKeys.MageFireProjectile : null, sizeMul,
+                     gravityOrb ? new Color(0.78f, 0.42f, 1f) : color);
         proj.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
         proj.rb.linearVelocity = velocity;
         proj.damage = damage;
@@ -91,6 +91,31 @@ public class MageProjectile : MonoBehaviour
         proj.hitKnockbackDirSign = Mathf.Approximately(velocity.x, 0f) ? 0f : Mathf.Sign(velocity.x);
         return proj;
     }
+
+    /// <summary>탄 그림 재생 속도(팩 기본).</summary>
+    public const float ArtFps = 15f;
+
+    /// <summary>
+    /// 탄 그림(2026-11-07 VFX 스프린트): 폭발 갈래는 `mage/fire_projectile`(Projectiles Pack 4 plasma_ball red — 문서의 '화염탄' 그림이 무료판에 없어 대체),
+    /// 중력 갈래는 `mage/gravity_orb_small`(dark_matter violet)을 되풀이한다. 배율은 판정 폭에 가장 가까운 **정수**(도트 배율 정수, `docs/pixel-standard.md`)
+    /// — 판정 상자는 그대로다. 빌드 없음(0차)이거나 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
+    /// </summary>
+    void ShowArt(string key, float sizeMul, Color fallbackColor)
+    {
+        float hitWidth = BaseHalfWidth * 2f * sizeMul;
+        var frames = key != null ? VfxFrames.Get(key) : System.Array.Empty<Sprite>();
+        if (frames.Length == 0)
+        {
+            visualTf.localScale = Vector3.one * hitWidth;
+            visualRenderer.color = fallbackColor;
+            return;
+        }
+        visualTf.localScale = Vector3.one * ArtScale(hitWidth, frames[0].bounds.size.x);
+        visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
+    }
+
+    /// <summary>판정 폭(유닛)에 가장 가까운 정수 배율 — 그림 한 장의 폭(유닛)으로 나눠 반올림, 최소 1.</summary>
+    public static int ArtScale(float hitWidth, float artWidth) => Mathf.Max(1, Mathf.RoundToInt(hitWidth / artWidth));
 
     void Update()
     {

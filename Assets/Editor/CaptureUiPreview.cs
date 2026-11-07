@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -163,6 +164,59 @@ namespace ChronoSavior.Editor
             vortex.ApplyAt(1.0f, 0.2f);
             Render(pc, cam, outDir, "gravity_vortex_ending", 1920, 1080, 3f);
             Debug.Log("[CaptureUiPreview] 폭발 반지름 " + r + " 중력장 반지름 " + well.Radius + " 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
+        /// <summary>
+        /// 마법사 이펙트(2026-11-07 VFX 스프린트)를 실제 전투 화면 배율로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunMageVfx`.
+        /// 그림이 없는 클론이면 빈 화면만 찍힌다(팩을 먼저 가져올 것). 편집 화면이라 애니메이션은 첫 프레임 — 프레임 진행은 테스트가 본다.
+        /// </summary>
+        public static void RunMageVfx()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            var made = new System.Collections.Generic.List<GameObject>();
+            void Clear() { foreach (var go in made) if (go != null) Object.DestroyImmediate(go); made.Clear(); }
+
+            // 1. 차지 오라 — 갈래마다 색(MageChargeVfx와 같은 키·배율·색)
+            foreach (var branch in new[] { MageBranch.None, MageBranch.Explosion, MageBranch.Gravity })
+            {
+                var aura = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageChargeLarge, player.transform.position, 1f,
+                    ChronoSavior.Characters.MageChargeVfx.AuraFps, ChronoSavior.Characters.MageChargeVfx.AuraSortingOrder(player.GetComponent<SpriteRenderer>()), true, 0f,
+                    ChronoSavior.Characters.MageChargeVfx.AuraTint(branch));
+                if (aura != null) { aura.Play(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeLarge).Skip(5).ToArray(), 15f, true, 0f, ChronoSavior.Characters.MageChargeVfx.AuraTint(branch)); made.Add(aura.gameObject); }
+                Render(pc, cam, outDir, "mage_charge_" + branch.ToString().ToLowerInvariant(), 1920, 1080, 3f);
+                Clear();
+            }
+
+            // 2. 탄 — 차지 0·완충(크기 1·1.9), 0차·폭발·중력
+            var bolt = AssetDatabase.LoadAssetAtPath<ChronoSavior.Characters.MageProjectile>("Assets/Prefabs/Combat/MageBolt.prefab");
+            float y = player.transform.position.y;
+            int col = 0;
+            foreach (var (explosive, gravity) in new[] { (false, false), (true, false), (false, true) })
+            {
+                foreach (float size in new[] { 1f, 1.9f })
+                {
+                    var b = ChronoSavior.Characters.MageProjectile.Spawn(bolt, new Vector3(7f + col * 0.9f, y + (size > 1f ? 0.9f : 0f), 0f), Vector2.zero, 1f, 1, 5f, size,
+                        new Color(0.55f, 0.8f, 1f), false, false, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
+                    made.Add(b.gameObject);
+                }
+                col++;
+            }
+            Render(pc, cam, outDir, "mage_bolts", 1920, 1080, 3f);
+            Clear();
+            Debug.Log("[CaptureUiPreview] 마법사 이펙트 저장: " + outDir);
             EditorApplication.Exit(0);
         }
 

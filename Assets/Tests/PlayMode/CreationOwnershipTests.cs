@@ -41,7 +41,7 @@ public class CreationOwnershipTests
     {
         // A. 전투 물체 — 각 클래스의 정적 생성 함수가 본체·그림 자식·판정·RunTransient를 짓는다
         ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다"),
-        ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다"),
+        ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다. 갈래별 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
@@ -53,12 +53,12 @@ public class CreationOwnershipTests
         ["Systems/EnemySpawner.cs"]        = (Kind.EnemyAssembly, "몹·성소·보스를 종류별 프리팹(EnemyData.prefab·MonsterCatalog)에서 세운다"),
         ["Systems/EnemySetup.cs"]          = (Kind.EnemyAssembly, "세운 몹을 데이터로 완성한다 — 실행 중 붙이는 건 스폰 때 확률로 정해지는 엘리트 표식(EnemyElite)뿐(2026-11-06 5-1, 스포너에서 떼어 냄)"),
 
-        // C. 스스로 부품 붙이기 — 2-1에서 전부 씬 배치로 옮겼다(MageChargeFlash·HitSound 소리 장치·로비 CameraAnchor, 안 쓰던 PlayerAttack 삭제). 새로 생기면 안 된다.
+        // C. 스스로 부품 붙이기 — 2-1에서 전부 씬 배치로 옮겼다(MageChargeFlash(지금 MageChargeVfx)·HitSound 소리 장치·로비 CameraAnchor, 안 쓰던 PlayerAttack 삭제). 새로 생기면 안 된다.
 
         // D. 그림만 있는 효과
         ["Characters/BladeSlashVfx.cs"]    = (Kind.VisualEffect, "섬영 베기 그림 풀"),
         ["Characters/PlayerAfterimages.cs"] = (Kind.VisualEffect, "잔상 그림 풀"),
-        ["Characters/MageChargeFlash.cs"]  = (Kind.VisualEffect, "차지 깜빡임 그림 자식"),
+        ["Characters/MageChargeVfx.cs"]    = (Kind.VisualEffect, "차지 오라(키로 불러온 프레임 재생기)·완충 깜빡임 그림 자식"),
         ["Characters/GunnerLaserBeam.cs"]  = (Kind.VisualEffect, "레이저 구간 그림(판정은 레이저 쪽 계산)"),
         ["Characters/GunnerAttack.cs"]     = (Kind.VisualEffect, "설치물 사이 연결선 그림"),
         ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 흰 깜빡임 그림 자식"),

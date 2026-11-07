@@ -143,9 +143,9 @@ namespace ChronoSavior.Editor
             CheckMonsterCatalog(spawner, persistent, problems);
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;
-            if (player != null && player.GetComponent<MageChargeFlash>() == null) problems.Add("Player에 MageChargeFlash(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
+            if (player != null && player.GetComponent<MageChargeVfx>() == null) problems.Add("Player에 MageChargeVfx(마법사 차지 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
             // 효과 에셋은 연결 칸에서 받는다(2026-11-06 3.5-e — 예전엔 Resources 경로로 읽었다)
-            if (player != null && player.TryGetComponent(out MageChargeFlash chargeFlash) && chargeFlash.FlashMaterial == null) problems.Add("Player MageChargeFlash의 머티리얼이 비어 있다");
+            if (player != null && player.TryGetComponent(out MageChargeVfx chargeFlash) && chargeFlash.FlashMaterial == null) problems.Add("Player MageChargeVfx의 머티리얼이 비어 있다");
             if (player != null && player.TryGetComponent(out PlayerAfterimages afterimages) && afterimages.GhostMaterial == null) problems.Add("Player PlayerAfterimages의 머티리얼이 비어 있다");
             // 살수 베기 프레임은 라이선스 그림이라 씬에 연결하지 않는다(키로 불러온다, 2026-11-07) — 가져오기 설정은 VfxTests가 본다.
             // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)

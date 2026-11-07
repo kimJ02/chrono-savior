@@ -16,7 +16,7 @@
 | 투사체·구슬·드론·포탑 그림 | `Assets/Prefabs/Combat/*`의 `Visual` 자식 그림 | 크기는 쏠 때 코드가 넣는다(판정 상자와 같은 크기) — 그림 비율이 달라지면 확인. 보스 탄 색은 `Enemy_Boss`의 `Boss.projectileColor` |
 | 타격음 | `00_Persistent` › `Audio`의 `HitSound.clip` | 소리 크기는 설정 창 효과음 값 |
 | 살수(섬영) 베기 효과 | 키 `assassin/slash_1~3`(Slash Vol 2 무속성 3종, 휘두를 때마다 번갈아 — `Editor/VfxPackImporter` 목록) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수. 2026-11-07부터 씬 연결이 아니라 키(라이선스 그림이라 git 밖) |
-| 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeFlash`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
+| 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeVfx`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
 
 ## 라이선스 이펙트(구매·무료 팩) — git 밖, 키로 (2026-11-07)
 

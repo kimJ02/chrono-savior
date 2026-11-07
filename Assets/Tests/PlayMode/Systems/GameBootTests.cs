@@ -469,7 +469,7 @@ public class GameBootTests
         Assert.AreEqual(1, player.GetComponents<BladeSlashVfx>().Length, "섬영 회전베기 효과");
 
         // 효과 머티리얼은 씬의 연결 칸(2026-11-06 3.5-e). 살수 베기 프레임은 라이선스 그림이라 키로 불러온다(2026-11-07) — 가져오기 규격은 VfxTests.
-        Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<MageChargeFlash>().FlashMaterial);
+        Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<MageChargeVfx>().FlashMaterial);
         Assert.AreSame(TestPrefabs.SpriteFlash, player.GetComponent<PlayerAfterimages>().GhostMaterial);
     }
 
