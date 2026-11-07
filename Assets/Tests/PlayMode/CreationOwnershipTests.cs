@@ -63,8 +63,7 @@ public class CreationOwnershipTests
         ["Characters/GunnerAttack.cs"]     = (Kind.VisualEffect, "설치물 사이 연결선 그림"),
         ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 흰 깜빡임 그림 자식"),
         ["Combat/GravityBurstRing.cs"]     = (Kind.VisualEffect, "중력 폭발 고리(원판 메시·선)"),
-        ["Combat/GravityImpactVfx.cs"]     = (Kind.VisualEffect, "중력 착탄 그림"),
-        ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력 소용돌이 그림"),
+        ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력장 암흑 구체 그림(키로 불러온 프레임 재생기 자식)"),
         ["Combat/VfxPlayer.cs"]            = (Kind.VisualEffect, "라이선스 이펙트(키로 불러온 프레임)를 한 번·반복 재생하는 단순 재생기 — 그림만, 판정 없음(2026-11-07 VFX 스프린트)"),
 
         // E. UI 짓기

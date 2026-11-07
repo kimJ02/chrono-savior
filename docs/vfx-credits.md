@@ -30,7 +30,7 @@ Pixel Art Effects
 | 키 | 팩 | 원본 |
 |---|---|---|
 | `mage/charge_large·charge_small` | Gigapack | Sci-fi/scifi_charge_up_001 (large·small, yellow) |
-| `mage/fire_projectile` | Projectiles Pack 4 | pj4_plasma_ball_small_red (화염탄 대체 후보) |
+| `mage/fire_projectile` | Projectiles Pack 4 | pj4_plasma_ball_small_red (문서의 화염탄 그림은 무료판에 없어 대체 — Codex와 정함) |
 | `mage/fire_trail·fire_trail_small` | Pixel Fire | fire asset red / Group 4 - 1·Group 4 - 3 |
 | `mage/gravity_orb_small·large` | Projectiles Pack 4 | pj4_dark_matter (small·large, violet) |
 | `mage/fire_explosion` | Gigapack | Explosions/symmetrical_explosion_004_large_orange |

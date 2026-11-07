@@ -30,12 +30,11 @@ namespace ChronoSavior.Combat
         public float Pull { get; private set; }
         /// <summary>스폰(또는 마지막 중첩) 이후 지난 시간. 원본 `z.t` — 대붕괴가 "가장 최근 것 우선"으로 정렬할 때 쓴다.</summary>
         public float Age { get; private set; }
-        /// <summary>중력장이 사라질 때까지 남은 시간(초) — 소용돌이 그림이 끝나갈 때 흐려지는 데 쓴다.</summary>
+        /// <summary>중력장이 사라질 때까지 남은 시간(초) — 구체 그림이 끝나갈 때 흐려지는 데 쓴다.</summary>
         public float Remaining => life - Age;
 
         float life;
         float dmgTickTimer;
-        GravityVortexVfx vortex;
 
         public static void ClearAllForTests()
         {
@@ -68,8 +67,7 @@ namespace ChronoSavior.Combat
                         well.life = Mathf.Max(well.life, MageSpecConfig.GravityWellLife(tier, chargeK));
                         well.Radius = MageSpecConfig.GravityWellRadius(tier, well.Stack, chargeK);
                         well.Pull = MageSpecConfig.GravityWellPull(tier, well.Stack, chargeK);
-                        well.UpdateRingRadius();
-                        return well;
+                        return well; // 구체 그림(GravityVortexVfx)은 Stack을 읽어 스스로 커진다
                     }
                 }
             }
@@ -96,22 +94,10 @@ namespace ChronoSavior.Combat
             zone.life = MageSpecConfig.GravityWellLife(tier, chargeK);
             zone.Radius = MageSpecConfig.GravityWellRadius(tier, stackGain, chargeK);
             zone.Pull = MageSpecConfig.GravityWellPull(tier, stackGain, chargeK);
-            zone.SetupRing();
+            // 예전엔 맨 바깥 보라 고리(LineRenderer)도 그렸다 — 2026-10-25 사용자 "맨 바깥 고리는 지워" → 구체 그림만. 끌어당기는 범위 판정(Radius)은 그대로다.
+            GravityVortexVfx.Attach(zone);
             active.Add(zone);
             return zone;
-        }
-
-        void SetupRing()
-        {
-            // 예전엔 여기서 맨 바깥 보라 고리(LineRenderer)를 그렸다 — 2026-10-25 사용자 "맨 바깥 고리는 지워" → 소용돌이 그림만 남긴다.
-            // 끌어당기는 범위 판정(Radius)은 그대로다.
-            vortex = GravityVortexVfx.Attach(this);
-            UpdateRingRadius();
-        }
-
-        void UpdateRingRadius()
-        {
-            if (vortex != null) vortex.SetRadius(Radius);
         }
 
         /// <summary>

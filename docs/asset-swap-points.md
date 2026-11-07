@@ -27,12 +27,16 @@
 | 어느 팩의 어느 프레임을 쓰나 | `Assets/Editor/VfxPackImporter`의 목록(코드) → 메뉴 `ChronoSavior/VFX 팩 가져오기`로 다시 푼다 | 키 이름은 `Combat/VfxKeys` 상수(목록과 어긋나면 컴파일 에러) |
 | 그림 파일 | `Assets/Resources/Vfx/<키>/frame_000…`(git 밖) | 가져오기 설정은 `VfxImportSettings`(Point·무압축·밉맵 없음·PPU 128 — 배율 1 = 그림 한 픽셀이 격자 한 칸) |
 | 재생 | 실행 코드는 `Combat/VfxFrames.Get(키)`(없으면 빈 배열 → 지금 임시 그림)·`Combat/VfxPlayer`(단순 재생기) | 위치·크기·언제는 그 효과의 담당 코드 |
+| 마법사 차지 오라 | `Characters/MageChargeVfx`(키 `mage/charge_large`, 몸 뒤, 갈래 색 `FireTint`·`GravityTint`) | 크기 고정(월드 배율 1) |
+| 마법사 탄 그림 | `Characters/MageProjectile.ShowArt`(폭발 `mage/fire_projectile`·중력 `mage/gravity_orb_small`, 0차는 프리팹의 원) | 판정 폭에 가장 가까운 정수 배율(`VfxPlayer.WholeScale`), 판정 상자는 그대로 |
+| 마법사 불길 | `Combat/FireTrailZone`(키 `mage/fire_trail`) | `FlameScale`·`FadeTime`·밑동 높이(`MageSpecConfig.TeleportFlameLineHeight`) |
+| 마법사 폭발(화염·중력 착탄·대붕괴) | `Combat/MageSkillEffects.ShowExplosion`(키 `mage/fire_explosion`·`mage/gravity_explosion`) | 판정 지름에 가장 가까운 정수 배율. 대붕괴는 그 위에 원본 고리(`GravityBurstRing`)도 |
+| 마법사 중력장 구체 | `Combat/GravityVortexVfx`(키 `mage/gravity_orb_large`) | 배율 = 중첩 수(1~5) — 끌어당기는 판정 반경과 따로 |
 
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)
 
 | 무엇 | 지금 | 바꿀 방법(그때) |
 |---|---|---|
-| 중력 착탄 폭발·중력장 소용돌이 그림 | `GravityImpactVfx`가 키 `mage/gravity_explosion`(git 밖)으로 읽는다(소용돌이도 같은 그림, 프레임은 **파일 이름순**·15fps — 번호는 0을 채운 자릿수로). 정적 함수(`MageSkillEffects`)가 그때그때 만들어 그림을 넘길 주인이 없다 | 효과 프리팹으로 만들고, 쏘는 쪽(`MageAttack`)이 들고 넘긴다(투사체와 같은 방식). 크기는 스킬 반경에 맞춰 늘리는 지금 방식을 다시 볼 것(`pixel-standard.md`) |
 | 대붕괴 폭발 고리(원판·선) | `GravityBurstRing`이 `Shader.Find("Sprites/Default")`로 머티리얼을 만들고 메시·선을 코드로 그린다 | 외주 효과가 그림/프레임이면 효과 프리팹으로 교체 |
 | 레이저 구간·설치물 연결선 | `GunnerLaserBeam`·`GunnerAttack`이 `GunnerAttack.bulletSprite`를 코드로 늘려 그린다 | 외주 효과 형식에 맞춰 프리팹/프레임으로 |
 | 처치 연출·화면 흔들림 등 | 코드(`HitFeel`) — 그림 없음 | 필요하면 효과 프리팹 추가 |

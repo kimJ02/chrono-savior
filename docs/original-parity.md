@@ -319,6 +319,8 @@
 - **그림·소리 추가**(2026-10-25, 사용자가 받은 무료 팩) — 섬영 회전베기 베기 효과(Slash 1 · color4, `BladeSlashVfx`), 적 타격 소리
   (Kenney `footstep_carpet_002`, `UI/HitSound`), 블랙홀(중력) 마법사 착탄 폭발과 중력장 소용돌이(Gigapack `stylized_explosion_002_large_violet`,
   `Combat/GravityImpactVfx`·`GravityVortexVfx` — 중력장의 보라 선 고리는 지웠다). 판정·피해는 그대로, 그림·소리만.
+  → 2026-11-07 VFX 스프린트에서 마법사 그림을 팩 그림(git 밖, 키)으로 바꿨다: 차지 오라·갈래별 탄·불길·화염 폭발(원본에 그림 없음)·중력장 암흑 구체·착탄·대붕괴 폭발.
+  `GravityImpactVfx`는 지우고 `MageSkillEffects.ShowExplosion`으로 합쳤다. 판정·수치는 그대로.
 
 ---
 

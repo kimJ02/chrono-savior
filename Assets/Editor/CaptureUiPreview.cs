@@ -129,44 +129,6 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
-        /// <summary>블랙홀 마법사 착탄 폭발(`GravityImpactVfx`)을 시간대별로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunGravityVfx`.</summary>
-        public static void RunGravityVfx()
-        {
-            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
-            Directory.CreateDirectory(outDir);
-            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single); // 카메라는 상주 씬, 월드는 전투 씬(2026-11-04 씬 분할)
-            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
-            FieldLayout.SetBossArena(false);
-            var cam = Camera.main;
-            var player = GameObject.Find("Player");
-            FitPlayerSprite(player);
-            var visuals = Object.FindFirstObjectByType<StageVisuals>(); // 전투 씬에 놓인 것 — 그 씬의 땅·발판을 직렬화로 안다(2026-11-05 2b)
-            visuals.Build();
-            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
-            var pc = PixelCanvas.Create(cam);
-            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
-            float r = ChronoSavior.Combat.MageSpecConfig.GravityImpactRadius(2, 0.6f);
-            var vfx = ChronoSavior.Combat.GravityImpactVfx.Spawn(new Vector2(9f, FieldBounds.GroundY + 0.5f), r);
-            foreach (float t in new[] { 0.0f, 0.14f, 0.27f, 0.40f, 0.55f })
-            {
-                vfx.ShowAt(t);
-                Render(pc, cam, outDir, $"gravity_impact_{(int)(t * 100):D2}", 1920, 1080, 3f);
-            }
-            // 중력장이 남아 있는 동안(착탄 폭발이 끝난 뒤) 소용돌이가 도는 모습
-            Object.DestroyImmediate(vfx.gameObject);
-            var well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(new Vector2(9f, FieldBounds.GroundY + 0.5f), 2, 0.6f);
-            var vortex = well.GetComponentInChildren<ChronoSavior.Combat.GravityVortexVfx>();
-            foreach (float t in new[] { 0.8f, 0.93f, 1.07f, 1.2f, 1.33f, 1.47f })
-            {
-                vortex.ApplyAt(t, 3f);
-                Render(pc, cam, outDir, $"gravity_vortex_{(int)(t * 100):D3}", 1920, 1080, 3f);
-            }
-            vortex.ApplyAt(1.0f, 0.2f);
-            Render(pc, cam, outDir, "gravity_vortex_ending", 1920, 1080, 3f);
-            Debug.Log("[CaptureUiPreview] 폭발 반지름 " + r + " 중력장 반지름 " + well.Radius + " 저장: " + outDir);
-            EditorApplication.Exit(0);
-        }
-
         /// <summary>
         /// 마법사 이펙트(2026-11-07 VFX 스프린트)를 실제 전투 화면 배율로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunMageVfx`.
         /// 그림이 없는 클론이면 빈 화면만 찍힌다(팩을 먼저 가져올 것). 편집 화면이라 애니메이션은 첫 프레임 — 프레임 진행은 테스트가 본다.
@@ -231,6 +193,38 @@ namespace ChronoSavior.Editor
                 made.Add(boom.gameObject);
             }
             Render(pc, cam, outDir, "mage_fire", 1920, 1080, 3f);
+            Clear();
+
+            // 4. 중력 — 중력장 구체(중첩 1·3·5, 다 커진 크기) + 착탄 폭발(2차·차지 0.6) + 대붕괴 폭발(가운데 프레임)과 고리
+            var gravityFrames = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageGravityExplosion);
+            int k = 0;
+            foreach (int stack in new[] { 1, 3, 5 })
+            {
+                var well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(new Vector2(3.5f + k * 3.2f, feet + 1.4f), 1, 0f);
+                for (int m = 1; m < stack; m++) well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(well.transform.position, 2, 0f);
+                var orb = well.GetComponentInChildren<ChronoSavior.Combat.GravityVortexVfx>();
+                if (orb != null) orb.transform.localScale = Vector3.one * ChronoSavior.Combat.GravityVortexVfx.ScaleFor(well.Stack);
+                made.Add(well.gameObject);
+                k++;
+            }
+            Render(pc, cam, outDir, "mage_gravity_wells", 1920, 1080, 3f);
+            Clear();
+            ChronoSavior.Combat.GravityWellZone.ClearAllForTests();
+            if (gravityFrames.Length > 0)
+            {
+                float gr = ChronoSavior.Combat.MageSpecConfig.GravityImpactRadius(2, 0.6f);
+                var impact = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageGravityExplosion, new Vector2(4.5f, feet + 0.6f),
+                    ChronoSavior.Combat.VfxPlayer.WholeScale(gr * 2f, gravityFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                impact.Play(gravityFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
+                made.Add(impact.gameObject);
+                float cr = ChronoSavior.Combat.MageSpecConfig.CollapseRadius(3, 3);
+                var collapse = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageGravityExplosion, new Vector2(10f, feet + 1.4f),
+                    ChronoSavior.Combat.VfxPlayer.WholeScale(cr * 2f, gravityFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                collapse.Play(gravityFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
+                made.Add(collapse.gameObject);
+                made.Add(ChronoSavior.Combat.GravityBurstRing.Spawn(new Vector2(10f, feet + 1.4f), cr, 0.42f, false, false).gameObject);
+            }
+            Render(pc, cam, outDir, "mage_gravity_bursts", 1920, 1080, 3f);
             Clear();
             Debug.Log("[CaptureUiPreview] 마법사 이펙트 저장: " + outDir);
             EditorApplication.Exit(0);

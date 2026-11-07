@@ -109,13 +109,23 @@ namespace ChronoSavior.Editor
             foreach (var f in slashFrames.Where(f => f != null).GroupBy(f => (f.rect.width, f.rect.height, f.pixelsPerUnit)).Select(g => g.First()))
                 rows.Add(new Row { what = "살수 베기 효과", art = VfxKeys.AssassinSlash1, source = "VfxKeys.AssassinSlash1~3 × BladeSlashVfx.Scale",
                                    dotX = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit, dotY = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit });
-            var impact = VfxFrames.Get(VfxKeys.MageGravityExplosion).FirstOrDefault();
-            if (impact != null)
+            // 마법사 — 키로 불러온 라이선스 그림(2026-11-07). 배율은 정수(VfxPlayer.WholeScale 등)라 도트 배율 = 배율. 가로=최소, 세로=최대.
+            void Mage(string what, string key, float lo, float hi, string src)
             {
-                float lo = Dot(MageSpecConfig.GravityImpactRadius(0, 0f) * 2f, impact.rect.width);
-                float hi = Dot(MageSpecConfig.GravityImpactRadius(5, 1f) * 2f, impact.rect.width);
-                rows.Add(new Row { what = "중력 착탄 효과", art = impact.name, source = "스킬 반경×2(MageSpecConfig)", dotX = lo, dotY = hi, note = $"층·차지에 따라 {lo:0.##}~{hi:0.##}(가로=최소, 세로=최대)" });
+                var f = VfxFrames.Get(key).FirstOrDefault();
+                if (f == null) return; // 팩을 안 가져온 클론
+                float dlo = GridPpu * lo / f.pixelsPerUnit, dhi = GridPpu * hi / f.pixelsPerUnit;
+                rows.Add(new Row { what = what, art = key, source = src, dotX = dlo, dotY = dhi, note = Mathf.Approximately(dlo, dhi) ? null : $"{dlo:0.##}~{dhi:0.##}(가로=최소, 세로=최대)" });
             }
+            int Whole(string key, float width) => VfxPlayer.WholeScale(width, VfxFrames.Get(key).FirstOrDefault());
+            Mage("마법사 차지 오라", VfxKeys.MageChargeLarge, 1f, 1f, "MageChargeVfx(크기 고정, 월드 배율 1)");
+            Mage("마법사 화염탄", VfxKeys.MageFireProjectile, Whole(VfxKeys.MageFireProjectile, 0.4f), Whole(VfxKeys.MageFireProjectile, 0.4f * 2.25f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
+            Mage("마법사 중력탄", VfxKeys.MageGravityOrbSmall, Whole(VfxKeys.MageGravityOrbSmall, 0.4f), Whole(VfxKeys.MageGravityOrbSmall, 0.4f * 1.9f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
+            Mage("마법사 불길", VfxKeys.MageFireTrail, FireTrailZone.FlameScale, FireTrailZone.FlameScale, "FireTrailZone.FlameScale");
+            Mage("마법사 화염 폭발", VfxKeys.MageFireExplosion, Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(1) * 2f), Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(5) * 2f), "판정 지름에 가장 가까운 정수");
+            Mage("마법사 중력장 구체", VfxKeys.MageGravityOrbLarge, GravityVortexVfx.ScaleFor(1), GravityVortexVfx.ScaleFor(5), "중첩 수(GravityVortexVfx.ScaleFor)");
+            Mage("마법사 중력 착탄", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(1, 0f) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(5, 1f) * 2f), "판정 지름에 가장 가까운 정수");
+            Mage("마법사 대붕괴 폭발", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.CollapseRadius(1, 0) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.CollapseRadius(5, 5) * 2f), "판정 지름에 가장 가까운 정수");
 
             warnings = 0; shapes = 0;
             var sb = new StringBuilder();
