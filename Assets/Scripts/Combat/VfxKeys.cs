@@ -11,6 +11,8 @@ namespace ChronoSavior.Combat
         // ── 마법사 ──
         public const string MageChargeLarge = "mage/charge_large";
         public const string MageChargeSmall = "mage/charge_small";
+        /// <summary>차지 보라(중력 갈래) — 가져오기 도구가 노랑을 색상 회전으로 만든 파생 그림.</summary>
+        public const string MageChargeLargeViolet = "mage/charge_large_violet";
         public const string MageFireProjectile = "mage/fire_projectile";
         public const string MageFireTrail = "mage/fire_trail";
         public const string MageFireTrailSmall = "mage/fire_trail_small";
@@ -42,7 +44,7 @@ namespace ChronoSavior.Combat
             {
                 var keys = new System.Collections.Generic.List<string>
                 {
-                    MageChargeLarge, MageChargeSmall, MageFireProjectile, MageFireTrail, MageFireTrailSmall,
+                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion,
                     MechanicPellet, MechanicRelayHead,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,

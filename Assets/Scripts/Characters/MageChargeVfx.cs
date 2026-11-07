@@ -9,7 +9,8 @@ namespace ChronoSavior.Characters
     ///
     /// 1. **차지 오라**(2026-11-07 VFX 스프린트, 팀원 문서 '이펙트와 연출' — "이펙트 크기 고정"): 차지하는 동안 몸 중심에 기가팩
     ///    `scifi_charge_up_001`(키 <see cref="VfxKeys.MageChargeLarge"/>, 96px × 1 = 0.75유닛)이 되풀이된다. 크기는 차지율과 상관없이 고정.
-    ///    색은 갈래마다 — 빌드 없음은 그림 그대로(노랑), 폭발은 주황, 중력은 보라로 틴트한다(팩엔 노랑뿐). 그림이 없으면(팩을 안 가져온 클론) 안 보인다.
+    ///    색은 갈래마다 — 빌드 없음은 그림 그대로(노랑), 폭발은 주황 틴트, 중력은 가져오기 도구가 색상을 돌려 만든 보라 그림
+    ///    (<see cref="VfxKeys.MageChargeLargeViolet"/> — 팩엔 노랑뿐이고, 보라 틴트를 곱하면 노란 픽셀이 탁한 주황이 됐다). 그림이 없으면(팩을 안 가져온 클론) 안 보인다.
     /// 2. **완충 깜빡임**(2026-10-25 사용자 "두 번 말고 풀차징 되면 한 번만"): 차지가 다 차는 순간 몸 모양이 한 번 하얗게 번쩍인다
     ///    (몹 피격 플래시와 같은 셰이더·세기·감쇠). 문턱은 원본 `bowFire`의 **완충 99%**(`full = chargeK >= 0.99`, project_test.html:1944·:2047).
     ///
@@ -29,8 +30,8 @@ namespace ChronoSavior.Characters
         public const float AuraFps = 15f;
         /// <summary>오라는 몸 **뒤**(몸 정렬 − 1, 잔상과 같은 자리) — 그림 가운데가 꽉 찬 빛이라 앞에 두면 얼굴을 가린다(캡처로 확인).</summary>
         public static int AuraSortingOrder(SpriteRenderer body) => (body != null ? body.sortingOrder : 0) - 1;
-        /// <summary>갈래별 오라 색(그림이 노랑·흰색이라 곱하면 그 색 쪽으로 간다).</summary>
-        public static readonly Color FireTint = new Color(1f, 0.55f, 0.3f), GravityTint = new Color(0.8f, 0.5f, 1f);
+        /// <summary>폭발 갈래 오라 틴트(노랑·흰색 그림에 곱하면 주황 — 같은 계열이라 탁해지지 않는다).</summary>
+        public static readonly Color FireTint = new Color(1f, 0.55f, 0.3f);
 
         [Tooltip("효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
         [SerializeField] Material flashMaterial;
@@ -52,9 +53,11 @@ namespace ChronoSavior.Characters
             return s;
         }
 
-        /// <summary>갈래별 오라 색.</summary>
-        public static Color AuraTint(MageBranch branch) =>
-            branch == MageBranch.Explosion ? FireTint : branch == MageBranch.Gravity ? GravityTint : Color.white;
+        /// <summary>갈래별 오라 그림 — 중력은 보라 파생 그림, 나머지는 노랑 원본.</summary>
+        public static string AuraKey(MageBranch branch) => branch == MageBranch.Gravity ? VfxKeys.MageChargeLargeViolet : VfxKeys.MageChargeLarge;
+
+        /// <summary>갈래별 오라 틴트 — 폭발만 주황, 나머지는 그림 색 그대로.</summary>
+        public static Color AuraTint(MageBranch branch) => branch == MageBranch.Explosion ? FireTint : Color.white;
 
         /// <summary>지금 번쩍임 세기 0~1(테스트용).</summary>
         public float FlashAmount => flash;
@@ -91,7 +94,8 @@ namespace ChronoSavior.Characters
                 return;
             }
             if (aura != null && aura.gameObject.activeSelf) return; // 차지하는 동안 계속 돈다
-            var frames = VfxFrames.Get(VfxKeys.MageChargeLarge);
+            var branch = ProfileService.Current.mageBranch;
+            var frames = VfxFrames.Get(AuraKey(branch));
             if (frames.Length == 0) return; // 팩을 안 가져왔으면 그리지 않는다
             if (aura == null)
             {
@@ -106,7 +110,7 @@ namespace ChronoSavior.Characters
             var s = transform.lossyScale;
             aura.transform.localScale = new Vector3(1f / Mathf.Max(0.01f, Mathf.Abs(s.x)), 1f / Mathf.Max(0.01f, Mathf.Abs(s.y)), 1f);
             aura.gameObject.SetActive(true);
-            aura.Play(frames, AuraFps, true, 0f, AuraTint(ProfileService.Current.mageBranch)); // 차지를 새로 시작할 때마다 처음부터
+            aura.Play(frames, AuraFps, true, 0f, AuraTint(branch)); // 차지를 새로 시작할 때마다 처음부터
         }
 
         void DrawFlash()

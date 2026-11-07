@@ -154,10 +154,11 @@ namespace ChronoSavior.Editor
             // 1. 차지 오라 — 갈래마다 색(MageChargeVfx와 같은 키·배율·색)
             foreach (var branch in new[] { MageBranch.None, MageBranch.Explosion, MageBranch.Gravity })
             {
-                var aura = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageChargeLarge, player.transform.position, 1f,
+                var auraKey = ChronoSavior.Characters.MageChargeVfx.AuraKey(branch);
+                var aura = ChronoSavior.Combat.VfxPlayer.Spawn(auraKey, player.transform.position, 1f,
                     ChronoSavior.Characters.MageChargeVfx.AuraFps, ChronoSavior.Characters.MageChargeVfx.AuraSortingOrder(player.GetComponent<SpriteRenderer>()), true, 0f,
                     ChronoSavior.Characters.MageChargeVfx.AuraTint(branch));
-                if (aura != null) { aura.Play(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeLarge).Skip(5).ToArray(), 15f, true, 0f, ChronoSavior.Characters.MageChargeVfx.AuraTint(branch)); made.Add(aura.gameObject); }
+                if (aura != null) { aura.Play(ChronoSavior.Combat.VfxFrames.Get(auraKey).Skip(5).ToArray(), 15f, true, 0f, ChronoSavior.Characters.MageChargeVfx.AuraTint(branch)); made.Add(aura.gameObject); }
                 Render(pc, cam, outDir, "mage_charge_" + branch.ToString().ToLowerInvariant(), 1920, 1080, 3f);
                 Clear();
             }

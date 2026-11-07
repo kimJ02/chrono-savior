@@ -53,7 +53,7 @@ public class MageChargeVfxTests
     [Test]
     public void ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeLarge), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
         ProfileService.Current.mageBranch = MageBranch.Gravity;
         var mage = NewMage();
         mage.transform.localScale = new Vector3(0.8f, 0.8f, 1f); // 씬의 Player처럼 1이 아닌 배율
@@ -70,7 +70,8 @@ public class MageChargeVfxTests
         ChargeT.SetValue(mage, 1f);
         vfx.Refresh(0.016f);
         Assert.AreEqual(1f, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
-        Assert.AreEqual(MageChargeVfx.GravityTint, aura.GetComponent<SpriteRenderer>().color, "중력 갈래는 보라");
+        CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet), aura.GetComponent<SpriteRenderer>().sprite, "중력 갈래는 보라 파생 그림");
+        Assert.AreEqual(Color.white, aura.GetComponent<SpriteRenderer>().color, "파생 그림이라 틴트 없음");
 
         Charging.SetValue(mage, false);
         vfx.Refresh(0.016f);
@@ -78,11 +79,13 @@ public class MageChargeVfxTests
     }
 
     [Test]
-    public void ChargeAura_TintPerBranch()
+    public void ChargeAura_ColorPerBranch()
     {
         Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.None), "빌드 없음은 그림 그대로");
         Assert.AreEqual(MageChargeVfx.FireTint, MageChargeVfx.AuraTint(MageBranch.Explosion));
-        Assert.AreEqual(MageChargeVfx.GravityTint, MageChargeVfx.AuraTint(MageBranch.Gravity));
+        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.Gravity), "중력은 틴트 대신 보라 파생 그림");
+        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet, MageChargeVfx.AuraKey(MageBranch.Gravity));
+        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeLarge, MageChargeVfx.AuraKey(MageBranch.Explosion));
     }
 
     /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>

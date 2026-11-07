@@ -35,11 +35,15 @@ namespace ChronoSavior.Editor
             /// <summary>시트일 때만(Cell &gt; 0): 칸 크기, **위에서 0부터 센** 줄 번호, 그 줄의 프레임 수(뒤쪽 빈 칸 제외 — 다르면 오류).</summary>
             public int Cell, Row, Frames;
             public bool IsSheet => Cell > 0;
+            /// <summary>재색(0이면 그대로): 픽셀마다 색상(hue)을 이만큼(도) 돌린 파생 그림을 만든다 — 밝기·채도·투명도는 그대로라
+            /// 런타임 틴트(곱하기)로는 탁해지는 색 바꿈(노랑 → 보라)에 쓴다(`HANDOFF.md` 0-3 재색 규칙). 팩 원본은 안 건드린다.</summary>
+            public float HueShift;
         }
 
         static Source Frames(string key, string pack, string folder) => new Source { Key = key, Pack = pack, Path = folder };
         static Source Sheet(string key, string pack, string sheet, int cell, int row, int frames) =>
             new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Frames = frames };
+        static Source Recolored(Source src, float hueShiftDegrees) { src.HueShift = hueShiftDegrees; return src; }
 
         /// <summary>쓰는 효과 목록(2026-11-07 초안 — 효과를 입히며 고른다, `HANDOFF.md` 2절).</summary>
         static IEnumerable<Source> Manifest()
@@ -47,6 +51,8 @@ namespace ChronoSavior.Editor
             // 마법사
             yield return Frames(VfxKeys.MageChargeLarge, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_large_yellow");
             yield return Frames(VfxKeys.MageChargeSmall, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow");
+            // 중력 갈래 차지는 보라 — 팩엔 노랑뿐이고 보라 틴트를 곱하면 노란 픽셀이 탁한 주황이 돼서(캡처·Codex 리뷰) 색상을 돌린 파생 그림
+            yield return Recolored(Frames(VfxKeys.MageChargeLargeViolet, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_large_yellow"), 225f);
             yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_plasma_ball_small_red"); // 문서의 화염탄 그림은 무료판에 없다 — 대체 후보
             yield return Frames(VfxKeys.MageFireTrail, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 1");
             yield return Frames(VfxKeys.MageFireTrailSmall, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 3");
@@ -116,6 +122,7 @@ namespace ChronoSavior.Editor
                     }
                     if (zip == null) { problems.Add($"{src.Key}: 팩을 못 열었다 — '{src.Pack}…'.zip"); continue; }
                     var frames = src.IsSheet ? SliceSheet(zip, src, problems) : ReadFrames(zip, src, problems);
+                    if (frames != null && src.HueShift != 0f) frames = frames.Select(f => ShiftHue(f, src.HueShift)).ToList();
                     if (frames != null && frames.Count > 0) ready.Add((src.Key, frames));
                 }
             }
@@ -203,6 +210,28 @@ namespace ChronoSavior.Editor
                 return cells;
             }
             finally { Object.DestroyImmediate(sheet); }
+        }
+
+        /// <summary>PNG 한 장의 색상(hue)을 돌린다 — 밝기(V)·채도(S)·투명도는 그대로(흰색·회색은 그대로 남는다).</summary>
+        public static byte[] ShiftHue(byte[] png, float degrees)
+        {
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            try
+            {
+                tex.LoadImage(png);
+                var px = tex.GetPixels();
+                for (int i = 0; i < px.Length; i++)
+                {
+                    Color.RGBToHSV(px[i], out float h, out float s, out float v);
+                    var c = Color.HSVToRGB(Mathf.Repeat(h + degrees / 360f, 1f), s, v);
+                    c.a = px[i].a;
+                    px[i] = c;
+                }
+                tex.SetPixels(px);
+                tex.Apply();
+                return tex.EncodeToPNG();
+            }
+            finally { Object.DestroyImmediate(tex); }
         }
 
         static byte[] ReadAll(ZipArchiveEntry e)
