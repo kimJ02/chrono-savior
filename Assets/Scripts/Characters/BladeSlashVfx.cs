@@ -1,12 +1,15 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ChronoSavior.Combat;
 using ChronoSavior.Core;
 
 namespace ChronoSavior.Characters
 {
     /// <summary>
-    /// 섬영 기본 공격(회전베기 Z)에 겹쳐 그리는 베기 효과 — 2026-10-25 사용자가 받은 "Pixel Art Animations - Slashes"의
-    /// Slash 1 · color4(9프레임, 128px)를 섬영에 적용. 공격 판정은 그대로, 그림만 얹는다.
+    /// 살수(섬영) 기본 공격(회전베기 Z)에 겹쳐 그리는 베기 효과 — 공격 판정은 그대로, 그림만 얹는다.
+    /// 그림은 **VFX Slash Vol 2의 무속성 베기 3종을 번갈아**(팀원 문서 '이펙트와 연출' — "3가지 모션 섞어서 빠르게") — 라이선스 그림이라 git 밖,
+    /// 키(`VfxKeys.AssassinSlash1~3`)로 불러온다(2026-11-07 — 예전엔 Frostwindz 'Slashes' 9장을 씬에 연결했는데 공개 저장소에 둘 수 없어 뺐다).
+    /// 그림이 없으면(팩을 안 가져온 클론) 아무것도 안 그린다.
     ///
     /// 섬영은 팀원 파일(`BladeCombat`)이라 안 건드리고 밖에서 읽는다: 회전베기를 휘두르면 `cdTimer`가 쿨다운 값으로 도로 올라가니
     /// 그 오름을 한 번의 휘두름으로 본다(`PlayerAfterimages`가 속도를 밖에서 읽는 것과 같은 방식). `PlayerRig`가 붙인다.
@@ -18,17 +21,22 @@ namespace ChronoSavior.Characters
         public const float Life = 0.2f;
         /// <summary>캐릭터 중심에서 바라보는 쪽으로 나가는 거리(유닛).</summary>
         public const float ForwardOffset = 0.45f;
-        /// <summary>그림 크기 배율 — 128px 프레임 = 1유닛, 회전베기 반경 1.05의 지름에 맞춘다.</summary>
+        /// <summary>그림 크기 배율(정수 — 도트 배율 2). 96px 프레임 × 2 = 1.5유닛(그림은 PPU 128). 도트 재작업 단계에서 다시 본다.</summary>
         public const float Scale = 2f;
 
-        struct Play { public SpriteRenderer sr; public float t; public int facing; }
+        /// <summary>휘두를 때마다 돌아가며 쓰는 베기 3종.</summary>
+        static readonly string[] SlashKeys = { VfxKeys.AssassinSlash1, VfxKeys.AssassinSlash2, VfxKeys.AssassinSlash3 };
+
+        struct Play { public SpriteRenderer sr; public float t; public int facing; public Sprite[] frames; }
         readonly List<Play> playing = new List<Play>();
         readonly Stack<SpriteRenderer> pool = new Stack<SpriteRenderer>();
-        [Tooltip("베기 애니메이션 프레임(순서대로) — 지금은 Assets/Resources/Art/Figma/Vfx/BladeSlash 9장. 외주 효과로 바꿀 땐 이 칸만(프레임 수는 자유).")]
-        [SerializeField] Sprite[] frames;
+        Sprite[] framesOverride;
+        int swing;
 
-        /// <summary>씬 검증과 테스트가 읽고 넣는다(2026-11-06 3.5-e — 예전엔 `Resources` 폴더에서 이름순으로 읽었다).</summary>
-        public Sprite[] Frames { get => frames; set => frames = value; }
+        /// <summary>
+        /// 다음에 쓸 프레임 — 보통은 키로 불러온 베기(3종을 번갈아). 테스트가 넣으면 그걸 쓴다(팩이 없어도 재생을 확인하게).
+        /// </summary>
+        public Sprite[] Frames { get => framesOverride ?? VfxFrames.Get(SlashKeys[swing % SlashKeys.Length]); set => framesOverride = value; }
 
         BladeCombat blade;
         SpriteRenderer body;
@@ -65,7 +73,9 @@ namespace ChronoSavior.Characters
         /// <summary>지금 자리에서 베기 효과 하나를 시작한다.</summary>
         public void Spawn()
         {
-            if (frames == null || frames.Length == 0 || body == null) return; // 씬엔 늘 있다(씬 구성 검증이 본다)
+            var frames = Frames;
+            if (frames == null || frames.Length == 0 || body == null) return; // 팩을 안 가져왔으면 그리지 않는다
+            swing++;
             var sr = pool.Count > 0 ? pool.Pop() : new GameObject("BladeSlash").AddComponent<SpriteRenderer>();
             sr.gameObject.SetActive(true);
             sr.sortingLayerID = body.sortingLayerID;
@@ -73,7 +83,7 @@ namespace ChronoSavior.Characters
             sr.transform.localScale = Vector3.one * Scale;
             flip = !flip;
             sr.flipY = flip;
-            playing.Add(new Play { sr = sr, t = 0f, facing = mover != null ? mover.Facing : 1 });
+            playing.Add(new Play { sr = sr, t = 0f, facing = mover != null ? mover.Facing : 1, frames = frames });
             Place(playing.Count - 1);
         }
 
@@ -82,7 +92,7 @@ namespace ChronoSavior.Characters
             var p = playing[i];
             p.sr.transform.position = transform.position + new Vector3(p.facing * ForwardOffset, 0f, 0f);
             p.sr.flipX = p.facing < 0;
-            p.sr.sprite = frames[FrameAt(p.t, frames.Length)];
+            p.sr.sprite = p.frames[FrameAt(p.t, p.frames.Length)];
         }
 
         void Age(float dt)

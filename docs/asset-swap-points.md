@@ -15,7 +15,7 @@
 | 몹 종류별 구성(행동 부품) | `Assets/Prefabs/Enemies/Enemy_*` | — |
 | 투사체·구슬·드론·포탑 그림 | `Assets/Prefabs/Combat/*`의 `Visual` 자식 그림 | 크기는 쏠 때 코드가 넣는다(판정 상자와 같은 크기) — 그림 비율이 달라지면 확인. 보스 탄 색은 `Enemy_Boss`의 `Boss.projectileColor` |
 | 타격음 | `00_Persistent` › `Audio`의 `HitSound.clip` | 소리 크기는 설정 창 효과음 값 |
-| 섬영 베기 효과 프레임 | `20_Combat` › `Player`의 `BladeSlashVfx.frames`(이름순) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수 — **지금과 같은 크기·PPU(128×128·128)·피벗의 프레임만** 코드 수정 없이 바뀐다. 외주 효과는 이 셋을 다시 맞춘다 |
+| 살수(섬영) 베기 효과 | 키 `assassin/slash_1~3`(Slash Vol 2 무속성 3종, 휘두를 때마다 번갈아 — `Editor/VfxPackImporter` 목록) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수. 2026-11-07부터 씬 연결이 아니라 키(라이선스 그림이라 git 밖) |
 | 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeFlash`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
 
 ## 라이선스 이펙트(구매·무료 팩) — git 밖, 키로 (2026-11-07)
@@ -32,7 +32,7 @@
 
 | 무엇 | 지금 | 바꿀 방법(그때) |
 |---|---|---|
-| 중력 착탄 폭발·중력장 소용돌이 그림 | `GravityImpactVfx`가 `Resources/Art/Figma/Vfx/GravityImpact`를 **폴더 경로로** 읽는다(소용돌이도 같은 그림, 프레임은 **파일 이름순**·15fps — 번호는 0을 채운 자릿수로). 정적 함수(`MageSkillEffects`)가 그때그때 만들어 그림을 넘길 주인이 없다 | 효과 프리팹으로 만들고, 쏘는 쪽(`MageAttack`)이 들고 넘긴다(투사체와 같은 방식). 크기는 스킬 반경에 맞춰 늘리는 지금 방식을 다시 볼 것(`pixel-standard.md`) |
+| 중력 착탄 폭발·중력장 소용돌이 그림 | `GravityImpactVfx`가 키 `mage/gravity_explosion`(git 밖)으로 읽는다(소용돌이도 같은 그림, 프레임은 **파일 이름순**·15fps — 번호는 0을 채운 자릿수로). 정적 함수(`MageSkillEffects`)가 그때그때 만들어 그림을 넘길 주인이 없다 | 효과 프리팹으로 만들고, 쏘는 쪽(`MageAttack`)이 들고 넘긴다(투사체와 같은 방식). 크기는 스킬 반경에 맞춰 늘리는 지금 방식을 다시 볼 것(`pixel-standard.md`) |
 | 대붕괴 폭발 고리(원판·선) | `GravityBurstRing`이 `Shader.Find("Sprites/Default")`로 머티리얼을 만들고 메시·선을 코드로 그린다 | 외주 효과가 그림/프레임이면 효과 프리팹으로 교체 |
 | 레이저 구간·설치물 연결선 | `GunnerLaserBeam`·`GunnerAttack`이 `GunnerAttack.bulletSprite`를 코드로 늘려 그린다 | 외주 효과 형식에 맞춰 프리팹/프레임으로 |
 | 처치 연출·화면 흔들림 등 | 코드(`HitFeel`) — 그림 없음 | 필요하면 효과 프리팹 추가 |

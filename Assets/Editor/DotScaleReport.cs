@@ -104,12 +104,12 @@ namespace ChronoSavior.Editor
             }
 
             // 효과 — 코드 상수로 크기를 정하는 것
-            // 섬영 베기 — 실제로 Player에 연결된 프레임(20_Combat)을 읽는다(파일 경로가 아니라 연결 칸 — 외주 프레임으로 바꾸면 그게 보이게)
-            var slashFrames = ReadPlayerSlashFrames();
+            // 살수 베기 — 키로 불러온 라이선스 그림(git 밖, 없으면 이 줄이 빠진다)
+            var slashFrames = VfxFrames.Get(VfxKeys.AssassinSlash1);
             foreach (var f in slashFrames.Where(f => f != null).GroupBy(f => (f.rect.width, f.rect.height, f.pixelsPerUnit)).Select(g => g.First()))
-                rows.Add(new Row { what = "섬영 베기 효과", art = f.name + (slashFrames.Length > 1 ? $" 외({slashFrames.Length}장)" : ""), source = "Player BladeSlashVfx.frames × BladeSlashVfx.Scale",
+                rows.Add(new Row { what = "살수 베기 효과", art = VfxKeys.AssassinSlash1, source = "VfxKeys.AssassinSlash1~3 × BladeSlashVfx.Scale",
                                    dotX = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit, dotY = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit });
-            var impact = AssetDatabase.FindAssets("t:Sprite", new[] { "Assets/Resources/Art/Figma/Vfx/GravityImpact" }).Select(g => AssetDatabase.LoadAssetAtPath<Sprite>(AssetDatabase.GUIDToAssetPath(g))).FirstOrDefault();
+            var impact = VfxFrames.Get(VfxKeys.MageGravityExplosion).FirstOrDefault();
             if (impact != null)
             {
                 float lo = Dot(MageSpecConfig.GravityImpactRadius(0, 0f) * 2f, impact.rect.width);
@@ -133,18 +133,6 @@ namespace ChronoSavior.Editor
                 sb.AppendLine($"| {r.what} | {r.art} | {r.source} | {dots} | {(whole ? "" : "⚠")} {r.note} |");
             }
             return sb.ToString();
-        }
-
-        /// <summary>20_Combat의 Player에 연결된 섬영 베기 프레임 — 씬이 안 열려 있으면 잠깐 열었다 닫는다.</summary>
-        static Sprite[] ReadPlayerSlashFrames()
-        {
-            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath(SceneSetupValidator.CombatPath);
-            bool opened = !scene.isLoaded;
-            if (opened) scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, UnityEditor.SceneManagement.OpenSceneMode.Additive);
-            var vfx = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<BladeSlashVfx>(true)).FirstOrDefault();
-            var frames = vfx != null && vfx.Frames != null ? vfx.Frames.ToArray() : new Sprite[0];
-            if (opened) UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
-            return frames;
         }
 
         static bool IsWhole(float v) => Mathf.Abs(v - Mathf.Round(v)) < 0.01f && v >= 0.99f;

@@ -21,6 +21,8 @@ Pixel Art Effects
   Pixel Fire Asset Pack — devkidd
 ```
 
+> **예전에 공개 저장소에 들어가 있던 라이선스 그림**(2026-10-25 커밋 — 기가팩 `stylized_explosion_002_large_violet` 10장 → `Resources/Art/Figma/Vfx/GravityImpact`, Frostwindz 'Pixel Art Animations - Slashes' 9장 → `.../BladeSlash`)은 2026-11-07에 저장소에서 뺐다(사용자 결정 — 기록은 옛 커밋에 남는다. 완전히 지우려면 저장소를 비공개로). 중력 착탄은 같은 그림을 키로, 베기는 Slash Vol 2로 바꿨다 — Frostwindz 팩은 더 쓰지 않는다.
+
 ## 쓰는 효과
 
 가져오기 도구의 목록이 채워질 때 여기 같이 적는다(키 → 팩 · 원본 폴더).

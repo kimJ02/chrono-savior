@@ -147,7 +147,7 @@ namespace ChronoSavior.Editor
             // 효과 에셋은 연결 칸에서 받는다(2026-11-06 3.5-e — 예전엔 Resources 경로로 읽었다)
             if (player != null && player.TryGetComponent(out MageChargeFlash chargeFlash) && chargeFlash.FlashMaterial == null) problems.Add("Player MageChargeFlash의 머티리얼이 비어 있다");
             if (player != null && player.TryGetComponent(out PlayerAfterimages afterimages) && afterimages.GhostMaterial == null) problems.Add("Player PlayerAfterimages의 머티리얼이 비어 있다");
-            if (player != null && player.TryGetComponent(out BladeSlashVfx slash) && (slash.Frames == null || slash.Frames.Length == 0 || slash.Frames.Any(f => f == null))) problems.Add("Player BladeSlashVfx의 프레임이 비어 있다");
+            // 살수 베기 프레임은 라이선스 그림이라 씬에 연결하지 않는다(키로 불러온다, 2026-11-07) — 가져오기 설정은 VfxTests가 본다.
             // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)
             if (player != null && player.TryGetComponent(out MageAttack mageKit)) CheckProjectilePrefab(mageKit.BoltPrefab, "Player MageAttack.boltPrefab", problems);
             if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit))

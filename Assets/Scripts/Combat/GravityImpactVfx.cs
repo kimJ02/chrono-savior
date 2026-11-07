@@ -4,8 +4,9 @@ using ChronoSavior.Core;
 namespace ChronoSavior.Combat
 {
     /// <summary>
-    /// 블랙홀(중력) 마법사의 공격이 적중한 자리에 한 번 터지는 폭발 — 2026-10-25 사용자가 받은
-    /// "Super Pixel Effects Gigapack (Free Version)"의 `stylized_explosion_002_large_violet`(10프레임, 96px, 15fps).
+    /// 블랙홀(중력) 마법사의 공격이 적중한 자리에 한 번 터지는 폭발 — "Super Pixel Effects Gigapack (Free Version)"의
+    /// `stylized_explosion_002_large_violet`(10프레임, 96px, 15fps). 라이선스 그림이라 git 밖, 키 `VfxKeys.MageGravityExplosion`으로 불러온다
+    /// (2026-11-07 — 예전엔 `Resources/Art/Figma/Vfx/GravityImpact`에 넣어 공개 저장소에 올라가 있었다). 없으면 그리지 않는다.
     /// **그림만이다** — 피해와 끌어당기는 중력장(보라 고리)은 <see cref="MageSkillEffects.DetonateGravityOrb"/>가 그대로 한다.
     /// 그림 한 변이 폭발 지름(반지름 × 2)이 되도록 키운다.
     /// </summary>
@@ -13,37 +14,31 @@ namespace ChronoSavior.Combat
     {
         /// <summary>팩 안내대로 15fps — 10프레임이라 0.667초.</summary>
         public const float Fps = 15f;
-        const string Folder = "Art/Figma/Vfx/GravityImpact";
         const int SortingOrder = 5; // 중력점 고리(3)·대붕괴 고리(4) 위
 
-        static Sprite[] frames;
         SpriteRenderer sr;
         float age;
 
-        public static float Life => (frames != null && frames.Length > 0 ? frames.Length : 10) / Fps;
+        public static float Life => (Frames().Length > 0 ? Frames().Length : 10) / Fps;
 
         /// <summary>시간 t(초)에 보일 프레임 번호.</summary>
         public static int FrameAt(float t, int count) => Mathf.Clamp(Mathf.FloorToInt(t * Fps), 0, Mathf.Max(0, count - 1));
 
         /// <summary>폭발 그림 10장(이름순). 중력장의 소용돌이(<see cref="GravityVortexVfx"/>)도 같은 그림을 쓴다.</summary>
-        public static Sprite[] Frames()
-        {
-            if (frames == null || frames.Length == 0)
-            {
-                frames = Resources.LoadAll<Sprite>(Folder);
-                System.Array.Sort(frames, (a, b) => string.CompareOrdinal(a.name, b.name));
-            }
-            return frames;
-        }
+        public static Sprite[] Frames() => VfxFrames.Get(VfxKeys.MageGravityExplosion);
+
+        Sprite[] frames;
 
         public static GravityImpactVfx Spawn(Vector2 pos, float radius)
         {
-            if (Frames().Length == 0) return null;
+            var frames = Frames();
+            if (frames.Length == 0) return null;
             var go = new GameObject("GravityImpact");
             go.transform.position = pos;
             RunTransient.Mark(go);
             go.transform.localScale = Vector3.one * (radius * 2f / frames[0].bounds.size.x);
             var v = go.AddComponent<GravityImpactVfx>();
+            v.frames = frames;
             v.sr = go.AddComponent<SpriteRenderer>();
             v.sr.sortingOrder = SortingOrder;
             v.sr.sprite = frames[0];
