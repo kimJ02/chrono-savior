@@ -28,8 +28,8 @@ namespace ChronoSavior.Characters
         public const float HeartbeatHeight = 0.55f, HeartbeatFps = 15f;
 
         // ── 궤적(원본 drawBladeTrail) ──
-        /// <summary>원본 넓은 선 26px(×3층 반경 배수)·가는 선 3.4px, 색과 투명도.</summary>
-        public const float TrailWideWidth = 0.26f, TrailThinWidth = 0.034f;
+        /// <summary>원본 넓은 선 26px(×3층 반경 배수)·가는 선 3.4px — 도트 단위로 맞춰 넓은 선 32칸·가는 선 4칸(도트 2개, 2026-11-09). 색과 투명도.</summary>
+        public const float TrailWideWidth = 0.25f, TrailThinWidth = 4f / 128f;
         static readonly Color TrailWideColor = new Color(143 / 255f, 228 / 255f, 1f, 0.22f), TrailThinColor = new Color(215 / 255f, 245 / 255f, 1f, 0.85f);
         /// <summary>원본: 궤적 시간이 끝난 뒤(파열 전) 남은 선은 0.75배로 흐리게.</summary>
         public const float TrailEndedFade = 0.75f;
@@ -124,7 +124,7 @@ namespace ChronoSavior.Characters
 
             if (focusing)
             {
-                if (heartbeat == null) heartbeat = NewLoop("FocusHeartbeat", VfxKeys.AssassinHeartbeat, HeartbeatFps, 1);
+                if (heartbeat == null) heartbeat = NewLoop("FocusHeartbeat", VfxKeys.AssassinHeartbeat, HeartbeatFps, DotScale.Value);
                 if (heartbeat != null)
                 {
                     if (!heartbeat.gameObject.activeSelf) { heartbeat.gameObject.SetActive(true); heartbeat.Play(VfxFrames.Get(VfxKeys.AssassinHeartbeat), HeartbeatFps, true, 0f, Color.white); }
@@ -241,8 +241,8 @@ namespace ChronoSavior.Characters
             wasStorming = storming;
         }
 
-        /// <summary>회전베기 그림 배율 — 칼날폭풍 회전베기 판정 지름(<see cref="BladeCombat.StormSpinDiameter"/>)에 가장 가까운 정수.</summary>
-        static int SpinScale() => VfxPlayer.WholeScale(BladeCombat.StormSpinDiameter, VfxFrames.Get(VfxKeys.AssassinSpin).Length > 0 ? VfxFrames.Get(VfxKeys.AssassinSpin)[0] : null);
+        /// <summary>회전베기 그림 배율 — 공통 도트 배율(96px → 1.5유닛, 판정 지름 2.4와 따로).</summary>
+        static int SpinScale() => DotScale.Value;
 
         /// <summary>캐릭터를 따라다니는 반복 그림 하나(월드 오브젝트 — 캐릭터 배율과 무관한 정수 배율). 그림이 없으면 null.</summary>
         static VfxPlayer NewLoop(string name, string key, float fps, int scale)

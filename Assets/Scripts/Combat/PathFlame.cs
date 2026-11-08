@@ -25,7 +25,7 @@ namespace ChronoSavior.Combat
 
         /// <summary>
         /// 불꽃 하나 — <paramref name="feetPos"/>(밑동, 바닥 높이)에 <paramref name="delay"/>초 뒤 점화해 <paramref name="life"/>초 타고(사그라드는 시간 포함) 사라진다.
-        /// 모양·배율(1~2, 정수)·속도·뒤집기·시작 프레임은 무작위. 그림이 없으면 null.
+        /// 모양·속도·뒤집기·시작 프레임은 무작위(배율은 공통 도트 배율). 그림이 없으면 null.
         /// </summary>
         public static PathFlame Ignite(Vector2 feetPos, float delay, float life)
         {
@@ -38,7 +38,7 @@ namespace ChronoSavior.Combat
             f.sr = go.GetComponent<SpriteRenderer>();
             f.sr.sortingOrder = SortingOrder;
             f.sr.flipX = Random.value < 0.5f;
-            int scale = Random.value < 0.65f ? 2 : 1;
+            int scale = DotScale.Value; // 모든 그림 같은 도트 크기 — 크기 차이는 모양(작은 불꽃 섞기)으로
             go.transform.localScale = new Vector3(scale, scale, 1f);
             f.player = go.AddComponent<VfxPlayer>();
             float fps = 12f * Random.Range(0.75f, 1.3f);

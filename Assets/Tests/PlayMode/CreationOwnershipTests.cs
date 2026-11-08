@@ -64,6 +64,8 @@ public class CreationOwnershipTests
         ["Characters/BladeVfx.cs"]         = (Kind.VisualEffect, "살수 집중(배경 어둡게·하트비트)·궤적 선·파열 스플래터·칼날폭풍 회전베기·연기 — 그림만(2026-11-08)"),
         ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 깜빡임 그림 자식·화상 불꽃(라이선스 프레임 재생기 자식)·불씨 점(2026-11-09)"),
         ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력장 암흑 구체 그림(키로 불러온 프레임 재생기 자식)·끌어당김 점·중첩 반짝임"),
+        ["Combat/RangeRing.cs"]            = (Kind.VisualEffect, "광역 공격 판정 범위 고리(실행 중에 그린 도트 원) — 그림만(2026-11-09 도트 통일)"),
+        ["Enemies/EnemyElite.cs"]          = (Kind.VisualEffect, "엘리트 오라·왕관(원본 drawEnemy :4780)·보라 불씨 — 그림만(2026-11-09)"),
         ["Combat/VfxDots.cs"]              = (Kind.VisualEffect, "그림 없는 점 입자(화상 불씨·블랙홀 끌어당김·중첩 반짝임·돌진 불씨) — 그림만(2026-11-09)"),
         ["Combat/PathFlame.cs"]            = (Kind.VisualEffect, "화염돌진이 지나간 바닥 불꽃 하나(점화·사그라듦) — 그림만, 판정은 FireTrailZone(2026-11-09)"),
         ["Combat/FireDashVfx.cs"]          = (Kind.VisualEffect, "화염돌진 그림 담당(출발 퍼프·분사·바닥 불꽃 점화·도착 불꽃) — 그림만(2026-11-09)"),

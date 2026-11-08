@@ -60,10 +60,12 @@ namespace ChronoSavior.Combat
         /// </summary>
         static VfxPlayer ShowExplosion(string key, Vector2 pos, float radius)
         {
-            var frames = VfxFrames.Get(key);
-            if (frames.Length == 0) return null;
-            return VfxPlayer.Spawn(key, pos, VfxPlayer.WholeScale(radius * 2f, frames[0]), ExplosionFps, ExplosionSortingOrder);
+            RangeRing.Show(pos, radius, key == VfxKeys.MageFireExplosion ? FireRingColor : GravityRingColor); // 범위는 고리로(그림은 판정보다 작다)
+            return VfxPlayer.Spawn(key, pos, DotScale.Value, ExplosionFps, ExplosionSortingOrder);
         }
+
+        /// <summary>판정 고리 색 — 화염 주황·중력 보라.</summary>
+        public static readonly Color FireRingColor = new Color(1f, 0.6f, 0.25f, 0.9f), GravityRingColor = new Color(0.8f, 0.55f, 1f, 0.9f);
 
         /// <summary>중력탄이 적을 맞혔을 때 흔들림(원본 px 단위).</summary>
         public const float ImpactShakePx = 3f;
@@ -74,7 +76,7 @@ namespace ChronoSavior.Combat
         /// </summary>
         public static void HitSpark(Vector2 at, Vector2 center, bool large)
         {
-            var spark = VfxPlayer.Spawn(large ? VfxKeys.MageGravitySparkLarge : VfxKeys.MageGravitySpark, at, 1, 20f, ExplosionSortingOrder);
+            var spark = VfxPlayer.Spawn(large ? VfxKeys.MageGravitySparkLarge : VfxKeys.MageGravitySpark, at, DotScale.Value, 20f, ExplosionSortingOrder);
             if (spark == null) return;
             Vector2 d = at - center;
             if (d.sqrMagnitude < 1e-6f) d = Vector2.right;
@@ -82,15 +84,10 @@ namespace ChronoSavior.Combat
         }
 
         /// <summary>
-        /// 대붕괴 폭발 그림 배율 — **중첩 수에 따라** 정한다(2026-11-09 사용자: 판정 반경은 중첩 1단계에 0.18씩만 늘어 작은·큰 블랙홀이
-        /// 같은 크기로 터져 보였다 → 비교 그림을 보고 "작게 시작해서 중첩마다 크게"로 정함). 중첩 1은 그 층 피해 범위보다 두 칸(1.5유닛) 작게 시작해
-        /// 중첩마다 두 칸씩 커진다(3차: 3.0·4.5·6.0·7.5·9.0유닛). 그림만이다 — 피해 범위(<see cref="MageSpecConfig.CollapseRadius"/>)는 그대로.
+        /// 대붕괴 폭발 그림 — 도트 크기를 하나로 맞추면서(2026-11-09) '중첩마다 커짐'(사용자 2026-11-09)을 그림 고르기로: 중첩 1~2는 가시 충격 고리(96px → 1.5유닛),
+        /// 3 이상이거나 임계면 큰 번개 충격(160px → 2.5유닛). 범위는 판정 고리(<see cref="RangeRing"/>)가 보인다.
         /// </summary>
-        public static int CollapseArtScale(int tier, int stack, Sprite frame)
-        {
-            int atStackOne = VfxPlayer.WholeScale(MageSpecConfig.CollapseRadius(tier, 1) * 2f, frame);
-            return Mathf.Max(1, atStackOne - 4 + 2 * Mathf.Max(1, stack));
-        }
+        public static string CollapseArtKey(int stack, bool critical) => critical || stack >= 3 ? VfxKeys.MageCollapseCritical : VfxKeys.MageCollapseExplosion;
 
         /// <summary>
         /// 원본 `detonateGravityOrb`(project_test.html:2023) — 충돌 지점 원형 피해를 준 뒤
@@ -223,9 +220,8 @@ namespace ChronoSavior.Combat
 
                 // 붕괴 그림(2026-11-08 VFX — 문서 "블랙홀 붕괴 = 기가팩 폭발 중 어울리는 것": 가시 충격 고리를 보라로, 붕괴 반경 크기). 그림만.
                 // 원본의 보라 원판·선 고리(`zones.push({ kind: 'gravityBurst' … })`, :2114·:2123)는 2026-11-09 사용자 "블랙홀은 기존 그림은 빼자"로 그리지 않는다.
-                var collapseFrames = VfxFrames.Get(VfxKeys.MageCollapseExplosion);
-                if (collapseFrames.Length > 0)
-                    VfxPlayer.Spawn(VfxKeys.MageCollapseExplosion, cx, CollapseArtScale(tier, stack, collapseFrames[0]), ExplosionFps, ExplosionSortingOrder);
+                VfxPlayer.Spawn(CollapseArtKey(stack, critical), cx, DotScale.Value, ExplosionFps, ExplosionSortingOrder);
+                RangeRing.Show(cx, r, GravityRingColor);
 
                 if (critical)
                 {
@@ -246,7 +242,7 @@ namespace ChronoSavior.Combat
                         if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                         target.TakeDamageWithKnockback(dmg2, null, dir, MageSpecConfig.CollapseCriticalRingKnockback, HitFeel.HitstopLight); // 원본 hitstop: 0.03(:2120)
                     }
-                    ShowExplosion(VfxKeys.MageCollapseCritical, cx, r2); // 임계 붕괴엔 큰 번개 충격을 2차 고리 크기로 겹친다(그림만)
+                    RangeRing.Show(cx, r2, Color.white, RangeRing.Life * 2f); // 임계 2차 범위 — 밝게, 조금 오래(그림만)
                 }
 
                 if (well != null) well.Vanish();

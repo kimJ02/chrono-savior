@@ -97,8 +97,8 @@ public class MageProjectile : MonoBehaviour
 
     /// <summary>
     /// 탄 그림(2026-11-07 VFX 스프린트): 폭발 갈래는 `mage/fire_projectile`(Projectiles Pack 4 energy_blast red — 문서 예시의 혜성 모양, 2026-11-08),
-    /// 중력 갈래는 `mage/gravity_orb_small`(dark_matter violet)을 되풀이한다. 배율은 판정 폭에 가장 가까운 **정수**(도트 배율 정수, `docs/pixel-standard.md`)
-    /// — 판정 상자는 그대로다. 혜성 그림은 오른쪽을 향해 있어 **그림만** 날아가는 방향으로 돌린다(판정 상자는 안 돈다 — 원본도 축 정렬 사각형).
+    /// 중력 갈래는 `mage/gravity_orb_small`(dark_matter violet)을 되풀이한다. 배율은 **모든 그림 공통 도트 배율**(<see cref="DotScale"/>, 2026-11-09)
+    /// — 판정 상자는 그대로다(차지할수록 판정은 커지지만 그림은 같다). 혜성 그림은 오른쪽을 향해 있어 **그림만** 날아가는 방향으로 돌린다(판정 상자는 안 돈다 — 원본도 축 정렬 사각형).
     /// 빌드 없음(0차)이거나 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
     /// </summary>
     void ShowArt(string key, float sizeMul, Color fallbackColor, Vector2 velocity)
@@ -111,7 +111,7 @@ public class MageProjectile : MonoBehaviour
             visualRenderer.color = fallbackColor;
             return;
         }
-        visualTf.localScale = Vector3.one * VfxPlayer.WholeScale(hitWidth, frames[0]);
+        visualTf.localScale = Vector3.one * DotScale.Value; // 모든 그림 같은 도트 크기(2026-11-09) — 판정 폭과 따로
         if (key == VfxKeys.MageFireProjectile && velocity.sqrMagnitude > 1e-6f)
             visualTf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg);
         visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);

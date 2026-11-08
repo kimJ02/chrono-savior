@@ -13,6 +13,7 @@ namespace ChronoSavior.Combat
         public const string MageChargeSmall = "mage/charge_small";
         /// <summary>차지 보라(중력 갈래) — 가져오기 도구가 노랑을 색상 회전으로 만든 파생 그림.</summary>
         public const string MageChargeLargeViolet = "mage/charge_large_violet";
+        public const string MageChargeSmallViolet = "mage/charge_small_violet";
         public const string MageFireProjectile = "mage/fire_projectile";
         public const string MageFireTrail = "mage/fire_trail";
         public const string MageFireTrailSmall = "mage/fire_trail_small";
@@ -62,7 +63,7 @@ namespace ChronoSavior.Combat
             {
                 var keys = new System.Collections.Generic.List<string>
                 {
-                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
+                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicRelayHead,

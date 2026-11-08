@@ -103,43 +103,18 @@ namespace ChronoSavior.Editor
                 Big("성소", catalog.shrine, catalog.shrineSize, catalog.name + ".shrineSize");
             }
 
-            // 효과 — 코드 상수로 크기를 정하는 것
-            // 살수 베기 — 키로 불러온 라이선스 그림(git 밖, 없으면 이 줄이 빠진다)
-            var slashFrames = VfxFrames.Get(VfxKeys.AssassinSlash1);
-            foreach (var f in slashFrames.Where(f => f != null).GroupBy(f => (f.rect.width, f.rect.height, f.pixelsPerUnit)).Select(g => g.First()))
-                rows.Add(new Row { what = "살수 베기 효과", art = VfxKeys.AssassinSlash1, source = "VfxKeys.AssassinSlash1~3 × BladeSlashVfx.Scale",
-                                   dotX = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit, dotY = GridPpu * BladeSlashVfx.Scale / f.pixelsPerUnit });
-            // 마법사 — 키로 불러온 라이선스 그림(2026-11-07). 배율은 정수(VfxPlayer.WholeScale 등)라 도트 배율 = 배율. 가로=최소, 세로=최대.
-            void Mage(string what, string key, float lo, float hi, string src)
+            // 효과 — 라이선스 이펙트 그림(키, git 밖). 2026-11-09부터 **모두 공통 도트 배율**(Core.DotScale)로 그린다 — 크기는 그림 고르기로,
+            // 길이(레이저·중계선)는 이어 붙이기로. 그림이 없는 클론이면 이 줄들이 빠진다.
+            foreach (var key in VfxKeys.All)
             {
                 var f = VfxFrames.Get(key).FirstOrDefault();
-                if (f == null) return; // 팩을 안 가져온 클론
-                float dlo = GridPpu * lo / f.pixelsPerUnit, dhi = GridPpu * hi / f.pixelsPerUnit;
-                rows.Add(new Row { what = what, art = key, source = src, dotX = dlo, dotY = dhi, note = Mathf.Approximately(dlo, dhi) ? null : $"{dlo:0.##}~{dhi:0.##}(가로=최소, 세로=최대)" });
+                if (f == null) continue;
+                float dot = GridPpu * DotScale.Value / f.pixelsPerUnit;
+                rows.Add(new Row { what = "효과 " + key, art = key, source = "Core.DotScale", dotX = dot, dotY = dot });
             }
-            int Whole(string key, float width) => VfxPlayer.WholeScale(width, VfxFrames.Get(key).FirstOrDefault());
-            Mage("마법사 차지 오라", VfxKeys.MageChargeLarge, 1f, 1f, "MageChargeVfx(크기 고정, 월드 배율 1)");
-            Mage("마법사 화염탄", VfxKeys.MageFireProjectile, Whole(VfxKeys.MageFireProjectile, 0.4f), Whole(VfxKeys.MageFireProjectile, 0.4f * 2.25f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
-            Mage("마법사 중력탄", VfxKeys.MageGravityOrbSmall, Whole(VfxKeys.MageGravityOrbSmall, 0.4f), Whole(VfxKeys.MageGravityOrbSmall, 0.4f * 1.9f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
-            Mage("마법사 불길(바닥 불꽃 5종)", VfxKeys.MageFireTrail, 1f, 2f, "PathFlame(배율 1·2 무작위)");
-            Mage("마법사 화염돌진 분사", VfxKeys.MageFireProjectile, FireDashVfx.JetScale, FireDashVfx.JetScale, "FireDashVfx.JetScale");
-            Mage("마법사 화상 불꽃", VfxKeys.MageBurn, ChronoSavior.Enemies.EnemyHealth.BurnFlameScale, ChronoSavior.Enemies.EnemyHealth.BurnFlameScale, "EnemyHealth.BurnFlameScale(몹 배율과 무관)");
-            Mage("마법사 화염 폭발", VfxKeys.MageFireExplosion, Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(1) * 2f), Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(5) * 2f), "판정 지름에 가장 가까운 정수");
-            Mage("마법사 중력장 구체", VfxKeys.MageGravityOrbLarge, GravityVortexVfx.ScaleFor(1), GravityVortexVfx.ScaleFor(5), "중첩 수(GravityVortexVfx.ScaleFor)");
-            Mage("마법사 중력 착탄", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(1, 0f) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(5, 1f) * 2f), "판정 지름에 가장 가까운 정수");
-            var collapseFrame = VfxFrames.Get(VfxKeys.MageCollapseExplosion).FirstOrDefault();
-            if (collapseFrame != null)
-                Mage("마법사 대붕괴 폭발", VfxKeys.MageCollapseExplosion, MageSkillEffects.CollapseArtScale(1, 1, collapseFrame), MageSkillEffects.CollapseArtScale(5, 5, collapseFrame), "중첩마다 두 칸(MageSkillEffects.CollapseArtScale)");
-            // 메카닉·살수(2026-11-08)
-            Mage("메카닉 레이저(1~2층 small·3~4층 large·5층 large)", VfxKeys.MechanicLaser("center", "loop", true), GunnerLaserBeam.ArtThickness(1), GunnerLaserBeam.ArtThickness(5), "굵기 정수 배율 — 길이는 이어 붙임(타일)");
-            Mage("메카닉 드론 탄(펠렛)", VfxKeys.MechanicPellet, Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(1)), Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(5)), "판정 폭에 가장 가까운 정수");
-            Mage("메카닉 중계기 머리", VfxKeys.MechanicRelayHead, 1f, 1f, "GunnerTurret(배율 1)");
-            Mage("메카닉 중계선", VfxKeys.MechanicLaser("center", "loop", false), 1f, 1f, "GunnerFieldVfx(이어 붙임)");
-            Mage("살수 칼날폭풍 회전베기", VfxKeys.AssassinSpin, Whole(VfxKeys.AssassinSpin, BladeCombat.StormSpinDiameter), Whole(VfxKeys.AssassinSpin, BladeCombat.StormSpinDiameter), "판정 지름에 가장 가까운 정수");
-            Mage("살수 하트비트", VfxKeys.AssassinHeartbeat, 1f, 1f, "BladeVfx");
-            Mage("살수 스플래터", VfxKeys.AssassinSplatter, BladeVfx.SplatterScale, BladeVfx.SplatterScale, "BladeVfx.SplatterScale");
-            Mage("살수 연기", VfxKeys.AssassinSmoke, BladeVfx.SmokeScale, BladeVfx.SmokeScale, "BladeVfx.SmokeScale");
-            Mage("마법사 임계 붕괴 충격", VfxKeys.MageCollapseCritical, Whole(VfxKeys.MageCollapseCritical, MageSpecConfig.CollapseRadius(2, 0) * MageSpecConfig.CollapseCriticalRingMult(2) * 2f), Whole(VfxKeys.MageCollapseCritical, MageSpecConfig.CollapseRadius(5, 5) * MageSpecConfig.CollapseCriticalRingMult(5) * 2f), "2차 고리 지름에 가장 가까운 정수");
+            // 판정 고리(실행 중에 그린 도트 원)
+            var ring = RangeRing.RingSprite(1f);
+            rows.Add(new Row { what = "판정 고리", art = "(실행 중 그림)", source = "Combat.RangeRing", dotX = GridPpu / ring.pixelsPerUnit, dotY = GridPpu / ring.pixelsPerUnit });
 
             warnings = 0; shapes = 0;
             var sb = new StringBuilder();

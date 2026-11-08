@@ -83,7 +83,7 @@ namespace ChronoSavior.Characters
         public const float ArtFps = 15f;
 
         /// <summary>
-        /// 탄 그림 — 그림 키가 있고 그림이 들어와 있으면(2026-11-08 VFX: 드론 탄 = Projectiles Pack 4 `energy_pellet`, 팀원 문서) 판정 폭에 가장 가까운 정수 배율로
+        /// 탄 그림 — 그림 키가 있고 그림이 들어와 있으면(2026-11-08 VFX: 드론 탄 = Projectiles Pack 4 `energy_pellet`, 팀원 문서) 공통 도트 배율로
         /// 되풀이한다. 아니면 예전처럼 원을 판정 크기로 늘려 색칠한다. 판정 상자는 어느 쪽이든 그대로.
         /// </summary>
         void ShowArt(string artKey, float sizeMul, Color color)
@@ -95,7 +95,7 @@ namespace ChronoSavior.Characters
                 visualRenderer.color = color;
                 return;
             }
-            visualTf.localScale = Vector3.one * VfxPlayer.WholeScale(BaseHalfWidth * 2f * sizeMul, frames[0]);
+            visualTf.localScale = Vector3.one * DotScale.Value; // 모든 그림 같은 도트 크기(2026-11-09) — 판정 상자와 따로
             visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
         }
 

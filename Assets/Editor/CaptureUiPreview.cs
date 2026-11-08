@@ -202,7 +202,7 @@ namespace ChronoSavior.Editor
             if (fireFrames.Length > 0)
             {
                 var boom = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageFireExplosion, new Vector2(9f, feet + 0.6f),
-                    ChronoSavior.Combat.VfxPlayer.WholeScale(fr * 2f, fireFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                    ChronoSavior.Core.DotScale.Value, 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
                 boom.Play(fireFrames.Skip(4).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(boom.gameObject);
             }
@@ -217,7 +217,7 @@ namespace ChronoSavior.Editor
                 var well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(new Vector2(3.5f + k * 3.2f, feet + 1.4f), 1, 0f);
                 for (int m = 1; m < stack; m++) well = ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(well.transform.position, 2, 0f);
                 var orb = well.GetComponentInChildren<ChronoSavior.Combat.GravityVortexVfx>();
-                if (orb != null) orb.transform.localScale = Vector3.one * ChronoSavior.Combat.GravityVortexVfx.ScaleFor(well.Stack);
+                if (orb != null) orb.transform.localScale = Vector3.one * ChronoSavior.Core.DotScale.Value;
                 made.Add(well.gameObject);
                 k++;
             }
@@ -228,13 +228,13 @@ namespace ChronoSavior.Editor
             {
                 float gr = ChronoSavior.Combat.MageSpecConfig.GravityImpactRadius(2, 0.6f);
                 var impact = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageGravityExplosion, new Vector2(4.5f, feet + 0.6f),
-                    ChronoSavior.Combat.VfxPlayer.WholeScale(gr * 2f, gravityFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                    ChronoSavior.Core.DotScale.Value, 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
                 impact.Play(gravityFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(impact.gameObject);
                 float cr = ChronoSavior.Combat.MageSpecConfig.CollapseRadius(3, 3);
                 var collapseFrames = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageCollapseExplosion);
-                var collapse = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageCollapseExplosion, new Vector2(10f, feet + 1.4f),
-                    ChronoSavior.Combat.VfxPlayer.WholeScale(cr * 2f, collapseFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                var collapse = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.MageSkillEffects.CollapseArtKey(3, false), new Vector2(10f, feet + 1.4f),
+                    ChronoSavior.Core.DotScale.Value, 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
                 collapse.Play(collapseFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(collapse.gameObject);
             }

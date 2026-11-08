@@ -75,7 +75,7 @@ namespace ChronoSavior.Characters
         public const int RelayHeadSortingOrder = 4;
 
         /// <summary>
-        /// 중계기 머리(2026-11-08 VFX, 팀원 문서 "몸체 위에 달아 놓는 느낌") — Projectiles Pack 4 `plasma_ball` 파랑(키 <see cref="VfxKeys.MechanicRelayHead"/>, 배율 1).
+        /// 중계기 머리(2026-11-08 VFX, 팀원 문서 "몸체 위에 달아 놓는 느낌") — Projectiles Pack 4 `plasma_ball` 파랑(키 <see cref="VfxKeys.MechanicRelayHead"/>, 공통 도트 배율).
         /// 몸체(안테나) 그림은 팩에 없어 지금 몸체 그대로. 그림이 없으면 머리 없이.
         /// </summary>
         static void AttachRelayHead(Transform turret)
@@ -84,7 +84,8 @@ namespace ChronoSavior.Characters
             if (frames.Length == 0) return;
             var go = new GameObject("RelayHead", typeof(SpriteRenderer));
             go.transform.SetParent(turret, false);
-            go.transform.localPosition = new Vector3(0f, RelayHeadHeight, 0f);
+            go.transform.localPosition = new Vector3(0f, RelayHeadHeight + DotScale.Units(6f), 0f); // 머리(24px × 도트 2 = 0.375유닛)가 몸체 위에 앉게
+            go.transform.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f);
             go.GetComponent<SpriteRenderer>().sortingOrder = RelayHeadSortingOrder;
             go.AddComponent<VfxPlayer>().Play(frames, RelayHeadFps, true, 0f, Color.white);
         }

@@ -53,7 +53,7 @@ public class MageChargeVfxTests
     [Test]
     public void ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
         ProfileService.Current.mageBranch = MageBranch.Gravity;
         var mage = NewMage();
         mage.transform.localScale = new Vector3(0.8f, 0.8f, 1f); // 씬의 Player처럼 1이 아닌 배율
@@ -66,11 +66,11 @@ public class MageChargeVfxTests
         vfx.Refresh(0.016f);
         Assert.IsTrue(vfx.AuraVisible, "차지하는 동안 보인다");
         var aura = mage.transform.Find("ChargeAura");
-        Assert.AreEqual(1f, aura.lossyScale.x, 1e-4f, "크기 고정 — 월드 배율 1(도트 배율 1)");
+        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "크기 고정 — 공통 도트 배율");
         ChargeT.SetValue(mage, 1f);
         vfx.Refresh(0.016f);
-        Assert.AreEqual(1f, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
-        CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet), aura.GetComponent<SpriteRenderer>().sprite, "중력 갈래는 보라 파생 그림");
+        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
+        CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), aura.GetComponent<SpriteRenderer>().sprite, "중력 갈래는 보라 파생 그림");
         Assert.AreEqual(Color.white, aura.GetComponent<SpriteRenderer>().color, "파생 그림이라 틴트 없음");
 
         Charging.SetValue(mage, false);
@@ -84,8 +84,8 @@ public class MageChargeVfxTests
         Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.None), "빌드 없음은 그림 그대로");
         Assert.AreEqual(MageChargeVfx.FireTint, MageChargeVfx.AuraTint(MageBranch.Explosion));
         Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.Gravity), "중력은 틴트 대신 보라 파생 그림");
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeLargeViolet, MageChargeVfx.AuraKey(MageBranch.Gravity));
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeLarge, MageChargeVfx.AuraKey(MageBranch.Explosion));
+        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet, MageChargeVfx.AuraKey(MageBranch.Gravity));
+        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmall, MageChargeVfx.AuraKey(MageBranch.Explosion));
     }
 
     /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>

@@ -103,7 +103,10 @@ namespace ChronoSavior.Characters
                 tf.position = (a + b) * 0.5f;
                 tf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
                 if (links[i].drawMode == SpriteDrawMode.Tiled && links[i].sprite != null)
-                    links[i].size = new Vector2(Mathf.Max(0.01f, v.magnitude), links[i].sprite.bounds.size.y);
+                {
+                    tf.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f); // 도트 크기는 같게, 길이는 이어 붙여서
+                    links[i].size = new Vector2(Mathf.Max(0.01f, v.magnitude) / DotScale.Value, links[i].sprite.bounds.size.y);
+                }
                 else
                     tf.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude), 0.06f, 1f);
             }

@@ -163,7 +163,8 @@ public static class EnemySetup
 
         float eliteMul = elite ? DifficultyScalingConfig.EliteScale : 1f;
         float wantRadius = (data != null ? data.colliderRadius : prefabWorldRadius) * eliteMul;       // 판정
-        float wantHeight = (data != null && data.visualHeight > 0f ? data.visualHeight : wantRadius / eliteMul * 2f) * eliteMul;  // 그림(비어 있으면 판정 지름)
+        // 그림(비어 있으면 판정 지름) — 엘리트도 **그림은 그대로**(2026-11-09 도트 통일: 모든 그림 같은 도트 크기), 판정만 ×1.35. 엘리트 표시는 오라·왕관(EnemyElite).
+        float wantHeight = data != null && data.visualHeight > 0f ? data.visualHeight : wantRadius / eliteMul * 2f;
 
         // ── 콜라이더와 스프라이트가 **같은 GameObject**에 있어서 `localScale`이 둘 다에 걸린다 ──
         // 스케일 하나로 그림 높이를 맞추고, 콜라이더는 `radius`를 역으로 나눠 판정 반지름을 맞춘다:

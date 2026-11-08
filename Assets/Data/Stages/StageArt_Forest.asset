@@ -16,9 +16,10 @@ MonoBehaviour:
   groundDirt: {fileID: 21300000, guid: efdbf58d7dca429393a0e207d71ac3ab, type: 3}
   platformTile: {fileID: 21300000, guid: b7d2f7d64fd342ac9de47341ad7cb909, type: 3}
   background: {fileID: 21300000, guid: 2184db6913cf4af98200fb5a8145bbfc, type: 3}
-  backgroundScale: 3
-  backgroundViewLeftPx: 190
-  backgroundViewRightPx: 450
+  backgroundScale: 2
+  backgroundViewLeftPx: 240
+  backgroundViewRightPx: 400
   backgroundGrassYPx: 181.8
+  backgroundTopPx: 19
   portal: {fileID: 21300000, guid: e38567fdd53146a09e8437979a646118, type: 3}
-  portalScale: 1.5
+  portalScale: 2

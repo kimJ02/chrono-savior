@@ -56,11 +56,11 @@ namespace ChronoSavior.Characters
         public const int ArtSortingOrder = 3;
 
         /// <summary>
-        /// 층별 레이저 그림 — 팀원 문서 "파란색, 각성 차수에 따라 굵기 차이": 1~2층 small(몸통 굵기 26px), 3~4층 large(50px), 5층 large × 2.
-        /// 판정 굵기(반폭 0.156~0.36)와는 따로다(그림 테두리가 판정 경계와 몇 px 다를 수 있다).
+        /// 층별 레이저 그림 — 팀원 문서 "파란색, 각성 차수에 따라 굵기 차이": 도트 크기를 하나로 맞추면서(2026-11-09) 1~4층 small(몸통 26px → 0.4유닛),
+        /// 5층 large(50px → 0.78유닛). 판정 굵기(2W 0.31~0.72)와는 따로다(그림 테두리가 판정 경계와 몇 px 다를 수 있다).
         /// </summary>
-        public static bool LargeArt(int tier) => tier >= 3;
-        public static int ArtThickness(int tier) => tier >= 5 ? 2 : 1;
+        public static bool LargeArt(int tier) => tier >= 5;
+        public static int ArtThickness(int tier) => DotScale.Value;
 
         public GunnerLaserBeam(GunnerAttack kit, CharacterMover2D mover)
         {
@@ -363,8 +363,8 @@ namespace ChronoSavior.Characters
             t.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
             if (art && sr.sprite != null)
             {
-                t.localScale = new Vector3(1f, thickness, 1f);
-                sr.size = new Vector2(Mathf.Max(0.01f, v.magnitude), sr.sprite.bounds.size.y);
+                t.localScale = new Vector3(thickness, thickness, 1f); // 도트 크기는 같게, 길이는 이어 붙여서
+                sr.size = new Vector2(Mathf.Max(0.01f, v.magnitude) / thickness, sr.sprite.bounds.size.y);
             }
             else t.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude), thickness, 1f);
         }

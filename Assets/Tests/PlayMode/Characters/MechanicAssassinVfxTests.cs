@@ -64,11 +64,10 @@ public class MechanicAssassinVfxTests
     [Test]
     public void LaserArt_ThicknessGrowsWithTier()
     {
-        Assert.IsFalse(GunnerLaserBeam.LargeArt(2));
-        Assert.IsTrue(GunnerLaserBeam.LargeArt(3));
-        Assert.AreEqual(1, GunnerLaserBeam.ArtThickness(1));
-        Assert.AreEqual(1, GunnerLaserBeam.ArtThickness(4));
-        Assert.AreEqual(2, GunnerLaserBeam.ArtThickness(5));
+        Assert.IsFalse(GunnerLaserBeam.LargeArt(4), "1~4층 small");
+        Assert.IsTrue(GunnerLaserBeam.LargeArt(5), "5층 large");
+        Assert.AreEqual(DotScale.Value, GunnerLaserBeam.ArtThickness(1), "도트 크기는 공통");
+        Assert.AreEqual(DotScale.Value, GunnerLaserBeam.ArtThickness(5));
     }
 
     /// <summary>레이저: 총구·몸통(길이만큼 타일)·끝 그림이 판정 선 위에 놓인다. 판정 값(사거리·굵기)은 그대로.</summary>
@@ -84,7 +83,7 @@ public class MechanicAssassinVfxTests
         Assert.IsNotNull(root);
         var body = root.transform.Find("Segment").GetComponent<SpriteRenderer>();
         Assert.AreEqual(SpriteDrawMode.Tiled, body.drawMode, "몸통은 늘리지 않고 이어 붙인다");
-        Assert.AreEqual(beam.Range, body.size.x, 1e-3f, "몸통 길이 = 판정 사거리");
+        Assert.AreEqual(beam.Range, body.size.x * body.transform.lossyScale.x, 1e-3f, "몸통 길이 = 판정 사거리");
         Assert.AreEqual(GunnerSpecConfig.BeamWidth(1), beam.Width, 1e-5f, "판정 굵기는 그대로");
         Assert.IsTrue(root.transform.Find("Origin").gameObject.activeSelf && root.transform.Find("Impact").gameObject.activeSelf, "총구·끝 그림");
         CollectionAssert.Contains(VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop", false)), body.sprite, "1층은 small 그림");
@@ -113,7 +112,8 @@ public class MechanicAssassinVfxTests
         var t = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(4f, 0f), 1);
         var head = t.transform.Find("RelayHead");
         Assert.IsNotNull(head, "중계기 머리");
-        Assert.AreEqual(GunnerTurret.RelayHeadHeight, head.localPosition.y, 1e-5f);
+        Assert.Greater(head.localPosition.y, GunnerTurret.RelayHeadHeight - 1e-4f, "몸체 위");
+        Assert.AreEqual(DotScale.Value, head.lossyScale.x, 1e-4f, "공통 도트 배율");
         t.Remove();
     }
 

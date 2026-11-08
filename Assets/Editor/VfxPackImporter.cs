@@ -57,6 +57,7 @@ namespace ChronoSavior.Editor
             yield return Frames(VfxKeys.MageChargeSmall, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow");
             // 중력 갈래 차지는 보라 — 팩엔 노랑뿐이고 보라 틴트를 곱하면 노란 픽셀이 탁한 주황이 돼서(캡처·Codex 리뷰) 색상을 돌린 파생 그림
             yield return Recolored(Frames(VfxKeys.MageChargeLargeViolet, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_large_yellow"), 225f);
+            yield return Recolored(Frames(VfxKeys.MageChargeSmallViolet, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow"), 225f);
             // 화염탄 — 문서 예시(혜성 모양 energy_blast)의 빨강. 오른쪽을 향한 그림이라 쏠 때 속도 방향으로 돌린다(2026-11-08, 예전 plasma_ball에서 교체)
             yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_energy_blast_A_small_red");
             yield return Frames(VfxKeys.MageFireTrail, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 1");

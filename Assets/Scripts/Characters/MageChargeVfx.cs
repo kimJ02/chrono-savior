@@ -54,7 +54,7 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>갈래별 오라 그림 — 중력은 보라 파생 그림, 나머지는 노랑 원본.</summary>
-        public static string AuraKey(MageBranch branch) => branch == MageBranch.Gravity ? VfxKeys.MageChargeLargeViolet : VfxKeys.MageChargeLarge;
+        public static string AuraKey(MageBranch branch) => branch == MageBranch.Gravity ? VfxKeys.MageChargeSmallViolet : VfxKeys.MageChargeSmall; // 48px × 도트 2 = 0.75유닛(2026-11-09 도트 통일)
 
         /// <summary>갈래별 오라 틴트 — 폭발만 주황, 나머지는 그림 색 그대로.</summary>
         public static Color AuraTint(MageBranch branch) => branch == MageBranch.Explosion ? FireTint : Color.white;
@@ -106,9 +106,9 @@ namespace ChronoSavior.Characters
                 sr.sortingOrder = AuraSortingOrder(body);
                 aura = go.AddComponent<VfxPlayer>();
             }
-            // 플레이어는 캐릭터 그림에 맞춰 배율이 1이 아니다(씬 0.8 등) — 오라는 월드 배율 1(도트 배율 1)이 되게 되돌린다.
+            // 플레이어는 캐릭터 그림에 맞춰 배율이 1이 아니다 — 오라는 월드 배율 = 도트 배율(2)이 되게 되돌린다.
             var s = transform.lossyScale;
-            aura.transform.localScale = new Vector3(1f / Mathf.Max(0.01f, Mathf.Abs(s.x)), 1f / Mathf.Max(0.01f, Mathf.Abs(s.y)), 1f);
+            aura.transform.localScale = new Vector3(DotScale.Value / Mathf.Max(0.01f, Mathf.Abs(s.x)), DotScale.Value / Mathf.Max(0.01f, Mathf.Abs(s.y)), 1f);
             aura.gameObject.SetActive(true);
             aura.Play(frames, AuraFps, true, 0f, AuraTint(branch)); // 차지를 새로 시작할 때마다 처음부터
         }

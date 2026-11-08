@@ -193,10 +193,12 @@ namespace ChronoSavior.World
             float pxPerUnitRaw = art.background.pixelsPerUnit / art.backgroundScale;
             float halfHRaw = halfH * pxPerUnitRaw;
             float vLow = art.backgroundGrassYPx - (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw + halfHRaw;
-            float vHigh = halfHRaw; // 맨 위 발판에 섰을 때 — 그림 윗변이 화면 윗변
+            float vHigh = art.backgroundTopPx + halfHRaw; // 맨 위 발판에 섰을 때 — 그림 윗변(테두리 아래)이 화면 윗변
             float minY = CameraFollow2D.MinY, maxY = CameraFollow2D.MaxY;
             float ty = maxY > minY ? Mathf.InverseLerp(minY, maxY, camY) : 0f;
             float v = Mathf.Lerp(vLow, vHigh, ty);
+            // 그림 위·아래 가장자리가 화면에 걸리지 않게(2026-11-09 배경 배율 3→2 — 풀밭 맞춤보다 가장자리 숨김이 먼저)
+            v = Mathf.Clamp(v, art.backgroundTopPx + halfHRaw, art.background.rect.height - halfHRaw);
             return new Vector2(u, v);
         }
     }

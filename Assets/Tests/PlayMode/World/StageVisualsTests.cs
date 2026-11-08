@@ -110,13 +110,24 @@ public class StageVisualsTests
     }
 
     [Test]
-    public void Background_GrassLineSitsOnGround_WhenStandingOnGround()
+    public void Background_GrassLineNearGround_AndNoEdgeEverShows()
     {
-        float camY = CameraFollow2D.MinY;
-        Vector2 c = StageVisuals.BackgroundRawCenter(TestPrefabs.StageArt, StageArtConfig.ViewHalfWidth, camY);
-        float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / (float)TestPrefabs.StageArt.backgroundScale;
+        // 2026-11-09 도트 통일로 배경 3배 → 2배: 그림 위·아래 가장자리를 숨기는 게 먼저라, 땅에 섰을 때 그림 속 풀밭은 지면에서 조금(그림 14px 이내) 어긋날 수 있다.
+        var art = TestPrefabs.StageArt;
+        float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / (float)art.backgroundScale;
+        float halfWRaw = StageArtConfig.ViewHalfWidth * StageArtConfig.PixelsPerUnit / (float)art.backgroundScale;
+        Vector2 c = StageVisuals.BackgroundRawCenter(art, StageArtConfig.ViewHalfWidth, CameraFollow2D.MinY);
         float groundRawY = (c.y - halfHRaw) + (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw;
-        Assert.AreEqual(181.8f, groundRawY, 0.05f, "그림 속 풀밭이 우리 지면 높이에 안 온다");
+        Assert.AreEqual(art.backgroundGrassYPx, groundRawY, 36f, "그림 속 풀밭이 지면 근처에 와야 한다(테두리를 숨기느라 그림 36px 이내로 어긋날 수 있다)");
+        foreach (float camX in new[] { FieldBounds.MinX, FieldBounds.MaxX })
+            foreach (float camY in new[] { CameraFollow2D.MinY, CameraFollow2D.MaxY })
+            {
+                Vector2 v = StageVisuals.BackgroundRawCenter(art, camX, camY);
+                Assert.GreaterOrEqual(v.x - halfWRaw, -0.01f, "왼쪽 가장자리가 보인다");
+                Assert.LessOrEqual(v.x + halfWRaw, art.background.rect.width + 0.01f, "오른쪽 가장자리가 보인다");
+                Assert.GreaterOrEqual(v.y - halfHRaw, art.backgroundTopPx - 0.01f, "위 테두리가 보인다");
+                Assert.LessOrEqual(v.y + halfHRaw, art.background.rect.height + 0.01f, "아래 가장자리가 보인다");
+            }
     }
 
     // ---------------- 그림 깔기 ----------------
@@ -208,13 +219,13 @@ public class StageVisualsTests
         var set = TestPrefabs.StageArt; // 게임 씬의 StageVisuals가 쓰는 그림 묶음
         AssertSprite(set.groundTop, "ground_top", 64f, new Vector2(0.5f, 0.5f));
         AssertSprite(set.groundDirt, "ground_dirt", 64f, new Vector2(0.5f, 0.5f));
-        AssertSprite(set.platformTile, "platform_tile", 128f, new Vector2(0.125f, 0.125f));
+        AssertSprite(set.platformTile, "platform_tile", 64f, new Vector2(0.25f, 0.25f)); // 2026-11-09 도트 통일 — 땅 타일과 같은 PPU 64(도트 2)
         AssertSprite(set.background, "bg_forest", 128f, new Vector2(5f, 2.8125f));
         AssertSprite(set.portal, "portal", 128f, new Vector2(0.25f, 0.5f));
     }
 
     [Test]
-    public void Portal_GetsFigmaArt_At1_5x_StandingOnGround_KeepsItsArtColors()
+    public void Portal_GetsFigmaArt_AtDotScale_StandingOnGround_KeepsItsArtColors()
     {
         var go = new GameObject("TestPortal");
         go.transform.position = new Vector3(FieldLayout.BossPortalX, FieldBounds.GroundY + FieldLayout.BossPortalHeight / 2f, 0f);
@@ -228,7 +239,7 @@ public class StageVisualsTests
 
         var sr = go.GetComponent<SpriteRenderer>();
         Assert.AreSame(art, sr.sprite);
-        Assert.AreEqual(new Vector3(1.5f, 1.5f, 1f), go.transform.localScale, "포탈 1.5배(사용자 결정 2026-10-24)");
+        Assert.AreEqual(new Vector3(DotScale.Value, DotScale.Value, 1f), go.transform.localScale, "포탈은 공통 도트 배율(2026-11-09 — 예전 1.5배는 사용자 2026-10-24 결정, 도트 통일로 2배)");
         Assert.AreEqual(FieldBounds.GroundY, go.transform.position.y - art.bounds.size.y * set.portalScale / 2f, 1e-4f,
             "포탈이 땅 위에 안 서 있다");
         Assert.AreEqual(FieldLayout.BossPortalX, go.transform.position.x, 1e-4f);

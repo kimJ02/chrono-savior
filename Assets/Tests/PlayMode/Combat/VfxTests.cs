@@ -94,19 +94,6 @@ public class VfxTests
         return sprites;
     }
 
-    /// <summary>정수 배율 — 목표 폭에 가장 가까운 정수, 최소 1(24px·PPU 128 = 0.1875유닛).</summary>
-    [Test]
-    public void WholeScale_IsNearestWholeNumber()
-    {
-        var tex = new Texture2D(24, 24);
-        made.Add(tex);
-        var frame = Sprite.Create(tex, new Rect(0, 0, 24, 24), new Vector2(0.5f, 0.5f), 128f);
-        made.Add(frame);
-        Assert.AreEqual(2, VfxPlayer.WholeScale(0.4f, frame));
-        Assert.AreEqual(5, VfxPlayer.WholeScale(0.9f, frame));
-        Assert.AreEqual(1, VfxPlayer.WholeScale(0.05f, frame), "최소 1");
-    }
-
     /// <summary>바깥에서 곱한 투명도(수명을 담당이 들고 있는 반복 재생용)가 색에 반영된다.</summary>
     [Test]
     public void Alpha_MultipliesTheColor()

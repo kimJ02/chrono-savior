@@ -22,7 +22,7 @@ namespace ChronoSavior.Editor
         public static bool IsIllustration(string path) =>
             path.StartsWith(UiFolder + "Title/") || path.StartsWith(UiFolder + "Skills/");
 
-        public override uint GetVersion() => 5;
+        public override uint GetVersion() => 6;
 
         void OnPreprocessTexture()
         {
@@ -38,7 +38,9 @@ namespace ChronoSavior.Editor
             ti.wrapMode = TextureWrapMode.Clamp;
             bool ui = assetPath.StartsWith(UiFolder);
             // UI는 캔버스 1단위 = 그림 1도트(캔버스 referencePixelsPerUnit 100) — 9-슬라이스 테두리도 도트 그대로 잡힌다.
-            ti.spritePixelsPerUnit = ui ? 100f : System.IO.Path.GetFileName(assetPath).StartsWith("ground_") ? 64f : 128f;
+            // 월드 타일(땅·발판)은 PPU 64 — 그대로 깔면 도트 배율 2(Core.DotScale, 2026-11-09 발판도 땅과 같게). 배경·포탈은 128에 배율 2를 곱해 깐다.
+            string file = System.IO.Path.GetFileName(assetPath);
+            ti.spritePixelsPerUnit = ui ? 100f : file.StartsWith("ground_") || file.StartsWith("platform_") ? 64f : 128f;
             // UI 버튼의 마우스 올림·눌림·비활성 그림은 원본 그림의 밝기만 바꿔 실행 중에 만든다(`UI/Pixel/PxArt`) — 픽셀을 읽어야 한다.
             ti.isReadable = ui;
             if (IsIllustration(assetPath))

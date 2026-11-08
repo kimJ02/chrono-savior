@@ -112,7 +112,7 @@ namespace ChronoSavior.Combat
         {
             var orb = GetComponentInChildren<GravityVortexVfx>();
             if (orb != null) orb.Pulse();
-            float top = GravityVortexVfx.ScaleFor(Stack) * 0.375f + 0.2f;
+            float top = GravityVortexVfx.DiameterFor(Stack) * 0.5f + 0.2f;
             CombatEvents.RaisePopup((Vector2)transform.position + new Vector2(0f, top), "중첩 x" + Stack, MergeTextColor);
         }
 

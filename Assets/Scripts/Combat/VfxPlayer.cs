@@ -34,12 +34,6 @@ namespace ChronoSavior.Combat
             set { alpha = Mathf.Clamp01(value); if (frames != null && frames.Length > 0) Show(Frame, CurrentFade()); }
         }
 
-        /// <summary>
-        /// 그림을 `targetWidth`(유닛)에 가장 가깝게 보이게 하는 **정수** 배율(최소 1) — 도트 배율을 정수로 지키려고(`docs/pixel-standard.md`).
-        /// 판정 크기는 그대로 두고 그림만 이 배율로 그린다.
-        /// </summary>
-        public static int WholeScale(float targetWidth, Sprite frame) =>
-            frame == null ? 1 : Mathf.Max(1, Mathf.RoundToInt(targetWidth / frame.bounds.size.x));
 
         /// <summary>
         /// 그 키의 효과를 세운다. 그림이 없으면 null — 부르는 쪽은 지금 임시 그림으로 그린다.
