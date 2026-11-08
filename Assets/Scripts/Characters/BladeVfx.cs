@@ -58,7 +58,6 @@ namespace ChronoSavior.Characters
         float shadeAlpha, ripFlash;
         Vector2 lastSmoke;
         bool wasStorming;
-        static Sprite whiteSprite;
 
         /// <summary>테스트용.</summary>
         public float ShadeAmount => shadeAlpha;
@@ -112,7 +111,7 @@ namespace ChronoSavior.Characters
                     var go = new GameObject("FocusShade", typeof(SpriteRenderer)); // 캐릭터 배율과 무관하게 월드 오브젝트로
                     RunTransient.Mark(go);
                     shade = go.GetComponent<SpriteRenderer>();
-                    shade.sprite = WhiteSprite();
+                    shade.sprite = VfxDots.DotSprite();
                     shade.sortingOrder = ShadeSortingOrder;
                     go.transform.localScale = new Vector3(ShadeSize / shade.sprite.bounds.size.x, ShadeSize / shade.sprite.bounds.size.y, 1f);
                 }
@@ -259,11 +258,5 @@ namespace ChronoSavior.Characters
             return p;
         }
 
-        static Sprite WhiteSprite()
-        {
-            if (whiteSprite == null)
-                whiteSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 128f);
-            return whiteSprite;
-        }
     }
 }

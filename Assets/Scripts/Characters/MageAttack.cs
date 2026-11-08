@@ -27,12 +27,15 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         cdTimer = 0f;
         ultCdTimer = 0f;
         CancelCharge();
-        dashing = false;
-        dashZones.Clear();
+        CancelDash();
     }
 
     /// <summary>다른 캐릭터로 바뀔 때 — 진행 중이던 차지와 감속·표시물을 정리한다.</summary>
-    public void OnDeselected() => CancelCharge();
+    public void OnDeselected()
+    {
+        CancelCharge();
+        CancelDash(); // 돌진 중에 다른 캐릭터로 바뀌면 그 자리에서 멈춘다(장판도 안 깐다)
+    }
 
     /// <summary>
     /// 새 사냥 시작 시 — 원본 `resetPlayerForRun()`의 `p.atkCds`·`p.ultCd`·`p.charging` 초기화
@@ -132,7 +135,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     void OnDisable() => GameState.Changed -= HandleGameStateChanged;
     void HandleGameStateChanged(GameScene scene)
     {
-        if (scene != GameScene.Run) CancelCharge();
+        if (scene != GameScene.Run) { CancelCharge(); CancelDash(); }
     }
 
     void Update()
@@ -346,6 +349,12 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     Vector3 dashFrom, dashTo;
     int dashTier, dashGhosts;
     readonly System.Collections.Generic.List<Vector2> dashZones = new System.Collections.Generic.List<Vector2>();
+
+    void CancelDash()
+    {
+        dashing = false;
+        dashZones.Clear();
+    }
 
     /// <summary>돌진 중인가(테스트·그림용).</summary>
     public bool IsDashing => dashing;

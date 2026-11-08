@@ -110,7 +110,8 @@ namespace ChronoSavior.Combat
             if (!any && !Emitting) Destroy(gameObject);
         }
 
-        static Sprite DotSprite()
+        /// <summary>흰 4px 정사각형(그림 2px = 도트 2개) — 점 입자·내부 장판 흰 점·화면 어둡게 판이 같이 쓴다. 기본 흰 텍스처는 4×4다.</summary>
+        public static Sprite DotSprite()
         {
             if (dotSprite == null)
                 dotSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 128f);

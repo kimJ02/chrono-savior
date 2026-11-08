@@ -16,6 +16,15 @@ namespace ChronoSavior.Combat
         public const int SortingOrder = 5;
 
         static readonly Dictionary<int, Sprite> cache = new Dictionary<int, Sprite>();
+        const int CacheStepPx = 4, CacheLimit = 32;
+
+        /// <summary>그려 둔 고리 그림을 모두 지운다(텍스처까지).</summary>
+        public static void ClearCache()
+        {
+            foreach (var sp in cache.Values)
+                if (sp != null) { Destroy(sp.texture); Destroy(sp); }
+            cache.Clear();
+        }
         SpriteRenderer sr;
         Color color;
         float t, life;
@@ -48,8 +57,10 @@ namespace ChronoSavior.Combat
         public static Sprite RingSprite(float radius)
         {
             float ppu = DotScale.GridPixelsPerUnit / DotScale.Value;
-            int rp = Mathf.Max(1, Mathf.RoundToInt(radius * ppu));
+            // 반경은 차지에 따라 연속으로 바뀐다 — 그림 4px 단위로 맞춰 캐시를 작게(눈으로는 구별 안 되는 차이), 너무 많아지면 비운다
+            int rp = Mathf.Max(CacheStepPx, Mathf.RoundToInt(radius * ppu / CacheStepPx) * CacheStepPx);
             if (cache.TryGetValue(rp, out var s) && s != null) return s;
+            if (cache.Count >= CacheLimit) ClearCache();
             int size = rp * 2 + 3;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             var px = new Color32[size * size];

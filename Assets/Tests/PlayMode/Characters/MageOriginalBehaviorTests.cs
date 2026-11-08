@@ -267,6 +267,21 @@ public class MageOriginalBehaviorTests
         Assert.AreEqual(5f, flames[0].transform.position.x, 0.05f);
     }
 
+    /// <summary>화염돌진 중에 다른 캐릭터로 바뀌면 그 자리에서 멈추고 장판도 깔지 않는다(Codex 리뷰 2026-11-09).</summary>
+    [Test]
+    public void Dash_StopsWhenCharacterIsSwitchedAway()
+    {
+        var mage = NewMage(new Vector2(5f, 0f));
+        Call(mage, "TeleportTowards", 1f, 0f, 1, 1);
+        Assert.IsTrue(mage.IsDashing);
+        float x = mage.transform.position.x;
+        mage.OnDeselected();
+        Call(mage, "UpdateDash", 1f);
+        Assert.IsFalse(mage.IsDashing);
+        Assert.AreEqual(x, mage.transform.position.x, 1e-4f, "멈춘 자리 그대로");
+        Assert.AreEqual(0, Object.FindObjectsByType<FireTrailZone>(FindObjectsSortMode.None).Length, "장판을 깔지 않는다");
+    }
+
     // ───────────────────────── 5. 수직 조준 탄 위치 ─────────────────────────
 
     [Test]

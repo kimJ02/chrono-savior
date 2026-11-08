@@ -36,7 +36,6 @@ namespace ChronoSavior.Characters
         Mesh fillMesh;
         readonly List<Dot> dots = new List<Dot>();
         List<Vector2> polygon;
-        static Sprite dotSprite;
 
         struct Dot { public SpriteRenderer sr; public float t, life; }
 
@@ -128,7 +127,7 @@ namespace ChronoSavior.Characters
                     var dgo = new GameObject("Dot", typeof(SpriteRenderer));
                     dgo.transform.SetParent(root.transform, false);
                     var sr = dgo.GetComponent<SpriteRenderer>();
-                    sr.sprite = DotSprite();
+                    sr.sprite = VfxDots.DotSprite();
                     sr.sortingOrder = DotSortingOrder;
                     float life = Random.Range(DotLifeMin, DotLifeMax);
                     sr.transform.position = RandomPointInside(points); // 처음부터 안에 흩어져 있게(제각각 다른 때에 깜빡이도록 시작 시각도 흩는다)
@@ -148,13 +147,6 @@ namespace ChronoSavior.Characters
             fillMesh.RecalculateBounds();
         }
 
-        /// <summary>흰 점 — 작은 정사각형(그림 4px = 월드 격자 4칸).</summary>
-        static Sprite DotSprite()
-        {
-            if (dotSprite == null)
-                dotSprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 128f);
-            return dotSprite;
-        }
 
         void Update()
         {

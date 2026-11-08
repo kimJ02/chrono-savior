@@ -68,7 +68,7 @@ public class MageVfxTests
         Assert.AreEqual(DotScale.Value, vfx.transform.localScale.x, 1e-4f, "공통 도트 배율");
         var ring = GameObject.Find("RangeRing");
         Assert.IsNotNull(ring, "판정 고리");
-        Assert.AreEqual(MageSpecConfig.FireExplosionRadius(3) * 2f, ring.GetComponent<SpriteRenderer>().bounds.size.x, 0.1f, "고리 지름 = 판정 지름");
+        Assert.AreEqual(MageSpecConfig.FireExplosionRadius(3) * 2f, ring.GetComponent<SpriteRenderer>().bounds.size.x, 0.15f, "고리 지름 = 판정 지름(그림 4px 단위로 맞춤)");
         yield return new WaitForSeconds(VfxFrames.Get(VfxKeys.MageFireExplosion).Length / MageSkillEffects.ExplosionFps + 0.2f);
         Assert.IsTrue(vfx == null && ring == null, "한 번 재생하고 고리와 함께 사라진다");
     }
