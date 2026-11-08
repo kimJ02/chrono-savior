@@ -70,6 +70,21 @@ namespace ChronoSavior.Enemies
         int burnStacks;
         float burnRemaining;
         float burnTickTimer;
+        VfxPlayer burnFlame;
+        VfxDots burnEmbers;
+
+        /// <summary>지금 화상 스택(그림·테스트용).</summary>
+        public int BurnStacks => burnStacks;
+
+        /// <summary>
+        /// 화상 그림(2026-11-09 사용자 "적이 불타는 VFX가 뜨면서 도트 데미지를 받아야") — 화상 피해 자체는 원래 있었지만(원본 그대로 0.5초마다)
+        /// 눈에 안 보였다. 불타는 동안 몸에 Pixel Fire 불꽃(<see cref="VfxKeys.MageBurn"/>)이 붙고, 틱마다 몸이 주황으로 깜빡인다(흰 피격 깜빡임과 구별).
+        /// 원본은 머리 위에 스택 숫자만 그렸다 — 그림은 의도적 편차(`docs/original-parity.md`).
+        /// </summary>
+        public static readonly Color BurnFlashColor = new Color(1f, 0.55f, 0.15f);
+        public const int BurnFlameScale = 2;
+        public const float BurnFlameFps = 12f;
+        Color flashColor = Color.white;
         // 원본 `e.vulnT` / `e.gravityExpose`(project_test.html:3968에서 0으로 시작).
         float vulnRemaining;
         float gravityExpose;
@@ -158,6 +173,39 @@ namespace ChronoSavior.Enemies
                 finally { burnTick = false; }
             }
             if (burnRemaining <= 0f) burnStacks = 0; // 원본 `if (e.burnT <= 0) e.burnS = 0`
+            UpdateBurnFlame();
+        }
+
+        /// <summary>불타는 동안만 불꽃 그림 — 몹 배율과 무관하게 월드 배율 <see cref="BurnFlameScale"/>(정수), 몸 아래쪽에 붙는다. 그림이 없으면 없이.</summary>
+        void UpdateBurnFlame()
+        {
+            bool burning = burnStacks > 0 && !IsDead;
+            if (burnEmbers != null) burnEmbers.Emitting = burning; // 끄면 남은 불씨만 사라지고 스스로 지워진다
+            if (!burning)
+            {
+                if (burnFlame != null) burnFlame.gameObject.SetActive(false);
+                return;
+            }
+            // 튀어 오르는 불씨(그림 없이 점, 2026-11-09 Codex 합의) — 몹에 붙여 몹 배율과 무관하게
+            if (burnEmbers == null && VfxFrames.Has(VfxKeys.MageBurn))
+                burnEmbers = VfxDots.Attach(transform, VfxDots.Motion.Rise, 6, new Color(1f, 0.6f, 0.2f), 0.15f, 0.5f, 0.6f, (sr != null ? sr.sortingOrder : 0) + 3);
+            if (burnFlame == null)
+            {
+                var frames = VfxFrames.Get(VfxKeys.MageBurn);
+                if (frames.Length == 0) return;
+                var go = new GameObject("BurnFlame", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false);
+                var fsr = go.GetComponent<SpriteRenderer>();
+                fsr.sortingOrder = (sr != null ? sr.sortingOrder : 0) + 2; // 몸·피격 깜빡임 위
+                burnFlame = go.AddComponent<VfxPlayer>();
+                burnFlame.Play(frames, BurnFlameFps, true, 0f, Color.white);
+            }
+            var s = transform.lossyScale;
+            burnFlame.transform.localScale = new Vector3(BurnFlameScale / Mathf.Max(0.01f, Mathf.Abs(s.x)), BurnFlameScale / Mathf.Max(0.01f, Mathf.Abs(s.y)), 1f);
+            float bodyHalf = sr != null && sr.sprite != null ? sr.bounds.extents.y : 0.25f;
+            float flameHalf = burnFlame.GetComponent<SpriteRenderer>().bounds.extents.y;
+            burnFlame.transform.position = (Vector2)transform.position + new Vector2(0f, flameHalf - bodyHalf * 0.6f); // 불꽃 밑동이 몸 아래쪽에
+            burnFlame.gameObject.SetActive(true);
         }
 
         public void ApplyBurn(int stacks)
@@ -165,6 +213,7 @@ namespace ChronoSavior.Enemies
             if (IsDead) return;
             burnStacks = Mathf.Min(maxBurnStacks, burnStacks + stacks);
             burnRemaining = burnDuration; // 원본 `e.burnT = E.life` — 누적이 아니라 리필
+            UpdateBurnFlame();
         }
 
         public void TakeDamage(float amount, GameObject source)
@@ -230,6 +279,7 @@ namespace ChronoSavior.Enemies
 
             CurrentHp -= amount;
             flash = 1f; // 원본 `e.flash = 1`(project_test.html:1666)
+            flashColor = burnTick ? BurnFlashColor : Color.white; // 화상 틱은 주황(2026-11-09 — 불타는 피해가 보이게)
             ShowFlash();
 
             // 원본 `kbBase * (1 + itemPow('knockback')) * (e.type === 'bigOni' ? 0.4 : 1)`(:1678).
@@ -274,7 +324,7 @@ namespace ChronoSavior.Enemies
             flashSr.flipY = sr.flipY;
             flashSr.sortingLayerID = sr.sortingLayerID;
             flashSr.sortingOrder = sr.sortingOrder + 1;
-            flashSr.color = new Color(1f, 1f, 1f, flash * flashStrength);
+            flashSr.color = new Color(flashColor.r, flashColor.g, flashColor.b, flash * flashStrength);
             flashSr.enabled = flash > 0f;
         }
 

@@ -35,7 +35,7 @@ Pixel Art Effects
 | `mage/fire_trail·fire_trail_small` | Pixel Fire | fire asset red / Group 4 - 1·Group 4 - 3 |
 | `mage/gravity_orb_small·large` | Projectiles Pack 4 | pj4_dark_matter (small·large, violet) |
 | `mage/fire_explosion` | Gigapack | Explosions/stylized_explosion_001_large_yellow (폭발 17종을 게임 배율로 비교해 고름, 2026-11-08) |
-| `mage/gravity_explosion` | Gigapack | Explosions/stylized_explosion_002_large_violet |
+| `mage/gravity_explosion` | Gigapack | Explosions/symmetrical_explosion_004_large_orange → 보라 파생(+250°) (2026-11-09 — 예전 stylized_002 보라 구체는 사용자 결정으로 뺌) |
 | `mage/collapse_explosion` | Gigapack | Impacts/symmetrical_impact_002_large_blue → 보라 파생(+75°) |
 | `mage/collapse_critical` | Gigapack | Impacts/symmetrical_impact_006_large_yellow → 보라 파생(+225°) |
 | `mechanic/laser_*` | Projectiles Pack 4 | pj4_laser_beam_A (small·large, blue) origin·center·impact × start·loop·end |

@@ -30,7 +30,7 @@
 | 마법사 차지 오라 | `Characters/MageChargeVfx`(키 `mage/charge_large`, 몸 뒤, 갈래 색 `FireTint`·`GravityTint`) | 크기 고정(월드 배율 1) |
 | 마법사 탄 그림 | `Characters/MageProjectile.ShowArt`(폭발 `mage/fire_projectile`·중력 `mage/gravity_orb_small`, 0차는 프리팹의 원) | 판정 폭에 가장 가까운 정수 배율(`VfxPlayer.WholeScale`), 판정 상자는 그대로 |
 | 마법사 불길 | `Combat/FireTrailZone`(키 `mage/fire_trail`) | `FlameScale`·`FadeTime`·밑동 높이(`MageSpecConfig.TeleportFlameLineHeight`) |
-| 마법사 폭발(화염·중력 착탄·대붕괴) | `Combat/MageSkillEffects.ShowExplosion`(키 `mage/fire_explosion`·`mage/gravity_explosion`) | 판정 지름에 가장 가까운 정수 배율. 대붕괴는 그 위에 원본 고리(`GravityBurstRing`)도 |
+| 마법사 폭발(화염·중력 착탄·대붕괴) | `Combat/MageSkillEffects.ShowExplosion`(키 `mage/fire_explosion`·`mage/gravity_explosion`) | 화염·착탄은 판정 지름에 가장 가까운 정수 배율, 대붕괴는 중첩마다 두 칸씩(`CollapseArtScale`). 대붕괴는 `mage/collapse_explosion`(+임계 `mage/collapse_critical`)만 — 원본의 원판·선 고리는 2026-11-09 사용자 결정으로 뺐다 |
 | 마법사 중력장 구체 | `Combat/GravityVortexVfx`(키 `mage/gravity_orb_large`) | 배율 = 중첩 수(1~5) — 끌어당기는 판정 반경과 따로 |
 | 메카닉 레이저 | `Characters/GunnerLaserBeam`(키 `mechanic/laser_{origin·center·impact}_loop_{small·large}`) | 1~2층 small·3~4층 large·5층 large×2(`ArtThickness`). 몸통은 길이만큼 타일. 그림 없으면 예전 막대 |
 | 메카닉 드론 탄 | `Characters/GunnerDrone` → `GunnerBullet.Spawn(artKey: mechanic/pellet)` | 판정 폭에 가장 가까운 정수 배율. 드론 몸체 그림은 팩에 없어 프리팹 그대로 |
@@ -42,7 +42,6 @@
 
 | 무엇 | 지금 | 바꿀 방법(그때) |
 |---|---|---|
-| 대붕괴 폭발 고리(원판·선) | `GravityBurstRing`이 `Shader.Find("Sprites/Default")`로 머티리얼을 만들고 메시·선을 코드로 그린다 | 외주 효과가 그림/프레임이면 효과 프리팹으로 교체 |
 | 레이저 구간·설치물 연결선 | `GunnerLaserBeam`·`GunnerAttack`이 `GunnerAttack.bulletSprite`를 코드로 늘려 그린다 | 외주 효과 형식에 맞춰 프리팹/프레임으로 |
 | 처치 연출·화면 흔들림 등 | 코드(`HitFeel`) — 그림 없음 | 필요하면 효과 프리팹 추가 |
 

@@ -21,12 +21,14 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     /// <summary>마법사는 원본 `updatePlayerCommon`의 즉시-속도 이동을 쓴다(관성은 섬영 전용).</summary>
     public CharacterMover2D.MoveMode RequiredMoveMode => CharacterMover2D.MoveMode.Instant;
 
-    /// <summary>이 캐릭터로 전환됐을 때 — 쿨다운·차지를 초기화한다.</summary>
+    /// <summary>이 캐릭터로 전환됐을 때 — 쿨다운·차지를 초기화한다(돌진 중이었으면 그만둔다).</summary>
     public void OnSelected()
     {
         cdTimer = 0f;
         ultCdTimer = 0f;
         CancelCharge();
+        dashing = false;
+        dashZones.Clear();
     }
 
     /// <summary>다른 캐릭터로 바뀔 때 — 진행 중이던 차지와 감속·표시물을 정리한다.</summary>
@@ -135,6 +137,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
 
     void Update()
     {
+        UpdateDash(Time.deltaTime); // 화염돌진은 사냥 밖 게이트와 무관하게 끝까지 간다
         var profile = ProfileService.Current;
         var branch = profile.mageBranch;
         int tier = profile.mageTier;
@@ -265,7 +268,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     }
 
     /// <summary>원본 `mageFireTeleport()`(project_test.html:2132) — 방향키 방향(없으면 정면)으로
-    /// 순간이동하고, 지나온 경로에 불길 장판을 남긴다.</summary>
+    /// 이동하고(2026-11-09부터 순간이동 대신 짧은 화염돌진), 지나온 경로에 불길 장판을 남긴다.</summary>
     void FireTeleportDash(int tier, int facing)
     {
         float dx = (GameInput.Right ? 1 : 0) - (GameInput.Left ? 1 : 0);
@@ -305,18 +308,84 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         Vector2 lineTo = new Vector2(toX, toY + MageSpecConfig.TeleportFlameLineHeight);
 
         if (TryGetComponent(out PlayerAfterimages afterimages)) afterimages.Spawn(transform.position); // 원본 출발 자리 잔상(:2147)
-        mover.Teleport(new Vector3(toX, toY + bodyOffset, transform.position.z)); // 원본 vx = vy = 0 — Teleport가 속도를 비운다
-        health?.GrantInvuln(MageSpecConfig.TeleportInvuln); // 원본 :2149
+        health?.GrantInvuln(MageSpecConfig.TeleportInvuln); // 원본 :2149 — 돌진을 시작할 때부터
         HitFeel.Shake(5f, 0.15f); // 원본 mageFireTeleport(:2152)
 
-        // 원본 spawnFlameLine(:2008) — 출발·도착 사이를 n등분한 n+1곳에 불길.
+        // 원본 spawnFlameLine(:2008) — 출발·도착 사이를 n등분한 n+1곳에 불길 장판(피해·화상). 자리·개수는 원본 그대로 정해 두고 **돌진이 끝나면** 깐다(Codex 합의).
+        // 단 **발밑이 바닥·발판인 곳에만**: 2026-11-09 사용자 "공중에서 쓰면 불길이 남으면 안 되지" — 원본은 공중에도 깔았다(의도적 편차, `docs/original-parity.md`).
+        dashZones.Clear();
         int trailPoints = MageSpecConfig.TeleportTrailPoints(tier);
         for (int i = 0; i <= trailPoints; i++)
         {
             float t = trailPoints <= 0 ? 1f : (float)i / trailPoints;
-            FireTrailZone.Spawn(Vector2.Lerp(lineFrom, lineTo, t), tier, MageSpecConfig.TeleportTrailPower);
+            Vector2 p = Vector2.Lerp(lineFrom, lineTo, t);
+            if (IsOnSurface(p - new Vector2(0f, MageSpecConfig.TeleportFlameLineHeight))) dashZones.Add(p);
         }
+
+        // 화염돌진(2026-11-09 사용자 "순간이동 느낌이라 별로, 화염돌진처럼") — 같은 도착점으로 DashDuration초에 걸쳐 날아간다(의도적 편차: 원본은 즉시 이동).
+        dashFrom = transform.position;
+        dashTo = new Vector3(toX, toY + bodyOffset, transform.position.z);
+        dashT = 0f;
+        dashTier = tier;
+        dashGhosts = 0;
+        dashing = true;
+        FireDashVfx.Play(dashFrom, dashTo, DashDuration, GroundFlamePoints(feet, new Vector2(toX, toY)), MageSpecConfig.FlameTrailLife(tier));
+        UpdateDash(0f);
     }
+
+    // ---- 화염돌진(2026-11-09) ----
+    /// <summary>돌진 시간(초) — 같은 도착점까지 이만큼 걸려 날아간다(감속 곡선 <see cref="FireDashVfx.Ease"/>).</summary>
+    public const float DashDuration = 0.2f;
+    /// <summary>돌진 중 잔상 수(출발 자리 잔상 말고 더) — 날아가는 느낌.</summary>
+    public const int DashGhosts = 2;
+    /// <summary>바닥 불꽃(그림만) 간격 — 이 사이에서 무작위.</summary>
+    public const float FlameSpacingMin = 0.16f, FlameSpacingMax = 0.3f;
+
+    bool dashing;
+    float dashT;
+    Vector3 dashFrom, dashTo;
+    int dashTier, dashGhosts;
+    readonly System.Collections.Generic.List<Vector2> dashZones = new System.Collections.Generic.List<Vector2>();
+
+    /// <summary>돌진 중인가(테스트·그림용).</summary>
+    public bool IsDashing => dashing;
+
+    /// <summary>돌진을 한 프레임 진행한다 — 위치를 직접 정하고(원본처럼 지형과 안 부딪힌다), 다 가면 불길 장판을 원본 자리에 깐다.</summary>
+    void UpdateDash(float dt)
+    {
+        if (!dashing || mover == null) return;
+        dashT += dt;
+        float k = Mathf.Clamp01(dashT / DashDuration);
+        mover.Teleport(Vector3.Lerp(dashFrom, dashTo, FireDashVfx.Ease(k)));
+        while (dashGhosts < DashGhosts && k >= (dashGhosts + 1f) / (DashGhosts + 1f))
+        {
+            if (TryGetComponent(out PlayerAfterimages ghosts)) ghosts.Spawn(transform.position);
+            dashGhosts++;
+        }
+        if (k < 1f) return;
+        dashing = false;
+        foreach (var p in dashZones) FireTrailZone.Spawn(p, dashTier, MageSpecConfig.TeleportTrailPower);
+        dashZones.Clear();
+    }
+
+    /// <summary>바닥 불꽃 그림 자리 — 출발·도착 발 높이 선을 무작위 간격으로 짚어, 발밑이 바닥·발판인 곳만 그 바닥 높이로.</summary>
+    static System.Collections.Generic.List<Vector2> GroundFlamePoints(Vector2 feetFrom, Vector2 feetTo)
+    {
+        var list = new System.Collections.Generic.List<Vector2>();
+        float len = Vector2.Distance(feetFrom, feetTo);
+        for (float s = Random.Range(0f, FlameSpacingMin); s <= len; s += Random.Range(FlameSpacingMin, FlameSpacingMax))
+        {
+            Vector2 p = len > 0f ? Vector2.Lerp(feetFrom, feetTo, s / len) : feetFrom;
+            if (!IsOnSurface(p)) continue;
+            list.Add(new Vector2(p.x, FieldLayout.SurfaceBelow(p.x, p.y)));
+        }
+        return list;
+    }
+
+    /// <summary>발 높이가 그 자리의 바닥·발판 바로 위인가(<see cref="FlameGroundTolerance"/> 이내).</summary>
+    public const float FlameGroundTolerance = 0.12f;
+    static bool IsOnSurface(Vector2 feetPoint) =>
+        feetPoint.y - FieldLayout.SurfaceBelow(feetPoint.x, feetPoint.y) <= FlameGroundTolerance;
 
     /// <summary>원본 `nearestEnemy()`(project_test.html:2155) — 대붕괴가 중력점이 하나도 없을 때 쓸 대체 좌표.</summary>
     Vector2? FindNearestEnemyPosition()

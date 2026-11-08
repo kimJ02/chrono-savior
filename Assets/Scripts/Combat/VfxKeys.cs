@@ -16,6 +16,19 @@ namespace ChronoSavior.Combat
         public const string MageFireProjectile = "mage/fire_projectile";
         public const string MageFireTrail = "mage/fire_trail";
         public const string MageFireTrailSmall = "mage/fire_trail_small";
+        /// <summary>화상 걸린 적에 붙는 불꽃(Pixel Fire).</summary>
+        public const string MageBurn = "mage/burn";
+        /// <summary>화염돌진 바닥 불꽃 모양 더(넓은·낮은·큰) — 기존 fire_trail(가늘고 긴)·fire_trail_small과 섞는다.</summary>
+        public const string MageFireTrailWide = "mage/fire_trail_wide";
+        public const string MageFireTrailLow = "mage/fire_trail_low";
+        public const string MageFireTrailBig = "mage/fire_trail_big";
+        /// <summary>화염돌진: 바닥 불길 사이 작은 연기·출발 퍼프·도착 불꽃.</summary>
+        public const string MageFireSmoke = "mage/fire_smoke";
+        public const string MageDashPuff = "mage/dash_puff";
+        public const string MageDashLand = "mage/dash_land";
+        /// <summary>중력 공격이 적에게 맞을 때 튀는 보라 충격(작은 것 = 착탄, 큰 것 = 대붕괴 임계).</summary>
+        public const string MageGravitySpark = "mage/gravity_spark";
+        public const string MageGravitySparkLarge = "mage/gravity_spark_large";
         public const string MageGravityOrbSmall = "mage/gravity_orb_small";
         public const string MageGravityOrbLarge = "mage/gravity_orb_large";
         public const string MageFireExplosion = "mage/fire_explosion";
@@ -49,7 +62,8 @@ namespace ChronoSavior.Combat
             {
                 var keys = new System.Collections.Generic.List<string>
                 {
-                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall,
+                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
+                    MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicRelayHead,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,

@@ -94,13 +94,7 @@ namespace ChronoSavior.UI
             }
         }
 
-        static void Place(Text t, Vector2 world, Vector2 cam)
-        {
-            var rt = (RectTransform)t.transform;
-            float bx = 320f + (world.x - cam.x) * (320f / ChronoSavior.World.StageArtConfig.ViewHalfWidth);
-            float by = 180f - (world.y - cam.y) * (180f / ChronoSavior.World.StageArtConfig.ViewHalfHeight);
-            rt.anchoredPosition = new Vector2(Mathf.Round(bx - rt.sizeDelta.x / 2f), -Mathf.Round(by - rt.sizeDelta.y / 2f));
-        }
+        static void Place(Text t, Vector2 world, Vector2 cam) => Px.PlaceAtWorld(t, world, cam);
 
         static float MapX(float worldX)
         {

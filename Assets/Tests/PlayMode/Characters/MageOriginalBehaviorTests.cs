@@ -203,6 +203,7 @@ public class MageOriginalBehaviorTests
     {
         var mage = NewMage(new Vector2(5f, 0f));
         Call(mage, "TeleportTowards", 0f, -1f, 1, 1);
+        Call(mage, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
         Assert.AreEqual(0.01f, FeetY(mage), 1e-3f, "바닥 아래로 순간이동했다");
     }
 
@@ -212,6 +213,7 @@ public class MageOriginalBehaviorTests
         float top = FieldLayout.PlatformTopY(0);
         var mage = NewMage(new Vector2(FieldLayout.Platforms[0, 0], top));
         Call(mage, "TeleportTowards", 0f, -1f, 1, 1);
+        Call(mage, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
         Assert.AreEqual(top + 0.01f, FeetY(mage), 1e-3f,
             "밟고 있던 발판을 뚫고 내려갔다 — 원본은 지금 발 높이 아래의 발판·바닥보다 아래로 못 간다");
     }
@@ -222,6 +224,7 @@ public class MageOriginalBehaviorTests
         float top = FieldLayout.PlatformTopY(12); // 4층
         var mage = NewMage(new Vector2(FieldLayout.Platforms[12, 0], top));
         Call(mage, "TeleportTowards", 0f, 1f, 1, 1);
+        Call(mage, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
         Assert.AreEqual(FieldLayout.TeleportCeilingY, FeetY(mage), 1e-3f, "천장 위로 순간이동했다");
     }
 
@@ -230,6 +233,7 @@ public class MageOriginalBehaviorTests
     {
         var mage = NewMage(new Vector2(5f, 0f));
         Call(mage, "TeleportTowards", 1f, 0f, 1, 1);
+        Call(mage, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
 
         Assert.AreEqual(5f + MageSpecConfig.TeleportDistanceX, mage.transform.position.x, 1e-3f);
         Assert.AreEqual(0.01f, FeetY(mage), 1e-3f);
@@ -239,6 +243,28 @@ public class MageOriginalBehaviorTests
         foreach (var f in flames)
             Assert.AreEqual(MageSpecConfig.TeleportFlameLineHeight, f.transform.position.y, 0.02f,
                 "불길이 원본 높이(발에서 0.28 위)에 안 깔렸다");
+    }
+
+    /// <summary>
+    /// 의도적 편차(2026-11-09 사용자 "공중에서 쓰면 불길이 남으면 안 되지") — 발밑이 바닥·발판이 아닌 지점엔 불길을 깔지 않는다(원본은 공중에도 깔았다).
+    /// 공중에서 옆으로 쓰면 하나도 없고, 바닥에서 위로 쓰면 출발 자리에만 남는다.
+    /// </summary>
+    [Test]
+    public void Teleport_LeavesFlamesOnlyWhereFeetAreOnASurface()
+    {
+        var air = NewMage(new Vector2(5f, 1.0f)); // 1층 바닥 위 공중(발판 없는 자리)
+        Assume.That(FieldLayout.SurfaceBelow(5f, 1.0f) < 0.5f, "전제: 그 자리 아래가 바닥이다");
+        Call(air, "TeleportTowards", 1f, 0f, 1, 1);
+        Call(air, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
+        Assert.AreEqual(0, Object.FindObjectsByType<FireTrailZone>(FindObjectsSortMode.None).Length, "공중에서 옆으로 썼는데 불길이 남았다");
+        Object.DestroyImmediate(air.gameObject);
+
+        var up = NewMage(new Vector2(5f, 0f));
+        Call(up, "TeleportTowards", 0f, 1f, 1, 1);
+        Call(up, "UpdateDash", 1f); // 화염돌진을 끝까지(2026-11-09 — 예전엔 즉시 순간이동)
+        var flames = Object.FindObjectsByType<FireTrailZone>(FindObjectsSortMode.None);
+        Assert.AreEqual(1, flames.Length, "바닥에서 위로 쓰면 출발 자리에만 남는다");
+        Assert.AreEqual(5f, flames[0].transform.position.x, 0.05f);
     }
 
     // ───────────────────────── 5. 수직 조준 탄 위치 ─────────────────────────

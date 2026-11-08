@@ -137,9 +137,6 @@ namespace ChronoSavior.Combat
         public const float CollapseCriticalRingDamageMult = 0.58f;
         public const float CollapseCriticalRingKnockback = 2.40f;
         /// <summary>폭발 고리 그림 수명(원본 `life: 0.42 + idx * 0.04` :2114, 바깥 고리 `life: 0.58` :2123).</summary>
-        public const float CollapseBurstLife = 0.42f;
-        public const float CollapseBurstLifeStep = 0.04f;
-        public const float CollapseCriticalRingLife = 0.58f;
 
         // ---- X 스킬 쿨다운 (tryMageSkill, project_test.html:2177) ----
         public const float UltBaseCooldown = 30f; // 원본 CONFIG.ult.cd

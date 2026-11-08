@@ -67,7 +67,8 @@ namespace ChronoSavior.Combat
                         well.life = Mathf.Max(well.life, MageSpecConfig.GravityWellLife(tier, chargeK));
                         well.Radius = MageSpecConfig.GravityWellRadius(tier, well.Stack, chargeK);
                         well.Pull = MageSpecConfig.GravityWellPull(tier, well.Stack, chargeK);
-                        return well; // 구체 그림(GravityVortexVfx)은 Stack을 읽어 스스로 커진다
+                        well.ShowMerged(); // 구체 그림(GravityVortexVfx)은 Stack을 읽어 스스로 커진다 — 여기선 '합쳐졌다'는 신호만
+                        return well;
                     }
                 }
             }
@@ -98,6 +99,21 @@ namespace ChronoSavior.Combat
             GravityVortexVfx.Attach(zone);
             active.Add(zone);
             return zone;
+        }
+
+        /// <summary>'중첩 xN' 글씨 색(원본 `#d8b4ff`).</summary>
+        public static readonly Color MergeTextColor = new Color(0xd8 / 255f, 0xb4 / 255f, 1f);
+
+        /// <summary>
+        /// 합쳐졌다는 신호(2026-11-09 사용자 "중첩이 제대로 되냐"·"타격감", Codex 합의) — 원본 `popDmg('중첩 x' + stack)`(:2060)·보라 파티클(:2059)을 옮겼다:
+        /// 구체가 한 번 '쿵' 부풀고 보라 반짝임이 튀며, 구체 위에 "중첩 xN"이 잠깐 떠오른다(전투 HUD가 그린다). 그림만.
+        /// </summary>
+        void ShowMerged()
+        {
+            var orb = GetComponentInChildren<GravityVortexVfx>();
+            if (orb != null) orb.Pulse();
+            float top = GravityVortexVfx.ScaleFor(Stack) * 0.375f + 0.2f;
+            CombatEvents.RaisePopup((Vector2)transform.position + new Vector2(0f, top), "중첩 x" + Stack, MergeTextColor);
         }
 
         /// <summary>

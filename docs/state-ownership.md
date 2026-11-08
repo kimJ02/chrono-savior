@@ -42,7 +42,7 @@
 
 ## 5. 캐시·테스트 전용 (상태라기보다 보관)
 
-- 그림·데이터 캐시: `PxArt`(UI 그림·톤·9슬라이스)·`StageVisuals.partials`(잘린 타일)·`Px.Font`·`GravityBurstRing.material`·`VfxFrames`(키 → 라이선스 이펙트 프레임)·`ItemDatabase.byId`(아이템 id 찾기) — 같은 입력이면 같은 결과, 지워도 다시 만든다.
+- 그림·데이터 캐시: `PxArt`(UI 그림·톤·9슬라이스)·`StageVisuals.partials`(잘린 타일)·`Px.Font`·`VfxFrames`(키 → 라이선스 이펙트 프레임)·`ItemDatabase.byId`(아이템 id 찾기) — 같은 입력이면 같은 결과, 지워도 다시 만든다.
 - `HitFeel`의 흔들림 세기(`ShakeMag`)·시간·붉어짐 — 위 1절 '타격감' 행(요청형, `BeginField`의 `Reset`).
 - `SaveService.PathOverride` — 테스트가 세이브 경로를 임시 파일로 돌린다(`TestSaveSandbox`). 게임에선 비어 있다.
 - 각 정적 클래스의 `Reset()` — 테스트 격리용(게임 흐름에선 부르지 않는다: `CombatModifiers.ResetForRun`·`HitFeel.Reset`처럼 게임이 부르는 초기화는 위 표의 '수명' 칸).

@@ -182,8 +182,21 @@ namespace ChronoSavior.Editor
 
             // 3. 불길(텔레포트 경로 — 발 높이 + 0.28에 5곳) + 화염 폭발(3차, 가운데 프레임)
             float feet = FieldBounds.GroundY;
-            for (int i = 0; i <= 4; i++)
-                made.Add(ChronoSavior.Combat.FireTrailZone.Spawn(new Vector2(4.2f + i * 0.45f, feet + ChronoSavior.Combat.MageSpecConfig.TeleportFlameLineHeight), 1, 1f).gameObject);
+            // 화염돌진: 바닥 불꽃(무작위 간격·모양, 다 솟은 상태) + 몸 뒤 분사(돌진 중간)
+            var flameT = typeof(ChronoSavior.Combat.PathFlame).GetField("t", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var flameApply = typeof(ChronoSavior.Combat.PathFlame).GetMethod("Apply", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            for (float x = 3.4f; x <= 5.6f; x += Random.Range(ChronoSavior.Characters.MageAttack.FlameSpacingMin, ChronoSavior.Characters.MageAttack.FlameSpacingMax))
+            {
+                var f = ChronoSavior.Combat.PathFlame.Ignite(new Vector2(x, feet), 0f, 2f);
+                if (f == null) continue;
+                flameT.SetValue(f, 0.5f); flameApply.Invoke(f, null);
+                made.Add(f.gameObject);
+            }
+            var dash = ChronoSavior.Combat.FireDashVfx.Play(new Vector2(4.6f, feet + 0.25f), new Vector2(7.2f, feet + 0.25f), 0.2f, null, 1f);
+            typeof(ChronoSavior.Combat.FireDashVfx).GetField("t", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(dash, 0.07f);
+            typeof(ChronoSavior.Combat.FireDashVfx).GetMethod("Apply", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(dash, null);
+            made.Add(dash.gameObject);
+            foreach (var p2 in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) if (p2.name.Contains("dash_puff")) made.Add(p2.gameObject);
             float fr = ChronoSavior.Combat.MageSpecConfig.FireExplosionRadius(3);
             var fireFrames = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageFireExplosion);
             if (fireFrames.Length > 0)
@@ -224,7 +237,6 @@ namespace ChronoSavior.Editor
                     ChronoSavior.Combat.VfxPlayer.WholeScale(cr * 2f, collapseFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
                 collapse.Play(collapseFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(collapse.gameObject);
-                made.Add(ChronoSavior.Combat.GravityBurstRing.Spawn(new Vector2(10f, feet + 1.4f), cr, 0.42f, false, false).gameObject);
             }
             Render(pc, cam, outDir, "mage_gravity_bursts", 1920, 1080, 3f);
             Clear();

@@ -65,6 +65,33 @@ namespace ChronoSavior.Combat
             return VfxPlayer.Spawn(key, pos, VfxPlayer.WholeScale(radius * 2f, frames[0]), ExplosionFps, ExplosionSortingOrder);
         }
 
+        /// <summary>중력탄이 적을 맞혔을 때 흔들림(원본 px 단위).</summary>
+        public const float ImpactShakePx = 3f;
+
+        /// <summary>
+        /// 중력 공격이 적에게 맞은 자리의 보라 충격(2026-11-09 사용자 "블랙홀 타격감 보충", Codex 합의) — 기가팩 `directional_impact_003` violet을
+        /// 폭발 중심에서 바깥쪽으로 돌려 한 번. 대붕괴 임계는 큰 것. 그림만, 그림이 없으면 아무것도 안 한다.
+        /// </summary>
+        public static void HitSpark(Vector2 at, Vector2 center, bool large)
+        {
+            var spark = VfxPlayer.Spawn(large ? VfxKeys.MageGravitySparkLarge : VfxKeys.MageGravitySpark, at, 1, 20f, ExplosionSortingOrder);
+            if (spark == null) return;
+            Vector2 d = at - center;
+            if (d.sqrMagnitude < 1e-6f) d = Vector2.right;
+            spark.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg);
+        }
+
+        /// <summary>
+        /// 대붕괴 폭발 그림 배율 — **중첩 수에 따라** 정한다(2026-11-09 사용자: 판정 반경은 중첩 1단계에 0.18씩만 늘어 작은·큰 블랙홀이
+        /// 같은 크기로 터져 보였다 → 비교 그림을 보고 "작게 시작해서 중첩마다 크게"로 정함). 중첩 1은 그 층 피해 범위보다 두 칸(1.5유닛) 작게 시작해
+        /// 중첩마다 두 칸씩 커진다(3차: 3.0·4.5·6.0·7.5·9.0유닛). 그림만이다 — 피해 범위(<see cref="MageSpecConfig.CollapseRadius"/>)는 그대로.
+        /// </summary>
+        public static int CollapseArtScale(int tier, int stack, Sprite frame)
+        {
+            int atStackOne = VfxPlayer.WholeScale(MageSpecConfig.CollapseRadius(tier, 1) * 2f, frame);
+            return Mathf.Max(1, atStackOne - 4 + 2 * Mathf.Max(1, stack));
+        }
+
         /// <summary>
         /// 원본 `detonateGravityOrb`(project_test.html:2023) — 충돌 지점 원형 피해를 준 뒤
         /// 그 자리에 중력점을 만들거나 중첩시킨다(<see cref="GravityWellZone.SpawnOrMerge"/>).
@@ -99,12 +126,14 @@ namespace ChronoSavior.Combat
                 if (target == null || target.IsDead) continue;
 
                 hitCount++;
+                HitSpark(col.transform.position, pos, false);
                 float dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
                 float dir = Mathf.Sign(col.transform.position.x - pos.x);
                 if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                 target.TakeDamageWithKnockback(dmg, null, dir, MageSpecConfig.GravityImpactKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:2036)
             }
 
+            if (hitCount > 0) HitFeel.Shake(ImpactShakePx, 0.1f); // 맞췄을 때만 약하게(2026-11-09 타격감 — 원본 착탄은 흔들림 없음)
             GravityWellZone.SpawnOrMerge(pos, tier, chargeK);
             ShowExplosion(VfxKeys.MageGravityExplosion, pos, r); // 착탄 폭발 그림(기가팩 stylized_explosion_002 violet) — 그림만
             return hitCount;
@@ -184,6 +213,7 @@ namespace ChronoSavior.Combat
 
                 foreach (var (col, target) in primaryTargets)
                 {
+                    HitSpark(col.transform.position, cx, critical);
                     float dmg = DamageCalculator.Roll(atk * dmgMult, critChance, out _);
                     float dir = Mathf.Sign(col.transform.position.x - cx.x);
                     if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
@@ -191,11 +221,11 @@ namespace ChronoSavior.Combat
                     target.TakeDamageWithKnockback(dmg, null, dir, kb, critical ? HitFeel.HitstopSkill : HitFeel.HitstopLight);
                 }
 
-                // 원본 `zones.push({ kind: 'gravityBurst', x: cx, y: cy, r, life: 0.42 + idx * 0.04, critical })`(:2114) — 그림만.
-                // 그 아래에 붕괴 폭발 그림(2026-11-08 VFX — 문서 "블랙홀 붕괴 = 기가팩 폭발 중 어울리는 것": 가시 충격 고리를 보라로, 붕괴 반경 크기). 고리는 원본 그림이라 그대로 위에.
-                ShowExplosion(VfxKeys.MageCollapseExplosion, cx, r);
-                GravityBurstRing.Spawn(cx, r, MageSpecConfig.CollapseBurstLife + idx * MageSpecConfig.CollapseBurstLifeStep,
-                                       critical, ringOnly: false);
+                // 붕괴 그림(2026-11-08 VFX — 문서 "블랙홀 붕괴 = 기가팩 폭발 중 어울리는 것": 가시 충격 고리를 보라로, 붕괴 반경 크기). 그림만.
+                // 원본의 보라 원판·선 고리(`zones.push({ kind: 'gravityBurst' … })`, :2114·:2123)는 2026-11-09 사용자 "블랙홀은 기존 그림은 빼자"로 그리지 않는다.
+                var collapseFrames = VfxFrames.Get(VfxKeys.MageCollapseExplosion);
+                if (collapseFrames.Length > 0)
+                    VfxPlayer.Spawn(VfxKeys.MageCollapseExplosion, cx, CollapseArtScale(tier, stack, collapseFrames[0]), ExplosionFps, ExplosionSortingOrder);
 
                 if (critical)
                 {
@@ -209,6 +239,7 @@ namespace ChronoSavior.Combat
                         var target = col.GetComponent<IDamageable>();
                         if (target == null || target.IsDead) continue;
 
+                        HitSpark(col.transform.position, cx, true);
                         float dmg2 = DamageCalculator.Roll(atk * dmgMult * MageSpecConfig.CollapseCriticalRingDamageMult, critChance, out _);
                         // 원본은 이 2차 링에 kbDir을 지정하지 않는다 — 기본값(플레이어 위치 기준)을 그대로 쓴다(:2120).
                         float dir = Mathf.Sign(col.transform.position.x - playerPos.x);
@@ -216,8 +247,6 @@ namespace ChronoSavior.Combat
                         target.TakeDamageWithKnockback(dmg2, null, dir, MageSpecConfig.CollapseCriticalRingKnockback, HitFeel.HitstopLight); // 원본 hitstop: 0.03(:2120)
                     }
                     ShowExplosion(VfxKeys.MageCollapseCritical, cx, r2); // 임계 붕괴엔 큰 번개 충격을 2차 고리 크기로 겹친다(그림만)
-                    // 원본 `zones.push({ kind: 'gravityBurst', r: r2, life: 0.58, critical: true, ringOnly: true })`(:2123).
-                    GravityBurstRing.Spawn(cx, r2, MageSpecConfig.CollapseCriticalRingLife, critical: true, ringOnly: true);
                 }
 
                 if (well != null) well.Vanish();

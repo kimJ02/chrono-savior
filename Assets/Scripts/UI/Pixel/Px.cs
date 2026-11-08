@@ -110,6 +110,18 @@ namespace ChronoSavior.UI
         }
 
         /// <summary>글자에 테두리(Figma 글자 외곽선) — 두께는 설계 1도트.</summary>
+        /// <summary>
+        /// 글씨를 월드 좌표 위에 놓는다(가운데 맞춤) — 카메라는 가운데에 서 있고 화면에 보이는 월드 가로 7.5 × 세로 4.22유닛(`StageArtConfig`)이
+        /// 판 640×360에 딱 맞는다. 로비 건물 이름·전투 팝업 글씨가 쓴다.
+        /// </summary>
+        public static void PlaceAtWorld(Text t, Vector2 world, Vector2 cam)
+        {
+            var rt = (RectTransform)t.transform;
+            float bx = 320f + (world.x - cam.x) * (320f / ChronoSavior.World.StageArtConfig.ViewHalfWidth);
+            float by = 180f - (world.y - cam.y) * (180f / ChronoSavior.World.StageArtConfig.ViewHalfHeight);
+            rt.anchoredPosition = new Vector2(Mathf.Round(bx - rt.sizeDelta.x / 2f), -Mathf.Round(by - rt.sizeDelta.y / 2f));
+        }
+
         public static Text WithOutline(this Text t, Color color, float dots = 1f)
         {
             var o = t.gameObject.AddComponent<Outline>();

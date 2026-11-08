@@ -116,6 +116,8 @@ namespace ChronoSavior.Editor
                 if (!cam.CompareTag("MainCamera")) problems.Add("공용 카메라 태그가 MainCamera가 아니다(에디터 캡처 도구가 Camera.main으로 찾는다)");
                 var lobbyHud = persistent.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<LobbyHud>(true)).FirstOrDefault();
                 if (lobbyHud != null && lobbyHud.Camera != cam) problems.Add("로비 HUD(LobbyHud)의 카메라가 공용 카메라를 가리키지 않는다");
+                var combatHud = persistent.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<ChronoSavior.UI.CombatHud>(true)).FirstOrDefault();
+                if (combatHud != null && combatHud.Camera != cam) problems.Add("전투 HUD(CombatHud)의 카메라가 공용 카메라를 가리키지 않는다 — 팝업 글씨(중첩 xN)가 안 뜬다");
                 foreach (var need in new[] { typeof(CameraFollow2D), typeof(SkyBackground), typeof(AudioListener), typeof(PixelPerfectCamera) })
                     if (cam.GetComponent(need) == null) problems.Add($"공용 카메라에 {need.Name}이 없다");
                 CheckCamera(cam, problems);

@@ -121,11 +121,15 @@ namespace ChronoSavior.Editor
             Mage("마법사 차지 오라", VfxKeys.MageChargeLarge, 1f, 1f, "MageChargeVfx(크기 고정, 월드 배율 1)");
             Mage("마법사 화염탄", VfxKeys.MageFireProjectile, Whole(VfxKeys.MageFireProjectile, 0.4f), Whole(VfxKeys.MageFireProjectile, 0.4f * 2.25f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
             Mage("마법사 중력탄", VfxKeys.MageGravityOrbSmall, Whole(VfxKeys.MageGravityOrbSmall, 0.4f), Whole(VfxKeys.MageGravityOrbSmall, 0.4f * 1.9f), "판정 폭(0.4×sizeMul)에 가장 가까운 정수");
-            Mage("마법사 불길", VfxKeys.MageFireTrail, FireTrailZone.FlameScale, FireTrailZone.FlameScale, "FireTrailZone.FlameScale");
+            Mage("마법사 불길(바닥 불꽃 5종)", VfxKeys.MageFireTrail, 1f, 2f, "PathFlame(배율 1·2 무작위)");
+            Mage("마법사 화염돌진 분사", VfxKeys.MageFireProjectile, FireDashVfx.JetScale, FireDashVfx.JetScale, "FireDashVfx.JetScale");
+            Mage("마법사 화상 불꽃", VfxKeys.MageBurn, ChronoSavior.Enemies.EnemyHealth.BurnFlameScale, ChronoSavior.Enemies.EnemyHealth.BurnFlameScale, "EnemyHealth.BurnFlameScale(몹 배율과 무관)");
             Mage("마법사 화염 폭발", VfxKeys.MageFireExplosion, Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(1) * 2f), Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(5) * 2f), "판정 지름에 가장 가까운 정수");
             Mage("마법사 중력장 구체", VfxKeys.MageGravityOrbLarge, GravityVortexVfx.ScaleFor(1), GravityVortexVfx.ScaleFor(5), "중첩 수(GravityVortexVfx.ScaleFor)");
             Mage("마법사 중력 착탄", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(1, 0f) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(5, 1f) * 2f), "판정 지름에 가장 가까운 정수");
-            Mage("마법사 대붕괴 폭발", VfxKeys.MageCollapseExplosion, Whole(VfxKeys.MageCollapseExplosion, MageSpecConfig.CollapseRadius(1, 0) * 2f), Whole(VfxKeys.MageCollapseExplosion, MageSpecConfig.CollapseRadius(5, 5) * 2f), "판정 지름에 가장 가까운 정수");
+            var collapseFrame = VfxFrames.Get(VfxKeys.MageCollapseExplosion).FirstOrDefault();
+            if (collapseFrame != null)
+                Mage("마법사 대붕괴 폭발", VfxKeys.MageCollapseExplosion, MageSkillEffects.CollapseArtScale(1, 1, collapseFrame), MageSkillEffects.CollapseArtScale(5, 5, collapseFrame), "중첩마다 두 칸(MageSkillEffects.CollapseArtScale)");
             // 메카닉·살수(2026-11-08)
             Mage("메카닉 레이저(1~2층 small·3~4층 large·5층 large)", VfxKeys.MechanicLaser("center", "loop", true), GunnerLaserBeam.ArtThickness(1), GunnerLaserBeam.ArtThickness(5), "굵기 정수 배율 — 길이는 이어 붙임(타일)");
             Mage("메카닉 드론 탄(펠렛)", VfxKeys.MechanicPellet, Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(1)), Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(5)), "판정 폭에 가장 가까운 정수");

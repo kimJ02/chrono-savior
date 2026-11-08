@@ -138,9 +138,11 @@ public class AfterimageTests
 
         typeof(MageAttack).GetMethod("TeleportTowards", BindingFlags.NonPublic | BindingFlags.Instance)
             .Invoke(mage, new object[] { 1f, 0f, 1, 1 });
+        typeof(MageAttack).GetMethod("UpdateDash", BindingFlags.NonPublic | BindingFlags.Instance)
+            .Invoke(mage, new object[] { 1f }); // 화염돌진을 끝까지(2026-11-09)
 
-        Assert.AreNotEqual(startX, go.transform.position.x, "전제: 순간이동했다");
-        Assert.AreEqual(1, ai.Count, "출발 자리에 잔상 하나(원본 :2147)");
+        Assert.AreNotEqual(startX, go.transform.position.x, "전제: 돌진해 옮겨 갔다");
+        Assert.AreEqual(1 + MageAttack.DashGhosts, ai.Count, "출발 자리 잔상(원본 :2147) + 돌진 중 잔상");
         Assert.AreEqual(startX, ai.GhostRenderer(0).transform.position.x, 1e-4f, "잔상은 출발 자리에");
     }
 }

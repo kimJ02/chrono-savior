@@ -63,6 +63,12 @@ namespace ChronoSavior.Core
             if (seconds > 0f) HitstopRequested?.Invoke(seconds);
         }
 
+        /// <summary>
+        /// 월드 위에 잠깐 떠오르는 글씨(원본 `popDmg`) — 예: 블랙홀 "중첩 x3"(2026-11-09). 전투 HUD가 받아 그 자리에 띄운다(화면은 월드를 모른다).
+        /// </summary>
+        public static event System.Action<Vector2, string, Color> PopupRequested;
+        public static void RaisePopup(Vector2 worldPos, string text, Color color) => PopupRequested?.Invoke(worldPos, text, color);
+
         public static void RaiseEnemyKilled(GameObject enemy) => EnemyKilled?.Invoke(enemy);
         public static void RaiseEnemyDamaged(GameObject enemy) => EnemyDamaged?.Invoke(enemy);
         public static void RaiseEnemyTickDamaged(GameObject enemy) => EnemyTickDamaged?.Invoke(enemy);
@@ -83,6 +89,7 @@ namespace ChronoSavior.Core
             PlayerDied = null;
             ShrineBuffGranted = null;
             RewardGranted = null;
+            PopupRequested = null;
         }
     }
 }

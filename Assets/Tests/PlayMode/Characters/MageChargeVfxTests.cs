@@ -156,13 +156,13 @@ public class MageChargeVfxTests
 
         tryUse.Invoke(mage, new object[] { ProfileService.Current, MageBranch.Gravity, 3 });
         Assert.LessOrEqual((float)ultCd.GetValue(mage), 0f, "블랙홀이 없으면 X가 안 나가고 쿨다운도 안 쓴다");
-        Assert.AreEqual(0, Object.FindObjectsByType<ChronoSavior.Combat.GravityBurstRing>(FindObjectsSortMode.None).Length, "아무 데서도 안 터진다");
+        Assert.IsNull(GameObject.Find("Vfx_mage_collapse_explosion"), "아무 데서도 안 터진다");
 
         ChronoSavior.Combat.GravityWellZone.SpawnOrMerge(mage.transform.position + Vector3.right, 3, 0.5f);
         tryUse.Invoke(mage, new object[] { ProfileService.Current, MageBranch.Gravity, 3 });
         Assert.Greater((float)ultCd.GetValue(mage), 0f, "깔아 둔 블랙홀이 있으면 터뜨리고 쿨다운이 돈다");
         ChronoSavior.Combat.GravityWellZone.ClearAllForTests();
-        foreach (var b in Object.FindObjectsByType<ChronoSavior.Combat.GravityBurstRing>(FindObjectsSortMode.None)) Object.DestroyImmediate(b.gameObject);
+        foreach (var v in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) Object.DestroyImmediate(v.gameObject);
     }
 
     [Test]

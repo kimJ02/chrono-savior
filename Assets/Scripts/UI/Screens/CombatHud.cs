@@ -21,6 +21,73 @@ namespace ChronoSavior.UI
     public class CombatHud : PxScreen
     {
         protected override PixelCanvas.Layer Layer => PixelCanvas.Layer.Hud;
+
+        [Tooltip("월드 위 팝업 글씨(예: 블랙홀 '중첩 x3')를 놓을 때 쓰는 공용 카메라(같은 상주 씬)")]
+        [SerializeField] Camera cam;
+        /// <summary>씬 검증·테스트가 읽고 넣는다.</summary>
+        public Camera Camera { get => cam; set => cam = value; }
+
+        // ── 월드 팝업 글씨(원본 `popDmg`) — 2026-11-09 ──
+        public const float PopupLife = 0.8f, PopupRise = 0.35f;
+        public const int PopupSize = 10;
+        struct Popup { public Text text; public Vector2 world; public float t; }
+        readonly List<Popup> popups = new List<Popup>();
+
+        protected override void Awake()
+        {
+            base.Awake();
+            CombatEvents.PopupRequested += ShowPopup;
+        }
+
+        protected override void OnDestroy()
+        {
+            CombatEvents.PopupRequested -= ShowPopup;
+            base.OnDestroy();
+        }
+
+        /// <summary>지금 떠 있는 팝업 글씨들(테스트용).</summary>
+        public IEnumerable<string> ActivePopups { get { foreach (var p in popups) if (p.text.enabled) yield return p.text.text; } }
+
+        void ShowPopup(Vector2 world, string text, Color color)
+        {
+            if (Content == null) return;
+            int i = popups.FindIndex(p => !p.text.enabled);
+            Text t;
+            if (i < 0)
+            {
+                t = Px.Text(Content, "Popup", "", 0f, 0f, 80f, 12f, PopupSize, color).WithOutline(Px.Ink);
+                popups.Add(new Popup { text = t });
+                i = popups.Count - 1;
+            }
+            t = popups[i].text;
+            t.text = text;
+            t.color = color;
+            t.enabled = true;
+            popups[i] = new Popup { text = t, world = world, t = 0f };
+            PlacePopup(popups[i]);
+        }
+
+        void UpdatePopups()
+        {
+            for (int i = 0; i < popups.Count; i++)
+            {
+                var p = popups[i];
+                if (!p.text.enabled) continue;
+                p.t += Time.deltaTime; // 일시정지 땐 멈춘다
+                if (p.t >= PopupLife) { p.text.enabled = false; popups[i] = p; continue; }
+                var c = p.text.color;
+                c.a = 1f - Mathf.Clamp01((p.t - PopupLife * 0.5f) / (PopupLife * 0.5f)); // 뒤 절반에 흐려진다
+                p.text.color = c;
+                popups[i] = p;
+                PlacePopup(p);
+            }
+        }
+
+        void PlacePopup(Popup p)
+        {
+            if (cam == null) return;
+            Px.PlaceAtWorld(p.text, p.world + new Vector2(0f, PopupRise * Mathf.Clamp01(p.t / PopupLife)), cam.transform.position);
+        }
         protected override bool TakesKeys => false;
         // 원본 `#hud`는 로비에서만 숨긴다 — 일시정지·결과 화면 뒤에도 보인다.
         protected override bool WantsVisible =>
@@ -230,6 +297,7 @@ namespace ChronoSavior.UI
         protected override void Refresh()
         {
             var v = Preview ?? Live();
+            UpdatePopups();
 
             // 체력 — 칸 폭을 도트 단위로 채운다(반 도트가 안 생기게)
             float ratio = v.MaxHp > 0f ? Mathf.Clamp01(v.Hp / v.MaxHp) : 0f;

@@ -83,6 +83,15 @@ namespace ChronoSavior.Combat
             Show(0, 1f);
         }
 
+        /// <summary>재생 중인 위치를 옮긴다(초) — 여러 개를 같이 세울 때 서로 다른 프레임에서 시작하게(예: 불길 장판).</summary>
+        public void Skip(float seconds)
+        {
+            if (frames == null || frames.Length == 0) return;
+            t = Mathf.Max(0f, seconds);
+            int i = Mathf.FloorToInt(t * fps);
+            Show(loop ? i % frames.Length : Mathf.Min(i, frames.Length - 1), CurrentFade());
+        }
+
         /// <summary>한 번 재생에 걸리는 시간(초).</summary>
         public float Duration => frames == null ? 0f : frames.Length / fps;
 

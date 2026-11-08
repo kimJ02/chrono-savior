@@ -61,12 +61,24 @@ namespace ChronoSavior.Editor
             yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_energy_blast_A_small_red");
             yield return Frames(VfxKeys.MageFireTrail, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 1");
             yield return Frames(VfxKeys.MageFireTrailSmall, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 3");
+            yield return Frames(VfxKeys.MageBurn, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 2"); // 화상 걸린 적에 붙는 불꽃
+            // 화염돌진 바닥 불꽃 — 모양을 섞어 줄지어 선 기둥처럼 안 보이게(2026-11-09 사용자 "인위적")
+            yield return Frames(VfxKeys.MageFireTrailWide, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 4");
+            yield return Frames(VfxKeys.MageFireTrailLow, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 5");
+            yield return Frames(VfxKeys.MageFireTrailBig, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 6 - 2");
+            yield return Frames(VfxKeys.MageFireSmoke, Gigapack, "PNG/Smoke Bursts/looping_smoke_burst_002/looping_smoke_burst_002_small_gray");
+            yield return Frames(VfxKeys.MageDashPuff, Gigapack, "PNG/Explosions/symmetrical_explosion_002/symmetrical_explosion_002_small_orange");
+            yield return Frames(VfxKeys.MageDashLand, Gigapack, "PNG/Explosions/symmetrical_explosion_001/symmetrical_explosion_001_small_orange");
+            // 중력 공격 적중 — 보라 충격(팩에 보라가 있다)
+            yield return Frames(VfxKeys.MageGravitySpark, Gigapack, "PNG/Impacts/directional_impact_003/directional_impact_003_small_violet");
+            yield return Frames(VfxKeys.MageGravitySparkLarge, Gigapack, "PNG/Impacts/directional_impact_003/directional_impact_003_large_violet");
             yield return Frames(VfxKeys.MageGravityOrbSmall, Projectiles, "PNG/pj4_dark_matter_small_violet");
             yield return Frames(VfxKeys.MageGravityOrbLarge, Projectiles, "PNG/pj4_dark_matter_large_violet");
             // 폭발 — 기가팩 폭발 17종을 게임 화면 배율로 비교해 골랐다(2026-11-08, 사용자 "다양하게 적용해 보고 어울리는 것", Codex 합의):
             // 화염 = 둥근 불꽃+연기(공중·지면 어디서 터져도 어울림), 중력 착탄 = 보라 구체, 대붕괴 = 가시 충격 고리(보라 파생), 임계 붕괴엔 큰 번개 충격을 겹친다
             yield return Frames(VfxKeys.MageFireExplosion, Gigapack, "PNG/Explosions/stylized_explosion_001/stylized_explosion_001_large_yellow");
-            yield return Frames(VfxKeys.MageGravityExplosion, Gigapack, "PNG/Explosions/stylized_explosion_002/stylized_explosion_002_large_violet");
+            // 중력 착탄 — 2026-11-09 사용자 "블랙홀은 기존에 쓰던 그림(10/25부터 쓰던 stylized_explosion_002 보라 구체)은 빼자" → 알갱이 고리 폭발을 보라로(Codex와 고름)
+            yield return Recolored(Frames(VfxKeys.MageGravityExplosion, Gigapack, "PNG/Explosions/symmetrical_explosion_004/symmetrical_explosion_004_large_orange"), 250f);
             yield return Recolored(Frames(VfxKeys.MageCollapseExplosion, Gigapack, "PNG/Impacts/symmetrical_impact_002/symmetrical_impact_002_large_blue"), 75f);
             yield return Recolored(Frames(VfxKeys.MageCollapseCritical, Gigapack, "PNG/Impacts/symmetrical_impact_006/symmetrical_impact_006_large_yellow"), 225f);
             // 메카닉

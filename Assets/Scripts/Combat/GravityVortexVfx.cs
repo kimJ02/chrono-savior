@@ -24,7 +24,11 @@ namespace ChronoSavior.Combat
 
         GravityWellZone well;
         VfxPlayer player;
+        VfxDots pull;
         float scale = 1f;
+        /// <summary>합쳐질 때 부푸는 정도(배율 +) — 그 뒤 <see cref="GrowSpeed"/>로 제 크기로 돌아온다.</summary>
+        public const float PulseScale = 1f;
+        static readonly Color PullColor = new Color(0.85f, 0.7f, 1f, 0.9f), SparkleColor = new Color(0.9f, 0.75f, 1f);
 
         public static GravityVortexVfx Attach(GravityWellZone well)
         {
@@ -37,6 +41,8 @@ namespace ChronoSavior.Combat
             v.well = well;
             v.player = go.AddComponent<VfxPlayer>();
             v.player.Play(frames, Fps, true, 0f, Color.white);
+            // 끌어당김이 보이게 — 바깥에서 가운데로 빨려 드는 보라 점(그림 없이, 2026-11-09 타격감). 구체와 달리 끌어당기는 범위 둘레에서 생긴다.
+            v.pull = VfxDots.Attach(well.transform, VfxDots.Motion.Inward, 12, PullColor, well.Radius, 0.7f, 0f, SortingOrder + 1);
             v.Apply(0f);
             return v;
         }
@@ -46,6 +52,13 @@ namespace ChronoSavior.Combat
 
         /// <summary>남은 시간에 따른 투명도 — 끝나기 <see cref="FadeOutTime"/>초 전부터 0으로.</summary>
         public static float AlphaAt(float remaining) => Mathf.Clamp01(remaining / FadeOutTime);
+
+        /// <summary>합쳐질 때 — 한 번 부풀었다 제 크기로(쿵), 보라 반짝임이 사방으로.</summary>
+        public void Pulse()
+        {
+            scale = ScaleFor(well != null ? well.Stack : 1) + PulseScale;
+            VfxDots.Attach(transform.parent, VfxDots.Motion.Burst, 14, SparkleColor, 0f, 0.45f, 3f, SortingOrder + 8);
+        }
 
         /// <summary>지금 그림 배율(테스트용 — 중첩이 늘면 목표까지 커지는 중일 수 있다).</summary>
         public float Scale => scale;
@@ -58,6 +71,11 @@ namespace ChronoSavior.Combat
             scale = Mathf.MoveTowards(scale, ScaleFor(well.Stack), GrowSpeed * dt);
             transform.localScale = new Vector3(scale, scale, 1f);
             player.Alpha = AlphaAt(well.Remaining);
+            if (pull != null)
+            {
+                pull.SetRadius(well.Radius);
+                pull.Emitting = well.Remaining > FadeOutTime;
+            }
         }
     }
 }
