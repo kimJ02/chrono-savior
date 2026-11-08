@@ -41,10 +41,16 @@ namespace ChronoSavior.World
         [Tooltip("보스 포탈 — Figma 포탈 그림으로 바꾼다.")]
         [SerializeField] BossPortal portal;
 
+        [Tooltip("이 묶음의 배경(art.background)도 깔지 여부 — 기본 켜짐(전투와 같음). 로비(`10_Lobby`)는 땅·발판 타일만 이 묶음(숲 그림)에서 " +
+                 "재사용하고 배경은 `LobbyWorld`가 따로(원본 그림 7장 중 3겹) 그리므로 꺼둔다(2026-11-08 — 꺼두지 않으면 이 숲 배경이 배율 3으로 " +
+                 "`LobbyWorld`의 배경 뒤에 깔려서, 로비 배경이 화면보다 작을 때 틈으로 비쳐 보이는 '구버전 배경'처럼 보였다).")]
+        [SerializeField] bool includeBackground = true;
+
         /// <summary>씬 검증(`Editor/SceneSetupValidator`)과 테스트가 읽고 넣는다(2026-11-05 2b — 예전엔 이름·타입으로 씬을 뒤졌다).</summary>
         public Transform Ground { get => ground; set => ground = value; }
         public PlatformSet[] PlatformSets { get => platformSets; set => platformSets = value; }
         public BossPortal Portal { get => portal; set => portal = value; }
+        public bool IncludeBackground { get => includeBackground; set => includeBackground = value; }
 
         Transform background;
 
@@ -53,14 +59,15 @@ namespace ChronoSavior.World
         /// <summary>씬에 있는 땅·발판·카메라에 그림을 붙인다. 두 번 불러도 한 번만 깐다.</summary>
         public void Build()
         {
-            // 포탈 그림은 포탈이 있는 씬(전투)에서만 필요하다 — 로비엔 포탈이 없다.
-            if (art == null || art.groundTop == null || art.groundDirt == null || art.platformTile == null || art.background == null
+            // 포탈 그림은 포탈이 있는 씬(전투)에서만 필요하다 — 로비엔 포탈이 없다. 배경도 `includeBackground`가 꺼져 있으면(로비) 필요 없다.
+            if (art == null || art.groundTop == null || art.groundDirt == null || art.platformTile == null
+                || (includeBackground && art.background == null)
                 || (portal != null && art.portal == null))
             {
                 Debug.LogError("[StageVisuals] 스테이지 그림 묶음(StageArtSet)이 비었거나 칸이 빠졌다 — 메뉴 ChronoSavior/씬 구성 검증", this);
                 return;
             }
-            Sprite top = art.groundTop, dirt = art.groundDirt, plat = art.platformTile, bg = art.background;
+            Sprite top = art.groundTop, dirt = art.groundDirt, plat = art.platformTile;
 
             if (ground != null) BuildGround(ground.gameObject, top, dirt);
 
@@ -70,7 +77,7 @@ namespace ChronoSavior.World
                         foreach (Transform child in set.transform)
                             BuildPlatform(child, plat);
 
-            if (background == null) BuildBackground(bg);
+            if (includeBackground && background == null) BuildBackground(art.background);
 
             if (portal != null) portal.ApplyArt(art.portal, art.portalScale);
         }

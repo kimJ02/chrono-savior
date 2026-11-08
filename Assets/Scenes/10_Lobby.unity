@@ -558,6 +558,7 @@ MonoBehaviour:
   ground: {fileID: 1354175749}
   platformSets: []
   portal: {fileID: 0}
+  includeBackground: 0
 --- !u!4 &1503795757
 Transform:
   m_ObjectHideFlags: 0
