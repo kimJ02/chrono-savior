@@ -219,15 +219,108 @@ namespace ChronoSavior.Editor
                 impact.Play(gravityFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(impact.gameObject);
                 float cr = ChronoSavior.Combat.MageSpecConfig.CollapseRadius(3, 3);
-                var collapse = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageGravityExplosion, new Vector2(10f, feet + 1.4f),
-                    ChronoSavior.Combat.VfxPlayer.WholeScale(cr * 2f, gravityFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
-                collapse.Play(gravityFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
+                var collapseFrames = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageCollapseExplosion);
+                var collapse = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MageCollapseExplosion, new Vector2(10f, feet + 1.4f),
+                    ChronoSavior.Combat.VfxPlayer.WholeScale(cr * 2f, collapseFrames[0]), 15f, ChronoSavior.Combat.MageSkillEffects.ExplosionSortingOrder);
+                collapse.Play(collapseFrames.Skip(3).ToArray(), 15f, false, 0f, Color.white);
                 made.Add(collapse.gameObject);
                 made.Add(ChronoSavior.Combat.GravityBurstRing.Spawn(new Vector2(10f, feet + 1.4f), cr, 0.42f, false, false).gameObject);
             }
             Render(pc, cam, outDir, "mage_gravity_bursts", 1920, 1080, 3f);
             Clear();
             Debug.Log("[CaptureUiPreview] 마법사 이펙트 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
+        /// <summary>
+        /// 메카닉·살수 이펙트(2026-11-08)를 전투 화면 배율로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunMechanicAssassinVfx`.
+        /// 편집 화면이라 실제 키트 코드(빔 갱신·장판 그림·탄·설치기)를 직접 부르고, 살수 상태는 캡처용으로 비공개 필드를 채운다.
+        /// </summary>
+        public static void RunMechanicAssassinVfx()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var kit = player.GetComponent<ChronoSavior.Characters.GunnerAttack>();
+            var made = new System.Collections.Generic.List<GameObject>();
+            void Clear() { foreach (var go in made) if (go != null) Object.DestroyImmediate(go); made.Clear(); }
+
+            // 1. 레이저 — 층마다 굵기(1·3·5층)
+            foreach (int tier in new[] { 1, 3, 5 })
+            {
+                var beam = new ChronoSavior.Characters.GunnerLaserBeam(kit, player.GetComponent<ChronoSavior.Characters.CharacterMover2D>());
+                beam.Update(0.016f, true, tier);
+                var root = GameObject.Find("GunnerBeam");
+                if (root != null) made.Add(root);
+                Render(pc, cam, outDir, "mech_laser_t" + tier, 1920, 1080, 3f);
+                Clear();
+            }
+
+            // 2. 드론 탄(펠렛) + 설치기 셋(중계기 머리) + 링크·내부 장판
+            var bulletPrefab = AssetDatabase.LoadAssetAtPath<ChronoSavior.Characters.GunnerBullet>("Assets/Prefabs/Combat/GunnerBullet.prefab");
+            for (int i = 0; i < 3; i++)
+                made.Add(ChronoSavior.Characters.GunnerBullet.Spawn(bulletPrefab, new Vector3(4.6f + i * 0.5f, feet + 1.3f, 0f), new Vector2(1f, -0.2f * i), 1f, 1, 5f, 1f + i * 0.4f,
+                    ChronoSavior.Characters.GunnerAttack.LaserColor, artKey: ChronoSavior.Combat.VfxKeys.MechanicPellet).gameObject);
+            var turretPrefab = AssetDatabase.LoadAssetAtPath<ChronoSavior.Characters.GunnerTurret>("Assets/Prefabs/Combat/GunnerTurret.prefab");
+            var turrets = new System.Collections.Generic.List<ChronoSavior.Characters.GunnerTurret>();
+            foreach (float x in new[] { 7.2f, 8.4f, 9.6f })
+            {
+                var t = ChronoSavior.Characters.GunnerTurret.Spawn(turretPrefab, new Vector2(x, feet), 3);
+                turrets.Add(t); made.Add(t.gameObject);
+            }
+            var pts = ChronoSavior.Characters.GunnerField.FieldPoints(turrets);
+            var segs = ChronoSavior.Characters.GunnerField.LinkSegments(pts, ChronoSavior.Characters.GunnerSpecConfig.LinkMax(3));
+            var field = player.GetComponent<ChronoSavior.Characters.GunnerFieldVfx>();
+            field.Show(pts, segs, kit.bulletSprite);
+            var fieldRoot = GameObject.Find("GunnerFieldLinks");
+            if (fieldRoot != null) made.Add(fieldRoot);
+            Render(pc, cam, outDir, "mech_field", 1920, 1080, 3f);
+            Clear();
+
+            // 3. 살수 — 집중(배경 어둡게·하트비트) + 궤적, 파열(섬광·스플래터), 칼날폭풍(회전베기·연기)
+            var blade = player.GetComponent<ChronoSavior.Characters.BladeCombat>();
+            var bvfx = player.GetComponent<ChronoSavior.Characters.BladeVfx>();
+            var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var bt = typeof(ChronoSavior.Characters.BladeCombat);
+            GameState.Set(GameScene.Run);
+            ProfileService.Current.bladeTier = 4;
+            var trail = (System.Collections.Generic.List<Vector2>)bt.GetField("trailPts", flags).GetValue(blade);
+            trail.Clear();
+            for (int i = 0; i < 18; i++) trail.Add(new Vector2(3.6f + i * 0.24f, feet + 0.45f + Mathf.Sin(i * 0.5f) * 0.35f));
+            bt.GetField("trailT", flags).SetValue(blade, 2f);
+            bt.GetField("focusT", flags).SetValue(blade, 1.5f);
+            for (int k = 0; k < 20; k++) bvfx.Refresh(0.05f); // 어두운 판이 다 차게
+            foreach (var n in new[] { "FocusShade", "FocusHeartbeat", "BladeTrailWide", "BladeTrailThin" }) { var g = GameObject.Find(n); if (g != null) made.Add(g); }
+            Render(pc, cam, outDir, "blade_focus", 1920, 1080, 3f);
+            bt.GetField("focusT", flags).SetValue(blade, 0f);
+            for (int k = 0; k < 20; k++) bvfx.Refresh(0.05f);
+            typeof(ChronoSavior.Characters.BladeVfx).GetMethod("OnTrailRipped", flags).Invoke(bvfx, new object[] { trail.ToArray() });
+            trail.Clear();
+            bvfx.Refresh(0.0f);
+            foreach (var p2 in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) made.Add(p2.gameObject);
+            Render(pc, cam, outDir, "blade_rip", 1920, 1080, 3f);
+            Clear();
+            bt.GetField("storming", flags).SetValue(blade, true);
+            for (int i = 0; i < 6; i++)
+            {
+                player.transform.position = new Vector3(4.2f + i * 0.4f, feet + 1.4f - i * 0.2f, 0f);
+                bvfx.Refresh(0.016f);
+            }
+            foreach (var p2 in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) made.Add(p2.gameObject);
+            Render(pc, cam, outDir, "blade_storm", 1920, 1080, 3f);
+            Clear();
+            Debug.Log("[CaptureUiPreview] 메카닉·살수 이펙트 저장: " + outDir);
             EditorApplication.Exit(0);
         }
 

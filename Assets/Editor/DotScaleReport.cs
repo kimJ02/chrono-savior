@@ -125,7 +125,17 @@ namespace ChronoSavior.Editor
             Mage("마법사 화염 폭발", VfxKeys.MageFireExplosion, Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(1) * 2f), Whole(VfxKeys.MageFireExplosion, MageSpecConfig.FireExplosionRadius(5) * 2f), "판정 지름에 가장 가까운 정수");
             Mage("마법사 중력장 구체", VfxKeys.MageGravityOrbLarge, GravityVortexVfx.ScaleFor(1), GravityVortexVfx.ScaleFor(5), "중첩 수(GravityVortexVfx.ScaleFor)");
             Mage("마법사 중력 착탄", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(1, 0f) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.GravityImpactRadius(5, 1f) * 2f), "판정 지름에 가장 가까운 정수");
-            Mage("마법사 대붕괴 폭발", VfxKeys.MageGravityExplosion, Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.CollapseRadius(1, 0) * 2f), Whole(VfxKeys.MageGravityExplosion, MageSpecConfig.CollapseRadius(5, 5) * 2f), "판정 지름에 가장 가까운 정수");
+            Mage("마법사 대붕괴 폭발", VfxKeys.MageCollapseExplosion, Whole(VfxKeys.MageCollapseExplosion, MageSpecConfig.CollapseRadius(1, 0) * 2f), Whole(VfxKeys.MageCollapseExplosion, MageSpecConfig.CollapseRadius(5, 5) * 2f), "판정 지름에 가장 가까운 정수");
+            // 메카닉·살수(2026-11-08)
+            Mage("메카닉 레이저(1~2층 small·3~4층 large·5층 large)", VfxKeys.MechanicLaser("center", "loop", true), GunnerLaserBeam.ArtThickness(1), GunnerLaserBeam.ArtThickness(5), "굵기 정수 배율 — 길이는 이어 붙임(타일)");
+            Mage("메카닉 드론 탄(펠렛)", VfxKeys.MechanicPellet, Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(1)), Whole(VfxKeys.MechanicPellet, 0.26f * GunnerSpecConfig.DroneBulletSize(5)), "판정 폭에 가장 가까운 정수");
+            Mage("메카닉 중계기 머리", VfxKeys.MechanicRelayHead, 1f, 1f, "GunnerTurret(배율 1)");
+            Mage("메카닉 중계선", VfxKeys.MechanicLaser("center", "loop", false), 1f, 1f, "GunnerFieldVfx(이어 붙임)");
+            Mage("살수 칼날폭풍 회전베기", VfxKeys.AssassinSpin, Whole(VfxKeys.AssassinSpin, BladeCombat.StormSpinDiameter), Whole(VfxKeys.AssassinSpin, BladeCombat.StormSpinDiameter), "판정 지름에 가장 가까운 정수");
+            Mage("살수 하트비트", VfxKeys.AssassinHeartbeat, 1f, 1f, "BladeVfx");
+            Mage("살수 스플래터", VfxKeys.AssassinSplatter, BladeVfx.SplatterScale, BladeVfx.SplatterScale, "BladeVfx.SplatterScale");
+            Mage("살수 연기", VfxKeys.AssassinSmoke, BladeVfx.SmokeScale, BladeVfx.SmokeScale, "BladeVfx.SmokeScale");
+            Mage("마법사 임계 붕괴 충격", VfxKeys.MageCollapseCritical, Whole(VfxKeys.MageCollapseCritical, MageSpecConfig.CollapseRadius(2, 0) * MageSpecConfig.CollapseCriticalRingMult(2) * 2f), Whole(VfxKeys.MageCollapseCritical, MageSpecConfig.CollapseRadius(5, 5) * MageSpecConfig.CollapseCriticalRingMult(5) * 2f), "2차 고리 지름에 가장 가까운 정수");
 
             warnings = 0; shapes = 0;
             var sb = new StringBuilder();

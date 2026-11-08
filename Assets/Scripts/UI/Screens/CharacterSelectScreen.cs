@@ -40,7 +40,7 @@ namespace ChronoSavior.UI
         {
             new Entry { Id = CharacterId.Mage, Name = "마법사", Icon = "Icons/weapon_hat", Hint = "Z 차지 마법탄 · X 전문화 스킬. 멀리서 터뜨리는 마법." },
             new Entry { Id = CharacterId.Gunner, Name = "메카닉", Icon = "Icons/weapon_spanner", Hint = "Z 에너지 탄(레이저 빌드는 광선) · X 전문화 스킬. 드론·설치기." },
-            new Entry { Id = CharacterId.Blade, Name = "섬영", Icon = "Icons/weapon_blades", Hint = "관성 이동 — 달릴수록 빨라지고 강해진다. 방향키를 누르는 동안 피격 무적." },
+            new Entry { Id = CharacterId.Blade, Name = "살수", Icon = "Icons/weapon_blades", Hint = "관성 이동 — 달릴수록 빨라지고 강해진다. 방향키를 누르는 동안 피격 무적." },
             new Entry { Id = null, Name = "???", Icon = "Icons/weapon_hammer", Hint = "아직 준비 중인 캐릭터." },
         };
 

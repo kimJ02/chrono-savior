@@ -31,15 +31,18 @@ Pixel Art Effects
 |---|---|---|
 | `mage/charge_large·charge_small` | Gigapack | Sci-fi/scifi_charge_up_001 (large·small, yellow) |
 | `mage/charge_large_violet` | Gigapack | 위 large_yellow의 색상을 +225° 돌린 파생 그림(가져오기 도구가 만든다) |
-| `mage/fire_projectile` | Projectiles Pack 4 | pj4_plasma_ball_small_red (문서의 화염탄 그림은 무료판에 없어 대체 — Codex와 정함) |
+| `mage/fire_projectile` | Projectiles Pack 4 | pj4_energy_blast_A_small_red (문서 예시의 혜성 모양 빨강, 2026-11-08) |
 | `mage/fire_trail·fire_trail_small` | Pixel Fire | fire asset red / Group 4 - 1·Group 4 - 3 |
 | `mage/gravity_orb_small·large` | Projectiles Pack 4 | pj4_dark_matter (small·large, violet) |
-| `mage/fire_explosion` | Gigapack | Explosions/symmetrical_explosion_004_large_orange |
+| `mage/fire_explosion` | Gigapack | Explosions/stylized_explosion_001_large_yellow (폭발 17종을 게임 배율로 비교해 고름, 2026-11-08) |
 | `mage/gravity_explosion` | Gigapack | Explosions/stylized_explosion_002_large_violet |
+| `mage/collapse_explosion` | Gigapack | Impacts/symmetrical_impact_002_large_blue → 보라 파생(+75°) |
+| `mage/collapse_critical` | Gigapack | Impacts/symmetrical_impact_006_large_yellow → 보라 파생(+225°) |
 | `mechanic/laser_*` | Projectiles Pack 4 | pj4_laser_beam_A (small·large, blue) origin·center·impact × start·loop·end |
 | `mechanic/pellet` | Projectiles Pack 4 | pj4_energy_pellet_small_yellow |
-| `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (후보) |
+| `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (설치기 몸체 위 — 몸체 안테나 그림은 팩에 없어 지금 몸체) |
 | `assassin/slash_1~3` | Slash Vol 2 | spritesheet_96x96 1·3·5줄(무속성) |
+| `assassin/spin` | Slash Vol 2 update_1 | spritesheet_96x96 17줄(회전베기 7장 — 불투명 갈색 바탕을 가져오기 도구가 뺀다) |
 | `assassin/heartbeat` | Gigapack | Sci-fi/scifi_heartbeat_fast_001_large_yellow |
 | `assassin/splatter` | Gigapack | Splatters/directional_splatter_001_small_red |
 | `assassin/smoke` | Gigapack | Smoke Bursts/looping_smoke_burst_002_small_gray |

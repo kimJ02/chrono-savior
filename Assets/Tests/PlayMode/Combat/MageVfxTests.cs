@@ -116,16 +116,16 @@ public class MageVfxTests
         Assert.IsTrue(orb != null && orb.GetComponent<SpriteRenderer>().color.a > 0.9f, "폭발이 끝나도 남아 보인다");
     }
 
-    /// <summary>대붕괴: 중력점마다 붕괴 폭발 그림(정수 배율) — 원본 고리(`GravityBurstRing`)는 그대로 그 위에.</summary>
+    /// <summary>대붕괴: 중력점마다 붕괴 폭발 그림(가시 충격 고리, 정수 배율) — 원본 고리(`GravityBurstRing`)는 그대로 그 위에.</summary>
     [Test]
     public void Collapse_ShowsBurstPerWell()
     {
-        AssumeInstalled(VfxKeys.MageGravityExplosion);
+        AssumeInstalled(VfxKeys.MageCollapseExplosion);
         GravityWellZone.SpawnOrMerge(new Vector2(3f, 1f), 3, 0f); // 3차부터 중력점 3개까지
         GravityWellZone.SpawnOrMerge(new Vector2(6f, 1f), 3, 0f);
         Assert.AreEqual(2, GravityWellZone.Active.Count);
         MageSkillEffects.GravityCollapse(3, new Vector2(4.5f, 1f), 1, null);
-        var bursts = System.Array.FindAll(Object.FindObjectsByType<VfxPlayer>(FindObjectsSortMode.None), p => p.name == "Vfx_mage_gravity_explosion");
+        var bursts = System.Array.FindAll(Object.FindObjectsByType<VfxPlayer>(FindObjectsSortMode.None), p => p.name == "Vfx_mage_collapse_explosion");
         Assert.AreEqual(2, bursts.Length, "중력점마다 하나");
         foreach (var b in bursts) Assert.IsTrue(IsWhole(b.transform.localScale.x), "정수 배율");
     }

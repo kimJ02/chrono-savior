@@ -192,8 +192,8 @@ namespace ChronoSavior.Combat
                 }
 
                 // 원본 `zones.push({ kind: 'gravityBurst', x: cx, y: cy, r, life: 0.42 + idx * 0.04, critical })`(:2114) — 그림만.
-                // 그 아래에 붕괴 폭발 그림(2026-11-07 VFX — 문서 "블랙홀 붕괴 = 기가팩 Explosions", 착탄과 같은 보라 폭발을 붕괴 반경 크기로). 고리는 원본 그림이라 그대로 위에.
-                ShowExplosion(VfxKeys.MageGravityExplosion, cx, r);
+                // 그 아래에 붕괴 폭발 그림(2026-11-08 VFX — 문서 "블랙홀 붕괴 = 기가팩 폭발 중 어울리는 것": 가시 충격 고리를 보라로, 붕괴 반경 크기). 고리는 원본 그림이라 그대로 위에.
+                ShowExplosion(VfxKeys.MageCollapseExplosion, cx, r);
                 GravityBurstRing.Spawn(cx, r, MageSpecConfig.CollapseBurstLife + idx * MageSpecConfig.CollapseBurstLifeStep,
                                        critical, ringOnly: false);
 
@@ -215,6 +215,7 @@ namespace ChronoSavior.Combat
                         if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                         target.TakeDamageWithKnockback(dmg2, null, dir, MageSpecConfig.CollapseCriticalRingKnockback, HitFeel.HitstopLight); // 원본 hitstop: 0.03(:2120)
                     }
+                    ShowExplosion(VfxKeys.MageCollapseCritical, cx, r2); // 임계 붕괴엔 큰 번개 충격을 2차 고리 크기로 겹친다(그림만)
                     // 원본 `zones.push({ kind: 'gravityBurst', r: r2, life: 0.58, critical: true, ringOnly: true })`(:2123).
                     GravityBurstRing.Spawn(cx, r2, MageSpecConfig.CollapseCriticalRingLife, critical: true, ringOnly: true);
                 }

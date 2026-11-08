@@ -40,12 +40,12 @@ public class CreationOwnershipTests
     static readonly Dictionary<string, (Kind kind, string why)> Owners = new Dictionary<string, (Kind, string)>
     {
         // A. 전투 물체 — 각 클래스의 정적 생성 함수가 본체·그림 자식·판정·RunTransient를 짓는다
-        ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다"),
+        ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다. 드론 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다. 갈래별 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
-        ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다"),
+        ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다. 중계기 머리 그림(라이선스 프레임 재생기 자식)을 붙인다"),
         ["Combat/FireTrailZone.cs"]        = (Kind.CombatObject, "화염 장판 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐이고 에디터에서 조정할 판정 부품이 없다(값은 MageSpecConfig). 불꽃 그림은 키로 불러온 라이선스 프레임이라 자식 재생기로(2026-11-07). 마법사 스킬이 깐다"),
         ["Combat/GravityWellZone.cs"]      = (Kind.CombatObject, "중력장 — 코드로 짓는다: 구성이 루트+이 컴포넌트(+RunTransient)뿐, 그림은 소용돌이 효과(D)가 따로. 값은 MageSpecConfig. 마법사 스킬이 연다"),
 
@@ -60,7 +60,8 @@ public class CreationOwnershipTests
         ["Characters/PlayerAfterimages.cs"] = (Kind.VisualEffect, "잔상 그림 풀"),
         ["Characters/MageChargeVfx.cs"]    = (Kind.VisualEffect, "차지 오라(키로 불러온 프레임 재생기)·완충 깜빡임 그림 자식"),
         ["Characters/GunnerLaserBeam.cs"]  = (Kind.VisualEffect, "레이저 구간 그림(판정은 레이저 쪽 계산)"),
-        ["Characters/GunnerAttack.cs"]     = (Kind.VisualEffect, "설치물 사이 연결선 그림"),
+        ["Characters/GunnerFieldVfx.cs"]   = (Kind.VisualEffect, "설치기 링크선(레이저 그림 타일)·내부 장판 칠하기(메시)·흰 점 — 그림만, 2026-11-08 GunnerAttack에서 떼어 냄"),
+        ["Characters/BladeVfx.cs"]         = (Kind.VisualEffect, "살수 집중(배경 어둡게·하트비트)·궤적 선·파열 스플래터·칼날폭풍 회전베기·연기 — 그림만(2026-11-08)"),
         ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 흰 깜빡임 그림 자식"),
         ["Combat/GravityBurstRing.cs"]     = (Kind.VisualEffect, "중력 폭발 고리(원판 메시·선)"),
         ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력장 암흑 구체 그림(키로 불러온 프레임 재생기 자식)"),

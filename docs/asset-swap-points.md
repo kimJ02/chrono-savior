@@ -32,6 +32,11 @@
 | 마법사 불길 | `Combat/FireTrailZone`(키 `mage/fire_trail`) | `FlameScale`·`FadeTime`·밑동 높이(`MageSpecConfig.TeleportFlameLineHeight`) |
 | 마법사 폭발(화염·중력 착탄·대붕괴) | `Combat/MageSkillEffects.ShowExplosion`(키 `mage/fire_explosion`·`mage/gravity_explosion`) | 판정 지름에 가장 가까운 정수 배율. 대붕괴는 그 위에 원본 고리(`GravityBurstRing`)도 |
 | 마법사 중력장 구체 | `Combat/GravityVortexVfx`(키 `mage/gravity_orb_large`) | 배율 = 중첩 수(1~5) — 끌어당기는 판정 반경과 따로 |
+| 메카닉 레이저 | `Characters/GunnerLaserBeam`(키 `mechanic/laser_{origin·center·impact}_loop_{small·large}`) | 1~2층 small·3~4층 large·5층 large×2(`ArtThickness`). 몸통은 길이만큼 타일. 그림 없으면 예전 막대 |
+| 메카닉 드론 탄 | `Characters/GunnerDrone` → `GunnerBullet.Spawn(artKey: mechanic/pellet)` | 판정 폭에 가장 가까운 정수 배율. 드론 몸체 그림은 팩에 없어 프리팹 그대로 |
+| 메카닉 중계기 머리 | `Characters/GunnerTurret.AttachRelayHead`(키 `mechanic/relay_head`) | 높이 `RelayHeadHeight`. 몸체(안테나) 그림은 팩에 없음 |
+| 메카닉 중계선·내부 장판 | `Characters/GunnerFieldVfx`(Player에 놓임, 머티리얼 칸 `Assets/Materials/VfxUnlit`) | 중계선 = 레이저 몸통 small 타일, 내부 = 푸른 반투명 메시 + 흰 점(그림 없이) |
+| 살수 집중·궤적·칼날폭풍 | `Characters/BladeVfx`(Player에 놓임, 머티리얼 칸 `VfxUnlit`) | 배경 어둡게(`ShadeAlpha`)·하트비트·궤적 선(원본 drawBladeTrail)·파열 섬광+스플래터·회전베기(`assassin/spin`)·연기 |
 
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)
 

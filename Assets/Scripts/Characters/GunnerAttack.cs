@@ -72,8 +72,7 @@ namespace ChronoSavior.Characters
         float ultCdMax;
         float fieldTickTimer;                    // 원본 player.mechFieldTick
 
-        GameObject fieldVisualRoot;
-        readonly List<SpriteRenderer> linkVisuals = new List<SpriteRenderer>();
+        GunnerFieldVfx fieldVfx; // 링크·내부 장판 그림(같은 Player에 놓여 있다 — 없으면 그림 없이)
 
         public CharacterId Character => CharacterId.Gunner;
         /// <summary>메카닉은 마법사와 같은 즉시-속도 이동(관성은 섬영 전용).</summary>
@@ -160,7 +159,7 @@ namespace ChronoSavior.Characters
         public void OnDeselected()
         {
             beam?.Stop();
-            if (fieldVisualRoot != null) fieldVisualRoot.SetActive(false);
+            if (fieldVfx != null) fieldVfx.Hide();
         }
 
         /// <summary>
@@ -179,6 +178,7 @@ namespace ChronoSavior.Characters
             mover = GetComponent<CharacterMover2D>();
             bodyCol = GetComponent<CircleCollider2D>();
             beam = new GunnerLaserBeam(this, mover);
+            fieldVfx = GetComponent<GunnerFieldVfx>();
         }
 
         /// <summary>
@@ -345,45 +345,12 @@ namespace ChronoSavior.Characters
                     fieldTickTimer -= tick;
                     GunnerField.DamageTick(t, pts, segs);
                 }
-                UpdateFieldVisual(segs);
+                if (fieldVfx != null) fieldVfx.Show(pts, segs, bulletSprite);
             }
             else
             {
                 fieldTickTimer = 0f;
-                if (fieldVisualRoot != null) fieldVisualRoot.SetActive(false);
-            }
-        }
-
-        // ---- 링크 표시(원본 drawMechanicField :5194의 최소한 — 연결선만 얇은 막대로) ----
-        void UpdateFieldVisual(List<GunnerField.Segment> segs)
-        {
-            if (fieldVisualRoot == null)
-            {
-                fieldVisualRoot = new GameObject("GunnerFieldLinks");
-                fieldVisualRoot.AddComponent<RunTransient>(); // 설치기와 같이 런이 끝나면 치워진다
-                linkVisuals.Clear();
-            }
-            fieldVisualRoot.SetActive(true);
-            while (linkVisuals.Count < segs.Count)
-            {
-                var go = new GameObject("Link");
-                go.transform.SetParent(fieldVisualRoot.transform, false);
-                var sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = bulletSprite;
-                sr.color = new Color(LaserColor.r, LaserColor.g, LaserColor.b, 0.6f);
-                sr.sortingOrder = 3;
-                linkVisuals.Add(sr);
-            }
-            for (int i = 0; i < linkVisuals.Count; i++)
-            {
-                bool on = i < segs.Count;
-                linkVisuals[i].enabled = on;
-                if (!on) continue;
-                Vector2 a = segs[i].a, b = segs[i].b, v = b - a;
-                var tf = linkVisuals[i].transform;
-                tf.position = (a + b) * 0.5f;
-                tf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
-                tf.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude), 0.06f, 1f);
+                if (fieldVfx != null) fieldVfx.Hide();
             }
         }
     }

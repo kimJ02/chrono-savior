@@ -31,7 +31,7 @@ namespace ChronoSavior.UI
         Text doom, region, who, money, prompt;
         Text[] buildingNames, buildingDoors;
         Image expFill, playerDot;
-        static readonly string[] CharacterNames = { "마법사", "메카닉", "섬영", "드루이드" };
+        static readonly string[] CharacterNames = { "마법사", "메카닉", "살수", "드루이드" }; // '살수' = 예전 섬영(화면 이름만, 2026-11-07)
 
         protected override void Build()
         {

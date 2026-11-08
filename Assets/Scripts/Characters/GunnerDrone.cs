@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using ChronoSavior.Combat;
 using ChronoSavior.Core;
 
 namespace ChronoSavior.Characters
@@ -149,7 +150,8 @@ namespace ChronoSavior.Characters
                 GunnerSpecConfig.DroneBulletPierce(Tier), GunnerSpecConfig.DroneBulletLife,
                 GunnerSpecConfig.DroneBulletSize(Tier), GunnerAttack.LaserColor,
                 homing: GunnerSpecConfig.DroneBulletHoming(Tier), seekRange: Range,
-                turnRate: GunnerSpecConfig.DroneBulletTurnRate(Tier), stackOwner: null, stackOnHit: 0);
+                turnRate: GunnerSpecConfig.DroneBulletTurnRate(Tier), stackOwner: null, stackOnHit: 0,
+                artKey: VfxKeys.MechanicPellet); // 드론 탄 그림 = 에너지 펠렛(팀원 문서). 드론 몸체 그림은 팩에 없어 지금 그림 그대로
         }
     }
 }

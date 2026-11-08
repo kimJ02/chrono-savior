@@ -58,13 +58,12 @@ namespace ChronoSavior.Characters
         public static GunnerBullet Spawn(GunnerBullet prefab, Vector3 pos, Vector2 velocity, float damage, int pierce, float life,
             float sizeMul, Color color,
             bool homing = false, float seekRange = 0f, float turnRate = 0f,
-            GunnerAttack stackOwner = null, int stackOnHit = 0)
+            GunnerAttack stackOwner = null, int stackOnHit = 0, string artKey = null)
         {
             if (prefab == null) { Debug.LogError("[GunnerBullet] 탄 프리팹이 없다 — 쏘는 쪽(GunnerAttack)의 bulletPrefab을 확인"); return null; }
             var bullet = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
             bullet.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
-            bullet.visualTf.localScale = new Vector3(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul, 1f);
-            bullet.visualRenderer.color = color;
+            bullet.ShowArt(artKey, sizeMul, color);
             bullet.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
             bullet.rb.linearVelocity = velocity;
             bullet.damage = damage;
@@ -78,6 +77,26 @@ namespace ChronoSavior.Characters
             bullet.stackOnHit = stackOnHit;
             bullet.OrientVisual(velocity);
             return bullet;
+        }
+
+        /// <summary>탄 그림 재생 속도.</summary>
+        public const float ArtFps = 15f;
+
+        /// <summary>
+        /// 탄 그림 — 그림 키가 있고 그림이 들어와 있으면(2026-11-08 VFX: 드론 탄 = Projectiles Pack 4 `energy_pellet`, 팀원 문서) 판정 폭에 가장 가까운 정수 배율로
+        /// 되풀이한다. 아니면 예전처럼 원을 판정 크기로 늘려 색칠한다. 판정 상자는 어느 쪽이든 그대로.
+        /// </summary>
+        void ShowArt(string artKey, float sizeMul, Color color)
+        {
+            var frames = artKey != null ? VfxFrames.Get(artKey) : System.Array.Empty<Sprite>();
+            if (frames.Length == 0)
+            {
+                visualTf.localScale = new Vector3(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul, 1f);
+                visualRenderer.color = color;
+                return;
+            }
+            visualTf.localScale = Vector3.one * VfxPlayer.WholeScale(BaseHalfWidth * 2f * sizeMul, frames[0]);
+            visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
         }
 
         void Update()

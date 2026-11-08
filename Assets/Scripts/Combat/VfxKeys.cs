@@ -20,6 +20,9 @@ namespace ChronoSavior.Combat
         public const string MageGravityOrbLarge = "mage/gravity_orb_large";
         public const string MageFireExplosion = "mage/fire_explosion";
         public const string MageGravityExplosion = "mage/gravity_explosion";
+        /// <summary>대붕괴 폭발(가시 충격 고리)과 임계 붕괴에 겹치는 큰 충격 — 둘 다 가져오기 도구가 보라로 돌린 파생 그림.</summary>
+        public const string MageCollapseExplosion = "mage/collapse_explosion";
+        public const string MageCollapseCritical = "mage/collapse_critical";
 
         // ── 메카닉 ──
         /// <summary>레이저 한 토막: <c>mechanic/laser_{origin|center|impact}_{start|loop|end}_{small|large}</c>.</summary>
@@ -33,6 +36,8 @@ namespace ChronoSavior.Combat
         public const string AssassinSlash1 = "assassin/slash_1";
         public const string AssassinSlash2 = "assassin/slash_2";
         public const string AssassinSlash3 = "assassin/slash_3";
+        /// <summary>칼날폭풍 회전베기(Slash Vol 2 업데이트 시트).</summary>
+        public const string AssassinSpin = "assassin/spin";
         public const string AssassinHeartbeat = "assassin/heartbeat";
         public const string AssassinSplatter = "assassin/splatter";
         public const string AssassinSmoke = "assassin/smoke";
@@ -45,9 +50,9 @@ namespace ChronoSavior.Combat
                 var keys = new System.Collections.Generic.List<string>
                 {
                     MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall,
-                    MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion,
+                    MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicRelayHead,
-                    AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
+                    AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
                 };
                 foreach (var part in LaserParts)
                     foreach (var phase in LaserPhases)

@@ -241,6 +241,25 @@ namespace ChronoSavior.Characters
         /// </summary>
         public SkillSlotState AttackSlot => SkillSlotState.Cooldown(cdTimer, SpinCd);
 
+        // ---- 그림(BladeVfx·BladeSlashVfx)이 읽는 상태 — 읽기만 한다 ----
+        /// <summary>집중 중인가(배경 어둡게·하트비트).</summary>
+        public bool IsFocusing => focusT > 0f;
+        /// <summary>칼날폭풍 중인가(회전베기 반복·연기).</summary>
+        public bool IsStorming => storming;
+        /// <summary>궤적 점들(판정과 같은 점 — 원본 `p.trailPts`).</summary>
+        public IReadOnlyList<Vector2> TrailPoints => trailPts;
+        /// <summary>궤적 시간이 남았나(원본 `drawBladeTrail`의 `fade = trailT > 0 ? 1 : 0.75`).</summary>
+        public bool TrailLive => trailT > 0f;
+        /// <summary>궤적 굵기 배수 — 3층부터 판정 반경이 1.3배라 선도 굵어진다(원본 `wide = 26 * bladeTrailR()/trailR`).</summary>
+        public float TrailWidthScale => ProfileService.Current.bladeTier >= 3 ? FocusT3RadiusMult : 1f;
+        /// <summary>칼날폭풍 회전베기 판정 지름(그림 크기 기준).</summary>
+        public static float StormSpinDiameter => SpinRadius * StormSpinRadiusMult * 2f;
+        /// <summary>
+        /// 4층 궤적 파열이 터졌다(피해를 준 뒤, 궤적을 비우기 직전) — 그 궤적 점을 넘긴다. 그림(섬광·스플래터)만 듣는다.
+        /// 1~3층은 궤적이 그냥 사라질 뿐 파열이 아니라 알리지 않는다.
+        /// </summary>
+        public event System.Action<IReadOnlyList<Vector2>> TrailRipped;
+
         /// <summary>회전베기(Z)의 남은 쿨다운(초) — 베기 효과(`BladeSlashVfx`)가 '방금 베었다'를 알아채는 데 쓴다(예전엔 비공개 필드를 리플렉션으로 읽었다).</summary>
         public float SpinCooldownLeft => cdTimer;
 
@@ -665,6 +684,7 @@ namespace ChronoSavior.Characters
                         target.TakeDamageWithKnockback(dmg, gameObject, dirSign, FocusT4RipKnockback);
                     }
                 }
+                TrailRipped?.Invoke(trailPts.ToArray()); // 그림(섬광·스플래터) — 비우기 전 점을 복사해서
             }
 
             trailPts.Clear();

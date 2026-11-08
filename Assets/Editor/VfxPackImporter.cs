@@ -26,6 +26,7 @@ namespace ChronoSavior.Editor
         const string Gigapack = "Super Pixel Effects Gigapack";
         const string Projectiles = "Super Pixel Projectiles Pack 4";
         const string Slash = "vfx_slash_vol_2";
+        const string SlashUpdate = "update_1"; // Slash Vol 2 업데이트(회전베기 등) — 시트에 불투명 갈색 바탕 칸이 있어 그 색을 빼고 쓴다
         const string Fire = "Pixel fire asset pack";
 
         /// <summary>한 키를 어디서 가져오나 — 프레임 폴더(파일마다 한 장) 또는 스프라이트 시트의 한 줄.</summary>
@@ -38,12 +39,15 @@ namespace ChronoSavior.Editor
             /// <summary>재색(0이면 그대로): 픽셀마다 색상(hue)을 이만큼(도) 돌린 파생 그림을 만든다 — 밝기·채도·투명도는 그대로라
             /// 런타임 틴트(곱하기)로는 탁해지는 색 바꿈(노랑 → 보라)에 쓴다(`HANDOFF.md` 0-3 재색 규칙). 팩 원본은 안 건드린다.</summary>
             public float HueShift;
+            /// <summary>시트일 때: 이 색(불투명 바탕)을 투명으로 뺀다(null이면 그대로).</summary>
+            public Color32? Matte;
         }
 
         static Source Frames(string key, string pack, string folder) => new Source { Key = key, Pack = pack, Path = folder };
         static Source Sheet(string key, string pack, string sheet, int cell, int row, int frames) =>
             new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Frames = frames };
         static Source Recolored(Source src, float hueShiftDegrees) { src.HueShift = hueShiftDegrees; return src; }
+        static Source Matted(Source src, Color32 background) { src.Matte = background; return src; }
 
         /// <summary>쓰는 효과 목록(2026-11-07 초안 — 효과를 입히며 고른다, `HANDOFF.md` 2절).</summary>
         static IEnumerable<Source> Manifest()
@@ -53,13 +57,18 @@ namespace ChronoSavior.Editor
             yield return Frames(VfxKeys.MageChargeSmall, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow");
             // 중력 갈래 차지는 보라 — 팩엔 노랑뿐이고 보라 틴트를 곱하면 노란 픽셀이 탁한 주황이 돼서(캡처·Codex 리뷰) 색상을 돌린 파생 그림
             yield return Recolored(Frames(VfxKeys.MageChargeLargeViolet, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_large_yellow"), 225f);
-            yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_plasma_ball_small_red"); // 문서의 화염탄 그림은 무료판에 없다 — 대체 후보
+            // 화염탄 — 문서 예시(혜성 모양 energy_blast)의 빨강. 오른쪽을 향한 그림이라 쏠 때 속도 방향으로 돌린다(2026-11-08, 예전 plasma_ball에서 교체)
+            yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_energy_blast_A_small_red");
             yield return Frames(VfxKeys.MageFireTrail, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 1");
             yield return Frames(VfxKeys.MageFireTrailSmall, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 3");
             yield return Frames(VfxKeys.MageGravityOrbSmall, Projectiles, "PNG/pj4_dark_matter_small_violet");
             yield return Frames(VfxKeys.MageGravityOrbLarge, Projectiles, "PNG/pj4_dark_matter_large_violet");
-            yield return Frames(VfxKeys.MageFireExplosion, Gigapack, "PNG/Explosions/symmetrical_explosion_004/symmetrical_explosion_004_large_orange");
+            // 폭발 — 기가팩 폭발 17종을 게임 화면 배율로 비교해 골랐다(2026-11-08, 사용자 "다양하게 적용해 보고 어울리는 것", Codex 합의):
+            // 화염 = 둥근 불꽃+연기(공중·지면 어디서 터져도 어울림), 중력 착탄 = 보라 구체, 대붕괴 = 가시 충격 고리(보라 파생), 임계 붕괴엔 큰 번개 충격을 겹친다
+            yield return Frames(VfxKeys.MageFireExplosion, Gigapack, "PNG/Explosions/stylized_explosion_001/stylized_explosion_001_large_yellow");
             yield return Frames(VfxKeys.MageGravityExplosion, Gigapack, "PNG/Explosions/stylized_explosion_002/stylized_explosion_002_large_violet");
+            yield return Recolored(Frames(VfxKeys.MageCollapseExplosion, Gigapack, "PNG/Impacts/symmetrical_impact_002/symmetrical_impact_002_large_blue"), 75f);
+            yield return Recolored(Frames(VfxKeys.MageCollapseCritical, Gigapack, "PNG/Impacts/symmetrical_impact_006/symmetrical_impact_006_large_yellow"), 225f);
             // 메카닉
             foreach (var part in VfxKeys.LaserParts)
                 foreach (var phase in VfxKeys.LaserPhases)
@@ -73,6 +82,8 @@ namespace ChronoSavior.Editor
             yield return Sheet(VfxKeys.AssassinSlash1, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 1, 5);
             yield return Sheet(VfxKeys.AssassinSlash2, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 3, 6);
             yield return Sheet(VfxKeys.AssassinSlash3, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 5, 7);
+            // 칼날폭풍 회전베기 — 업데이트 시트 17줄(위에서 0부터, 하양·하늘 타원 회전베기 7장)
+            yield return Matted(Sheet(VfxKeys.AssassinSpin, SlashUpdate, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 17, 7), new Color32(157, 137, 108, 255));
             yield return Frames(VfxKeys.AssassinHeartbeat, Gigapack, "PNG/Sci-fi/scifi_heartbeat_fast_001/scifi_heartbeat_fast_001_large_yellow");
             yield return Frames(VfxKeys.AssassinSplatter, Gigapack, "PNG/Splatters/directional_splatter_001/directional_splatter_001_small_red");
             yield return Frames(VfxKeys.AssassinSmoke, Gigapack, "PNG/Smoke Bursts/looping_smoke_burst_002/looping_smoke_burst_002_small_gray");
@@ -195,10 +206,19 @@ namespace ChronoSavior.Editor
                 int y = sheet.height - (src.Row + 1) * src.Cell; // 텍스처는 아래가 0
                 if (y < 0) { problems.Add($"{src.Key}: 시트 {src.Row}줄이 없다"); return null; }
                 var cells = new List<byte[]>();
+                var px = sheet.GetPixels32();
                 for (int c = 0; (c + 1) * src.Cell <= sheet.width; c++)
                 {
                     var cell = new Texture2D(src.Cell, src.Cell, TextureFormat.RGBA32, false);
-                    cell.SetPixels(sheet.GetPixels(c * src.Cell, y, src.Cell, src.Cell));
+                    var cellPx = new Color32[src.Cell * src.Cell];
+                    for (int yy = 0; yy < src.Cell; yy++)
+                        for (int xx = 0; xx < src.Cell; xx++)
+                        {
+                            var p = px[(y + yy) * sheet.width + c * src.Cell + xx];
+                            if (src.Matte.HasValue && p.r == src.Matte.Value.r && p.g == src.Matte.Value.g && p.b == src.Matte.Value.b) p = new Color32(0, 0, 0, 0);
+                            cellPx[yy * src.Cell + xx] = p;
+                        }
+                    cell.SetPixels32(cellPx);
                     cell.Apply();
                     bool empty = cell.GetPixels32().All(p => p.a == 0);
                     cells.Add(empty ? null : cell.EncodeToPNG());
@@ -270,6 +290,11 @@ namespace ChronoSavior.Editor
             t.mipmapEnabled = false;
             t.alphaIsTransparency = true;
             t.wrapMode = TextureWrapMode.Clamp;
+            // 레이저 몸통·중계선은 길이만큼 이어 붙인다(SpriteRenderer 타일) — 타일은 사각형 메시(FullRect)여야 한다
+            var settings = new TextureImporterSettings();
+            t.ReadTextureSettings(settings);
+            settings.spriteMeshType = SpriteMeshType.FullRect;
+            t.SetTextureSettings(settings);
         }
     }
 }

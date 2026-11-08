@@ -179,13 +179,15 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | 값 | 용도 |
 |---|---|
 | -100 | 배경(`StageVisuals.BackgroundOrder`) |
+| -50 | 살수 집중 — 배경만 어둡게 덮는 판(`BladeVfx.ShadeSortingOrder`, 배경 위·땅 아래) |
 | -5 | 땅·발판 타일(`StageVisuals.GroundOrder`) |
-| -3 | 중력장 그림(필드 효과 — 캐릭터·적 뒤) |
-| -2 | 불길 장판 그림(`FireTrailZone.FlameSortingOrder`) |
+| -4 | 살수 칼날폭풍 연기(`BladeVfx.SmokeSortingOrder`) |
+| -3 | 필드 효과 — 중력장 구체·메카닉 내부 장판 칠(캐릭터·적 뒤) |
+| -2 | 불길 장판 그림(`FireTrailZone.FlameSortingOrder`)·메카닉 내부 장판 흰 점 |
 | -1 | 몸 바로 뒤: 잔상·마법사 차지 오라(몸 정렬 − 1) |
 | 0 | 캐릭터·적(기본) — 몸 바로 앞(+1)은 피격·완충 깜빡임, 베기 효과 |
-| 3 | 투사체 |
-| 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`) |
+| 3 | 투사체·메카닉 레이저·중계선 |
+| 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`)·중계기 머리·살수 스플래터·하트비트·회전베기(궤적 선은 3) |
 | 5 | 공격 판정 표시(링)·대붕괴 고리 |
 
 ### 테스트

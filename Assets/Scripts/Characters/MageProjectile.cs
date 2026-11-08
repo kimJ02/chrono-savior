@@ -72,7 +72,7 @@ public class MageProjectile : MonoBehaviour
         var proj = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
         proj.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
         proj.ShowArt(gravityOrb ? VfxKeys.MageGravityOrbSmall : explosive ? VfxKeys.MageFireProjectile : null, sizeMul,
-                     gravityOrb ? new Color(0.78f, 0.42f, 1f) : color);
+                     gravityOrb ? new Color(0.78f, 0.42f, 1f) : color, velocity);
         proj.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
         proj.rb.linearVelocity = velocity;
         proj.damage = damage;
@@ -96,11 +96,12 @@ public class MageProjectile : MonoBehaviour
     public const float ArtFps = 15f;
 
     /// <summary>
-    /// 탄 그림(2026-11-07 VFX 스프린트): 폭발 갈래는 `mage/fire_projectile`(Projectiles Pack 4 plasma_ball red — 문서의 '화염탄' 그림이 무료판에 없어 대체),
+    /// 탄 그림(2026-11-07 VFX 스프린트): 폭발 갈래는 `mage/fire_projectile`(Projectiles Pack 4 energy_blast red — 문서 예시의 혜성 모양, 2026-11-08),
     /// 중력 갈래는 `mage/gravity_orb_small`(dark_matter violet)을 되풀이한다. 배율은 판정 폭에 가장 가까운 **정수**(도트 배율 정수, `docs/pixel-standard.md`)
-    /// — 판정 상자는 그대로다. 빌드 없음(0차)이거나 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
+    /// — 판정 상자는 그대로다. 혜성 그림은 오른쪽을 향해 있어 **그림만** 날아가는 방향으로 돌린다(판정 상자는 안 돈다 — 원본도 축 정렬 사각형).
+    /// 빌드 없음(0차)이거나 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
     /// </summary>
-    void ShowArt(string key, float sizeMul, Color fallbackColor)
+    void ShowArt(string key, float sizeMul, Color fallbackColor, Vector2 velocity)
     {
         float hitWidth = BaseHalfWidth * 2f * sizeMul;
         var frames = key != null ? VfxFrames.Get(key) : System.Array.Empty<Sprite>();
@@ -111,6 +112,8 @@ public class MageProjectile : MonoBehaviour
             return;
         }
         visualTf.localScale = Vector3.one * VfxPlayer.WholeScale(hitWidth, frames[0]);
+        if (key == VfxKeys.MageFireProjectile && velocity.sqrMagnitude > 1e-6f)
+            visualTf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg);
         visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
     }
 

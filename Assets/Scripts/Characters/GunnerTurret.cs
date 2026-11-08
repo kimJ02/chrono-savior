@@ -65,8 +65,28 @@ namespace ChronoSavior.Characters
             t.TickInterval = GunnerSpecConfig.TurretTick(tier);
             t.Range = GunnerSpecConfig.TurretRange(tier);
             t.DamageMult = GunnerSpecConfig.TurretDamageMult(tier);
+            AttachRelayHead(t.transform);
             active.Add(t);
             return t;
+        }
+
+        /// <summary>중계기 머리 높이(발에서, 몸체 그림 꼭대기 0.36 바로 위)·재생 속도·정렬.</summary>
+        public const float RelayHeadHeight = 0.42f, RelayHeadFps = 15f;
+        public const int RelayHeadSortingOrder = 4;
+
+        /// <summary>
+        /// 중계기 머리(2026-11-08 VFX, 팀원 문서 "몸체 위에 달아 놓는 느낌") — Projectiles Pack 4 `plasma_ball` 파랑(키 <see cref="VfxKeys.MechanicRelayHead"/>, 배율 1).
+        /// 몸체(안테나) 그림은 팩에 없어 지금 몸체 그대로. 그림이 없으면 머리 없이.
+        /// </summary>
+        static void AttachRelayHead(Transform turret)
+        {
+            var frames = VfxFrames.Get(VfxKeys.MechanicRelayHead);
+            if (frames.Length == 0) return;
+            var go = new GameObject("RelayHead", typeof(SpriteRenderer));
+            go.transform.SetParent(turret, false);
+            go.transform.localPosition = new Vector3(0f, RelayHeadHeight, 0f);
+            go.GetComponent<SpriteRenderer>().sortingOrder = RelayHeadSortingOrder;
+            go.AddComponent<VfxPlayer>().Play(frames, RelayHeadFps, true, 0f, Color.white);
         }
 
         /// <summary>
