@@ -11,7 +11,8 @@ namespace ChronoSavior.Characters
     /// 원래 그림 크기로 돌아가는 프레임이 생기고 곡선(5층)은 조각마다 무늬가 끊겼다. 이제 **선 하나**(<see cref="LineRenderer"/>, 길이 방향 타일)로
     /// 직선·곡선을 끊김 없이 그린다 — Projectiles Pack 4 `laser_beam_A` 파랑 몸통 텍스처를 길이만큼 반복(도트 크기 그대로).
     /// - 켜질 때 start 프레임 → 켜져 있는 동안 loop → 떼면 end 프레임으로 사그라든다(마지막 모양 그대로).
-    /// - 총구에 origin 그림, 끝 impact 그림은 **목표를 잡았을 때만**(아무것도 안 맞는 빔 끝에 물 튀김이 붙지 않게). 맞은 적마다 작은 충격이 튄다.
+    /// - 총구에 origin 그림, 끝 impact 그림(늘 small — large는 2유닛이라 과했다)은 **목표를 잡았을 때만**. 맞은 적 자리엔 작은 파란 충격(0.5유닛)을
+    ///   **적마다 <see cref="SparkInterval"/>초에 한 번만**(2026-11-09 사용자 — 예전엔 빔 끝 물보라를 적마다 피해 틱마다 띄워 큰 덩어리로 겹쳤다).
     /// - 맞을 적이 없으면 빔 대신 총구에 **차징** 그림(기가팩 `scifi_charge_up`을 파랑으로 돌린 것)만 — 적이 광선에 들어오면 그때 빔이 start 프레임부터 뻗는다(2026-11-09 사용자).
     /// - 굵기: 1~4층 small(띠 26px → 0.4유닛), 5층 large(50px → 0.78유닛). 그림이 없으면 원본처럼 하늘색 선(판정 굵기).
     /// 선은 머티리얼이 필요해 메카닉 키트의 씬 연결 칸(<see cref="GunnerAttack.BeamMaterial"/>)을 복제해 쓴다.
@@ -19,6 +20,9 @@ namespace ChronoSavior.Characters
     public class GunnerBeamVfx : MonoBehaviour
     {
         public const float LoopFps = 15f, EdgeFps = 30f;
+        /// <summary>같은 적에게 적중 충격을 다시 띄우기까지(초).</summary>
+        public const float SparkInterval = 0.25f;
+        readonly Dictionary<Collider2D, float> lastSpark = new Dictionary<Collider2D, float>();
         public const int SortingOrder = 3;
 
         LineRenderer line;
@@ -152,9 +156,15 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>빔에 맞은 적 자리에 작은 충격(그림이 없으면 아무것도 안 한다).</summary>
-        public void Spark(Vector2 at, Vector2 dir)
+        public void Spark(Collider2D enemy, Vector2 at, Vector2 dir)
         {
-            var p = VfxPlayer.Spawn(VfxKeys.MechanicLaser("impact", "start", false), at, DotScale.Value, EdgeFps, SortingOrder + 1);
+            if (enemy != null)
+            {
+                if (lastSpark.TryGetValue(enemy, out float last) && Time.time - last < SparkInterval) return;
+                lastSpark[enemy] = Time.time;
+                if (lastSpark.Count > 64) lastSpark.Clear(); // 죽은 적이 쌓이지 않게(대충 비워도 충격이 한 번 더 뜰 뿐이다)
+            }
+            var p = VfxPlayer.Spawn(VfxKeys.MechanicHitSpark, at, DotScale.Value, EdgeFps, SortingOrder + 1);
             if (p != null && dir.sqrMagnitude > 1e-6f) p.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         }
 
@@ -165,7 +175,7 @@ namespace ChronoSavior.Characters
             loopF = VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop", large));
             endF = VfxFrames.Get(VfxKeys.MechanicLaser("center", "end", large));
             originF = VfxFrames.Get(VfxKeys.MechanicLaser("origin", "loop", large));
-            impactF = VfxFrames.Get(VfxKeys.MechanicLaser("impact", "loop", large));
+            impactF = VfxFrames.Get(VfxKeys.MechanicLaser("impact", "loop", false)); // 끝 그림은 늘 small
             hasArt = loopF.Length > 0;
             mat.mainTexture = null;
             line.startColor = line.endColor = Color.white;

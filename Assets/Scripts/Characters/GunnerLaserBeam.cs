@@ -260,7 +260,7 @@ namespace ChronoSavior.Characters
 
                 float dmg = DamageCalculator.Roll(atk * mult, crit, out _);
                 e.damageable.TakeTickDamage(dmg);
-                if (vfx != null) vfx.Spark(e.center, Direction); // 맞은 자리에 작은 충격(그림만)
+                if (vfx != null) vfx.Spark(e.collider, e.center, Direction); // 맞은 자리에 작은 충격(그림만, 적마다 0.25초에 한 번)
                 kit.AddStack(1);
             }
         }
@@ -269,22 +269,41 @@ namespace ChronoSavior.Characters
 
         void HideVisual()
         {
+            beamHold = 0f; // 다음에 켤 땐 맞을 적이 있어야 빔
             if (vfx != null) vfx.Release(); // 사그라든다(end 프레임)
         }
+
+        /// <summary>빔이 켜진 뒤 맞을 적이 없어져도 이만큼(초)은 빔을 유지한다 — 적이 들락날락·죽을 때 빔↔차징이 깜빡이지 않게(2026-11-09 Codex 합의).</summary>
+        public const float BeamHoldTime = 0.35f;
+        float beamHold;
 
         void UpdateVisual()
         {
             if (vfx == null) vfx = GunnerBeamVfx.Create(kit.BeamMaterial);
             if (vfx == null) return;
+            if (HasSomethingToHit) beamHold = BeamHoldTime;
+            else beamHold -= Time.deltaTime;
+            if (beamHold <= 0f)
+            {
+                vfx.ShowCharging(Origin, Direction);
+                return;
+            }
             path.Clear();
             path.Add(Origin);
             if (Curved)
+            {
+                // 5층 곡선은 판정상 목표를 0.5 지나 끝나지만, 그림은 **목표 가장자리에서** 끝낸다(목표를 뚫고 나간 끝이 '끊긴' 것처럼 보였다)
+                bool hasTarget = GunnerTargets.TryMake(Target, out var tg);
                 for (int i = 1; i <= GunnerSpecConfig.BeamCurveSamples; i++)
-                    path.Add(Bezier(Origin, CurveControl, CurveEnd, i / (float)GunnerSpecConfig.BeamCurveSamples));
+                {
+                    Vector2 q = Bezier(Origin, CurveControl, CurveEnd, i / (float)GunnerSpecConfig.BeamCurveSamples);
+                    path.Add(q);
+                    if (hasTarget && Vector2.Distance(q, tg.center) <= tg.width * 0.5f) break;
+                }
+            }
             else
                 path.Add(Origin + Direction * Range);
-            if (HasSomethingToHit) vfx.Show(path, currentTier, Target != null, Width);
-            else vfx.ShowCharging(Origin, Direction);
+            vfx.Show(path, currentTier, Curved && Target != null, Width); // 끝 그림은 빔이 목표에서 끝날 때(5층 곡선)만 — 3·4층 직선은 목표를 지나 사거리 끝까지 간다(빈 곳에 물보라가 뜨지 않게)
         }
 
         /// <summary>그림 담당(테스트용 — 아직 안 켰으면 null).</summary>

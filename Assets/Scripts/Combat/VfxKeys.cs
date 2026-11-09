@@ -46,6 +46,8 @@ namespace ChronoSavior.Combat
         public const string MechanicPellet = "mechanic/pellet";
         /// <summary>레이저 차징(맞을 적이 없을 때 총구) — 가져오기 도구가 노랑 차지를 파랑으로 돌린 파생 그림.</summary>
         public const string MechanicCharge = "mechanic/charge";
+        /// <summary>레이저에 맞은 적 자리의 작은 파란 충격(기가팩 directional_impact_001 파랑).</summary>
+        public const string MechanicHitSpark = "mechanic/hit_spark";
         /// <summary>레이저 드론 몸통 — 팀원 문서의 드론 그림(Projectiles Pack 4 `scrap_metal` 회색).</summary>
         public const string MechanicDrone = "mechanic/drone";
         public const string MechanicRelayHead = "mechanic/relay_head";
@@ -70,7 +72,7 @@ namespace ChronoSavior.Combat
                     MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
-                    MechanicPellet, MechanicCharge, MechanicDrone, MechanicRelayHead,
+                    MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
                 };
                 foreach (var part in LaserParts)
