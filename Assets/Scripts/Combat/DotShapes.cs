@@ -7,13 +7,13 @@ namespace ChronoSavior.Combat
     /// <summary>
     /// 실행 중에 그리는 **도트 도형**(원·타원·점선 원·호) — 원본이 캔버스에 선·원으로 그리던 연출(판정 고리·엘리트 오라·드론 빛·설치기 범위)을
     /// 다른 그림과 같은 도트 크기로 옮기려고(그림 1px = 격자 <see cref="DotScale.Value"/>칸, 2026-11-09). 흰색으로 그려 두고 색은 렌더러가 칠한다.
-    /// 같은 모양은 한 번만 만든다(캐시 — 너무 많아지면 비운다).
+    /// 같은 모양은 한 번만 만든다(캐시). 종류가 적고 정해져 있어(고리는 그림 4px 단위, 호는 16각, 타원은 몹·설치기 크기별) 지우지 않는다 —
+    /// 지우면 이미 그 그림을 쓰는 설치기 범위·엘리트 오라가 사라진다(Codex 리뷰 2026-11-09).
     /// </summary>
     public static class DotShapes
     {
         /// <summary>도트 도형의 PPU — 그림 1px이 격자 도트 배율 칸.</summary>
         public static float Ppu => DotScale.GridPixelsPerUnit / DotScale.Value;
-        const int CacheLimit = 64;
         static readonly Dictionary<string, Sprite> cache = new Dictionary<string, Sprite>();
 
         /// <summary>원 둘레(1px). <paramref name="dash"/> &gt; 0이면 그 길이(px)만큼 칠하고 같은 만큼 비우는 점선.</summary>
@@ -77,7 +77,6 @@ namespace ChronoSavior.Combat
         static Sprite Get(string key, int w, int h, System.Func<int, int, Vector2, bool> on, bool center = true)
         {
             if (cache.TryGetValue(key, out var s) && s != null) return s;
-            if (cache.Count >= CacheLimit) Clear();
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             var px = new Color32[w * h];
             var c = new Vector2(w / 2, h / 2);
