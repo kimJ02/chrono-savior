@@ -8,13 +8,11 @@ namespace ChronoSavior.Combat
     /// - <see cref="Motion.Rise"/>: 둘레에서 생겨 위로 떠오르며 사라진다(화상 불씨).
     /// - <see cref="Motion.Inward"/>: 둘레(반지름)에서 생겨 가운데로 빨려 들며 사라진다(블랙홀 끌어당김).
     /// - <see cref="Motion.Burst"/>: 가운데서 한 번 사방으로 튀고 끝난다(중첩 반짝임). 다 사라지면 오브젝트도 지운다.
-    /// - <see cref="Motion.Stream"/>: 붙인 오브젝트의 앞(+x)쪽으로 흩어지며 사라진다(레이저 끝 빛 알갱이 — 오브젝트를 돌려 방향을 정한다).
-    ///   생기는 자리는 뒤로 <c>radius</c>·옆으로 <c>radius</c>×0.5 안.
     /// 붙인 오브젝트를 따라다닌다(자식). 시간은 게임 시간이라 일시정지·히트스톱 땐 같이 멈춘다.
     /// </summary>
     public class VfxDots : MonoBehaviour
     {
-        public enum Motion { Rise, Inward, Burst, Stream }
+        public enum Motion { Rise, Inward, Burst }
 
         struct Dot { public SpriteRenderer sr; public Vector2 pos, vel; public float t, life; }
 
@@ -26,8 +24,6 @@ namespace ChronoSavior.Combat
 
         /// <summary>끊임없이 다시 생기는지(Rise·Inward). 끄면 남은 점만 사라지고 더 안 생긴다.</summary>
         public bool Emitting { get; set; } = true;
-        /// <summary>다 사라져도 오브젝트를 남겨 두나 — 껐다 켰다 하는 쪽(레이저 끝)이 켠다. 다시 <see cref="Emitting"/>을 켜면 점이 다시 생긴다.</summary>
-        public bool KeepAlive { get; set; }
 
         /// <summary>점 무리를 붙인다 — <paramref name="radius"/>는 생기는 둘레(유닛), <paramref name="life"/>는 점 하나의 수명(초).</summary>
         public static VfxDots Attach(Transform parent, Motion motion, int count, Color color, float radius, float life, float speed, int sortingOrder)
@@ -80,10 +76,6 @@ namespace ChronoSavior.Combat
                     d.pos = dir * radius * Random.Range(0.8f, 1.1f);
                     d.vel = -dir * (radius / d.life) * Random.Range(0.8f, 1.1f);
                     break;
-                case Motion.Stream:
-                    d.pos = new Vector2(-Random.Range(0f, radius), Random.Range(-radius * 0.5f, radius * 0.5f));
-                    d.vel = new Vector2(speed * Random.Range(0.6f, 1.3f), speed * Random.Range(-0.3f, 0.3f));
-                    break;
                 default: // Burst
                     d.pos = Vector2.zero;
                     d.vel = dir * speed * Random.Range(0.5f, 1.2f);
@@ -99,12 +91,7 @@ namespace ChronoSavior.Combat
             for (int i = 0; i < dots.Count; i++)
             {
                 var d = dots[i];
-                if (!d.sr.enabled)
-                {
-                    if (!Emitting || motion == Motion.Burst) continue;
-                    Respawn(ref d); // 껐다가 다시 켰다
-                    d.t = Random.value * d.life * 0.5f;
-                }
+                if (!d.sr.enabled) continue;
                 d.t += dt;
                 if (d.t >= d.life)
                 {
@@ -120,7 +107,7 @@ namespace ChronoSavior.Combat
                 dots[i] = d;
                 any = true;
             }
-            if (!any && !Emitting && !KeepAlive) Destroy(gameObject);
+            if (!any && !Emitting) Destroy(gameObject);
         }
 
         /// <summary>흰 4px 정사각형(그림 2px = 도트 2개) — 점 입자·내부 장판 흰 점·화면 어둡게 판이 같이 쓴다. 기본 흰 텍스처는 4×4다.</summary>

@@ -55,7 +55,7 @@ namespace ChronoSavior.Characters
         /// 층별 레이저 그림 굵기 — 팀원 문서 "파란색, 각성 차수에 따라 굵기 차이": 도트 크기를 하나로 맞추면서(2026-11-09) 1~4층 small(띠 26px → 0.4유닛),
         /// 5층 large(50px → 0.78유닛). 판정 굵기(2W 0.31~0.72)와는 따로다.
         /// </summary>
-        public static bool LargeArt(int tier) => tier >= 5;
+        public static int ArtBodyRows(int tier) => tier >= 5 ? 16 : tier == 4 ? 14 : tier == 3 ? 12 : 10;
 
         public GunnerLaserBeam(GunnerAttack kit, CharacterMover2D mover)
         {
@@ -279,7 +279,7 @@ namespace ChronoSavior.Characters
 
         void UpdateVisual()
         {
-            if (vfx == null) vfx = GunnerBeamVfx.Create(kit.BeamMaterial);
+            if (vfx == null) vfx = GunnerBeamVfx.Create(kit.BeamMaterial, kit.LaserTipPrefab);
             if (vfx == null) return;
             if (HasSomethingToHit) beamHold = BeamHoldTime;
             else beamHold -= Time.deltaTime;

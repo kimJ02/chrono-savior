@@ -38,7 +38,7 @@ Pixel Art Effects
 | `mage/gravity_explosion` | Gigapack | Explosions/symmetrical_explosion_004_large_orange → 보라 파생(+250°) (2026-11-09 — 예전 stylized_002 보라 구체는 사용자 결정으로 뺌) |
 | `mage/collapse_explosion` | Gigapack | Impacts/symmetrical_impact_002_large_blue → 보라 파생(+75°) |
 | `mage/collapse_critical` | Gigapack | Impacts/symmetrical_impact_006_large_yellow → 보라 파생(+225°) |
-| `mechanic/laser_*` | Projectiles Pack 4 | pj4_laser_beam_A (small·large, blue) origin·center·impact × start·loop·end |
+| `mechanic/laser_b_*` | Projectiles Pack 4 | pj4_laser_beam_B (small, blue) origin·center·impact × start·loop·end — 2026-11-10 A형에서 교체(두께는 셰이더가 잘라 정함) |
 | `mechanic/pellet` | Projectiles Pack 4 | pj4_energy_pellet_small_yellow |
 | `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (설치기 몸체 위 — 몸체 안테나 그림은 팩에 없어 지금 몸체) |
 | `assassin/slash_1~3` | Slash Vol 2 | spritesheet_96x96 1·3·5줄(무속성) |

@@ -3712,7 +3712,8 @@ MonoBehaviour:
   dronePrefab: {fileID: 7816464890555267892, guid: 0c252f3da91361745abcbf0c575dc521, type: 3}
   turretPrefab: {fileID: 6836539027887107402, guid: 1c54572007550d64aa5b1dc02a2db280, type: 3}
   bulletSprite: {fileID: 21300000, guid: 53195ca095df4ff43b5d349553399683, type: 3}
-  beamMaterial: {fileID: 2100000, guid: a93efdee302a5344e90f6c3c91d9e783, type: 2}
+  beamMaterial: {fileID: 2100000, guid: 7b8d57340ea31a54a88f9f7bee518d99, type: 2}
+  laserTipPrefab: {fileID: 5978752659516994661, guid: 823dbef49026b214fb2d109c145a1590, type: 3}
   bulletColor: {r: 1, g: 0.92, b: 0.63, a: 1}
 --- !u!114 &1457870346
 MonoBehaviour:

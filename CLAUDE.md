@@ -187,7 +187,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | -1 | 몸 바로 뒤: 잔상·마법사 차지 오라(몸 정렬 − 1) |
 | 0 | 캐릭터·적(기본) — 몸 바로 앞(+1)은 피격·완충 깜빡임, 베기 효과 |
 | 3 | 투사체·메카닉 레이저·중계선 |
-| 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`)·중계기 머리·살수 스플래터·하트비트·회전베기(궤적 선은 3) |
+| 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`)·중계기 머리·살수 스플래터·하트비트·회전베기(궤적 선은 3)·레이저 총구 빛 바깥(`GunnerBeamVfx`, 가운데 밝은 원은 5) |
 | 5 | 공격 판정 표시(링) |
 
 ### 테스트

@@ -160,6 +160,10 @@ namespace ChronoSavior.Editor
                 CheckProjectilePrefab(gunnerKit.BulletPrefab, "Player GunnerAttack.bulletPrefab", problems);
                 CheckProjectilePrefab(gunnerKit.DronePrefab, "Player GunnerAttack.dronePrefab", problems);
                 CheckProjectilePrefab(gunnerKit.TurretPrefab, "Player GunnerAttack.turretPrefab", problems);
+                // 레이저 몸통은 가운데 줄을 잘라 그리는 셰이더, 끝 빛 알갱이는 Particle System 프리팹(2026-11-10)
+                if (gunnerKit.BeamMaterial == null || gunnerKit.BeamMaterial.shader == null || gunnerKit.BeamMaterial.shader.name != "ChronoSavior/LaserBeamSlice")
+                    problems.Add("Player GunnerAttack.beamMaterial이 비었거나 LaserBeamSlice 셰이더가 아니다 — 레이저가 원래 두께 그대로 나온다");
+                if (gunnerKit.LaserTipPrefab == null) problems.Add("Player GunnerAttack.laserTipPrefab이 비어 있다 — 레이저 끝 빛 알갱이가 안 나온다");
             }
             if (spawner != null && spawner.Player != playerTf) problems.Add("EnemySpawner.Player가 이 씬의 Player가 아니다 — 몹이 쫓을 대상·구슬이 끌려갈 곳이 없다");
             var portal = One<BossPortal>(combat, problems);

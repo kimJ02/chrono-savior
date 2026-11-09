@@ -84,7 +84,7 @@ namespace ChronoSavior.Characters
 
         void DrawLinks(List<GunnerField.Segment> segs, Sprite fallbackSprite)
         {
-            var frames = VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop", false));
+            var frames = VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop"));
             while (links.Count < segs.Count)
             {
                 var go = new GameObject("Link", typeof(SpriteRenderer));

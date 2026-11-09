@@ -40,7 +40,8 @@ namespace ChronoSavior.Combat
 
         // ── 메카닉 ──
         /// <summary>레이저 한 토막: <c>mechanic/laser_{origin|center|impact}_{start|loop|end}_{small|large}</c>.</summary>
-        public static string MechanicLaser(string part, string phase, bool large) => $"mechanic/laser_{part}_{phase}_{(large ? "large" : "small")}";
+        /// <summary>메카닉 레이저(팩 B형 small 파랑) — 두께는 셰이더가 층마다 잘라 정한다(2026-11-10).</summary>
+        public static string MechanicLaser(string part, string phase) => $"mechanic/laser_b_{part}_{phase}";
         public static readonly string[] LaserParts = { "origin", "center", "impact" };
         public static readonly string[] LaserPhases = { "start", "loop", "end" };
         public const string MechanicPellet = "mechanic/pellet";
@@ -78,8 +79,7 @@ namespace ChronoSavior.Combat
                 foreach (var part in LaserParts)
                     foreach (var phase in LaserPhases)
                     {
-                        keys.Add(MechanicLaser(part, phase, false));
-                        keys.Add(MechanicLaser(part, phase, true));
+                        keys.Add(MechanicLaser(part, phase));
                     }
                 return keys.ToArray();
             }

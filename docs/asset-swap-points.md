@@ -32,10 +32,10 @@
 | 마법사 불길 | `Combat/FireTrailZone`(키 `mage/fire_trail`) | `FlameScale`·`FadeTime`·밑동 높이(`MageSpecConfig.TeleportFlameLineHeight`) |
 | 마법사 폭발(화염·중력 착탄·대붕괴) | `Combat/MageSkillEffects.ShowExplosion`(키 `mage/fire_explosion`·`mage/gravity_explosion`) | 화염·착탄은 판정 지름에 가장 가까운 정수 배율, 대붕괴는 중첩마다 두 칸씩(`CollapseArtScale`). 대붕괴는 `mage/collapse_explosion`(+임계 `mage/collapse_critical`)만 — 원본의 원판·선 고리는 2026-11-09 사용자 결정으로 뺐다 |
 | 마법사 중력장 구체 | `Combat/GravityVortexVfx`(키 `mage/gravity_orb_large`) | 배율 = 중첩 수(1~5) — 끌어당기는 판정 반경과 따로 |
-| 메카닉 레이저 | `Characters/GunnerLaserBeam`(키 `mechanic/laser_{origin·center·impact}_loop_{small·large}`) | 1~2층 small·3~4층 large·5층 large×2(`ArtThickness`). 몸통은 길이만큼 타일. 그림 없으면 예전 막대 |
+| 메카닉 레이저 | 그림 `Characters/GunnerBeamVfx`(키 `mechanic/laser_b_{origin·center·impact}_{start·loop·end}`, 팩 B형 small), 몸통 머티리얼 `Assets/Materials/LaserBeam`(셰이더 `Assets/Shaders/LaserBeamSlice` — Player `GunnerAttack.beamMaterial` 칸), 끝 빛 알갱이 Particle System 프리팹 `Assets/Prefabs/Combat/LaserTipSparks`(`laserTipPrefab` 칸) | 2026-11-10: 몸통은 텍스처를 줄이지 않고 위아래 3줄 1:1·가운데만 잘라 층별 10/10/12/14/16줄(`GunnerLaserBeam.ArtBodyRows`) + 바깥 반투명 빛 2줄, 끝 0.75유닛 흐림. 총구 그림은 켜질 때 0.1초 섬광, 그 뒤 총구 원형 빛. 목표 끝 그림은 닿을 때 0.15초. 외주 빔으로 바꿀 땐 텍스처(띠가 세로 가운데, 프레임마다 단독 텍스처)와 머티리얼 줄 수만. 그림 없으면 하늘색 선 |
 | 메카닉 드론 탄 | `Characters/GunnerDrone` → `GunnerBullet.Spawn(artKey: mechanic/pellet)` | 판정 폭에 가장 가까운 정수 배율. 드론 몸체 그림은 팩에 없어 프리팹 그대로 |
 | 메카닉 중계기 머리 | `Characters/GunnerTurret.AttachRelayHead`(키 `mechanic/relay_head`) | 높이 `RelayHeadHeight`. 몸체(안테나) 그림은 팩에 없음 |
-| 메카닉 중계선·내부 장판 | `Characters/GunnerFieldVfx`(Player에 놓임, 머티리얼 칸 `Assets/Materials/VfxUnlit`) | 중계선 = 레이저 몸통 small 타일, 내부 = 푸른 반투명 메시 + 흰 점(그림 없이) |
+| 메카닉 중계선·내부 장판 | `Characters/GunnerFieldVfx`(Player에 놓임, 머티리얼 칸 `Assets/Materials/VfxUnlit`) | 중계선 = 레이저 몸통(B형 center loop) 타일, 내부 = 푸른 반투명 메시 + 흰 점(그림 없이) |
 | 살수 집중·궤적·칼날폭풍 | `Characters/BladeVfx`(Player에 놓임, 머티리얼 칸 `VfxUnlit`) | 배경 어둡게(`ShadeAlpha`)·하트비트·궤적 선(원본 drawBladeTrail)·파열 섬광+스플래터·회전베기(`assassin/spin`)·연기 |
 
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)

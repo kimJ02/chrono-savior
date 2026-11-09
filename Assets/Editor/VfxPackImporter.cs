@@ -86,8 +86,8 @@ namespace ChronoSavior.Editor
             foreach (var part in VfxKeys.LaserParts)
                 foreach (var phase in VfxKeys.LaserPhases)
                 {
-                    yield return Frames(VfxKeys.MechanicLaser(part, phase, false), Projectiles, $"PNG/pj4_laser_beam_A_small_blue/{part}_{phase}");
-                    yield return Frames(VfxKeys.MechanicLaser(part, phase, true), Projectiles, $"PNG/pj4_laser_beam_A_large_blue/{part}_{phase}");
+                    // B형 small — 가운데 줄을 셰이더가 잘라 층별 두께로(2026-11-10 사용자 "레이저가 두껍다", A형 26px → B형 16px 기준)
+                    yield return Frames(VfxKeys.MechanicLaser(part, phase), Projectiles, $"PNG/pj4_laser_beam_B_small_blue/{part}_{phase}");
                 }
             yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_yellow");
             // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로

@@ -61,11 +61,43 @@ public class MechanicAssassinVfxTests
 
     // ── 메카닉 ──
 
+    /// <summary>레이저 몸체 두께(2026-11-10 사용자 "두껍다" → 팩 B형 가운데 줄 잘라 쓰기): 층마다 커지고 5층이 그림 원래 굵기(16줄), 선 폭(몸체+빛)을 넘지 않는다.</summary>
     [Test]
     public void LaserArt_ThicknessGrowsWithTier()
     {
-        Assert.IsFalse(GunnerLaserBeam.LargeArt(4), "1~4층 small");
-        Assert.IsTrue(GunnerLaserBeam.LargeArt(5), "5층 large");
+        int prev = 0;
+        for (int tier = 1; tier <= 5; tier++)
+        {
+            int rows = GunnerLaserBeam.ArtBodyRows(tier);
+            Assert.GreaterOrEqual(rows, prev, $"{tier}층은 아래층보다 얇지 않다");
+            Assert.AreEqual(0, rows % 2, "위아래 대칭(짝수 줄)");
+            Assert.LessOrEqual(rows + 4, GunnerBeamVfx.WindowRows, "몸체 + 빛 2줄씩이 선 폭 안");
+            prev = rows;
+        }
+        Assert.AreEqual(10, GunnerLaserBeam.ArtBodyRows(1), "1층 10줄 — 예전 A형 26줄의 절반 아래");
+        Assert.AreEqual(GunnerBeamVfx.SourceRows, GunnerLaserBeam.ArtBodyRows(5), "5층은 그림 원래 굵기");
+    }
+
+    /// <summary>
+    /// 레이저 몸통 머티리얼(게임 씬에 꽂히는 `Assets/Materials/LaserBeam`)의 합의값 — 위아래 3줄 1:1, 가장 바깥 줄 0.6, 빛 2줄(Codex 리뷰 2026-11-10:
+    /// 머티리얼 값이 바뀌면 테두리·빛이 조용히 깨진다). 셰이더는 텍스처 전체를 한 프레임으로 읽으므로 빔 프레임이 아틀라스에 묶이면 안 된다 — 각 프레임이 단독 텍스처인지도 본다.
+    /// </summary>
+    [Test]
+    public void LaserBeamMaterial_KeepsAgreedSliceSettings()
+    {
+        var m = TestPrefabs.LaserBeam;
+        Assert.AreEqual("ChronoSavior/LaserBeamSlice", m.shader.name);
+        Assert.AreEqual(3f, m.GetFloat("_EdgeRows"), "위아래 3줄(밝은 테두리·진한 선·줄무늬)은 그대로");
+        Assert.AreEqual(0.6f, m.GetFloat("_EdgeAlpha"), 1e-4f, "가장 바깥 줄은 조금 투명");
+        Assert.Greater(m.GetFloat("_Glow1"), m.GetFloat("_Glow2"), "빛은 바깥으로 갈수록 옅다");
+        Assert.Greater(m.GetFloat("_Glow2"), 0f, "빛 2줄");
+        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop"));
+        foreach (var f in VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop")))
+        {
+            Assert.AreEqual(f.texture.width, (int)f.rect.width, "프레임이 텍스처 전체(아틀라스에 묶이면 셰이더가 엉뚱한 곳을 읽는다)");
+            Assert.AreEqual(f.texture.height, (int)f.rect.height);
+            Assert.GreaterOrEqual(f.texture.height, GunnerBeamVfx.SourceRows, "띠 16줄이 들어가는 높이");
+        }
     }
 
     /// <summary>
@@ -75,7 +107,7 @@ public class MechanicAssassinVfxTests
     [UnityTest]
     public IEnumerator LaserBeam_ChargesUntilSomethingIsOnTheLine_ThenOneUnbrokenLine()
     {
-        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop", false));
+        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop"));
         var go = NewBody("TestGunner");
         go.transform.position = new Vector3(5f, 0.5f, 0f);
         var kit = go.AddComponent<GunnerAttack>().Equipped();
@@ -103,16 +135,17 @@ public class MechanicAssassinVfxTests
             yield return null;
         }
         Assert.IsFalse(beam.Vfx.ImpactVisible, "1층은 목표를 잡지 않으니 끝 그림 없음");
-        Assert.AreEqual(DotScale.Units(64f), beam.Vfx.Line.widthMultiplier, 1e-4f, "선 굵기 = 텍스처 높이 × 도트 배율");
+        Assert.AreEqual(DotScale.Units(GunnerBeamVfx.WindowRows), beam.Vfx.Line.widthMultiplier, 1e-4f, "선 폭 = (몸체 + 빛) 줄 수 × 도트 배율");
+        Assert.AreEqual(10, beam.Vfx.BodyRows, "1층 몸체 10줄");
+        var m = beam.Vfx.BodyMaterial;
+        Assert.AreEqual("ChronoSavior/LaserBeamSlice", m.shader.name, "몸통은 가운데 줄을 잘라 그리는 셰이더");
+        Assert.AreEqual(10f, m.GetFloat("_BodyRows"));
 
-        // 끝이 뚝 끊기지 않는다 — 끝 0.75유닛은 점점 투명, 끝 점은 완전히 투명, 끝 빛 알갱이가 흩어진다
-        var g = beam.Vfx.Line.colorGradient;
-        Assert.AreEqual(0f, g.Evaluate(1f).a, 1e-3f, "끝 점은 투명");
-        Assert.AreEqual(1f, g.Evaluate(0f).a, 1e-3f, "총구 쪽은 불투명");
-        float fadeFrom = 1f - GunnerBeamVfx.FadeLength / beam.Range;
-        Assert.AreEqual(1f, g.Evaluate(fadeFrom - 0.1f).a, 0.05f, "흐려지기 전은 불투명");
-        Assert.Greater(g.Evaluate(fadeFrom + (1f - fadeFrom) * 0.5f).a, 0.2f, "흐려지는 중간");
-        Assert.IsTrue(beam.Vfx.TipDots != null && beam.Vfx.TipDots.Emitting, "끝 빛 알갱이");
+        // 끝이 뚝 끊기지 않는다 — 셰이더가 끝 0.75유닛을 점점 투명하게, 끝 빛 알갱이(Particle System)가 흩어진다
+        Assert.AreEqual(GunnerBeamVfx.FadeLength, m.GetFloat("_FadeLength"), 1e-4f, "허공에서 끝나면 끝 흐림");
+        Assert.AreEqual(beam.Range, m.GetFloat("_BeamLength"), 1e-3f, "흐림 기준 길이 = 보이는 길이");
+        Assert.IsNotNull(beam.Vfx.TipSparks, "끝 빛 알갱이 프리팹");
+        Assert.IsTrue(beam.Vfx.TipSparks.emission.enabled, "빔이 켜져 있으면 알갱이가 나온다");
 
         float before = beam.Vfx.VisibleLength, endDur = beam.Vfx.EndDuration;
         Assert.Greater(endDur, 0.25f, "사그라들기는 팩 권장 15fps — 약 0.33초");
@@ -121,6 +154,7 @@ public class MechanicAssassinVfxTests
         yield return new WaitForSeconds(endDur * 0.5f);
         Assert.IsTrue(beam.Vfx.Visible, "아직 사그라드는 중");
         Assert.Less(beam.Vfx.VisibleLength, before * 0.8f, "앞끝부터 총구로 빨려 들어간다");
+        Assert.IsFalse(beam.Vfx.TipSparks.emission.enabled, "빨려 들어갈 땐 알갱이가 새로 안 나온다");
         yield return new WaitForSeconds(endDur * 0.5f + 0.15f);
         Assert.IsFalse(beam.Vfx.Visible, "사그라든 뒤 숨는다");
         Object.Destroy(enemy);
@@ -130,7 +164,7 @@ public class MechanicAssassinVfxTests
     [UnityTest]
     public IEnumerator LaserBeam_LosingTarget_RetractsThenCharges()
     {
-        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop", false));
+        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop"));
         var go = NewBody("TestGunner");
         go.transform.position = new Vector3(5f, 0.5f, 0f);
         var kit = go.AddComponent<GunnerAttack>().Equipped();

@@ -31,6 +31,8 @@ namespace ChronoSavior.Tests.PlayMode
         public static GunnerDrone GunnerDrone => Load<GunnerDrone>("GunnerDrone");
         public static GunnerTurret GunnerTurret => Load<GunnerTurret>("GunnerTurret");
         public static ChronoSavior.Systems.ExpOrb ExpOrb => Load<ChronoSavior.Systems.ExpOrb>("ExpOrb");
+        /// <summary>레이저 끝 빛 알갱이(Particle System, 2026-11-10).</summary>
+        public static ParticleSystem LaserTipSparks => Load<ParticleSystem>("LaserTipSparks");
 
         /// <summary>1스테이지(숲) 그림 묶음 — 게임 씬의 `StageVisuals`가 쓰는 에셋.</summary>
         public static ChronoSavior.World.StageArtSet StageArt
@@ -53,6 +55,8 @@ namespace ChronoSavior.Tests.PlayMode
         public static Material SpriteFlash => LoadAsset<Material>("Assets/Materials/SpriteFlash.mat");
         /// <summary>선·메시 효과 머티리얼(게임에선 Player의 BladeVfx·GunnerFieldVfx·GunnerAttack 칸에 꽂혀 있다).</summary>
         public static Material VfxUnlit => LoadAsset<Material>("Assets/Materials/VfxUnlit.mat");
+        /// <summary>레이저 몸통 머티리얼(셰이더 LaserBeamSlice — 게임에선 Player GunnerAttack 칸에 꽂혀 있다).</summary>
+        public static Material LaserBeam => LoadAsset<Material>("Assets/Materials/LaserBeam.mat");
 
         /// <summary>
         /// 섬영 베기 테스트용 프레임 — **특정 파일에 기대지 않는다**(효과 그림은 외주로 바꿀 예정이라 파일이 옮겨져도 테스트가 깨지지 않게, 타격음과 같은 방식).
@@ -101,7 +105,8 @@ namespace ChronoSavior.Tests.PlayMode
             gunner.BulletPrefab = GunnerBullet;
             gunner.DronePrefab = GunnerDrone;
             gunner.TurretPrefab = GunnerTurret;
-            gunner.BeamMaterial = VfxUnlit;
+            gunner.BeamMaterial = LaserBeam;
+            gunner.LaserTipPrefab = LaserTipSparks;
             return gunner;
         }
         public static EnemyShooterMotion Equipped(this EnemyShooterMotion shooter) { shooter.BoltPrefab = EnemyBolt; return shooter; }
