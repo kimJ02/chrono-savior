@@ -118,7 +118,11 @@ namespace ChronoSavior.Characters
         /// <summary>원본 `1240 + tier*95` px/s ÷100.</summary>
         public static float DroneBulletSpeed(int tier) => (1240f + tier * 95f) / 100f;
         public const float DroneBulletLife = 0.62f;
-        public static int DroneBulletPierce(int tier) => tier >= 5 ? 3 : 2;
+        /// <summary>
+        /// 드론 탄 관통 — **1**(한 번 맞으면 사라진다). 2026-11-09 사용자 "드론 총알은 적한테 1번 맞으면 바로 사라져야지".
+        /// 원본은 2(5층 3)였다(:3905 `pierceLeft: z.tier >= 5 ? 3 : 2`) — 의도적 편차(`docs/original-parity.md`).
+        /// </summary>
+        public static int DroneBulletPierce(int tier) => 1;
         public static float DroneBulletSize(int tier) => tier >= 5 ? 1.45f : 1.12f;
         public static bool DroneBulletHoming(int tier) => tier >= 4;
         public static float DroneBulletTurnRate(int tier) => 11f + tier;

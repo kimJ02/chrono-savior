@@ -199,6 +199,46 @@ namespace ChronoSavior.Characters
             return Mathf.Abs(diff) <= maxAngle;
         }
 
+        /// <summary>그 적이 광선 위에 있나 — 원본 :2310~:2330(곡선은 14조각 선분까지 가장 가까운 거리, 직선은 사거리 안 수직 거리).</summary>
+        bool OnBeam(GunnerTargets.Target e)
+        {
+            float dist;
+            if (Curved)
+            {
+                dist = float.MaxValue;
+                Vector2 prev = Origin;
+                for (int si = 1; si <= GunnerSpecConfig.BeamCurveSamples; si++)
+                {
+                    Vector2 q = Bezier(Origin, CurveControl, CurveEnd, si / (float)GunnerSpecConfig.BeamCurveSamples);
+                    dist = Mathf.Min(dist, GunnerField.DistToSegment(e.center, prev, q));
+                    prev = q;
+                }
+            }
+            else
+            {
+                float along = Vector2.Dot(e.center - Origin, Direction);
+                if (along < 0f || along > Range) return false;
+                dist = Vector2.Distance(e.center, Origin + Direction * along);
+            }
+            return dist < Width + e.width * GunnerSpecConfig.BeamEnemyWidthFactor;
+        }
+
+        /// <summary>
+        /// 지금 광선에 맞을 적이 있나 — 없으면 그림은 빔 대신 총구에서 **차징하는 모습**만 보인다(2026-11-09 사용자 "Z를 누르고 있을 때 주변에 맞을 적이 없으면
+        /// 레이저 차징 중인 것처럼"). 판정(틱 피해)은 그대로 돈다 — 맞을 적이 없으니 결과도 같다.
+        /// </summary>
+        public bool HasSomethingToHit
+        {
+            get
+            {
+                if (!Active) return false;
+                float reach = Curved ? Mathf.Max(Vector2.Distance(CurveControl, Origin), Vector2.Distance(CurveEnd, Origin)) : Range;
+                foreach (var e in GunnerTargets.Query(Origin, reach + Width + GunnerTargets.QueryMargin))
+                    if (OnBeam(e)) return true;
+                return false;
+            }
+        }
+
         static Vector2 Bezier(Vector2 o, Vector2 c, Vector2 e, float t) =>
             (1f - t) * (1f - t) * o + 2f * (1f - t) * t * c + t * t * e;
 
@@ -216,26 +256,7 @@ namespace ChronoSavior.Characters
 
             foreach (var e in GunnerTargets.Query(Origin, reach + Width + GunnerTargets.QueryMargin))
             {
-                float dist;
-                if (Curved)
-                {
-                    // 원본: 곡선을 14조각 선분으로 나눠 가장 가까운 거리.
-                    dist = float.MaxValue;
-                    Vector2 prev = Origin;
-                    for (int si = 1; si <= GunnerSpecConfig.BeamCurveSamples; si++)
-                    {
-                        Vector2 q = Bezier(Origin, CurveControl, CurveEnd, si / (float)GunnerSpecConfig.BeamCurveSamples);
-                        dist = Mathf.Min(dist, GunnerField.DistToSegment(e.center, prev, q));
-                        prev = q;
-                    }
-                }
-                else
-                {
-                    float along = Vector2.Dot(e.center - Origin, Direction);
-                    if (along < 0f || along > Range) continue;
-                    dist = Vector2.Distance(e.center, Origin + Direction * along);
-                }
-                if (dist >= Width + e.width * GunnerSpecConfig.BeamEnemyWidthFactor) continue;
+                if (!OnBeam(e)) continue;
 
                 float dmg = DamageCalculator.Roll(atk * mult, crit, out _);
                 e.damageable.TakeTickDamage(dmg);
@@ -262,7 +283,8 @@ namespace ChronoSavior.Characters
                     path.Add(Bezier(Origin, CurveControl, CurveEnd, i / (float)GunnerSpecConfig.BeamCurveSamples));
             else
                 path.Add(Origin + Direction * Range);
-            vfx.Show(path, currentTier, Target != null, Width);
+            if (HasSomethingToHit) vfx.Show(path, currentTier, Target != null, Width);
+            else vfx.ShowCharging(Origin, Direction);
         }
 
         /// <summary>그림 담당(테스트용 — 아직 안 켰으면 null).</summary>

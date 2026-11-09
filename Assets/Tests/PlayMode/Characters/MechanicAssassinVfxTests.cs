@@ -69,32 +69,53 @@ public class MechanicAssassinVfxTests
     }
 
     /// <summary>
-    /// 레이저(2026-11-09 다시 짬 — 사용자 "중간에 뚝 끊긴다"): 몸통은 선 하나라 길이가 판정 사거리와 늘 같고(프레임이 바뀌어도), 곡선도 한 선으로 이어진다.
+    /// 레이저(2026-11-09 다시 짬): 맞을 적이 없으면 빔 대신 총구에서 차징하는 모습만 — 적이 광선에 들어오면 선 하나로 뻗고(길이 = 판정 사거리, 프레임마다),
     /// 끝 그림은 목표를 잡았을 때만. 떼면 사그라들었다 숨는다.
     /// </summary>
     [UnityTest]
-    public IEnumerator LaserBeam_IsOneUnbrokenLine_ImpactOnlyOnTarget_FadesOnRelease()
+    public IEnumerator LaserBeam_ChargesUntilSomethingIsOnTheLine_ThenOneUnbrokenLine()
     {
         AssumeInstalled(VfxKeys.MechanicLaser("center", "loop", false));
         var go = NewBody("TestGunner");
+        go.transform.position = new Vector3(5f, 0.5f, 0f);
         var kit = go.AddComponent<GunnerAttack>().Equipped();
         var beam = new GunnerLaserBeam(kit, go.GetComponent<CharacterMover2D>());
-        for (int f = 0; f < 6; f++)
+        beam.Update(Time.deltaTime, true, 1);
+        Assert.IsTrue(beam.Vfx.Charging, "맞을 적이 없으면 차징 모습");
+        Assert.IsFalse(beam.Vfx.Line.enabled, "빔은 안 보인다");
+
+        // 광선 위에 적
+        var enemy = new GameObject("TestEnemy");
+        enemy.tag = "Enemy";
+        enemy.layer = LayerMask.NameToLayer("Enemy");
+        enemy.transform.position = beam.Origin + beam.Direction * 1.5f;
+        enemy.AddComponent<CircleCollider2D>().radius = 0.25f;
+        enemy.AddComponent<ChronoSavior.Enemies.EnemyHealth>().SetMaxHp(100000f);
+        Physics2D.SyncTransforms();
+        for (int f = 0; f < 4; f++)
         {
             beam.Update(Time.deltaTime, true, 1);
+            Assert.IsFalse(beam.Vfx.Charging, "적이 광선에 들어오면 빔");
             var line = beam.Vfx.Line;
+            Assert.IsTrue(line.enabled);
             Assert.AreEqual(2, line.positionCount, "직선은 두 점");
             Assert.AreEqual(beam.Range, Vector3.Distance(line.GetPosition(0), line.GetPosition(1)), 1e-3f, "몸통 길이 = 판정 사거리(프레임마다)");
             yield return null;
         }
-        Assert.IsFalse(beam.Vfx.ImpactVisible, "아무것도 안 잡았으면 끝 그림 없음");
-        Assert.AreEqual(GunnerSpecConfig.BeamWidth(1), beam.Width, 1e-5f, "판정 굵기는 그대로");
+        Assert.IsFalse(beam.Vfx.ImpactVisible, "1층은 목표를 잡지 않으니 끝 그림 없음");
         Assert.AreEqual(DotScale.Units(64f), beam.Vfx.Line.widthMultiplier, 1e-4f, "선 굵기 = 텍스처 높이 × 도트 배율");
 
         beam.Update(Time.deltaTime, false, 1); // 뗐다
         Assert.IsTrue(beam.Vfx.Visible, "바로 사라지지 않고 사그라든다");
         yield return new WaitForSeconds(0.4f);
         Assert.IsFalse(beam.Vfx.Visible, "사그라든 뒤 숨는다");
+    }
+
+    /// <summary>드론 탄은 적 하나를 맞히면 사라진다(사용자 2026-11-09 — 원본은 2마리(5층 3마리) 관통).</summary>
+    [Test]
+    public void DroneBullet_VanishesAfterOneHit()
+    {
+        for (int tier = 1; tier <= 5; tier++) Assert.AreEqual(1, GunnerSpecConfig.DroneBulletPierce(tier), $"{tier}층");
     }
 
     /// <summary>드론 탄은 에너지 펠렛(정수 배율), 다른 탄은 예전 그림. 판정 상자는 그대로.</summary>

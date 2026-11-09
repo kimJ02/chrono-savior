@@ -90,6 +90,8 @@ namespace ChronoSavior.Editor
                     yield return Frames(VfxKeys.MechanicLaser(part, phase, true), Projectiles, $"PNG/pj4_laser_beam_A_large_blue/{part}_{phase}");
                 }
             yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_yellow");
+            // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로
+            yield return Recolored(Frames(VfxKeys.MechanicCharge, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow"), 150f);
             // 드론 — 팀원 문서 "별도 에셋이 없으면 이걸로"의 그림(회색 껍데기·초록 바이저·노란 줄무늬)이 이 팩의 scrap_metal 회색이다(2026-11-09 사용자)
             yield return Frames(VfxKeys.MechanicDrone, Projectiles, "PNG/pj4_scrap_metal_small_gray");
             yield return Frames(VfxKeys.MechanicRelayHead, Projectiles, "PNG/pj4_plasma_ball_small_blue");

@@ -12,6 +12,7 @@ namespace ChronoSavior.Characters
     /// 직선·곡선을 끊김 없이 그린다 — Projectiles Pack 4 `laser_beam_A` 파랑 몸통 텍스처를 길이만큼 반복(도트 크기 그대로).
     /// - 켜질 때 start 프레임 → 켜져 있는 동안 loop → 떼면 end 프레임으로 사그라든다(마지막 모양 그대로).
     /// - 총구에 origin 그림, 끝 impact 그림은 **목표를 잡았을 때만**(아무것도 안 맞는 빔 끝에 물 튀김이 붙지 않게). 맞은 적마다 작은 충격이 튄다.
+    /// - 맞을 적이 없으면 빔 대신 총구에 **차징** 그림(기가팩 `scifi_charge_up`을 파랑으로 돌린 것)만 — 적이 광선에 들어오면 그때 빔이 start 프레임부터 뻗는다(2026-11-09 사용자).
     /// - 굵기: 1~4층 small(띠 26px → 0.4유닛), 5층 large(50px → 0.78유닛). 그림이 없으면 원본처럼 하늘색 선(판정 굵기).
     /// 선은 머티리얼이 필요해 메카닉 키트의 씬 연결 칸(<see cref="GunnerAttack.BeamMaterial"/>)을 복제해 쓴다.
     /// </summary>
@@ -22,7 +23,11 @@ namespace ChronoSavior.Characters
 
         LineRenderer line;
         Material mat;
-        SpriteRenderer origin, impact;
+        SpriteRenderer origin, impact, charge;
+        Sprite[] chargeF;
+        bool charging;
+        float chargeT;
+        public const float ChargeFps = 15f;
         Sprite[] startF, loopF, endF, originF, impactF;
         bool hasArt, large, ending;
         int lastShownFrame = -1;
@@ -48,6 +53,7 @@ namespace ChronoSavior.Characters
             v.line.sortingOrder = SortingOrder;
             v.origin = NewCap(go.transform, "Origin");
             v.impact = NewCap(go.transform, "Impact");
+            v.charge = NewCap(go.transform, "Charge");
             go.SetActive(false);
             return v;
         }
@@ -65,6 +71,8 @@ namespace ChronoSavior.Characters
         /// <summary>지금 보이나·끝 그림이 붙어 있나·선 점 개수(테스트용).</summary>
         public bool Visible => gameObject.activeSelf;
         public bool ImpactVisible => impact != null && impact.enabled;
+        /// <summary>빔 대신 차징 모습인가(테스트용).</summary>
+        public bool Charging => gameObject.activeSelf && charging;
         public LineRenderer Line => line;
 
         /// <summary>
@@ -73,11 +81,12 @@ namespace ChronoSavior.Characters
         public void Show(IReadOnlyList<Vector2> path, int tier, bool showImpact, float hitWidth)
         {
             if (path == null || path.Count < 2) return;
-            if (!gameObject.activeSelf || ending)
+            if (!gameObject.activeSelf || ending || charging)
             {
                 gameObject.SetActive(true);
                 ending = false;
-                t = 0f; // 처음부터(start 프레임)
+                charging = false;
+                t = 0f; // 처음부터(start 프레임) — 차징하다가 적이 들어와도 여기서 빔이 뻗기 시작한다
             }
             bool wantLarge = GunnerLaserBeam.LargeArt(tier);
             if (startF == null || wantLarge != large) LoadFrames(wantLarge);
@@ -97,10 +106,37 @@ namespace ChronoSavior.Characters
             Apply();
         }
 
+        /// <summary>맞을 적이 없다 — 빔 대신 총구에서 차징하는 모습만.</summary>
+        public void ShowCharging(Vector2 at, Vector2 dir)
+        {
+            if (chargeF == null) chargeF = VfxFrames.Get(VfxKeys.MechanicCharge);
+            if (!gameObject.activeSelf || !charging)
+            {
+                gameObject.SetActive(true);
+                ending = false;
+                charging = true;
+                chargeT = 0f;
+            }
+            line.enabled = false;
+            origin.enabled = impact.enabled = false;
+            charge.enabled = chargeF.Length > 0;
+            if (dir.sqrMagnitude < 1e-8f) dir = Vector2.right;
+            charge.transform.position = at + dir.normalized * DotScale.Units(6f); // 총구 바로 앞
+            lastShownFrame = Time.frameCount;
+            ApplyCharge();
+        }
+
+        void ApplyCharge()
+        {
+            if (!charge.enabled) return;
+            charge.sprite = chargeF[Mathf.FloorToInt(chargeT * ChargeFps) % chargeF.Length];
+        }
+
         /// <summary>쏘기를 멈췄다 — end 프레임으로 사그라든 뒤 숨는다.</summary>
         public void Release()
         {
             if (!gameObject.activeSelf || ending) return;
+            if (charging) { charging = false; gameObject.SetActive(false); return; } // 차징만 하다 뗐으면 바로 끈다
             if (!hasArt) { gameObject.SetActive(false); return; }
             ending = true;
             t = 0f;
@@ -111,6 +147,7 @@ namespace ChronoSavior.Characters
         public void HideNow()
         {
             ending = false;
+            charging = false;
             gameObject.SetActive(false);
         }
 
@@ -137,6 +174,7 @@ namespace ChronoSavior.Characters
         void Update()
         {
             t += Time.deltaTime; // 일시정지·히트스톱 땐 같이 멈춘다
+            if (charging) { chargeT += Time.deltaTime; ApplyCharge(); return; }
             Apply();
         }
 
@@ -148,6 +186,8 @@ namespace ChronoSavior.Characters
 
         void Apply()
         {
+            line.enabled = true;
+            charge.enabled = false;
             if (!hasArt)
             {
                 origin.enabled = impact.enabled = false;
