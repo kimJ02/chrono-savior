@@ -89,7 +89,13 @@ namespace ChronoSavior.Editor
                     // B형 small — 가운데 줄을 셰이더가 잘라 층별 두께로(2026-11-10 사용자 "레이저가 두껍다", A형 26px → B형 16px 기준)
                     yield return Frames(VfxKeys.MechanicLaser(part, phase), Projectiles, $"PNG/pj4_laser_beam_B_small_blue/{part}_{phase}");
                 }
-            yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_yellow");
+            // 드론 탄 — 노랑이 파란 메카닉과 따로 노는 효과처럼 보여 파랑으로(2026-11-10 사용자 D-B '발사 강조형', Codex)
+            yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_blue");
+            yield return Recolored(Frames(VfxKeys.MechanicDroneMuzzle, Gigapack, "PNG/Sci-fi/scifi_muzzle_flash_003/scifi_muzzle_flash_003_small_yellow"), 155f);
+            yield return Recolored(Frames(VfxKeys.MechanicDroneHit, Gigapack, "PNG/Sci-fi/scifi_spark_burst_001/scifi_spark_burst_001_small_yellow"), 155f);
+            // 설치기 — 전기 아크형(2026-11-10 사용자 I-B): 피해 순간 적 자리 전기(보라 → 파랑), 중계기 머리 전기 오라
+            yield return Recolored(Frames(VfxKeys.MechanicZap, Gigapack, "PNG/Lightning/lightning_burst_001/lightning_burst_001_small_violet"), 285f);
+            yield return Frames(VfxKeys.MechanicRelayAura, Gigapack, "PNG/Lightning/lightning_aura_002/lightning_aura_002_small_blue");
             // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로
             // 레이저 적중 — 작고 짧은 파란 충격(2026-11-09 사용자 "맞았을 때 효과가 이게 뭐야" — 예전엔 빔 끝 물보라를 적마다 틱마다 띄워 겹쳤다)
             yield return Frames(VfxKeys.MechanicHitSpark, Gigapack, "PNG/Impacts/directional_impact_001/directional_impact_001_small_blue");

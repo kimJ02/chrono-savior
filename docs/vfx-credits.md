@@ -39,7 +39,11 @@ Pixel Art Effects
 | `mage/collapse_explosion` | Gigapack | Impacts/symmetrical_impact_002_large_blue → 보라 파생(+75°) |
 | `mage/collapse_critical` | Gigapack | Impacts/symmetrical_impact_006_large_yellow → 보라 파생(+225°) |
 | `mechanic/laser_b_*` | Projectiles Pack 4 | pj4_laser_beam_B (small, blue) origin·center·impact × start·loop·end — 2026-11-10 A형에서 교체(두께는 셰이더가 잘라 정함) |
-| `mechanic/pellet` | Projectiles Pack 4 | pj4_energy_pellet_small_yellow |
+| `mechanic/pellet` | Projectiles Pack 4 | pj4_energy_pellet_small_blue (2026-11-10 노랑에서 교체) |
+| `mechanic/drone_muzzle` | Super Pixel Effects Gigapack | scifi_muzzle_flash_003_small_yellow → 색상 +155° 파랑 |
+| `mechanic/drone_hit` | Super Pixel Effects Gigapack | scifi_spark_burst_001_small_yellow → 색상 +155° 파랑 |
+| `mechanic/zap` | Super Pixel Effects Gigapack | lightning_burst_001_small_violet → 색상 +285° 파랑 |
+| `mechanic/relay_aura` | Super Pixel Effects Gigapack | lightning_aura_002_small_blue |
 | `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (설치기 몸체 위 — 몸체 안테나 그림은 팩에 없어 지금 몸체) |
 | `assassin/slash_1~3` | Slash Vol 2 | spritesheet_96x96 1·3·5줄(무속성) |
 | `assassin/spin` | Slash Vol 2 update_1 | spritesheet_96x96 17줄(회전베기 7장 — 불투명 갈색 바탕을 가져오기 도구가 뺀다) |

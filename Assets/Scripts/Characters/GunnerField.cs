@@ -187,6 +187,7 @@ namespace ChronoSavior.Characters
                 float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3);
                 float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                       // 원본 kb:0 + noHitstop
+                GunnerZap.At(e.collider, e.center);                      // 그림만 — 맞은 적 자리 전기(적마다 0.25초에 한 번, 2026-11-10 I-B)
             }
             return hit;
         }

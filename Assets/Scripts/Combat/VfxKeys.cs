@@ -52,6 +52,14 @@ namespace ChronoSavior.Combat
         /// <summary>레이저 드론 몸통 — 팀원 문서의 드론 그림(Projectiles Pack 4 `scrap_metal` 회색).</summary>
         public const string MechanicDrone = "mechanic/drone";
         public const string MechanicRelayHead = "mechanic/relay_head";
+        /// <summary>드론 발사 섬광 — 기가팩 scifi_muzzle_flash_003을 파랑으로(2026-11-10 사용자 D-B '발사 강조형').</summary>
+        public const string MechanicDroneMuzzle = "mechanic/drone_muzzle";
+        /// <summary>드론 탄 적중 불꽃 — 기가팩 scifi_spark_burst_001을 파랑으로(D-B).</summary>
+        public const string MechanicDroneHit = "mechanic/drone_hit";
+        /// <summary>설치기 피해 순간 적 자리의 전기 — 기가팩 lightning_burst_001을 파랑으로(2026-11-10 사용자 I-B '전기 아크형').</summary>
+        public const string MechanicZap = "mechanic/zap";
+        /// <summary>중계기 머리에 붙는 전기 오라 — 기가팩 lightning_aura_002 파랑(I-B).</summary>
+        public const string MechanicRelayAura = "mechanic/relay_aura";
 
         // ── 살수 ──
         public const string AssassinSlash1 = "assassin/slash_1";
@@ -74,6 +82,7 @@ namespace ChronoSavior.Combat
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
+                    MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
                 };
                 foreach (var part in LaserParts)

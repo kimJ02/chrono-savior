@@ -66,7 +66,6 @@ namespace ChronoSavior.Characters
             t.Range = GunnerSpecConfig.TurretRange(tier);
             t.DamageMult = GunnerSpecConfig.TurretDamageMult(tier);
             AttachRelayHead(t.transform);
-            t.AttachRangeMarks();
             active.Add(t);
             return t;
         }
@@ -89,7 +88,20 @@ namespace ChronoSavior.Characters
             go.transform.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f);
             go.GetComponent<SpriteRenderer>().sortingOrder = RelayHeadSortingOrder;
             go.AddComponent<VfxPlayer>().Play(frames, RelayHeadFps, true, 0f, Color.white);
+            // 머리 둘레 지직거리는 전기(2026-11-10 사용자 I-B '전기 아크형') — 켜져 있다는 표시
+            var aura = VfxFrames.Get(VfxKeys.MechanicRelayAura);
+            if (aura.Length == 0) return;
+            var ago = new GameObject("RelayAura", typeof(SpriteRenderer));
+            ago.transform.SetParent(turret, false);
+            ago.transform.localPosition = new Vector3(0f, RelayHeadHeight, 0f);
+            ago.transform.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f);
+            ago.GetComponent<SpriteRenderer>().sortingOrder = RelayHeadSortingOrder - 1;
+            var ap = ago.AddComponent<VfxPlayer>();
+            ap.Play(aura, RelayAuraFps, true, 0f, Color.white);
         }
+
+        /// <summary>머리 전기 오라 재생 속도.</summary>
+        public const float RelayAuraFps = 15f;
 
         /// <summary>
         /// 치운다(원본 `z.dead = true` / `zones.splice`). 목록에서 **즉시** 빠진다 — `Destroy`는 프레임 끝에야
@@ -105,49 +117,11 @@ namespace ChronoSavior.Characters
 
         void OnDestroy() => active.Remove(this);
 
-        // ── 범위 표시(원본 그리기 :5322 — 2026-11-09 Codex 합의, 예전 Unity엔 없었다) ──
-        // 공격 범위(반투명 칠 + 테, 깜빡임)와 링크 사거리 점선 원. 원본은 크기도 깜빡였지만 도트 크기를 지키려고 투명도만 깜빡인다.
-        // 공격 범위는 원본 그림의 납작한 타원 대신 **원**(반지름 = range) — 판정이 원이라(hypot < range + 몹 폭/2) 타원 위아래 몹도 맞아
-        // "판정이 이상"해 보였다(2026-11-09 사용자, Codex 합의). 몹은 몸이 이 원에 닿으면 맞는다.
-        SpriteRenderer rangeFill, rangeEdge, linkRing;
-        static readonly Color RangeColor = new Color(88 / 255f, 190 / 255f, 1f), EdgeColor = new Color(143 / 255f, 216 / 255f, 1f), LinkColor = new Color(216 / 255f, 248 / 255f, 1f);
-        /// <summary>범위 표시 정렬 — 필드 효과 줄(캐릭터·적 뒤).</summary>
-        public const int RangeSortingOrder = -3;
-
-        void AttachRangeMarks()
-        {
-            rangeFill = NewMark("RangeFill", DotShapes.Ellipse(Range, Range), GunnerSpecConfig.TurretCenterHeight);
-            rangeEdge = NewMark("RangeEdge", DotShapes.Ring(Range), GunnerSpecConfig.TurretCenterHeight);
-            linkRing = NewMark("LinkRange", DotShapes.Ring(GunnerSpecConfig.LinkMax(Tier), dash: 5), GunnerSpecConfig.FieldPointHeight); // 원본 점선 [10, 10]
-        }
-
-        SpriteRenderer NewMark(string name, Sprite sprite, float height)
-        {
-            var go = new GameObject(name, typeof(SpriteRenderer));
-            go.transform.SetParent(transform, false);
-            go.transform.localPosition = new Vector3(0f, height, 0f);
-            var sr = go.GetComponent<SpriteRenderer>();
-            sr.sprite = sprite;
-            sr.sortingOrder = RangeSortingOrder;
-            return sr;
-        }
-
-        void DrawRangeMarks()
-        {
-            if (rangeFill == null) return;
-            float k = Mathf.Clamp01((Life - Age) / 0.55f); // 원본 `(z.life - z.t) / 0.55`
-            float pulse = 0.72f + 0.18f * Mathf.Sin(Time.time * 8f + transform.position.x);
-            rangeFill.color = new Color(RangeColor.r, RangeColor.g, RangeColor.b, (0.10f + pulse * 0.06f) * k);
-            rangeEdge.color = new Color(EdgeColor.r, EdgeColor.g, EdgeColor.b, (0.45f + pulse * 0.28f) * k);
-            linkRing.color = new Color(LinkColor.r, LinkColor.g, LinkColor.b, 0.18f * k);
-        }
-
         void Update()
         {
             if (removed) return;
             float dt = Time.deltaTime;
             Age += dt;
-            DrawRangeMarks();
             tickTimer += dt;
             if (tickTimer >= TickInterval)
             {
@@ -167,6 +141,7 @@ namespace ChronoSavior.Characters
                 if (Vector2.Distance(e.center, c) >= Range + e.width / 2f) continue;
                 float dmg = DamageCalculator.Roll(atk * DamageMult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                            // 원본 kb:0 + noHitstop
+                GunnerZap.At(e.collider, e.center);                           // 그림만 — 적마다 0.25초에 한 번
             }
         }
     }

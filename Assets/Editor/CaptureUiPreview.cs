@@ -296,7 +296,6 @@ namespace ChronoSavior.Editor
             foreach (float x in new[] { 7.2f, 8.4f, 9.6f })
             {
                 var t = ChronoSavior.Characters.GunnerTurret.Spawn(turretPrefab, new Vector2(x, feet), 3);
-                typeof(ChronoSavior.Characters.GunnerTurret).GetMethod("DrawRangeMarks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(t, null);
                 turrets.Add(t); made.Add(t.gameObject);
             }
             // 드론(문서 그림) — 편집 화면이라 그림 갱신을 직접 부른다

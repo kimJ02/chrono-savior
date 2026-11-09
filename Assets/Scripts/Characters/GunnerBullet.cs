@@ -45,6 +45,11 @@ namespace ChronoSavior.Characters
         [SerializeField] BoxCollider2D box;
         [SerializeField] Transform visualTf;
         [SerializeField] SpriteRenderer visualRenderer;
+        [Tooltip("탄 꼬리(TrailRenderer, 기본 꺼짐) — 드론 탄만 켠다(2026-11-10 사용자 D-B '발사 강조형').")]
+        [SerializeField] TrailRenderer trail;
+        string hitArtKey;
+        /// <summary>꼬리(씬 검증·테스트가 읽는다).</summary>
+        public TrailRenderer Trail { get => trail; set => trail = value; }
         Collider2D homingTarget;
         readonly HashSet<Collider2D> alreadyHit = new HashSet<Collider2D>();
 
@@ -58,7 +63,7 @@ namespace ChronoSavior.Characters
         public static GunnerBullet Spawn(GunnerBullet prefab, Vector3 pos, Vector2 velocity, float damage, int pierce, float life,
             float sizeMul, Color color,
             bool homing = false, float seekRange = 0f, float turnRate = 0f,
-            GunnerAttack stackOwner = null, int stackOnHit = 0, string artKey = null)
+            GunnerAttack stackOwner = null, int stackOnHit = 0, string artKey = null, bool withTrail = false, string hitArtKey = null)
         {
             if (prefab == null) { Debug.LogError("[GunnerBullet] 탄 프리팹이 없다 — 쏘는 쪽(GunnerAttack)의 bulletPrefab을 확인"); return null; }
             var bullet = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
@@ -76,11 +81,21 @@ namespace ChronoSavior.Characters
             bullet.stackOwner = stackOwner;
             bullet.stackOnHit = stackOnHit;
             bullet.OrientVisual(velocity);
+            bullet.hitArtKey = hitArtKey;
+            if (bullet.trail != null)
+            {
+                bullet.trail.Clear(); // 이전 위치에서 꼬리가 끌려오지 않게
+                bullet.trail.emitting = withTrail;
+                bullet.trail.enabled = withTrail;
+            }
             return bullet;
         }
 
         /// <summary>탄 그림 재생 속도.</summary>
         public const float ArtFps = 15f;
+        /// <summary>적중 그림 재생 속도·정렬(폭발·착탄 줄).</summary>
+        public const float HitArtFps = 30f;
+        public const int HitArtSortingOrder = 4;
 
         /// <summary>
         /// 탄 그림 — 그림 키가 있고 그림이 들어와 있으면(2026-11-08 VFX: 드론 탄 = Projectiles Pack 4 `energy_pellet`, 팀원 문서) 공통 도트 배율로
@@ -178,6 +193,14 @@ namespace ChronoSavior.Characters
             if (stackOnHit > 0 && stackOwner != null) stackOwner.AddStack(stackOnHit);
 
             // 원본 `w.pierceLeft--; if (w.pierceLeft <= 0) remove = true;`(project_test.html:3723-3725).
+            // 적중 그림(드론 탄 — 파란 불꽃, 2026-11-10 D-B). 진행 방향으로 돌린다.
+            if (hitArtKey != null)
+            {
+                var spark = VfxPlayer.Spawn(hitArtKey, transform.position, DotScale.Value, HitArtFps, HitArtSortingOrder);
+                if (spark != null && rb != null && rb.linearVelocity.sqrMagnitude > 1e-6f)
+                    spark.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(rb.linearVelocity.y, rb.linearVelocity.x) * Mathf.Rad2Deg);
+            }
+
             pierceLeft--;
             if (pierceLeft <= 0) Destroy(gameObject);
         }

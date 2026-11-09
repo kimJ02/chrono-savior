@@ -222,6 +222,42 @@ public class MechanicAssassinVfxTests
         Object.Destroy(plain.gameObject);
     }
 
+    /// <summary>
+    /// 드론 D-B '발사 강조형'(2026-11-10 사용자): 드론 프리팹엔 추진 배기(Particle System), 탄 프리팹엔 꼬리(TrailRenderer — 기본 꺼짐, 드론 탄만 켬).
+    /// 몸 둘레 빛 원·호는 없다.
+    /// </summary>
+    [Test]
+    public void Drone_HasExhaust_NoRing_AndOnlyDroneBulletsTrail()
+    {
+        var dronePrefab = TestPrefabs.GunnerDrone;
+        Assert.IsNotNull(dronePrefab.Exhaust, "추진 배기 Particle System");
+        Assert.IsNull(dronePrefab.transform.Find("Glow"), "둘레 빛 원 없음");
+        Assert.IsNull(dronePrefab.transform.Find("Arc"), "둘레 호 없음");
+        Assert.IsNotNull(TestPrefabs.GunnerBullet.Trail, "탄 프리팹에 꼬리");
+        Assert.IsFalse(TestPrefabs.GunnerBullet.Trail.enabled, "꼬리는 기본 꺼짐");
+        var droneBullet = GunnerBullet.Spawn(TestPrefabs.GunnerBullet, new Vector3(3f, 3f, 0f), Vector2.right, 1f, 1, 5f, 1f, Color.cyan, withTrail: true);
+        var plain = GunnerBullet.Spawn(TestPrefabs.GunnerBullet, new Vector3(3f, 4f, 0f), Vector2.right, 1f, 1, 5f, 1f, Color.cyan);
+        Assert.IsTrue(droneBullet.Trail.enabled && droneBullet.Trail.emitting, "드론 탄은 꼬리");
+        Assert.IsFalse(plain.Trail.enabled, "메카닉 Z 탄은 꼬리 없음");
+        Object.Destroy(droneBullet.gameObject);
+        Object.Destroy(plain.gameObject);
+    }
+
+    /// <summary>설치기 피해 순간 전기(I-B): 같은 적엔 0.25초에 한 번만(중계기·링크·장판이 같은 틱에 때려도), 다른 적은 따로.</summary>
+    [Test]
+    public void Zap_ThrottledPerEnemy()
+    {
+        GunnerZap.ResetForTests();
+        var a = new GameObject("ZapA").AddComponent<CircleCollider2D>();
+        var b = new GameObject("ZapB").AddComponent<CircleCollider2D>();
+        Assert.IsTrue(GunnerZap.At(a, Vector2.zero), "처음은 띄운다");
+        Assert.IsFalse(GunnerZap.At(a, Vector2.zero), "같은 적 바로 또는 안 띄운다");
+        Assert.IsTrue(GunnerZap.At(b, Vector2.one), "다른 적은 따로");
+        Object.Destroy(a.gameObject);
+        Object.Destroy(b.gameObject);
+        GunnerZap.ResetForTests();
+    }
+
     [Test]
     public void Turret_HasRelayHead_AboveTheBody()
     {
@@ -231,6 +267,11 @@ public class MechanicAssassinVfxTests
         Assert.IsNotNull(head, "중계기 머리");
         Assert.Greater(head.localPosition.y, GunnerTurret.RelayHeadHeight - 1e-4f, "몸체 위");
         Assert.AreEqual(DotScale.Value, head.lossyScale.x, 1e-4f, "공통 도트 배율");
+        // I-B(2026-11-10 사용자): 늘 깔린 범위 원·점선 원은 없다(맞는 순간 전기로 알린다)
+        Assert.IsNull(t.transform.Find("RangeFill"));
+        Assert.IsNull(t.transform.Find("RangeEdge"));
+        Assert.IsNull(t.transform.Find("LinkRange"));
+        if (VfxFrames.Get(VfxKeys.MechanicRelayAura).Length > 0) Assert.IsNotNull(t.transform.Find("RelayAura"), "머리 둘레 전기 오라");
         t.Remove();
     }
 
@@ -246,7 +287,19 @@ public class MechanicAssassinVfxTests
         var segs = new List<GunnerField.Segment> { new GunnerField.Segment(tri[0], tri[1]), new GunnerField.Segment(tri[1], tri[2]), new GunnerField.Segment(tri[2], tri[0]) };
         vfx.Show(tri, segs, 3, null);
         Assert.AreEqual(3, vfx.VisibleLinks);
-        Assert.AreEqual(3, vfx.VisibleBands, "링크마다 판정 폭 띠");
+        // I-B 전기 아크(2026-11-10): 링크마다 [판정 경로 그대로인 기준선, 주 아크, 보조 아크] — 아크 양 끝은 중계기에 고정, 가운데는 ±3px 안
+        var lines = vfx.LinkLines(0);
+        Assert.AreEqual(3, lines.Length);
+        Assert.AreEqual(2, lines[0].positionCount, "기준선은 곧은 두 점");
+        float px = DotScale.Units(1f);
+        Assert.Less(Vector3.Distance(lines[0].GetPosition(0), tri[0]), px, "기준선 시작 = 링크 끝점");
+        Assert.Less(Vector3.Distance(lines[0].GetPosition(1), tri[1]), px, "기준선 끝 = 링크 끝점");
+        var arc = lines[1];
+        Assert.Greater(arc.positionCount, 2, "아크는 여러 점");
+        Assert.Less(Vector3.Distance(arc.GetPosition(0), tri[0]), px, "아크 시작 고정");
+        Assert.Less(Vector3.Distance(arc.GetPosition(arc.positionCount - 1), tri[1]), px, "아크 끝 고정");
+        for (int k = 0; k < arc.positionCount; k++)
+            Assert.LessOrEqual(Mathf.Abs(arc.GetPosition(k).y - tri[0].y), DotScale.Units(GunnerFieldVfx.ArcJitterPx) + px, "가운데 점은 ±3px 안(판정선 둘레)");
         Assert.IsTrue(vfx.FillVisible, "닫힌 도형은 칠한다");
         vfx.Show(tri, new List<GunnerField.Segment> { segs[0], segs[1] }, 3, null);
         Assert.IsFalse(vfx.FillVisible, "꼭짓점은 셋이어도 한 변이 안 이어지면(판정상 안쪽 피해 없음) 칠하지 않는다");
