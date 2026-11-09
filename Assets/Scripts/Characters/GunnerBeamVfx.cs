@@ -14,12 +14,30 @@ namespace ChronoSavior.Characters
     /// - 총구에 origin 그림, 끝 impact 그림(늘 small — large는 2유닛이라 과했다)은 **목표를 잡았을 때만**. 맞은 적 자리엔 작은 파란 충격(0.5유닛)을
     ///   **적마다 <see cref="SparkInterval"/>초에 한 번만**(2026-11-09 사용자 — 예전엔 빔 끝 물보라를 적마다 피해 틱마다 띄워 큰 덩어리로 겹쳤다).
     /// - 맞을 적이 없으면 빔 대신 총구에 **차징** 그림(기가팩 `scifi_charge_up`을 파랑으로 돌린 것)만 — 적이 광선에 들어오면 그때 빔이 start 프레임부터 뻗는다(2026-11-09 사용자).
+    /// - **끝이 뚝 끊기지 않게**(2026-11-09 사용자, Codex 합의 — Positech·Source 엔진처럼 빔 끝을 흐린다):
+    ///   · 공간: 허공에서 끝나면 끝 <see cref="FadeLength"/>유닛 동안 점점 투명(목표에 닿아 끝 그림이 붙은 5층 곡선은 그 그림이 끝을 맡아 안 흐린다)(선 색 그라디언트 — 점을 같은 간격으로 다시 찍어 정점 보간이 거리와 맞게) + 끝에서 앞으로 흩어지는 빛 알갱이.
+    ///   · 떼면: end 프레임을 팩 권장 15fps(<see cref="EndFps"/>, 약 0.33초)로 돌리며 앞끝부터 총구로 빨려 들어간다(예전엔 30fps로 0.17초 만에 꺼졌다).
+    ///   · 맞을 적이 없어지면(0.35초 유지 뒤): 같은 방식으로 빨려 들어간 다음 차징 모습으로 이어진다(예전엔 빔이 꺼지고 차징이 툭 나타났다).
+    ///   얇아지게(폭 줄이기)는 안 한다 — 줄무늬 도트가 세로로 찌그러진다.
     /// - 굵기: 1~4층 small(띠 26px → 0.4유닛), 5층 large(50px → 0.78유닛). 그림이 없으면 원본처럼 하늘색 선(판정 굵기).
     /// 선은 머티리얼이 필요해 메카닉 키트의 씬 연결 칸(<see cref="GunnerAttack.BeamMaterial"/>)을 복제해 쓴다.
     /// </summary>
     public class GunnerBeamVfx : MonoBehaviour
     {
-        public const float LoopFps = 15f, EdgeFps = 30f;
+        public const float LoopFps = 15f, EdgeFps = 30f, EndFps = 15f;
+        /// <summary>빔 끝이 투명해지는 길이(유닛) — 빔이 짧으면 길이의 절반까지만.</summary>
+        public const float FadeLength = 0.75f;
+        static readonly Color TipDotColor = new Color(0.78f, 0.94f, 1f);
+        readonly List<Vector2> basePath = new List<Vector2>();
+        readonly List<Vector3> linePts = new List<Vector3>();
+        readonly GradientAlphaKey[] alphaKeys = new GradientAlphaKey[3];
+        readonly GradientColorKey[] colorKeys = new GradientColorKey[2];
+        Gradient grad;
+        Color baseColor = Color.white;
+        Transform tip;
+        VfxDots tipDots;
+        bool thenCharge;
+        Vector2 chargeAt, chargeDir;
         /// <summary>같은 적에게 적중 충격을 다시 띄우기까지(초).</summary>
         public const float SparkInterval = 0.25f;
         readonly Dictionary<Collider2D, float> lastSpark = new Dictionary<Collider2D, float>();
@@ -36,7 +54,6 @@ namespace ChronoSavior.Characters
         bool hasArt, large, ending;
         int lastShownFrame = -1;
         float t;
-        Vector3[] pts = new Vector3[0];
         Vector2 dirStart, dirEnd;
         bool impactOn;
 
@@ -58,6 +75,9 @@ namespace ChronoSavior.Characters
             v.origin = NewCap(go.transform, "Origin");
             v.impact = NewCap(go.transform, "Impact");
             v.charge = NewCap(go.transform, "Charge");
+            v.tip = new GameObject("Tip").transform;
+            v.tip.SetParent(go.transform, false);
+            v.grad = new Gradient();
             go.SetActive(false);
             return v;
         }
@@ -78,6 +98,10 @@ namespace ChronoSavior.Characters
         /// <summary>빔 대신 차징 모습인가(테스트용).</summary>
         public bool Charging => gameObject.activeSelf && charging;
         public LineRenderer Line => line;
+        /// <summary>지금 그리는 빔 길이(유닛, 빨려 들어가는 중엔 줄어든다 — 테스트용).</summary>
+        public float VisibleLength { get; private set; }
+        /// <summary>끝 빛 알갱이(테스트용 — 그림이 있어 빔을 한 번 켠 뒤에 생긴다).</summary>
+        public VfxDots TipDots => tipDots;
 
         /// <summary>
         /// 이번 프레임의 빔 — 경로(총구부터 끝까지, 직선이면 두 점), 층, 끝 그림을 붙일지(목표를 잡았을 때). 판정 굵기는 그림이 없을 때만 쓴다.
@@ -90,21 +114,20 @@ namespace ChronoSavior.Characters
                 gameObject.SetActive(true);
                 ending = false;
                 charging = false;
+                thenCharge = false;
                 t = 0f; // 처음부터(start 프레임) — 차징하다가 적이 들어와도 여기서 빔이 뻗기 시작한다
             }
             bool wantLarge = GunnerLaserBeam.LargeArt(tier);
             if (startF == null || wantLarge != large) LoadFrames(wantLarge);
-            if (pts.Length != path.Count) pts = new Vector3[path.Count];
-            for (int i = 0; i < path.Count; i++) pts[i] = path[i];
-            line.positionCount = pts.Length;
-            line.SetPositions(pts);
+            basePath.Clear();
+            for (int i = 0; i < path.Count; i++) basePath.Add(path[i]);
             dirStart = (path[1] - path[0]).normalized;
             dirEnd = (path[path.Count - 1] - path[path.Count - 2]).normalized;
             impactOn = showImpact;
             if (!hasArt)
             {
                 line.widthMultiplier = hitWidth * 2f;
-                line.startColor = line.endColor = new Color(GunnerAttack.LaserColor.r, GunnerAttack.LaserColor.g, GunnerAttack.LaserColor.b, 0.85f);
+                baseColor = new Color(GunnerAttack.LaserColor.r, GunnerAttack.LaserColor.g, GunnerAttack.LaserColor.b, 0.85f);
             }
             lastShownFrame = Time.frameCount;
             Apply();
@@ -114,6 +137,17 @@ namespace ChronoSavior.Characters
         public void ShowCharging(Vector2 at, Vector2 dir)
         {
             if (chargeF == null) chargeF = VfxFrames.Get(VfxKeys.MechanicCharge);
+            if (dir.sqrMagnitude < 1e-8f) dir = Vector2.right;
+            // 빔이 켜져 있었으면 바로 바꾸지 않고 총구로 빨려 들어간 뒤 차징으로 이어진다
+            if (gameObject.activeSelf && !charging && hasArt)
+            {
+                if (!ending) BeginEnd();
+                thenCharge = true;
+                chargeAt = at;
+                chargeDir = dir.normalized;
+                lastShownFrame = Time.frameCount;
+                return;
+            }
             if (!gameObject.activeSelf || !charging)
             {
                 gameObject.SetActive(true);
@@ -124,7 +158,7 @@ namespace ChronoSavior.Characters
             line.enabled = false;
             origin.enabled = impact.enabled = false;
             charge.enabled = chargeF.Length > 0;
-            if (dir.sqrMagnitude < 1e-8f) dir = Vector2.right;
+            if (tipDots != null) tipDots.Emitting = false;
             charge.transform.position = at + dir.normalized * DotScale.Units(6f); // 총구 바로 앞
             lastShownFrame = Time.frameCount;
             ApplyCharge();
@@ -139,19 +173,29 @@ namespace ChronoSavior.Characters
         /// <summary>쏘기를 멈췄다 — end 프레임으로 사그라든 뒤 숨는다.</summary>
         public void Release()
         {
+            thenCharge = false; // 빨려 들어가는 중에 떼면 차징 없이 끝난다
             if (!gameObject.activeSelf || ending) return;
             if (charging) { charging = false; gameObject.SetActive(false); return; } // 차징만 하다 뗐으면 바로 끈다
             if (!hasArt) { gameObject.SetActive(false); return; }
+            BeginEnd();
+        }
+
+        void BeginEnd()
+        {
             ending = true;
             t = 0f;
             Apply();
         }
+
+        /// <summary>떼거나 적을 잃었을 때 사그라드는 시간(초) — end 프레임 수 ÷ <see cref="EndFps"/>.</summary>
+        public float EndDuration => endF != null && endF.Length > 0 ? endF.Length / EndFps : 0f;
 
         /// <summary>바로 숨긴다(캐릭터 전환 등).</summary>
         public void HideNow()
         {
             ending = false;
             charging = false;
+            thenCharge = false;
             gameObject.SetActive(false);
         }
 
@@ -178,7 +222,7 @@ namespace ChronoSavior.Characters
             impactF = VfxFrames.Get(VfxKeys.MechanicLaser("impact", "loop", false)); // 끝 그림은 늘 small
             hasArt = loopF.Length > 0;
             mat.mainTexture = null;
-            line.startColor = line.endColor = Color.white;
+            baseColor = Color.white;
         }
 
         void Update()
@@ -204,13 +248,15 @@ namespace ChronoSavior.Characters
                 return;
             }
             Sprite body;
-            float alpha = 1f;
+            float alpha = 1f, keep = 1f;
             if (ending)
             {
-                int i = Mathf.FloorToInt(t * EdgeFps);
-                if (i >= endF.Length) { gameObject.SetActive(false); ending = false; return; }
+                int i = Mathf.FloorToInt(t * EndFps);
+                if (i >= endF.Length) { FinishEnd(); return; }
                 body = endF[i];
-                alpha = 1f - (float)i / endF.Length;
+                float k = Mathf.Clamp01(t / EndDuration);
+                keep = 1f - k;            // 앞끝부터 총구로 빨려 들어간다
+                alpha = 1f - 0.5f * k;    // 같이 조금씩 옅어진다
             }
             else
             {
@@ -221,11 +267,88 @@ namespace ChronoSavior.Characters
             mat.mainTexture = body.texture;
             line.widthMultiplier = DotScale.Units(body.rect.height);
             line.textureScale = new Vector2(1f / DotScale.Units(body.rect.width), 1f);
-            line.startColor = line.endColor = new Color(1f, 1f, 1f, alpha);
+            BuildLine(keep, alpha, !(impactOn && !ending)); // 목표에 닿아 끝 그림이 붙으면 끝을 흐리지 않는다(흐린 몸통이 끝 그림 앞에 희뿌연 판으로 보였다)
 
             int loopI = Mathf.FloorToInt(t * LoopFps);
-            PlaceCap(origin, originF, loopI, pts[0], dirStart, +1f, !ending, alpha);
-            PlaceCap(impact, impactF, loopI, pts[pts.Length - 1], dirEnd, -1f, impactOn && !ending, alpha);
+            PlaceCap(origin, originF, loopI, basePath[0], dirStart, +1f, true, alpha);
+            PlaceCap(impact, impactF, loopI, basePath[basePath.Count - 1], dirEnd, -1f, impactOn && !ending, alpha);
+
+            // 끝 빛 알갱이 — 흐려지는 끝에서 앞으로 흩어진다(빨려 들어갈 땐 새로 안 생기고 남은 것만 사라진다)
+            if (tipDots == null)
+            {
+                tipDots = VfxDots.Attach(tip, VfxDots.Motion.Stream, 12, TipDotColor, 0.5f, 0.35f, 0.9f, SortingOrder);
+                tipDots.KeepAlive = true;
+            }
+            tipDots.SetRadius(Mathf.Min(FadeLength, VisibleLength * 0.5f) * 0.8f);
+            tipDots.Emitting = !ending && !impactOn; // 목표 끝 그림이 붙은 5층 곡선은 그 그림이 끝을 맡는다
+        }
+
+        /// <summary>사그라들기가 끝났다 — 적을 잃어서였으면 차징으로 이어지고, 아니면 숨는다.</summary>
+        void FinishEnd()
+        {
+            ending = false;
+            if (thenCharge)
+            {
+                thenCharge = false;
+                charging = true;
+                chargeT = 0f;
+                line.enabled = false;
+                origin.enabled = impact.enabled = false;
+                if (tipDots != null) tipDots.Emitting = false;
+                charge.enabled = chargeF != null && chargeF.Length > 0;
+                charge.transform.position = chargeAt + chargeDir * DotScale.Units(6f);
+                ApplyCharge();
+                return;
+            }
+            gameObject.SetActive(false);
+        }
+
+        /// <summary>
+        /// 경로를 같은 간격으로 다시 찍어 선을 만든다 — 앞에서부터 <paramref name="keep"/>(0~1)만큼만, 끝 <see cref="FadeLength"/>는 점점 투명.
+        /// 선 색은 정점끼리 보간되므로 간격을 고르게 두고 흐려지기 시작하는 자리에 정점을 맞춘다(그라디언트 위치 = 거리 비율 = 정점 순번 비율).
+        /// </summary>
+        void BuildLine(float keep, float alpha, bool fadeEnd)
+        {
+            float total = 0f;
+            for (int i = 1; i < basePath.Count; i++) total += Vector2.Distance(basePath[i - 1], basePath[i]);
+            float len = total * Mathf.Clamp01(keep);
+            VisibleLength = len;
+            linePts.Clear();
+            if (len < 1e-3f) { line.positionCount = 0; return; }
+            float fade = Mathf.Min(FadeLength, len * 0.5f);
+            int n = Mathf.Max(2, Mathf.CeilToInt(len / (fade / 3f)));
+            float step = len / n;
+            int fadeSegs = Mathf.Clamp(Mathf.RoundToInt(fade / step), 1, n - 1);
+            int seg = 1;
+            float segStart = 0f;
+            for (int k = 0; k <= n; k++)
+            {
+                float d = k * step;
+                while (seg < basePath.Count - 1 && segStart + Vector2.Distance(basePath[seg - 1], basePath[seg]) < d)
+                {
+                    segStart += Vector2.Distance(basePath[seg - 1], basePath[seg]);
+                    seg++;
+                }
+                float sl = Vector2.Distance(basePath[seg - 1], basePath[seg]);
+                Vector2 p = sl > 1e-6f ? Vector2.Lerp(basePath[seg - 1], basePath[seg], Mathf.Clamp01((d - segStart) / sl)) : basePath[seg];
+                linePts.Add(p);
+            }
+            line.positionCount = linePts.Count;
+            for (int i = 0; i < linePts.Count; i++) line.SetPosition(i, linePts[i]);
+
+            float fadeAt = (n - fadeSegs) / (float)n;
+            colorKeys[0] = new GradientColorKey(baseColor, 0f);
+            colorKeys[1] = new GradientColorKey(baseColor, 1f);
+            alphaKeys[0] = new GradientAlphaKey(baseColor.a * alpha, 0f);
+            alphaKeys[1] = new GradientAlphaKey(baseColor.a * alpha, fadeAt);
+            alphaKeys[2] = new GradientAlphaKey(fadeEnd ? 0f : baseColor.a * alpha, 1f);
+            grad.SetKeys(colorKeys, alphaKeys);
+            line.colorGradient = grad;
+
+            Vector2 a = linePts[linePts.Count - 2], b = linePts[linePts.Count - 1];
+            Vector2 dir = (b - a).sqrMagnitude > 1e-8f ? (b - a).normalized : dirEnd;
+            tip.position = b;
+            tip.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         }
 
         /// <summary>총구·끝 그림 — 그 끝점에서 빛줄기 쪽으로 그림 반 폭만큼 들여 놓는다(<paramref name="inward"/> +1 = 앞으로, −1 = 뒤로).</summary>

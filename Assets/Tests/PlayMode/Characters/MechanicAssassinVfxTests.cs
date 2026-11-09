@@ -98,17 +98,71 @@ public class MechanicAssassinVfxTests
             Assert.IsFalse(beam.Vfx.Charging, "적이 광선에 들어오면 빔");
             var line = beam.Vfx.Line;
             Assert.IsTrue(line.enabled);
-            Assert.AreEqual(2, line.positionCount, "직선은 두 점");
-            Assert.AreEqual(beam.Range, Vector3.Distance(line.GetPosition(0), line.GetPosition(1)), 1e-3f, "몸통 길이 = 판정 사거리(프레임마다)");
+            Assert.AreEqual(beam.Range, beam.Vfx.VisibleLength, 1e-3f, "몸통 길이 = 판정 사거리(프레임마다)");
+            Assert.AreEqual(beam.Range, Vector3.Distance(line.GetPosition(0), line.GetPosition(line.positionCount - 1)), 1e-3f, "직선 — 첫 점에서 끝 점까지가 사거리");
             yield return null;
         }
         Assert.IsFalse(beam.Vfx.ImpactVisible, "1층은 목표를 잡지 않으니 끝 그림 없음");
         Assert.AreEqual(DotScale.Units(64f), beam.Vfx.Line.widthMultiplier, 1e-4f, "선 굵기 = 텍스처 높이 × 도트 배율");
 
+        // 끝이 뚝 끊기지 않는다 — 끝 0.75유닛은 점점 투명, 끝 점은 완전히 투명, 끝 빛 알갱이가 흩어진다
+        var g = beam.Vfx.Line.colorGradient;
+        Assert.AreEqual(0f, g.Evaluate(1f).a, 1e-3f, "끝 점은 투명");
+        Assert.AreEqual(1f, g.Evaluate(0f).a, 1e-3f, "총구 쪽은 불투명");
+        float fadeFrom = 1f - GunnerBeamVfx.FadeLength / beam.Range;
+        Assert.AreEqual(1f, g.Evaluate(fadeFrom - 0.1f).a, 0.05f, "흐려지기 전은 불투명");
+        Assert.Greater(g.Evaluate(fadeFrom + (1f - fadeFrom) * 0.5f).a, 0.2f, "흐려지는 중간");
+        Assert.IsTrue(beam.Vfx.TipDots != null && beam.Vfx.TipDots.Emitting, "끝 빛 알갱이");
+
+        float before = beam.Vfx.VisibleLength, endDur = beam.Vfx.EndDuration;
+        Assert.Greater(endDur, 0.25f, "사그라들기는 팩 권장 15fps — 약 0.33초");
         beam.Update(Time.deltaTime, false, 1); // 뗐다
         Assert.IsTrue(beam.Vfx.Visible, "바로 사라지지 않고 사그라든다");
-        yield return new WaitForSeconds(0.4f);
+        yield return new WaitForSeconds(endDur * 0.5f);
+        Assert.IsTrue(beam.Vfx.Visible, "아직 사그라드는 중");
+        Assert.Less(beam.Vfx.VisibleLength, before * 0.8f, "앞끝부터 총구로 빨려 들어간다");
+        yield return new WaitForSeconds(endDur * 0.5f + 0.15f);
         Assert.IsFalse(beam.Vfx.Visible, "사그라든 뒤 숨는다");
+        Object.Destroy(enemy);
+    }
+
+    /// <summary>적을 잃으면(0.35초 유지 뒤) 빔이 툭 꺼지지 않고 총구로 빨려 들어간 다음 차징 모습으로 이어진다(2026-11-09).</summary>
+    [UnityTest]
+    public IEnumerator LaserBeam_LosingTarget_RetractsThenCharges()
+    {
+        AssumeInstalled(VfxKeys.MechanicLaser("center", "loop", false));
+        var go = NewBody("TestGunner");
+        go.transform.position = new Vector3(5f, 0.5f, 0f);
+        var kit = go.AddComponent<GunnerAttack>().Equipped();
+        var beam = new GunnerLaserBeam(kit, go.GetComponent<CharacterMover2D>());
+        beam.Update(Time.deltaTime, true, 1);
+        var enemy = new GameObject("TestEnemy");
+        enemy.tag = "Enemy";
+        enemy.layer = LayerMask.NameToLayer("Enemy");
+        enemy.transform.position = beam.Origin + beam.Direction * 1.5f;
+        enemy.AddComponent<CircleCollider2D>().radius = 0.25f;
+        enemy.AddComponent<ChronoSavior.Enemies.EnemyHealth>().SetMaxHp(100000f);
+        Physics2D.SyncTransforms();
+        beam.Update(Time.deltaTime, true, 1);
+        yield return null;
+        Assert.IsFalse(beam.Vfx.Charging, "빔");
+
+        Object.Destroy(enemy);
+        beam.Update(Time.deltaTime, true, 1); // 매 프레임 그려야 키트가 꺼진 걸로 안 본다
+        yield return null;
+        float t = 0f, full = beam.Range;
+        bool sawRetract = false;
+        while (t < GunnerLaserBeam.BeamHoldTime + beam.Vfx.EndDuration + 0.3f)
+        {
+            beam.Update(Time.deltaTime, true, 1);
+            if (!beam.Vfx.Charging && beam.Vfx.Visible && beam.Vfx.VisibleLength < full * 0.7f && beam.Vfx.VisibleLength > 0.01f) sawRetract = true;
+            t += Time.deltaTime;
+            yield return null;
+        }
+        Assert.IsTrue(sawRetract, "빔이 줄어드는 단계가 있다(툭 꺼지지 않는다)");
+        Assert.IsTrue(beam.Vfx.Charging, "그 뒤 차징 모습");
+        beam.Update(Time.deltaTime, false, 1);
+        Assert.IsFalse(beam.Vfx.Visible, "떼면 끈다");
     }
 
     /// <summary>드론 탄은 적 하나를 맞히면 사라진다(사용자 2026-11-09 — 원본은 2마리(5층 3마리) 관통).</summary>
