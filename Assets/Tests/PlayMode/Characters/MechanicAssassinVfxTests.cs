@@ -258,6 +258,38 @@ public class MechanicAssassinVfxTests
         GunnerZap.ResetForTests();
     }
 
+    /// <summary>
+    /// 적중 분기 아크(2026-11-10 사용자 'A'): 전기가 뜰 때 때린 곳에서 적 몸 가장자리까지 짧은 전기 — 출발점 고정, 끝은 적 가장자리, 0.13초 뒤 꺼짐.
+    /// 한 프레임 4개까지(넘으면 아크만 생략).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator ZapArc_RunsFromSourceToEnemyEdge_AndIsCapped()
+    {
+        GunnerZap.ResetForTests();
+        GunnerZap.LineMaterial = TestMaterial();
+        Assume.That(GunnerZap.LineMaterial != null, "머티리얼 에셋이 없다");
+        var cols = new List<CircleCollider2D>();
+        for (int i = 0; i < 6; i++) cols.Add(new GameObject("ZapEnemy" + i).AddComponent<CircleCollider2D>());
+        int before = GunnerZap.ArcsAlive;
+        Assert.AreEqual(0, before, "초기화 뒤엔 보이는 아크 없음");
+        Vector2 from = new Vector2(0f, 0f), enemy = new Vector2(1f, 0f);
+        GunnerZap.At(cols[0], enemy, from, 0.25f);
+        Assert.AreEqual(before + 1, GunnerZap.ArcsAlive, "아크 하나");
+        var arc = Object.FindObjectsByType<GunnerZapArc>(FindObjectsSortMode.None);
+        LineRenderer line = null;
+        foreach (var a in arc) if (a.Busy) line = a.Line;
+        Assert.IsNotNull(line);
+        float px = DotScale.Units(1f);
+        Assert.Less(Vector2.Distance(line.GetPosition(0), from), px, "출발점 = 때린 곳");
+        Assert.Less(Mathf.Abs(Vector2.Distance(line.GetPosition(line.positionCount - 1), enemy) - 0.25f * 0.9f), px * 1.5f, "끝 = 적 몸 가장자리");
+        for (int i = 1; i < 6; i++) GunnerZap.At(cols[i], enemy + Vector2.up * i, from, 0.25f);
+        Assert.AreEqual(before + GunnerZap.MaxArcsPerFrame, GunnerZap.ArcsAlive, "한 프레임 4개까지");
+        yield return new WaitForSeconds(GunnerZapArc.Life + 0.1f);
+        Assert.AreEqual(0, GunnerZap.ArcsAlive, "잠깐 번쩍이고 꺼진다");
+        foreach (var c in cols) Object.Destroy(c.gameObject);
+        GunnerZap.ResetForTests();
+    }
+
     [Test]
     public void Turret_HasRelayHead_AboveTheBody()
     {

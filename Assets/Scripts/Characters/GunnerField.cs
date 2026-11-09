@@ -160,6 +160,25 @@ namespace ChronoSavior.Characters
         /// 이라 <see cref="IDamageable.TakeTickDamage"/>로 보낸다.
         /// </summary>
         /// <returns>이번 틱에 맞은 적이 있었는지(원본 `hit`).</returns>
+        /// <summary>점에서 가장 가까운 연결선 위 점(연결선이 없으면 도형 변 위 점) — 적중 아크의 출발점(그림만).</summary>
+        static Vector2 NearestOnEdges(Vector2 p, List<Segment> segs, List<Vector2> pts)
+        {
+            Vector2 best = p;
+            float bestD = float.MaxValue;
+            if (segs != null) foreach (var s in segs) Closer(p, s.a, s.b, ref best, ref bestD);
+            else for (int i = 0; i < pts.Count; i++) Closer(p, pts[i], pts[(i + 1) % pts.Count], ref best, ref bestD);
+            return best;
+        }
+
+        static void Closer(Vector2 p, Vector2 a, Vector2 b, ref Vector2 best, ref float bestD)
+        {
+            Vector2 ab = b - a;
+            float t = ab.sqrMagnitude > 1e-8f ? Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude) : 0f;
+            Vector2 q = a + ab * t;
+            float d = (q - p).sqrMagnitude;
+            if (d < bestD) { bestD = d; best = q; }
+        }
+
         public static bool DamageTick(int tier, List<Vector2> pts, List<Segment> segs)
         {
             if (pts.Count == 0) return false;
@@ -187,7 +206,8 @@ namespace ChronoSavior.Characters
                 float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3);
                 float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                       // 원본 kb:0 + noHitstop
-                GunnerZap.At(e.collider, e.center);                      // 그림만 — 맞은 적 자리 전기(적마다 0.25초에 한 번, 2026-11-10 I-B)
+                // 그림만 — 맞은 적 자리 전기 + 때린 곳(가장 가까운 연결선, 안쪽이면 도형 변)에서 그 적까지 아크(적마다 0.25초에 한 번, 2026-11-10)
+                if (GunnerZap.Ready(e.collider)) GunnerZap.At(e.collider, e.center, NearestOnEdges(e.center, onLink ? segs : null, pts), e.width * 0.5f);
             }
             return hit;
         }

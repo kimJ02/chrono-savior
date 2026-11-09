@@ -33,7 +33,10 @@ namespace ChronoSavior.Characters
         [SerializeField] Material fillMaterial;
 
         /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
-        public Material FillMaterial { get => fillMaterial; set => fillMaterial = value; }
+        public Material FillMaterial { get => fillMaterial; set { fillMaterial = value; GunnerZap.LineMaterial = value; } }
+
+        // 적중 분기 아크(GunnerZap)도 같은 선 머티리얼을 쓴다 — 씬의 이 칸에서 받는다
+        void Awake() => GunnerZap.LineMaterial = fillMaterial;
 
         GameObject root;
         /// <summary>링크마다 [기준선, 주 아크, 보조 아크].</summary>
@@ -159,7 +162,7 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>시드·점 번호로 정해지는 −<see cref="ArcJitterPx"/>~+<see cref="ArcJitterPx"/> 정수(할당 없는 해시).</summary>
-        static int Jitter(int seed, int k)
+        public static int Jitter(int seed, int k)
         {
             uint h = (uint)seed * 2654435761u ^ (uint)k * 2246822519u;
             h ^= h >> 15; h *= 2246822519u; h ^= h >> 13;
@@ -167,7 +170,7 @@ namespace ChronoSavior.Characters
         }
 
         /// <summary>그림 px 격자(도트 배율)에 맞춘다 — 선이 반 픽셀에 걸려 흔들리지 않게(Codex).</summary>
-        static Vector2 Snap(Vector2 p)
+        public static Vector2 Snap(Vector2 p)
         {
             float u = DotScale.Units(1f);
             return new Vector2(Mathf.Round(p.x / u) * u, Mathf.Round(p.y / u) * u);
