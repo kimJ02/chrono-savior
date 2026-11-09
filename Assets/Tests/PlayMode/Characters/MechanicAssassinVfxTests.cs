@@ -66,27 +66,35 @@ public class MechanicAssassinVfxTests
     {
         Assert.IsFalse(GunnerLaserBeam.LargeArt(4), "1~4층 small");
         Assert.IsTrue(GunnerLaserBeam.LargeArt(5), "5층 large");
-        Assert.AreEqual(DotScale.Value, GunnerLaserBeam.ArtThickness(1), "도트 크기는 공통");
-        Assert.AreEqual(DotScale.Value, GunnerLaserBeam.ArtThickness(5));
     }
 
-    /// <summary>레이저: 총구·몸통(길이만큼 타일)·끝 그림이 판정 선 위에 놓인다. 판정 값(사거리·굵기)은 그대로.</summary>
-    [Test]
-    public void LaserBeam_DrawsOriginBodyAndImpact_AlongTheBeam()
+    /// <summary>
+    /// 레이저(2026-11-09 다시 짬 — 사용자 "중간에 뚝 끊긴다"): 몸통은 선 하나라 길이가 판정 사거리와 늘 같고(프레임이 바뀌어도), 곡선도 한 선으로 이어진다.
+    /// 끝 그림은 목표를 잡았을 때만. 떼면 사그라들었다 숨는다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator LaserBeam_IsOneUnbrokenLine_ImpactOnlyOnTarget_FadesOnRelease()
     {
         AssumeInstalled(VfxKeys.MechanicLaser("center", "loop", false));
         var go = NewBody("TestGunner");
         var kit = go.AddComponent<GunnerAttack>().Equipped();
         var beam = new GunnerLaserBeam(kit, go.GetComponent<CharacterMover2D>());
-        beam.Update(0.016f, true, 1);
-        var root = GameObject.Find("GunnerBeam");
-        Assert.IsNotNull(root);
-        var body = root.transform.Find("Segment").GetComponent<SpriteRenderer>();
-        Assert.AreEqual(SpriteDrawMode.Tiled, body.drawMode, "몸통은 늘리지 않고 이어 붙인다");
-        Assert.AreEqual(beam.Range, body.size.x * body.transform.lossyScale.x, 1e-3f, "몸통 길이 = 판정 사거리");
+        for (int f = 0; f < 6; f++)
+        {
+            beam.Update(Time.deltaTime, true, 1);
+            var line = beam.Vfx.Line;
+            Assert.AreEqual(2, line.positionCount, "직선은 두 점");
+            Assert.AreEqual(beam.Range, Vector3.Distance(line.GetPosition(0), line.GetPosition(1)), 1e-3f, "몸통 길이 = 판정 사거리(프레임마다)");
+            yield return null;
+        }
+        Assert.IsFalse(beam.Vfx.ImpactVisible, "아무것도 안 잡았으면 끝 그림 없음");
         Assert.AreEqual(GunnerSpecConfig.BeamWidth(1), beam.Width, 1e-5f, "판정 굵기는 그대로");
-        Assert.IsTrue(root.transform.Find("Origin").gameObject.activeSelf && root.transform.Find("Impact").gameObject.activeSelf, "총구·끝 그림");
-        CollectionAssert.Contains(VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop", false)), body.sprite, "1층은 small 그림");
+        Assert.AreEqual(DotScale.Units(64f), beam.Vfx.Line.widthMultiplier, 1e-4f, "선 굵기 = 텍스처 높이 × 도트 배율");
+
+        beam.Update(Time.deltaTime, false, 1); // 뗐다
+        Assert.IsTrue(beam.Vfx.Visible, "바로 사라지지 않고 사그라든다");
+        yield return new WaitForSeconds(0.4f);
+        Assert.IsFalse(beam.Vfx.Visible, "사그라든 뒤 숨는다");
     }
 
     /// <summary>드론 탄은 에너지 펠렛(정수 배율), 다른 탄은 예전 그림. 판정 상자는 그대로.</summary>

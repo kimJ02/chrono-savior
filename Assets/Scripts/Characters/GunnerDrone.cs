@@ -37,6 +37,25 @@ namespace ChronoSavior.Characters
 
         GunnerAttack owner;
         float fireTimer;
+
+        // ── 그림(2026-11-09 사용자 "드론이 문서대로 안 돼 있다" → Codex와 다시 짬) ──
+        // 몸통은 팀원 문서의 드론 그림 — Projectiles Pack 4 `scrap_metal` 회색(키 VfxKeys.MechanicDrone, 24px × 도트 2, 라이선스 그림이라 git 밖).
+        // 그림이 없으면(팩을 안 가져온 클론) 프리팹의 하늘색 원 그대로. 원본 그리기(:5351)의 바깥 빛 원(깜빡)·돌아가는 호·나타날 때 0.18초·끝 0.55초 페이드도 옮겼다
+        // — 원·호는 도트 도형(DotShapes).
+        [Tooltip("드론 몸통 그림(프리팹의 Visual 자식) — 라이선스 그림이 있으면 그걸 돌리고, 목표 쪽을 보게 좌우를 뒤집고, 나타나고 사라질 때 투명도를 바꾼다.")]
+        [SerializeField] SpriteRenderer body;
+        SpriteRenderer glow, arc;
+        VfxPlayer bodyArt;
+        static readonly Color GlowColor = new Color(88 / 255f, 220 / 255f, 1f), ArcColor = new Color(143 / 255f, 216 / 255f, 1f);
+        /// <summary>원본 빛 원 반지름 24px·호 반지름 20px·호 길이 1.2π·호 회전 3rad/s.</summary>
+        public const float GlowRadius = 0.24f, ArcRadius = 0.2f, ArcSweep = Mathf.PI * 1.2f, ArcSpin = 3f;
+        const int ArcSteps = 16;
+
+        /// <summary>몸통 그림(씬 검증·테스트가 읽는다).</summary>
+        public SpriteRenderer Body { get => body; set => body = value; }
+
+        /// <summary>원본 투명도 — 나타날 때 0.18초, 끝나기 0.55초 전부터 흐려진다.</summary>
+        public static float FadeAt(float age, float life) => age < 0.18f ? age / 0.18f : Mathf.Clamp01((life - age) / 0.55f);
         float scanTimer;
         bool removed;
 
@@ -120,7 +139,47 @@ namespace ChronoSavior.Characters
                 if (GunnerTargets.TryMake(Target, out var t)) Shoot(t);
             }
 
+            DrawVisual();
             if (Age >= Life) Remove();
+        }
+
+        void DrawVisual()
+        {
+            if (body == null) return;
+            if (glow == null)
+            {
+                var frames = VfxFrames.Get(VfxKeys.MechanicDrone);
+                if (frames.Length > 0)
+                {
+                    body.transform.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f);
+                    bodyArt = body.gameObject.AddComponent<VfxPlayer>();
+                    bodyArt.Play(frames, 15f, true, 0f, Color.white);
+                }
+                glow = NewShape("Glow", DotShapes.Ellipse(GlowRadius, GlowRadius), body.sortingOrder - 1);
+                arc = NewShape("Arc", null, body.sortingOrder + 1);
+            }
+            float k = FadeAt(Age, Life);
+            // 목표가 있으면 그쪽을, 없으면 캐릭터가 보는 쪽을 본다(그림은 오른쪽을 본다)
+            float face = GunnerTargets.TryMake(Target, out var tg) ? tg.center.x - transform.position.x : (owner != null ? owner.Facing : 1);
+            if (Mathf.Abs(face) > 0.01f) body.flipX = face < 0f;
+            if (bodyArt != null) bodyArt.Alpha = k;
+            else body.color = new Color(GunnerAttack.LaserColor.r, GunnerAttack.LaserColor.g, GunnerAttack.LaserColor.b, k);
+            float pulse = Mathf.Sin(Time.time * 6f) * 0.5f + 0.5f;
+            glow.color = new Color(GlowColor.r, GlowColor.g, GlowColor.b, (0.12f + 0.1f * pulse) * k);
+            int step = Mathf.FloorToInt(Time.time * ArcSpin / (Mathf.PI * 2f) * ArcSteps);
+            arc.sprite = DotShapes.Arc(ArcRadius, step, ArcSteps, ArcSweep);
+            arc.color = new Color(ArcColor.r, ArcColor.g, ArcColor.b, 0.7f * k);
+        }
+
+        /// <summary>드론을 따라다니는 도트 도형 하나(드론 배율 1 기준 — 도형은 이미 도트 배율로 그려져 있다).</summary>
+        SpriteRenderer NewShape(string name, Sprite sprite, int order)
+        {
+            var go = new GameObject(name, typeof(SpriteRenderer));
+            go.transform.SetParent(transform, false);
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = order;
+            return sr;
         }
 
         /// <summary>원본 — 드론 위치에서 몸통 중심까지 거리가 사거리 미만인 적 중 가장 가까운 것.</summary>
@@ -151,7 +210,7 @@ namespace ChronoSavior.Characters
                 GunnerSpecConfig.DroneBulletSize(Tier), GunnerAttack.LaserColor,
                 homing: GunnerSpecConfig.DroneBulletHoming(Tier), seekRange: Range,
                 turnRate: GunnerSpecConfig.DroneBulletTurnRate(Tier), stackOwner: null, stackOnHit: 0,
-                artKey: VfxKeys.MechanicPellet); // 드론 탄 그림 = 에너지 펠렛(팀원 문서). 드론 몸체 그림은 팩에 없어 지금 그림 그대로
+                artKey: VfxKeys.MechanicPellet); // 드론 탄 그림 = 에너지 펠렛(팀원 문서)
         }
     }
 }

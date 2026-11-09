@@ -90,6 +90,8 @@ namespace ChronoSavior.Editor
                     yield return Frames(VfxKeys.MechanicLaser(part, phase, true), Projectiles, $"PNG/pj4_laser_beam_A_large_blue/{part}_{phase}");
                 }
             yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_yellow");
+            // 드론 — 팀원 문서 "별도 에셋이 없으면 이걸로"의 그림(회색 껍데기·초록 바이저·노란 줄무늬)이 이 팩의 scrap_metal 회색이다(2026-11-09 사용자)
+            yield return Frames(VfxKeys.MechanicDrone, Projectiles, "PNG/pj4_scrap_metal_small_gray");
             yield return Frames(VfxKeys.MechanicRelayHead, Projectiles, "PNG/pj4_plasma_ball_small_blue");
             // 살수 — Slash vol2 시트는 96칸 7열, 효과가 한 줄 건너 하나씩 있다(위에서 0부터 세어 1·3·5줄이 무속성, 프레임 5·6·7장)
             yield return Sheet(VfxKeys.AssassinSlash1, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 1, 5);
@@ -290,6 +292,7 @@ namespace ChronoSavior.Editor
     sealed class VfxImportSettings : AssetPostprocessor
     {
         public const float PixelsPerUnit = 128f;
+        public override uint GetVersion() => 2; // 설정이 바뀌면 올린다 — 이미 들어온 그림도 다시 가져온다
 
         void OnPreprocessTexture()
         {
@@ -302,7 +305,8 @@ namespace ChronoSavior.Editor
             t.textureCompression = TextureImporterCompression.Uncompressed;
             t.mipmapEnabled = false;
             t.alphaIsTransparency = true;
-            t.wrapMode = TextureWrapMode.Clamp;
+            // 레이저 몸통은 선(LineRenderer)이 길이 방향으로 반복해 그린다 — 텍스처가 반복돼야 한다(2026-11-09)
+            t.wrapMode = assetPath.Contains("/laser_center_") ? TextureWrapMode.Repeat : TextureWrapMode.Clamp;
             // 레이저 몸통·중계선은 길이만큼 이어 붙인다(SpriteRenderer 타일) — 타일은 사각형 메시(FullRect)여야 한다
             var settings = new TextureImporterSettings();
             t.ReadTextureSettings(settings);

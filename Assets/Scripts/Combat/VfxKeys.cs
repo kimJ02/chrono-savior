@@ -44,6 +44,8 @@ namespace ChronoSavior.Combat
         public static readonly string[] LaserParts = { "origin", "center", "impact" };
         public static readonly string[] LaserPhases = { "start", "loop", "end" };
         public const string MechanicPellet = "mechanic/pellet";
+        /// <summary>레이저 드론 몸통 — 팀원 문서의 드론 그림(Projectiles Pack 4 `scrap_metal` 회색).</summary>
+        public const string MechanicDrone = "mechanic/drone";
         public const string MechanicRelayHead = "mechanic/relay_head";
 
         // ── 살수 ──
@@ -66,7 +68,7 @@ namespace ChronoSavior.Combat
                     MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
-                    MechanicPellet, MechanicRelayHead,
+                    MechanicPellet, MechanicDrone, MechanicRelayHead,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
                 };
                 foreach (var part in LaserParts)

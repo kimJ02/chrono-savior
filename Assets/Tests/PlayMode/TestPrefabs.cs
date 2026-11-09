@@ -51,6 +51,8 @@ namespace ChronoSavior.Tests.PlayMode
 
         /// <summary>효과 머티리얼(SpriteFlash) — 게임 씬·몹 프리팹이 쓰는 것.</summary>
         public static Material SpriteFlash => LoadAsset<Material>("Assets/Materials/SpriteFlash.mat");
+        /// <summary>선·메시 효과 머티리얼(게임에선 Player의 BladeVfx·GunnerFieldVfx·GunnerAttack 칸에 꽂혀 있다).</summary>
+        public static Material VfxUnlit => LoadAsset<Material>("Assets/Materials/VfxUnlit.mat");
 
         /// <summary>
         /// 섬영 베기 테스트용 프레임 — **특정 파일에 기대지 않는다**(효과 그림은 외주로 바꿀 예정이라 파일이 옮겨져도 테스트가 깨지지 않게, 타격음과 같은 방식).
@@ -99,6 +101,7 @@ namespace ChronoSavior.Tests.PlayMode
             gunner.BulletPrefab = GunnerBullet;
             gunner.DronePrefab = GunnerDrone;
             gunner.TurretPrefab = GunnerTurret;
+            gunner.BeamMaterial = VfxUnlit;
             return gunner;
         }
         public static EnemyShooterMotion Equipped(this EnemyShooterMotion shooter) { shooter.BoltPrefab = EnemyBolt; return shooter; }

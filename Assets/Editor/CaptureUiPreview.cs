@@ -273,6 +273,13 @@ namespace ChronoSavior.Editor
             {
                 var beam = new ChronoSavior.Characters.GunnerLaserBeam(kit, player.GetComponent<ChronoSavior.Characters.CharacterMover2D>());
                 beam.Update(0.016f, true, tier);
+                var bv = beam.Vfx; // 편집 화면이라 시간이 안 흐른다 — 켜진 뒤 0.6초(반복 구간)로 옮겨 찍는다
+                if (bv != null)
+                {
+                    var bf = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                    typeof(ChronoSavior.Characters.GunnerBeamVfx).GetField("t", bf).SetValue(bv, 0.6f);
+                    typeof(ChronoSavior.Characters.GunnerBeamVfx).GetMethod("Apply", bf).Invoke(bv, null);
+                }
                 var root = GameObject.Find("GunnerBeam");
                 if (root != null) made.Add(root);
                 Render(pc, cam, outDir, "mech_laser_t" + tier, 1920, 1080, 3f);
@@ -289,7 +296,19 @@ namespace ChronoSavior.Editor
             foreach (float x in new[] { 7.2f, 8.4f, 9.6f })
             {
                 var t = ChronoSavior.Characters.GunnerTurret.Spawn(turretPrefab, new Vector2(x, feet), 3);
+                typeof(ChronoSavior.Characters.GunnerTurret).GetMethod("DrawRangeMarks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(t, null);
                 turrets.Add(t); made.Add(t.gameObject);
+            }
+            // 드론(문서 그림) — 편집 화면이라 그림 갱신을 직접 부른다
+            var dronePrefab = AssetDatabase.LoadAssetAtPath<ChronoSavior.Characters.GunnerDrone>("Assets/Prefabs/Combat/GunnerDrone.prefab");
+            foreach (float dx in new[] { 0f, 0.6f })
+            {
+                var dr = Object.Instantiate(dronePrefab, new Vector3(5.2f + dx, feet + 1.0f + dx * 0.3f, 0f), Quaternion.identity);
+                var flagsP = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+                typeof(ChronoSavior.Characters.GunnerDrone).GetProperty("Life").SetValue(dr, 5f);
+                typeof(ChronoSavior.Characters.GunnerDrone).GetProperty("Age").SetValue(dr, 1f);
+                typeof(ChronoSavior.Characters.GunnerDrone).GetMethod("DrawVisual", flagsP).Invoke(dr, null);
+                made.Add(dr.gameObject);
             }
             var pts = ChronoSavior.Characters.GunnerField.FieldPoints(turrets);
             var segs = ChronoSavior.Characters.GunnerField.LinkSegments(pts, ChronoSavior.Characters.GunnerSpecConfig.LinkMax(3));

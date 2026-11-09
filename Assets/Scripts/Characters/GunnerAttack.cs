@@ -59,6 +59,11 @@ namespace ChronoSavior.Characters
 
         [Tooltip("레이저 구간·설치물 연결선 그림(그림만 있는 효과 — 코드가 깐다).")]
         public Sprite bulletSprite;
+
+        [Tooltip("레이저 빔 선 머티리얼(Assets/Materials/VfxUnlit — 텍스처를 길이 방향으로 반복해 그린다). 외주 효과로 바꿀 땐 이 칸만.")]
+        [SerializeField] Material beamMaterial;
+        /// <summary>씬 검증·테스트가 읽고 넣는다(빔 그림 `GunnerBeamVfx`가 복제해 쓴다).</summary>
+        public Material BeamMaterial { get => beamMaterial; set => beamMaterial = value; }
         public Color bulletColor = new Color(1f, 0.92f, 0.63f);
 
         CharacterMover2D mover;

@@ -21,7 +21,8 @@ namespace ChronoSavior.Characters
         // ── 집중 ──
         /// <summary>배경을 덮는 정렬(배경 -100 위, 땅·발판 -5 아래 — 그래서 땅·발판·적·캐릭터는 그대로 밝다).</summary>
         public const int ShadeSortingOrder = -50;
-        public const float ShadeAlpha = 0.55f, ShadeFadeTime = 0.2f;
+        /// <summary>배경 어둡기 — 0.55는 캐릭터·적이 배경과 같이 묻혀 보여 0.4로(2026-11-09 Codex 합의).</summary>
+        public const float ShadeAlpha = 0.4f, ShadeFadeTime = 0.2f;
         /// <summary>어두운 판 크기(유닛) — 화면(7.5×4.2)보다 넉넉히, 캐릭터를 따라다닌다.</summary>
         const float ShadeSize = 40f;
         /// <summary>하트비트 그림 위치(몸 중심에서 위로)·재생 속도.</summary>
@@ -39,6 +40,13 @@ namespace ChronoSavior.Characters
 
         // ── 칼날폭풍 ──
         public const float SpinFps = 20f, SmokeSpacing = 0.35f, SmokeFps = 15f, SmokeFade = 0.4f;
+        /// <summary>
+        /// 칼날폭풍 회전베기 판정 범위 고리 간격(초) — 도트 크기를 지키느라 회전베기 그림(1.5유닛)이 판정 지름(2.4)보다 작아,
+        /// 실제로 베이는 범위를 고리로 주기적으로 보인다(2026-11-09 Codex 합의).
+        /// </summary>
+        public const float StormRingInterval = 0.3f;
+        static readonly Color StormRingColor = new Color(0.75f, 0.95f, 1f, 0.7f);
+        float stormRingT;
         public const int SmokeScale = 2;
         /// <summary>연기는 땅(-5) 바로 위, 필드 효과·캐릭터 뒤(CLAUDE.md 예약표).</summary>
         public const int SmokeSortingOrder = -4;
@@ -229,7 +237,13 @@ namespace ChronoSavior.Characters
                     spin.transform.position = transform.position;
                 }
                 Vector2 here = transform.position;
-                if (!wasStorming) lastSmoke = here;
+                if (!wasStorming) { lastSmoke = here; stormRingT = 0f; }
+                stormRingT -= Time.deltaTime;
+                if (stormRingT <= 0f)
+                {
+                    stormRingT = StormRingInterval;
+                    RangeRing.Show(here, BladeCombat.StormSpinDiameter * 0.5f, StormRingColor, 0.25f);
+                }
                 if (Vector2.Distance(here, lastSmoke) >= SmokeSpacing)
                 {
                     lastSmoke = here;

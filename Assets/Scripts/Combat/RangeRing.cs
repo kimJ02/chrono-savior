@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using ChronoSavior.Core;
 
@@ -15,16 +14,6 @@ namespace ChronoSavior.Combat
         public const float Life = 0.3f;
         public const int SortingOrder = 5;
 
-        static readonly Dictionary<int, Sprite> cache = new Dictionary<int, Sprite>();
-        const int CacheStepPx = 4, CacheLimit = 32;
-
-        /// <summary>그려 둔 고리 그림을 모두 지운다(텍스처까지).</summary>
-        public static void ClearCache()
-        {
-            foreach (var sp in cache.Values)
-                if (sp != null) { Destroy(sp.texture); Destroy(sp); }
-            cache.Clear();
-        }
         SpriteRenderer sr;
         Color color;
         float t, life;
@@ -53,31 +42,11 @@ namespace ChronoSavior.Combat
             if (t >= life) Destroy(gameObject);
         }
 
-        /// <summary>반경(유닛)의 1px 도트 원 — 중점 원 그리기, 그림 PPU = 128 ÷ 도트 배율.</summary>
+        /// <summary>반경(유닛)의 1px 도트 원 — 차지에 따라 반경이 연속으로 바뀌어 그림 4px 단위로 맞춘다(눈으로는 구별 안 되는 차이, 그림 수를 작게).</summary>
         public static Sprite RingSprite(float radius)
         {
-            float ppu = DotScale.GridPixelsPerUnit / DotScale.Value;
-            // 반경은 차지에 따라 연속으로 바뀐다 — 그림 4px 단위로 맞춰 캐시를 작게(눈으로는 구별 안 되는 차이), 너무 많아지면 비운다
-            int rp = Mathf.Max(CacheStepPx, Mathf.RoundToInt(radius * ppu / CacheStepPx) * CacheStepPx);
-            if (cache.TryGetValue(rp, out var s) && s != null) return s;
-            if (cache.Count >= CacheLimit) ClearCache();
-            int size = rp * 2 + 3;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            var px = new Color32[size * size];
-            int c = size / 2;
-            void Put(int x, int y) { if (x >= 0 && y >= 0 && x < size && y < size) px[y * size + x] = new Color32(255, 255, 255, 255); }
-            for (int x = 0, y = rp, d = 1 - rp; x <= y; x++)
-            {
-                Put(c + x, c + y); Put(c - x, c + y); Put(c + x, c - y); Put(c - x, c - y);
-                Put(c + y, c + x); Put(c - y, c + x); Put(c + y, c - x); Put(c - y, c - x);
-                if (d < 0) d += 2 * x + 3; else { d += 2 * (x - y) + 5; y--; }
-            }
-            tex.SetPixels32(px);
-            tex.Apply();
-            s = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), ppu, 0, SpriteMeshType.FullRect);
-            s.name = "RangeRing_" + rp;
-            cache[rp] = s;
-            return s;
+            float step = 4f / DotShapes.Ppu;
+            return DotShapes.Ring(Mathf.Max(step, Mathf.Round(radius / step) * step));
         }
     }
 }

@@ -66,12 +66,13 @@ namespace ChronoSavior.Characters
             t.Range = GunnerSpecConfig.TurretRange(tier);
             t.DamageMult = GunnerSpecConfig.TurretDamageMult(tier);
             AttachRelayHead(t.transform);
+            t.AttachRangeMarks();
             active.Add(t);
             return t;
         }
 
-        /// <summary>중계기 머리 높이(발에서, 몸체 그림 꼭대기 0.36 바로 위)·재생 속도·정렬.</summary>
-        public const float RelayHeadHeight = 0.42f, RelayHeadFps = 15f;
+        /// <summary>중계기 머리 높이(발에서 — 우리가 그린 안테나 몸체(13px × 도트 2 = 0.2유닛) 위, 링크 꼭짓점 0.24 근처)·재생 속도·정렬.</summary>
+        public const float RelayHeadHeight = 0.27f, RelayHeadFps = 15f;
         public const int RelayHeadSortingOrder = 4;
 
         /// <summary>
@@ -84,7 +85,7 @@ namespace ChronoSavior.Characters
             if (frames.Length == 0) return;
             var go = new GameObject("RelayHead", typeof(SpriteRenderer));
             go.transform.SetParent(turret, false);
-            go.transform.localPosition = new Vector3(0f, RelayHeadHeight + DotScale.Units(6f), 0f); // 머리(24px × 도트 2 = 0.375유닛)가 몸체 위에 앉게
+            go.transform.localPosition = new Vector3(0f, RelayHeadHeight, 0f); // 머리(24px × 도트 2 = 0.375유닛)가 몸체 위에 앉게
             go.transform.localScale = new Vector3(DotScale.Value, DotScale.Value, 1f);
             go.GetComponent<SpriteRenderer>().sortingOrder = RelayHeadSortingOrder;
             go.AddComponent<VfxPlayer>().Play(frames, RelayHeadFps, true, 0f, Color.white);
@@ -104,11 +105,48 @@ namespace ChronoSavior.Characters
 
         void OnDestroy() => active.Remove(this);
 
+        // ── 범위 표시(원본 그리기 :5322 — 2026-11-09 Codex 합의, 예전 Unity엔 없었다) ──
+        // 공격 범위 타원(반투명 칠 + 테, 깜빡임)과 링크 사거리 점선 원. 원본은 크기도 깜빡였지만 도트 크기를 지키려고 투명도만 깜빡인다.
+        SpriteRenderer rangeFill, rangeEdge, linkRing;
+        static readonly Color RangeColor = new Color(88 / 255f, 190 / 255f, 1f), EdgeColor = new Color(143 / 255f, 216 / 255f, 1f), LinkColor = new Color(216 / 255f, 248 / 255f, 1f);
+        /// <summary>범위 표시 정렬 — 필드 효과 줄(캐릭터·적 뒤).</summary>
+        public const int RangeSortingOrder = -3;
+
+        void AttachRangeMarks()
+        {
+            float ry = Range * 0.45f; // 원본 `ellipse(0, -18, range, range * 0.45)`
+            rangeFill = NewMark("RangeFill", DotShapes.Ellipse(Range, ry), GunnerSpecConfig.TurretCenterHeight);
+            rangeEdge = NewMark("RangeEdge", DotShapes.EllipseOutline(Range, ry), GunnerSpecConfig.TurretCenterHeight);
+            linkRing = NewMark("LinkRange", DotShapes.Ring(GunnerSpecConfig.LinkMax(Tier), dash: 5), GunnerSpecConfig.FieldPointHeight); // 원본 점선 [10, 10]
+        }
+
+        SpriteRenderer NewMark(string name, Sprite sprite, float height)
+        {
+            var go = new GameObject(name, typeof(SpriteRenderer));
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, height, 0f);
+            var sr = go.GetComponent<SpriteRenderer>();
+            sr.sprite = sprite;
+            sr.sortingOrder = RangeSortingOrder;
+            return sr;
+        }
+
+        void DrawRangeMarks()
+        {
+            if (rangeFill == null) return;
+            float k = Mathf.Clamp01((Life - Age) / 0.55f); // 원본 `(z.life - z.t) / 0.55`
+            float pulse = 0.72f + 0.18f * Mathf.Sin(Time.time * 8f + transform.position.x);
+            rangeFill.color = new Color(RangeColor.r, RangeColor.g, RangeColor.b, (0.10f + pulse * 0.06f) * k);
+            rangeEdge.color = new Color(EdgeColor.r, EdgeColor.g, EdgeColor.b, (0.45f + pulse * 0.28f) * k);
+            linkRing.color = new Color(LinkColor.r, LinkColor.g, LinkColor.b, 0.18f * k);
+        }
+
         void Update()
         {
             if (removed) return;
             float dt = Time.deltaTime;
             Age += dt;
+            DrawRangeMarks();
             tickTimer += dt;
             if (tickTimer >= TickInterval)
             {

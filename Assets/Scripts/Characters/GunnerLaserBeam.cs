@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using ChronoSavior.Combat;
 using ChronoSavior.Core;
@@ -46,21 +47,15 @@ namespace ChronoSavior.Characters
         bool hasPrevCurve;
         Vector2 prevControl, prevEnd;
 
-        GameObject visualRoot;
-        SpriteRenderer[] segments;
-        // 레이저 그림(2026-11-08 VFX): 총구(origin)·몸통(center, 길이만큼 이어 붙임)·끝(impact). 그림이 없으면 예전 막대만.
-        SpriteRenderer originArt, impactArt;
-        int artTier = -1;
-        const float ArtFps = 15f;
-        /// <summary>레이저 그림 정렬(투사체 3).</summary>
-        public const int ArtSortingOrder = 3;
+        // 그림은 따로(2026-11-09 — 선 하나로 끊김 없이, <see cref="GunnerBeamVfx"/>). 처음 켤 때 만든다.
+        GunnerBeamVfx vfx;
+        readonly List<Vector2> path = new List<Vector2>();
 
         /// <summary>
-        /// 층별 레이저 그림 — 팀원 문서 "파란색, 각성 차수에 따라 굵기 차이": 도트 크기를 하나로 맞추면서(2026-11-09) 1~4층 small(몸통 26px → 0.4유닛),
-        /// 5층 large(50px → 0.78유닛). 판정 굵기(2W 0.31~0.72)와는 따로다(그림 테두리가 판정 경계와 몇 px 다를 수 있다).
+        /// 층별 레이저 그림 굵기 — 팀원 문서 "파란색, 각성 차수에 따라 굵기 차이": 도트 크기를 하나로 맞추면서(2026-11-09) 1~4층 small(띠 26px → 0.4유닛),
+        /// 5층 large(50px → 0.78유닛). 판정 굵기(2W 0.31~0.72)와는 따로다.
         /// </summary>
         public static bool LargeArt(int tier) => tier >= 5;
-        public static int ArtThickness(int tier) => DotScale.Value;
 
         public GunnerLaserBeam(GunnerAttack kit, CharacterMover2D mover)
         {
@@ -194,7 +189,7 @@ namespace ChronoSavior.Characters
             Active = false;
             Target = null;
             hasPrevCurve = false;
-            HideVisual();
+            if (vfx != null) vfx.HideNow();
         }
 
         static bool InCone(Vector2 p, Vector2 o, float baseAngle, float maxAngle)
@@ -244,141 +239,33 @@ namespace ChronoSavior.Characters
 
                 float dmg = DamageCalculator.Roll(atk * mult, crit, out _);
                 e.damageable.TakeTickDamage(dmg);
+                if (vfx != null) vfx.Spark(e.center, Direction); // 맞은 자리에 작은 충격(그림만)
                 kit.AddStack(1);
             }
         }
 
-        // ---- 표시(원본 drawGunnerBeam :5372의 최소한만 — 판정과 같은 선을 따라 얇은 막대를 이어 붙인다) ----
-
-        void EnsureVisual()
-        {
-            if (visualRoot != null) return;
-            visualRoot = new GameObject("GunnerBeam");
-            // 런 오브젝트와 같이 치워지게(다시 필요하면 여기서 새로 만든다).
-            visualRoot.AddComponent<RunTransient>();
-            segments = new SpriteRenderer[GunnerSpecConfig.BeamCurveSamples];
-            for (int i = 0; i < segments.Length; i++) segments[i] = NewPiece("Segment");
-            originArt = NewPiece("Origin");
-            originArt.gameObject.AddComponent<VfxPlayer>();
-            impactArt = NewPiece("Impact");
-            impactArt.gameObject.AddComponent<VfxPlayer>();
-            artTier = -1;
-        }
+        // ---- 표시(그림은 GunnerBeamVfx — 경로·층·끝 그림 여부만 넘긴다) ----
 
         void HideVisual()
         {
-            if (visualRoot != null) visualRoot.SetActive(false);
-            artTier = -1; // 다시 켜질 때 그림을 처음부터
-        }
-
-        /// <summary>레이저 그림이 들어와 있나(그 층의 몸통 그림 기준).</summary>
-        static bool HasArt(int tier) => VfxFrames.Has(VfxKeys.MechanicLaser("center", "loop", LargeArt(tier)));
-
-        /// <summary>층이 바뀌었거나 새로 켜졌으면 세 부분의 그림을 그 층 크기로 다시 건다. 그림이 없으면 예전 막대 색으로.</summary>
-        void ApplyArt(int tier)
-        {
-            if (artTier == tier) return;
-            artTier = tier;
-            bool art = HasArt(tier);
-            bool large = LargeArt(tier);
-            foreach (var sr in segments)
-            {
-                var player = sr.GetComponent<VfxPlayer>();
-                if (art)
-                {
-                    sr.drawMode = SpriteDrawMode.Tiled; // 길이만큼 이어 붙인다(늘리지 않는다 — 도트가 안 뭉개지게)
-                    if (player == null) player = sr.gameObject.AddComponent<VfxPlayer>();
-                    player.Play(VfxFrames.Get(VfxKeys.MechanicLaser("center", "loop", large)), ArtFps, true, 0f, Color.white);
-                }
-                else
-                {
-                    if (player != null) Object.Destroy(player);
-                    sr.drawMode = SpriteDrawMode.Simple;
-                    sr.sprite = kit.bulletSprite;
-                    sr.color = new Color(GunnerAttack.LaserColor.r, GunnerAttack.LaserColor.g, GunnerAttack.LaserColor.b, 0.85f);
-                }
-            }
-            originArt.gameObject.SetActive(art);
-            impactArt.gameObject.SetActive(art);
-            if (!art) return;
-            originArt.GetComponent<VfxPlayer>().Play(VfxFrames.Get(VfxKeys.MechanicLaser("origin", "loop", large)), ArtFps, true, 0f, Color.white);
-            impactArt.GetComponent<VfxPlayer>().Play(VfxFrames.Get(VfxKeys.MechanicLaser("impact", "loop", large)), ArtFps, true, 0f, Color.white);
-        }
-
-        SpriteRenderer NewPiece(string name)
-        {
-            var go = new GameObject(name, typeof(SpriteRenderer));
-            go.transform.SetParent(visualRoot.transform, false);
-            var sr = go.GetComponent<SpriteRenderer>();
-            sr.sprite = kit.bulletSprite;
-            sr.color = new Color(GunnerAttack.LaserColor.r, GunnerAttack.LaserColor.g, GunnerAttack.LaserColor.b, 0.85f);
-            sr.sortingOrder = ArtSortingOrder;
-            return sr;
+            if (vfx != null) vfx.Release(); // 사그라든다(end 프레임)
         }
 
         void UpdateVisual()
         {
-            EnsureVisual();
-            visualRoot.SetActive(true);
-            int tier = currentTier;
-            ApplyArt(tier);
-            bool art = HasArt(tier);
-            float thickness = art ? ArtThickness(tier) : Width * 2f;
-            Vector2 firstDir, lastDir, end;
+            if (vfx == null) vfx = GunnerBeamVfx.Create(kit.BeamMaterial);
+            if (vfx == null) return;
+            path.Clear();
+            path.Add(Origin);
             if (Curved)
-            {
-                Vector2 prev = Origin;
-                firstDir = lastDir = Direction;
-                for (int i = 0; i < segments.Length; i++)
-                {
-                    Vector2 q = Bezier(Origin, CurveControl, CurveEnd, (i + 1) / (float)segments.Length);
-                    PlaceSegment(segments[i], prev, q, thickness, art);
-                    segments[i].enabled = true;
-                    if (i == 0) firstDir = q - prev;
-                    lastDir = q - prev;
-                    prev = q;
-                }
-                end = CurveEnd;
-            }
+                for (int i = 1; i <= GunnerSpecConfig.BeamCurveSamples; i++)
+                    path.Add(Bezier(Origin, CurveControl, CurveEnd, i / (float)GunnerSpecConfig.BeamCurveSamples));
             else
-            {
-                end = Origin + Direction * Range;
-                PlaceSegment(segments[0], Origin, end, thickness, art);
-                segments[0].enabled = true;
-                for (int i = 1; i < segments.Length; i++) segments[i].enabled = false;
-                firstDir = lastDir = Direction;
-            }
-            if (!art) return;
-            // 총구 그림은 빛줄기 시작점에, 끝 그림은 빛줄기 끝에 — 두 그림 모두 오른쪽을 향해 있어 방향대로 돌린다
-            PlaceCap(originArt, Origin, firstDir, thickness, +1f);
-            PlaceCap(impactArt, end, lastDir, thickness, -1f);
+                path.Add(Origin + Direction * Range);
+            vfx.Show(path, currentTier, Target != null, Width);
         }
 
-        /// <summary>몸통 한 토막 — 그림이면 길이만큼 타일(굵기는 정수 배율), 막대면 늘린다.</summary>
-        static void PlaceSegment(SpriteRenderer sr, Vector2 a, Vector2 b, float thickness, bool art)
-        {
-            Vector2 v = b - a;
-            var t = sr.transform;
-            t.position = (a + b) * 0.5f;
-            t.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
-            if (art && sr.sprite != null)
-            {
-                t.localScale = new Vector3(thickness, thickness, 1f); // 도트 크기는 같게, 길이는 이어 붙여서
-                sr.size = new Vector2(Mathf.Max(0.01f, v.magnitude) / thickness, sr.sprite.bounds.size.y);
-            }
-            else t.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude), thickness, 1f);
-        }
-
-        /// <summary>총구·끝 그림 — 그 끝점에서 빛줄기 쪽으로 그림 반 폭만큼 들여 놓는다(<paramref name="inward"/> +1 = 앞으로, −1 = 뒤로).</summary>
-        static void PlaceCap(SpriteRenderer sr, Vector2 at, Vector2 dir, float scale, float inward)
-        {
-            if (dir.sqrMagnitude < 1e-8f) dir = Vector2.right;
-            dir.Normalize();
-            float half = sr.sprite != null ? sr.sprite.bounds.size.x * scale * 0.5f : 0f;
-            var t = sr.transform;
-            t.position = at + dir * (half * inward);
-            t.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
-            t.localScale = new Vector3(scale, scale, 1f);
-        }
+        /// <summary>그림 담당(테스트용 — 아직 안 켰으면 null).</summary>
+        public GunnerBeamVfx Vfx => vfx;
     }
 }
