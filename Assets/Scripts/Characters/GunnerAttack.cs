@@ -350,7 +350,7 @@ namespace ChronoSavior.Characters
                     fieldTickTimer -= tick;
                     GunnerField.DamageTick(t, pts, segs);
                 }
-                if (fieldVfx != null) fieldVfx.Show(pts, segs, bulletSprite);
+                if (fieldVfx != null) fieldVfx.Show(pts, segs, t, bulletSprite);
             }
             else
             {

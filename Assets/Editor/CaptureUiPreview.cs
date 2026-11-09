@@ -313,7 +313,7 @@ namespace ChronoSavior.Editor
             var pts = ChronoSavior.Characters.GunnerField.FieldPoints(turrets);
             var segs = ChronoSavior.Characters.GunnerField.LinkSegments(pts, ChronoSavior.Characters.GunnerSpecConfig.LinkMax(3));
             var field = player.GetComponent<ChronoSavior.Characters.GunnerFieldVfx>();
-            field.Show(pts, segs, kit.bulletSprite);
+            field.Show(pts, segs, 3, kit.bulletSprite);
             var fieldRoot = GameObject.Find("GunnerFieldLinks");
             if (fieldRoot != null) made.Add(fieldRoot);
             Render(pc, cam, outDir, "mech_field", 1920, 1080, 3f);

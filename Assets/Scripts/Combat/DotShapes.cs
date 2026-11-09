@@ -41,21 +41,6 @@ namespace ChronoSavior.Combat
             }, center: false);
         }
 
-        /// <summary>타원 둘레(1px).</summary>
-        public static Sprite EllipseOutline(float rx, float ry)
-        {
-            int w = Mathf.Max(2, Mathf.RoundToInt(rx * 2f * Ppu)), h = Mathf.Max(2, Mathf.RoundToInt(ry * 2f * Ppu));
-            return Get($"ello{w}x{h}", w, h, (x, y, c) =>
-            {
-                bool In(int px, int py)
-                {
-                    float dx = (px + 0.5f - w / 2f) / (w / 2f), dy = (py + 0.5f - h / 2f) / (h / 2f);
-                    return dx * dx + dy * dy <= 1f;
-                }
-                return In(x, y) && (!In(x - 1, y) || !In(x + 1, y) || !In(x, y - 1) || !In(x, y + 1));
-            }, center: false);
-        }
-
         /// <summary>
         /// 원호(1px) — <paramref name="startStep"/>/<paramref name="steps"/> 바퀴에서 시작해 <paramref name="sweep"/>(라디안)만큼. 돌리는 대신 각도마다 다른 그림을 쓴다
         /// (그림을 회전시키면 도트가 비스듬히 깨진다).

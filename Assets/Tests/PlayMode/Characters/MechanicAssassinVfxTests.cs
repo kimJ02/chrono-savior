@@ -156,11 +156,14 @@ public class MechanicAssassinVfxTests
         Assume.That(vfx.FillMaterial != null, "머티리얼 에셋이 없다");
         var tri = new List<Vector2> { new Vector2(0f, 0f), new Vector2(2f, 0f), new Vector2(1f, 1.5f) };
         var segs = new List<GunnerField.Segment> { new GunnerField.Segment(tri[0], tri[1]), new GunnerField.Segment(tri[1], tri[2]), new GunnerField.Segment(tri[2], tri[0]) };
-        vfx.Show(tri, segs, null);
+        vfx.Show(tri, segs, 3, null);
         Assert.AreEqual(3, vfx.VisibleLinks);
+        Assert.AreEqual(3, vfx.VisibleBands, "링크마다 판정 폭 띠");
         Assert.IsTrue(vfx.FillVisible, "닫힌 도형은 칠한다");
+        vfx.Show(tri, new List<GunnerField.Segment> { segs[0], segs[1] }, 3, null);
+        Assert.IsFalse(vfx.FillVisible, "꼭짓점은 셋이어도 한 변이 안 이어지면(판정상 안쪽 피해 없음) 칠하지 않는다");
         var line = new List<Vector2> { tri[0], tri[1] };
-        vfx.Show(line, new List<GunnerField.Segment> { segs[0] }, null);
+        vfx.Show(line, new List<GunnerField.Segment> { segs[0] }, 3, null);
         Assert.AreEqual(1, vfx.VisibleLinks);
         Assert.IsFalse(vfx.FillVisible, "두 점이면 선만");
         vfx.Hide();

@@ -106,7 +106,9 @@ namespace ChronoSavior.Characters
         void OnDestroy() => active.Remove(this);
 
         // ── 범위 표시(원본 그리기 :5322 — 2026-11-09 Codex 합의, 예전 Unity엔 없었다) ──
-        // 공격 범위 타원(반투명 칠 + 테, 깜빡임)과 링크 사거리 점선 원. 원본은 크기도 깜빡였지만 도트 크기를 지키려고 투명도만 깜빡인다.
+        // 공격 범위(반투명 칠 + 테, 깜빡임)와 링크 사거리 점선 원. 원본은 크기도 깜빡였지만 도트 크기를 지키려고 투명도만 깜빡인다.
+        // 공격 범위는 원본 그림의 납작한 타원 대신 **원**(반지름 = range) — 판정이 원이라(hypot < range + 몹 폭/2) 타원 위아래 몹도 맞아
+        // "판정이 이상"해 보였다(2026-11-09 사용자, Codex 합의). 몹은 몸이 이 원에 닿으면 맞는다.
         SpriteRenderer rangeFill, rangeEdge, linkRing;
         static readonly Color RangeColor = new Color(88 / 255f, 190 / 255f, 1f), EdgeColor = new Color(143 / 255f, 216 / 255f, 1f), LinkColor = new Color(216 / 255f, 248 / 255f, 1f);
         /// <summary>범위 표시 정렬 — 필드 효과 줄(캐릭터·적 뒤).</summary>
@@ -114,9 +116,8 @@ namespace ChronoSavior.Characters
 
         void AttachRangeMarks()
         {
-            float ry = Range * 0.45f; // 원본 `ellipse(0, -18, range, range * 0.45)`
-            rangeFill = NewMark("RangeFill", DotShapes.Ellipse(Range, ry), GunnerSpecConfig.TurretCenterHeight);
-            rangeEdge = NewMark("RangeEdge", DotShapes.EllipseOutline(Range, ry), GunnerSpecConfig.TurretCenterHeight);
+            rangeFill = NewMark("RangeFill", DotShapes.Ellipse(Range, Range), GunnerSpecConfig.TurretCenterHeight);
+            rangeEdge = NewMark("RangeEdge", DotShapes.Ring(Range), GunnerSpecConfig.TurretCenterHeight);
             linkRing = NewMark("LinkRange", DotShapes.Ring(GunnerSpecConfig.LinkMax(Tier), dash: 5), GunnerSpecConfig.FieldPointHeight); // 원본 점선 [10, 10]
         }
 

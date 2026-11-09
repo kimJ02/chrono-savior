@@ -43,14 +43,24 @@ namespace ChronoSavior.Characters
         public int VisibleLinks { get { int n = 0; foreach (var l in links) if (l.enabled) n++; return n; } }
         public bool FillVisible => fill != null && fill.enabled;
 
-        /// <summary>장판을 그린다 — 꼭짓점(볼록 껍질 순서)과 연결선. 꼭짓점이 3개 이상이면 안을 칠한다(<see cref="GunnerField.DamageTick"/>의 내부 판정과 같은 조건).</summary>
-        public void Show(List<Vector2> points, List<GunnerField.Segment> segs, Sprite fallbackSprite)
+        /// <summary>판정 띠 색(아주 옅은 하늘색) — 링크선 아래에 실제로 맞는 폭을 보인다(2026-11-09 사용자 "설치기 판정이 살짝 이상", Codex 합의).</summary>
+        static readonly Color BandColor = new Color(0x8f / 255f, 0xd8 / 255f, 1f, 0.16f);
+        /// <summary>판정 띠 폭에 더하는 몹 몸 여유 — 판정은 '몹 몸통 중심이 선에서 0.30+층×0.03 + 몹 폭×0.25 이내'라, 고블린(폭 0.5) 기준 양쪽 0.125씩.</summary>
+        public const float BandEnemyAllowance = 0.25f;
+        readonly List<SpriteRenderer> bands = new List<SpriteRenderer>();
+
+        /// <summary>
+        /// 장판을 그린다 — 꼭짓점(볼록 껍질 순서)과 연결선·판정 띠. 안쪽 칠은 **판정과 같은 조건**(꼭짓점 3개 이상이고 모든 변이 이어진 닫힌 도형,
+        /// <see cref="GunnerField.DamageTick"/>)일 때만 — 예전엔 꼭짓점 3개면 늘 칠해서, 한 변이 링크 거리를 넘으면 칠은 보이는데 안쪽은 안 맞았다.
+        /// </summary>
+        public void Show(List<Vector2> points, List<GunnerField.Segment> segs, int tier, Sprite fallbackSprite)
         {
             EnsureRoot();
             root.SetActive(true);
             DrawLinks(segs, fallbackSprite);
+            DrawBands(segs, GunnerSpecConfig.LinkHitWidth(tier) * 2f + BandEnemyAllowance);
             polygon = points;
-            bool closed = points.Count >= 3 && fillMaterial != null;
+            bool closed = points.Count >= 3 && segs.Count >= points.Count && fillMaterial != null;
             if (closed) DrawFill(points);
             if (fill != null) fill.enabled = closed;
             foreach (var d in dots) d.sr.enabled = closed;
@@ -67,6 +77,7 @@ namespace ChronoSavior.Characters
             root = new GameObject("GunnerFieldLinks");
             RunTransient.Mark(root); // 설치기와 같이 런이 끝나면 치워진다
             links.Clear();
+            bands.Clear();
             dots.Clear();
             fill = null;
         }
@@ -110,6 +121,36 @@ namespace ChronoSavior.Characters
                     tf.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude), 0.06f, 1f);
             }
         }
+
+        /// <summary>링크마다 판정 폭만큼의 옅은 띠(그림 없이 흰 점 그림을 늘린 사각형 — 단색이라 늘려도 도트가 깨지지 않는다).</summary>
+        void DrawBands(List<GunnerField.Segment> segs, float width)
+        {
+            while (bands.Count < segs.Count)
+            {
+                var go = new GameObject("LinkBand", typeof(SpriteRenderer));
+                go.transform.SetParent(root.transform, false);
+                var sr = go.GetComponent<SpriteRenderer>();
+                sr.sprite = VfxDots.DotSprite();
+                sr.color = BandColor;
+                sr.sortingOrder = FillSortingOrder;
+                bands.Add(sr);
+            }
+            float unit = VfxDots.DotSprite().bounds.size.x;
+            for (int i = 0; i < bands.Count; i++)
+            {
+                bool on = i < segs.Count;
+                bands[i].enabled = on;
+                if (!on) continue;
+                Vector2 a = segs[i].a, b = segs[i].b, v = b - a;
+                var tf = bands[i].transform;
+                tf.position = (a + b) * 0.5f;
+                tf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg);
+                tf.localScale = new Vector3(Mathf.Max(0.01f, v.magnitude) / unit, width / unit, 1f);
+            }
+        }
+
+        /// <summary>지금 판정 띠가 몇 개 보이나(테스트용).</summary>
+        public int VisibleBands { get { int n = 0; foreach (var b in bands) if (b.enabled) n++; return n; } }
 
         void DrawFill(List<Vector2> points)
         {
