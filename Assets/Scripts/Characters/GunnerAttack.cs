@@ -75,11 +75,16 @@ namespace ChronoSavior.Characters
         GunnerLaserBeam beam;
         float cdTimer;
         float ultCdTimer;
+        bool beamWasActive;    // 2026-11-10 사운드 — 레이저가 막 켜진 순간만 소리를 내려고(눌려 있는 동안 매 프레임 true라 켜짐 감지용)
+        bool ultWasOnCooldown; // 2026-11-10 사운드 — 스킬 쿨다운이 막 다 찬 순간만(both_mechanic_skill_ready)
         // 쿨다운을 **건 순간**의 최대치 — HUD 슬롯 덮개 비율의 분모. 원본 `p.gunnerCdMax`(:2196)·`p.ultCdMax`
         // (:2399·:2414)도 발사·시전 때 정해진다.
         float attackCdMax;
         float ultCdMax;
         float fieldTickTimer;                    // 원본 player.mechFieldTick
+        float turretSfxTimer;                    // 2026-11-10 사운드 — 설치기 가동음 반복 주기(장판 틱과는 별개)
+        /// <summary>설치기 가동음(mechanic_machine_operating) 반복 간격(초) — 사용자 지시 "4,5초에 한번씩".</summary>
+        const float TurretSfxInterval = 4.5f;
 
         GunnerFieldVfx fieldVfx; // 링크·내부 장판 그림(같은 Player에 놓여 있다 — 없으면 그림 없이)
 
@@ -217,6 +222,9 @@ namespace ChronoSavior.Characters
             float dt = Time.deltaTime;
             cdTimer -= dt;
             ultCdTimer -= dt;
+            // 2026-11-10 사운드 — 쿨다운이 막 0 이하로 떨어진 프레임에만 한 번(both_mechanic_skill_ready).
+            if (ultCdTimer <= 0f && ultWasOnCooldown) SfxEvents.RaiseMechanicSkillReady();
+            ultWasOnCooldown = ultCdTimer > 0f;
 
             // 로비 등 Run 밖에서는 "새 입력을 받아 액션을 거는" 부분만 막는다 — 위 쿨다운·피해량
             // 재계산과 아래 UpdateField(dt)는 그대로 둬야 한다(PlayMode 테스트가 Update()를 직접 돌려서
@@ -233,8 +241,13 @@ namespace ChronoSavior.Characters
                 // 레이저 빌드는 누르고 있는 동안 광선이 켜져서 총알이 안 나간다.
                 bool held = GameInput.AttackHeld;
                 bool beamOn = UpdateBeam(dt, held);
+                // 2026-11-10 정정 — 레이저는 누르고 있는 동안 계속 들려야 해서, 켜짐/꺼짐이 "바뀐" 프레임에만
+                // (매 프레임 true라서가 아니라 전이 감지로) 상태를 같이 올린다. 재생기가 루프 시작/정지를 맡는다.
+                if (beamOn != beamWasActive) SfxEvents.RaiseMechanicLaserActive(beamOn);
+                beamWasActive = beamOn;
                 if (!beamOn && cdTimer <= 0f && (held || GameInput.AttackDown))
                 {
+                    SfxEvents.RaiseMechanicBasicAttack();
                     Fire();
                     cdTimer = attackCdMax = cooldown;
                 }
@@ -310,6 +323,7 @@ namespace ChronoSavior.Characters
                 // 충전 스택은 소환하는 순간 전부 드론 지속시간으로 바뀐다(`consumeGunnerStacks`).
                 int stackSpend = Stacks;
                 Stacks = 0;
+                SfxEvents.RaiseMechanicDroneFired();
                 GunnerDrone.Summon(dronePrefab, this, tier, stackSpend);
                 HitFeel.Shake(3f + tier * 0.5f, 0.14f); // 원본 :2401
                 ultCdTimer = ultCdMax = GunnerSpecConfig.DroneUltCooldown(tier) * cdMult;
@@ -329,6 +343,7 @@ namespace ChronoSavior.Characters
                 oldest?.Remove();
             }
             // 원본 `placeGunnerTurret`는 `y: p.y` — 발 높이(바닥)에 놓는다.
+            SfxEvents.RaiseMechanicTurretSet();
             GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier);
             HitFeel.Shake(2f + tier * 0.4f, 0.1f); // 원본 :2416
             ultCdTimer = ultCdMax = GunnerSpecConfig.TurretUltCooldown(tier) * cdMult;
@@ -355,10 +370,20 @@ namespace ChronoSavior.Characters
                     GunnerField.DamageTick(t, pts, segs);
                 }
                 if (fieldVfx != null) fieldVfx.Show(pts, segs, t, bulletSprite);
+
+                // 2026-11-10 사운드 — 설치기가 2개 이상 링크되어 연결선·장판이 떠 있는 동안 가동음을
+                // 데미지 틱(tick)과는 별개의 더 느린 주기(TurretSfxInterval)로 반복한다(사용자 지시).
+                turretSfxTimer += dt;
+                if (turretSfxTimer >= TurretSfxInterval)
+                {
+                    turretSfxTimer -= TurretSfxInterval;
+                    SfxEvents.RaiseMechanicTurretOperating();
+                }
             }
             else
             {
                 fieldTickTimer = 0f;
+                turretSfxTimer = 0f; // 링크가 풀리면 다음에 다시 이어졌을 때 처음부터(바로 안 울리게)
                 if (fieldVfx != null) fieldVfx.Hide();
             }
         }

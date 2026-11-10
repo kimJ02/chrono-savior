@@ -82,7 +82,10 @@ namespace ChronoSavior.World
 
             PlayerInRange = IsPlayerInRange();
             if (PlayerInRange && IsUnlocked && GameInput.InteractDown)
+            {
+                SfxEvents.RaiseBossRoomEntered(); // 2026-11-10 사운드 — enter_bossroom
                 RunEvents.RequestBossPortal();
+            }
         }
 
         void UpdateTint()

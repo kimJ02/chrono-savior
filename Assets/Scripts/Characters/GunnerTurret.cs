@@ -67,6 +67,9 @@ namespace ChronoSavior.Characters
             t.DamageMult = GunnerSpecConfig.TurretDamageMult(tier);
             AttachRelayHead(t.transform);
             active.Add(t);
+            // 2026-11-10 정정 — "가동" 소리는 더 이상 설치 순간 한 번이 아니다. 설치기가 2개 이상
+            // 링크되어 연결선·장판이 떠 있는 동안 GunnerAttack.UpdateField가 몇 초마다 반복해서 올린다.
+            // 놓는 순간의 소리는 호출부(GunnerAttack.TryUseSkill)의 RaiseMechanicTurretSet 그대로.
             return t;
         }
 

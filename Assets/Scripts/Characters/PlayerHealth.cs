@@ -229,6 +229,7 @@ namespace ChronoSavior.Characters
             // 불굴의 껍질 — 피격 후 무적시간 연장(원본 `invulnTime + itemPow('iframe')` :1907).
             SetHitInvuln(invulnTime + profile.items.Pow("iframe"));
             HitFeel.PlayerHurt(); // 원본 `state.redFlash = 0.35; shake(7, 0.22)`(:1912~:1913)
+            SfxEvents.RaisePlayerDamaged(); // 2026-11-10 사운드 — player_attacked (사망 때도 이 피격 처리를 먼저 지나므로 같이 난다)
 
             // 원본 `p.vx = sign(p.x - srcX) * 260; p.vy = min(p.vy, -220); p.onGround = false;`(:1908~1910)
             // 주의: 원본에서 이 수평 속도는 **다음 프레임에 이동 입력으로 통째로 덮어써진다**

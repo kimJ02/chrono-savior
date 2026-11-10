@@ -368,6 +368,8 @@ namespace ChronoSavior.Characters
                 {
                     cdTimer = cooldown;
                     float dmgMult = SpinDmgMult * SpeedDamageMultiplier(ComputeSpeedRatio());
+                    // 2026-11-10 정정 — 소리는 여기서 올리지 않는다. BladeSlashVfx가 베기 그림(attack1~3)과
+                    // 같은 번갈이 숫자로 직접 올린다(랜덤 방지 — 그림·소리 번호를 한 곳(swing 카운터)에서만 관리).
                     SpinHit(dmgMult, spinRadius, false, true);
                 }
 
@@ -572,6 +574,7 @@ namespace ChronoSavior.Characters
 
             if (tier >= 5 && trailPts.Count > 1) RipTrail(); // 남은 궤적부터 먼저 찢는다(:2526).
 
+            SfxEvents.RaiseAssassinFocusUsed(); // 2026-11-10 사운드 — 위 가드를 다 지나 실제로 켜질 때만
             focusT = FocusDur;
             focusCd = FocusCd;
             // bladeTrailLife()(:2537) — 3층 "짙은 잔영"부터 지속시간이 늘어난다. 원본처럼 캐스팅
@@ -774,6 +777,7 @@ namespace ChronoSavior.Characters
             stormTick = 0;
             stormCd = StormCd;
             stormGrab.Clear(); // 원본 `p.stormGrab = []`(:2626).
+            SfxEvents.RaiseAssassinSpinAttack(); // 2026-11-10 사운드 — 칼날폭풍(아직 음원 없음, 나중에 채우면 바로 남)
             storming = true;
         }
 

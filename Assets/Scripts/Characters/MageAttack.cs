@@ -219,6 +219,10 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         // 위치는 원본 `(p.x, p.y - 34)` — p.y는 **발**이라 발에서 0.34 **위**다(PlayerBody 참고).
         // 예전엔 몸 중심에서 0.34 아래로 옮겨져 있었다(원본 Y+가 아래인 걸 "아래"로 잘못 읽음).
         Vector2 feet = PlayerBody.Feet(transform, bodyCol);
+        // 2026-11-10 사운드 적용 — 갈래가 아직 안 정해졌으면(branch == None) 전용 사운드(기본 공격)로.
+        if (branch == MageBranch.Explosion) SfxEvents.RaiseMageFireAttack();
+        else if (branch == MageBranch.Gravity) SfxEvents.RaiseMageGravityAttack();
+        else SfxEvents.RaiseMageBasicAttack();
         if (gravityOrb && aimY < 0f && aimX == 0f)
             MageSkillEffects.DetonateGravityOrb(feet + new Vector2(0f, 0.34f), tier, chargeK, facing);
 
@@ -256,6 +260,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         int facing = mover != null ? mover.Facing : 1;
         if (branch == MageBranch.Explosion)
         {
+            SfxEvents.RaiseMageFireSkill();
             FireTeleportDash(tier, facing);
         }
         else
@@ -263,6 +268,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
             // 깔아 둔 블랙홀(중력점)이 범위 안에 없으면 아무것도 안 하고 쿨다운도 안 쓴다(2026-10-25 사용자 — 원본은 정면에 한 번 터뜨렸다).
             if (!MageSkillEffects.AnyWellInCollapseRange(transform.position)) return;
             Vector2? nearest = FindNearestEnemyPosition();
+            SfxEvents.RaiseMageGravitySkill();
             MageSkillEffects.GravityCollapse(tier, transform.position, facing, nearest);
         }
         // 원본 `p.ultCdMax = ... * cdMult()`(:2177) — 궁극기 쿨타임에도 '시간의 조각'이 붙는다.

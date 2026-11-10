@@ -73,9 +73,14 @@ namespace ChronoSavior.Characters
         /// <summary>지금 자리에서 베기 효과 하나를 시작한다.</summary>
         public void Spawn()
         {
-            var frames = Frames;
-            if (frames == null || frames.Length == 0 || body == null) return; // 팩을 안 가져왔으면 그리지 않는다
+            // 2026-11-10 사운드 — 그림과 같은 번갈이 숫자(0-베이스 swing → 1~3)를 소리에도 그대로 써서
+            // 123타 그림(attack1~3)과 맞춘다(사용자 지시: "랜덤이면 안되고"). 그림 팩이 없어 아래에서
+            // 그냥 return하는 클론도 소리는 나야 하니, 그림 유무를 가리기 전에 먼저 올린다.
+            int usedSwing = swing;
+            SfxEvents.RaiseAssassinBasicAttack(usedSwing % SlashKeys.Length + 1);
+            var frames = Frames; // swing은 아직 안 올렸다 — 위 소리와 같은 usedSwing 값을 그대로 읽는다
             swing++;
+            if (frames == null || frames.Length == 0 || body == null) return; // 그림만 생략(소리는 이미 났다)
             var sr = pool.Count > 0 ? pool.Pop() : new GameObject("BladeSlash").AddComponent<SpriteRenderer>();
             sr.gameObject.SetActive(true);
             sr.sortingLayerID = body.sortingLayerID;

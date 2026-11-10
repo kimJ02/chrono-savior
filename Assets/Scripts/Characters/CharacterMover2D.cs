@@ -129,6 +129,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpSpeed);
             jumpBufferTimer = 0f;
             coyoteTimer = 0f; // 코요테를 소모해 공중에서 두 번 점프하는 걸 막는다(원본 동일)
+            SfxEvents.RaiseJumped(ProfileService.Current.character); // 2026-11-10 사운드 — 캐릭터별 점프음
         }
     }
 
