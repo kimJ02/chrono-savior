@@ -28,6 +28,15 @@ namespace ChronoSavior.Core
             region >= 1 && region <= Count ? Names[region - 1] : "?";
 
         /// <summary>
+        /// 지역 보스 이름 — 전투 화면 보스 체력바 위에 뜬다(2026-11-10). 1지역은 팀원 기획 보스 **덩어리 지배자**.
+        /// 나머지는 아직 기획된 보스가 없어(원본 공통 보스, 원본 이름은 지역 이름이 바뀌어 안 맞음) 비워 두고 <see cref="BossNameOf"/>가 "보스"로 대신한다.
+        /// </summary>
+        static readonly string[] BossNames = { "덩어리 지배자", null, null, null, null, null, null, null, null };
+
+        public static string BossNameOf(int region) =>
+            region >= 1 && region <= Count && !string.IsNullOrEmpty(BossNames[region - 1]) ? BossNames[region - 1] : "보스";
+
+        /// <summary>
         /// 스테이지 입장료 — **받지 않는다**(2026-10-25 사용자 "입장료 없애고"). 원본은 지역마다 지수로 올라 결국 시간 회귀를 강제했다
         /// (<see cref="OriginalEntryFee"/>) — 의도적 편차, docs/original-parity.md. 이제 회귀를 미는 건 몹 체력 상승과 멸망까지 남은 기간이다.
         /// </summary>

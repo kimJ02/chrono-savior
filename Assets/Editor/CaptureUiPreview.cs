@@ -66,6 +66,16 @@ namespace ChronoSavior.Editor
                 Player = new Vector2(24.8f, FieldBounds.GroundY), PortalInRange = true, PortalUnlocked = true, BossRatio = 0.55f,
             };
             Shot(pc, cam, outDir, "전투HUD_보스바·포탈", sel => hud.ShowForCapture(sel));
+            // 보스전 — 체력바는 상단 가운데, 보스 이름 아래(2026-11-10)
+            ChronoSavior.Core.RunState.Begin(1, ChronoSavior.Core.RunMode.Boss);
+            hud.Preview = new CombatHud.PreviewState
+            {
+                Hp = 64f, MaxHp = 100f, ExpRatio = 0.4f, TimeLeft = 75f, Combo = 5,
+                Skill = ChronoSavior.Core.SkillSlotState.Cooldown(0.8f, 3f),
+                Player = new Vector2(4f, FieldBounds.GroundY), BossRatio = 0.62f,
+            };
+            Shot(pc, cam, outDir, "전투HUD_보스전", sel => hud.ShowForCapture(sel));
+            ChronoSavior.Core.RunState.Reset();
 
             Shot(pc, cam, outDir, "일시정지", sel => pause.ShowForCapture(sel));
             Shot(pc, cam, outDir, "설정", sel => { pause.ShowForCapture(false); settings.ShowForCapture(sel); });

@@ -164,6 +164,38 @@ public class PixelUiTests
         Assert.IsFalse(hud.IsShown, "로비에선 HUD 없음(원본도 로비에서 숨긴다)");
     }
 
+    /// <summary>
+    /// 보스 체력바는 **상단 가운데, 보스 이름 아래**(2026-11-10 사용자 A안 — 예전엔 화면 한가운데를 가로질렀다). 왼쪽 위 상태창과 안 겹친다.
+    /// 처음엔 0에서 차오르고, 맞으면 연노랑 잔상이 남았다 따라 줄어든다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator CombatHud_BossBar_TopCenterUnderName_IntroAndDamageTrail()
+    {
+        var hud = pc.GetComponent<CombatHud>();
+        RunState.Begin(1, RunMode.Boss);
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, BossRatio = 1f };
+        yield return null;
+        Assert.IsTrue(hud.BossBarShown);
+        Assert.AreEqual("덩어리 지배자", hud.BossNameLabel, "1지역 보스 이름이 바 위에");
+        var r = hud.BossBarRect;
+        Assert.AreEqual(320f, r.anchoredPosition.x + r.sizeDelta.x / 2f, 0.6f, "가로 가운데");
+        Assert.Less(-r.anchoredPosition.y + r.sizeDelta.y, 90f, "화면 위쪽(640×360 기준 y 90 위)");
+        Assert.GreaterOrEqual(r.anchoredPosition.x, 196f, "왼쪽 위 상태창(4~196)과 안 겹친다");
+        Assert.Less(hud.BossFillWidth, 232f, "첫 프레임은 아직 차오르는 중");
+
+        yield return new WaitForSeconds(CombatHud.BossIntroTime + 0.1f);
+        Assert.AreEqual(232f, hud.BossFillWidth, 0.6f, "다 찼다");
+
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, BossRatio = 0.5f };
+        yield return null;
+        yield return null;
+        Assert.AreEqual(116f, hud.BossFillWidth, 0.6f, "빨강은 바로 깎인다");
+        Assert.Greater(hud.BossTrailWidth, 150f, "잔상은 아직 남아 있다");
+        yield return new WaitForSeconds(CombatHud.BossTrailTime + 0.1f);
+        Assert.AreEqual(116f, hud.BossTrailWidth, 0.6f, "잔상이 따라왔다");
+        RunState.Reset();
+    }
+
     [UnityTest]
     public IEnumerator Title_ShowsOnTitle_LoadNeedsSave_PopupConfirmRunsCallback()
     {

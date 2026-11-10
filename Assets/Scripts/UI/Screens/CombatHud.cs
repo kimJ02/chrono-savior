@@ -118,8 +118,16 @@ namespace ChronoSavior.UI
         static readonly Rect ComboNum = new Rect(533f, 81f, 99f, 23f);   // 181:6 "32" 24px(560·45 상자의 가운데 = 582.5 그대로)
         const float SlotX = 20f, SlotY = 303f, SlotStep = 40f, SlotSize = 32f; // 181:2~181:4
         static readonly Rect Minimap = new Rect(504f, 280f, 128f, 64f);  // 166:30 "지도 1"
-        static readonly Rect BossBar = new Rect(39f, 143f, 560f, 16f);   // 281:8 "보스 체력바 2"
-        static readonly Rect BossFill = new Rect(4f, 4f, 552f, 8f);      // 막대 그림의 빈 안쪽(그림 픽셀)
+        // 보스 체력바 — **상단 가운데, 타이머·보스 이름 바로 아래**(2026-11-10 사용자 A안). Figma(281:8)는 화면 한가운데(39,143) 560폭이라
+        // 플레이 영역을 가로질러 가렸다. 그림은 Figma 막대의 왼쪽 절반 + 오른쪽 절반을 이어 붙인 240폭(`Hud/boss_bar_short` — 테두리 무늬가 있어 늘이면 뭉개진다).
+        // 왼쪽 위 상태창(4~196)과 안 겹치게 x 200부터. 이름은 '토벌' 줄 자리(KillsBox)에 — 보스전엔 토벌 수가 없다.
+        static readonly Rect BossBar = new Rect(200f, 60f, 240f, 16f);
+        static readonly Rect BossFill = new Rect(4f, 4f, 232f, 8f);      // 막대 그림의 빈 안쪽(그림 픽셀)
+        /// <summary>처음 나타날 때 0에서 차오르는 시간(Codex 상의 — 등장 연출 최소안).</summary>
+        public const float BossIntroTime = 0.25f;
+        /// <summary>맞은 만큼 연노랑 잔상이 남았다가 줄어드는 시간.</summary>
+        public const float BossTrailTime = 0.35f;
+        static readonly Color32 BossTrailColor = new Color32(255, 236, 190, 255);
         static readonly Rect PortalBox = new Rect(120f, 286f, 400f, 12f); // Figma에 없음(임시)
         static readonly Rect BuffBox = new Rect(6f, 73f, 480f, 12f);     // Figma에 없음(임시) — 원본 `#buffs`처럼 상태창 바로 아래
         static readonly Color BuffColor = new Color32(0x8e, 0xf0, 0xc8, 0xff); // 원본 `#buffs { color:#8ef0c8 }`(:38)
@@ -153,6 +161,10 @@ namespace ChronoSavior.UI
         public float ExpFillWidth => expFill != null ? ((RectTransform)expFill.transform).sizeDelta.x : 0f;
         public bool ComboShown => comboNum != null && comboNum.enabled;
         public bool BossBarShown => bossRoot != null && bossRoot.gameObject.activeSelf;
+        public float BossFillWidth => bossFill != null ? ((RectTransform)bossFill.transform).sizeDelta.x : 0f;
+        public float BossTrailWidth => bossTrail != null ? ((RectTransform)bossTrail.transform).sizeDelta.x : 0f;
+        public RectTransform BossBarRect => bossRoot;
+        public string BossNameLabel => kills != null && RunState.Mode != RunMode.Normal ? kills.text : "";
         public int MinimapLineCount => minimap != null ? minimap.PlatformLineCount : 0;
 
         public struct PreviewState
@@ -173,7 +185,9 @@ namespace ChronoSavior.UI
         PxTextGradient timerGradient;
         Image portrait;
         RectTransform bossRoot;
-        Image bossFill;
+        Image bossFill, bossTrail;
+        float bossShown, bossTrailRatio, bossIntroT, bossTrailSpeed;
+        bool bossWasShown;
         Image expFill;
         readonly Slot[] slots = new Slot[3];
         CombatMinimapView minimap;
@@ -281,8 +295,44 @@ namespace ChronoSavior.UI
         void BuildBossBar()
         {
             bossRoot = Px.Node(Content, "BossBar", BossBar.x, BossBar.y, BossBar.width, BossBar.height);
+            bossTrail = Px.Fill(bossRoot, "Trail", (Color)BossTrailColor, BossFill.x, BossFill.y, BossFill.width, BossFill.height);
             bossFill = Px.Fill(bossRoot, "Fill", (Color)HpRed, BossFill.x, BossFill.y, BossFill.width, BossFill.height);
-            Px.Image(bossRoot, "Frame", PxArt.Get("Hud/boss_bar"), 0f, 0f, BossBar.width, BossBar.height);
+            Px.Image(bossRoot, "Frame", PxArt.Get("Hud/boss_bar_short"), 0f, 0f, BossBar.width, BossBar.height);
+        }
+
+        /// <summary>
+        /// 보스 체력바 — 처음 나타나면 <see cref="BossIntroTime"/>에 걸쳐 차오르고, 맞으면 깎인 만큼 연노랑 잔상이 <see cref="BossTrailTime"/>에 걸쳐 줄어든다.
+        /// 게임 시간(일시정지·히트스톱엔 멈춤). 채움 폭은 정수 픽셀.
+        /// </summary>
+        void RefreshBossBar(float? ratio)
+        {
+            bool show = ratio.HasValue;
+            bossRoot.gameObject.SetActive(show);
+            if (!show) { bossWasShown = false; return; }
+            float target = Mathf.Clamp01(ratio.Value);
+            float dt = Time.deltaTime;
+            if (!bossWasShown) { bossWasShown = true; bossIntroT = 0f; bossShown = 0f; bossTrailRatio = 0f; }
+            if (!Application.isPlaying) { bossIntroT = BossIntroTime; bossShown = bossTrailRatio = target; } // 편집기 캡처(시간이 안 흐름)는 최종 모습
+
+            if (bossIntroT < BossIntroTime)
+            {
+                bossIntroT += dt;
+                bossShown = target * Mathf.Clamp01(bossIntroT / BossIntroTime);
+                bossTrailRatio = bossShown;
+            }
+            else
+            {
+                if (target < bossShown) // 새로 깎였다 — 잔상은 지금 자리에서 출발해 BossTrailTime에 걸쳐 따라온다
+                {
+                    bossTrailRatio = Mathf.Max(bossTrailRatio, bossShown);
+                    bossTrailSpeed = (bossTrailRatio - target) / BossTrailTime;
+                }
+                bossShown = target;
+                if (bossTrailRatio > bossShown) bossTrailRatio = Mathf.Max(bossShown, bossTrailRatio - bossTrailSpeed * dt);
+                else bossTrailRatio = bossShown;
+            }
+            ((RectTransform)bossFill.transform).sizeDelta = new Vector2(Mathf.Round(bossShown * BossFill.width), BossFill.height);
+            ((RectTransform)bossTrail.transform).sizeDelta = new Vector2(Mathf.Round(bossTrailRatio * BossFill.width), BossFill.height);
         }
 
         void BuildExpBar()
@@ -314,7 +364,7 @@ namespace ChronoSavior.UI
                 timer.SetVerticesDirty();
             }
 
-            kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : "보스전";
+            kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : RegionConfig.BossNameOf(RunState.Region);
             buffs.text = v.Buffs ?? "";
 
             bool combo = v.Combo > 0; // 원본: 0이면 숨김(:1633)
@@ -332,9 +382,7 @@ namespace ChronoSavior.UI
                 portal.color = v.PortalUnlocked ? PortalOpen : PortalLocked;
             }
 
-            bossRoot.gameObject.SetActive(v.BossRatio.HasValue);
-            if (v.BossRatio.HasValue)
-                ((RectTransform)bossFill.transform).sizeDelta = new Vector2(Mathf.Round(Mathf.Clamp01(v.BossRatio.Value) * BossFill.width), BossFill.height);
+            RefreshBossBar(v.BossRatio);
 
             ((RectTransform)expFill.transform).sizeDelta =
                 new Vector2(Mathf.Round(Mathf.Clamp01(v.ExpRatio) * (ExpBar.width - 2f)), ExpBar.height - 2f);
