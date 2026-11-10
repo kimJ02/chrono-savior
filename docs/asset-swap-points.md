@@ -36,7 +36,7 @@
 | 메카닉 드론 | `Characters/GunnerDrone`(프리팹 `Prefabs/Combat/GunnerDrone` — 추진 배기 Particle System `Exhaust` 자식), 탄 `GunnerBullet.Spawn(artKey: mechanic/pellet, withTrail, hitArtKey: mechanic/drone_hit)`(꼬리 = 탄 프리팹 `Trail` TrailRenderer), 발사 섬광 키 `mechanic/drone_muzzle` | 2026-11-10 D-B '발사 강조형'(사용자): 몸 둘레 원·호 없음, 끝나기 1초 전 깜빡. 판정 상자와 그림은 따로 |
 | 메카닉 중계기 머리 | `Characters/GunnerTurret.AttachRelayHead`(키 `mechanic/relay_head`, 머리 둘레 전기 `mechanic/relay_aura`) | 높이 `RelayHeadHeight`. 2026-11-10 I-B '전기 아크형'(사용자): 늘 깔린 범위 원·링크 사거리 점선 원 없음 — 맞는 순간 적 자리 전기(`Characters/GunnerZap`, 키 `mechanic/zap`, 적마다 0.25초에 한 번) + 때린 곳(연결선·도형 변·중계기 머리)에서 적까지 짧은 전기(`Characters/GunnerZapArc`, LineRenderer — 그림 없이) |
 | 메카닉 중계선·내부 장판 | `Characters/GunnerFieldVfx`(Player에 놓임, 머티리얼 칸 `Assets/Materials/VfxUnlit`) | 2026-11-10 I-B: 중계선 = 링크마다 LineRenderer 셋(판정 경로 그대로 1px 기준선 + 흔들리는 주 아크 2px + 보조 아크 1px, 15fps로 모양 바뀜, 양 끝 고정), 판정 폭 띠 없음. 내부 = 옅은 푸른 메시 + 흰 점 6개 |
-| 살수 집중·궤적·칼날폭풍 | `Characters/BladeVfx`(Player에 놓임, 머티리얼 칸 `VfxUnlit`) | 배경 어둡게(`ShadeAlpha`)·하트비트·궤적 선(원본 drawBladeTrail)·파열 섬광+스플래터·회전베기(`assassin/spin`)·연기 |
+| 살수 집중·궤적·칼날폭풍 | `Characters/BladeVfx`(Player에 놓임 — 칸: 선 머티리얼 `VfxUnlit`, 잔상 머티리얼 `SpriteFlash`, 착지 파편 프리팹 `Prefabs/Combat/BladeLandDebris`) | 2026-11-10 사용자 확정 — 집중 'B 잔상 복제'(남색 배경 어둡게·켤 때 청록 하트비트 `assassin/heartbeat`·파란 잔상 3·속도선·옅은 궤적 점·파열 흰 잔상 + `assassin/rip_hit`), 칼날폭풍 '잔상 연쇄 파열 + 착지 폭발'(회전베기 `assassin/spin` 틱마다 좌우 반전·`assassin/crescent`·잔상 사슬 → 끝나고 0.35초 뒤 `assassin/bolt_1·2`+`assassin/burst_spark`로 터짐·착지 `assassin/land_ring`·`land_burst`·`land_dust` + 바닥 충격파(착지 판정 반경) + 파편). 그림은 `BladeCombat`의 알림 이벤트(`TrailRipHit`·`StormSpun`·`StormLanded`·`StormEnded`)만 듣는다 |
 
 ## 코드 수정이 필요한 곳 (실제 효과가 오면 바꾼다)
 

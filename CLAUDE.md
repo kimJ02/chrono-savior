@@ -181,14 +181,13 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | -100 | 배경(`StageVisuals.BackgroundOrder`) |
 | -50 | 살수 집중 — 배경만 어둡게 덮는 판(`BladeVfx.ShadeSortingOrder`, 배경 위·땅 아래) |
 | -5 | 땅·발판 타일(`StageVisuals.GroundOrder`) |
-| -4 | 살수 칼날폭풍 연기(`BladeVfx.SmokeSortingOrder`) |
 | -3 | 필드 효과 — 중력장 구체·메카닉 내부 장판 칠(캐릭터·적 뒤) |
 | -2 | 불길 장판 그림(`FireTrailZone.FlameSortingOrder`)·메카닉 내부 장판 흰 점 |
-| -1 | 몸 바로 뒤: 잔상·마법사 차지 오라(몸 정렬 − 1) |
+| -1 | 몸 바로 뒤: 잔상(살수 집중·칼날폭풍 잔상 사슬 포함)·마법사 차지 오라·살수 집중 하트비트(몸 정렬 − 1) |
 | 0 | 캐릭터·적(기본) — 몸 바로 앞(+1)은 피격·완충 깜빡임, 베기 효과 |
 | 3 | 투사체·메카닉 레이저·중계선 기준선·보조 아크·중계기 머리 전기 오라·드론 탄 꼬리 |
 | 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`)·중계기 머리·살수 스플래터·하트비트·회전베기(궤적 선은 3)·레이저 총구 빛 바깥(`GunnerBeamVfx`, 가운데 밝은 원은 5)·중계선 주 아크·설치기 전기(`GunnerZap`)·드론 발사 섬광·적중 불꽃 |
-| 5 | 공격 판정 표시(링) |
+| 5 | 공격 판정 표시(링)·살수 착지 섬광 |
 
 ### 테스트
 - `Rigidbody2D`/`Collider2D`가 얽힌 로직(이동·공격 판정·발판 등)은 PlayMode 테스트 필수.

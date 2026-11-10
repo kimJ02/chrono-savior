@@ -33,6 +33,8 @@ namespace ChronoSavior.Tests.PlayMode
         public static ChronoSavior.Systems.ExpOrb ExpOrb => Load<ChronoSavior.Systems.ExpOrb>("ExpOrb");
         /// <summary>레이저 끝 빛 알갱이(Particle System, 2026-11-10).</summary>
         public static ParticleSystem LaserTipSparks => Load<ParticleSystem>("LaserTipSparks");
+        /// <summary>살수 착지 파편(Particle System, 2026-11-10).</summary>
+        public static ParticleSystem BladeLandDebris => Load<ParticleSystem>("BladeLandDebris");
 
         /// <summary>1스테이지(숲) 그림 묶음 — 게임 씬의 `StageVisuals`가 쓰는 에셋.</summary>
         public static ChronoSavior.World.StageArtSet StageArt

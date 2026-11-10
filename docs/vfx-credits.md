@@ -47,8 +47,13 @@ Pixel Art Effects
 | `mechanic/relay_head` | Projectiles Pack 4 | pj4_plasma_ball_small_blue (설치기 몸체 위 — 몸체 안테나 그림은 팩에 없어 지금 몸체) |
 | `assassin/slash_1~3` | Slash Vol 2 | spritesheet_96x96 1·3·5줄(무속성) |
 | `assassin/spin` | Slash Vol 2 update_1 | spritesheet_96x96 17줄(회전베기 7장 — 불투명 갈색 바탕을 가져오기 도구가 뺀다) |
-| `assassin/heartbeat` | Gigapack | Sci-fi/scifi_heartbeat_fast_001_large_yellow |
-| `assassin/splatter` | Gigapack | Splatters/directional_splatter_001_small_red |
-| `assassin/smoke` | Gigapack | Smoke Bursts/looping_smoke_burst_002_small_gray |
+| `assassin/heartbeat` | Gigapack | Sci-fi/scifi_heartbeat_fast_001_large_yellow → 색상 +135° 청록 |
+| `assassin/crescent` | Slash Vol 2 update_1 | spritesheet_96x96 13줄(큰 청록 초승달 7장, 갈색 바탕 뺌) |
+| `assassin/bolt_1`·`bolt_2` | Slash Vol 2 | spritesheet_96x96 13·15줄(번개 베기 — 노랑(22~80°)만 청록 187°로) |
+| `assassin/burst_spark` | Gigapack | Magic Bursts/round_sparkle_burst_001_small_blue |
+| `assassin/land_ring` | Gigapack | Impacts/symmetrical_impact_002_large_blue |
+| `assassin/land_burst` | Gigapack | Impacts/symmetrical_impact_001_large_yellow → 노랑만 청록 |
+| `assassin/land_dust` | Gigapack | Smoke Bursts/directional_smoke_burst_001_small_white |
+| `assassin/rip_hit` | Gigapack | Impacts/directional_impact_001_small_blue |
 
 목록은 효과를 입히며 바뀐다 — 바뀌면 이 표도 같이(원본은 `Editor/VfxPackImporter`).

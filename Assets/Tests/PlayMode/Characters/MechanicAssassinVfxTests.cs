@@ -347,64 +347,127 @@ public class MechanicAssassinVfxTests
     static (BladeCombat blade, BladeVfx vfx) NewAssassin()
     {
         var go = NewBody("TestBlade");
+        var sr = go.GetComponent<SpriteRenderer>();
+        if (sr.sprite == null) sr.sprite = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 8f);
         var blade = go.AddComponent<BladeCombat>();
         var vfx = go.AddComponent<BladeVfx>();
         vfx.LineMaterial = TestMaterial();
+        vfx.GhostMaterial = TestPrefabs.SpriteFlash;
+        vfx.DebrisPrefab = TestPrefabs.BladeLandDebris;
         GameState.Set(GameScene.Run);
         return (blade, vfx);
     }
 
+    /// <summary>집중 B(2026-11-10): 배경만 남색으로 어둡게, 켤 때만 하트비트(잠깐), 끝나면 다시 밝다.</summary>
     [Test]
-    public void Focus_DarkensBackground_AndShowsHeartbeat_ThenClears()
+    public void Focus_DarkensBackground_HeartbeatOnlyAtStart_ThenClears()
     {
         AssumeInstalled(VfxKeys.AssassinHeartbeat);
         var (blade, vfx) = NewAssassin();
-        typeof(BladeCombat).GetField("focusT", Private).SetValue(blade, 2f);
-        for (int i = 0; i < 10; i++) vfx.Refresh(0.05f);
+        typeof(BladeCombat).GetField("focusT", Private).SetValue(blade, 3f);
+        vfx.Refresh(0.05f);
+        Assert.IsTrue(vfx.HeartbeatVisible, "켤 때 하트비트");
+        for (int i = 0; i < 14; i++) vfx.Refresh(0.05f);
         Assert.AreEqual(BladeVfx.ShadeAlpha, vfx.ShadeAmount, 1e-4f, "집중 중엔 배경이 어둡다");
-        Assert.IsTrue(vfx.HeartbeatVisible, "하트비트");
+        Assert.IsFalse(vfx.HeartbeatVisible, "하트비트는 켤 때만(머리 위에 계속 떠 있지 않다)");
         typeof(BladeCombat).GetField("focusT", Private).SetValue(blade, 0f);
         for (int i = 0; i < 10; i++) vfx.Refresh(0.05f);
         Assert.AreEqual(0f, vfx.ShadeAmount, 1e-4f, "끝나면 다시 밝다");
-        Assert.IsFalse(vfx.HeartbeatVisible);
     }
 
-    /// <summary>궤적 선은 판정과 같은 점을 따라가고, 4층 파열은 길을 따라 스플래터를 뿌린다.</summary>
+    /// <summary>집중 B: 움직이면 뒤에 잔상 3개, 서 있으면 없다.</summary>
     [Test]
-    public void Trail_FollowsTrailPoints_AndRipScattersSplatter()
+    public void Focus_LeavesThreeGhosts_WhenMoving()
     {
-        AssumeInstalled(VfxKeys.AssassinSplatter);
         var (blade, vfx) = NewAssassin();
-        Assume.That(vfx.LineMaterial != null, "머티리얼 에셋이 없다");
+        typeof(BladeCombat).GetField("focusT", Private).SetValue(blade, 3f);
+        for (int i = 0; i < 20; i++) vfx.Refresh(0.03f);
+        Assert.AreEqual(0, vfx.CloseGhostCount, "서 있으면 잔상 없음");
+        for (int i = 0; i < 20; i++) { blade.transform.position += new Vector3(0.2f, 0f, 0f); vfx.Refresh(0.03f); }
+        Assert.AreEqual(3, vfx.CloseGhostCount, "움직이면 잔상 3개");
+    }
+
+    /// <summary>런이 끝나 그림 오브젝트가 치워져도(RunTransient) 다음 런에 궤적 점이 다시 생긴다(Codex 리뷰 2026-11-10).</summary>
+    [UnityTest]
+    public IEnumerator Trail_DotsComeBack_AfterRunObjectsAreDestroyed()
+    {
+        var (blade, vfx) = NewAssassin();
+        var pts = (List<Vector2>)typeof(BladeCombat).GetField("trailPts", Private).GetValue(blade);
+        for (int i = 0; i < 6; i++) pts.Add(new Vector2(i * 0.3f, 1f));
+        typeof(BladeCombat).GetField("trailT", Private).SetValue(blade, 1f);
+        vfx.Refresh(0.016f);
+        Assert.AreEqual(6, vfx.TrailPointCount);
+        foreach (var r in Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)) if (r.name == "TrailDot") Object.Destroy(r.gameObject);
+        yield return null;
+        vfx.Refresh(0.016f);
+        Assert.AreEqual(blade.TrailPoints.Count, vfx.TrailPointCount, "치워진 점을 다시 만든다(그 사이 판정이 점을 더 찍었을 수 있다)");
+        Assert.GreaterOrEqual(vfx.TrailPointCount, 6);
+    }
+
+    /// <summary>
+    /// 잔상 머티리얼(SpriteFlash)은 Unity 6 URP 스프라이트 색·뒤집기(unity_SpriteColor·unity_SpriteProps)를 읽는다 — 예전엔 정점 색만 읽어
+    /// 잔상이 늘 흰색, 뒤집힌 그림은 안 뒤집혔다(2026-11-10). 적 피격 플래시(흰색)도 같은 셰이더라 색·방향이 SpriteRenderer를 따른다.
+    /// </summary>
+    [Test]
+    public void SpriteFlash_ReadsSpriteColorAndFlip()
+    {
+        var shader = TestPrefabs.SpriteFlash.shader;
+        Assert.AreEqual("ChronoSavior/SpriteFlash", shader.name);
+        Assert.IsTrue(shader.isSupported, "셰이더가 컴파일된다");
+        var src = System.IO.File.ReadAllText("Assets/Resources/Shaders/SpriteFlash.shader");
+        StringAssert.Contains("unity_SpriteColor", src, "SpriteRenderer.color");
+        StringAssert.Contains("UnityFlipSprite", src, "SpriteRenderer.flipX");
+    }
+
+    /// <summary>궤적은 판정 점마다 옅은 점, 4층 파열은 길을 따라 흰 잔상을 차례로 띄운다.</summary>
+    [Test]
+    public void Trail_DotsFollowTrailPoints_AndRipFlashesGhosts()
+    {
+        var (blade, vfx) = NewAssassin();
         ProfileService.Current.bladeTier = 4;
         var pts = (List<Vector2>)typeof(BladeCombat).GetField("trailPts", Private).GetValue(blade);
         for (int i = 0; i < 12; i++) pts.Add(new Vector2(i * 0.3f, 1f));
         typeof(BladeCombat).GetField("trailT", Private).SetValue(blade, 1f);
         vfx.Refresh(0.016f);
-        Assert.AreEqual(12, vfx.TrailPointCount, "궤적 선 = 판정 점");
-
+        Assert.AreEqual(12, vfx.TrailPointCount, "궤적 점 = 판정 점");
         typeof(BladeCombat).GetMethod("RipTrail", Private).Invoke(blade, null);
-        int splatters = 0;
-        foreach (var p in Object.FindObjectsByType<VfxPlayer>(FindObjectsSortMode.None)) if (p.name == "Vfx_assassin_splatter") splatters++;
-        Assert.GreaterOrEqual(splatters, 6, "길(3.3유닛)을 따라 0.5유닛마다");
+        vfx.Refresh(0.2f);
+        int ghosts = 0;
+        foreach (var r in Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None)) if (r.name == "RipGhost" && r.gameObject.activeSelf) ghosts++;
+        Assert.GreaterOrEqual(ghosts, 2, "지나온 길(3.3유닛)을 따라 흰 잔상이 차례로");
     }
 
-    [Test]
-    public void Storm_LoopsSpinSlash_AndLeavesSmoke()
+    /// <summary>
+    /// 칼날폭풍(2026-11-10 '잔상 연쇄 파열 + 착지 폭발'): 회전베기 루프 + 지나온 길에 잔상 사슬, 끝나면 남았다가 터져 사라진다.
+    /// 판정 고리·연기는 없다. 착지 알림이 오면 바닥 충격파가 착지 판정 반경까지 퍼진다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Storm_ChainOfGhosts_BurstsAfterEnd_AndLandingShockReachesLandRadius()
     {
         AssumeInstalled(VfxKeys.AssassinSpin);
         var (blade, vfx) = NewAssassin();
         typeof(BladeCombat).GetField("storming", Private).SetValue(blade, true);
-        vfx.Refresh(0.016f);
+        for (int i = 0; i < 12; i++) { blade.transform.position += new Vector3(0.15f, -0.05f, 0f); vfx.Refresh(1 / 30f); }
         Assert.IsTrue(vfx.SpinVisible, "칼날폭풍 중 회전베기");
-        blade.transform.position += new Vector3(1f, 0f, 0f);
-        vfx.Refresh(0.016f);
-        bool smoke = false;
-        foreach (var p in Object.FindObjectsByType<VfxPlayer>(FindObjectsSortMode.None)) if (p.name == "Vfx_assassin_smoke") smoke = true;
-        Assert.IsTrue(smoke, "지나간 길에 연기");
+        Assert.GreaterOrEqual(vfx.ChainCount, 5, "0.05초마다 잔상 사슬");
+        Assert.AreEqual(3, vfx.CloseGhostCount, "바로 뒤 잔상 3개");
+        // 끝 — 착지 알림·끝 알림(판정이 내는 것을 흉내)
         typeof(BladeCombat).GetField("storming", Private).SetValue(blade, false);
-        vfx.Refresh(0.016f);
+        var landed = typeof(BladeCombat).GetField("StormLanded", Private);
+        var ended = typeof(BladeCombat).GetField("StormEnded", Private);
+        ((System.Action<Vector2>)landed.GetValue(blade))?.Invoke(blade.transform.position);
+        ((System.Action)ended.GetValue(blade))?.Invoke();
+        vfx.Refresh(1 / 30f);
         Assert.IsFalse(vfx.SpinVisible, "끝나면 회전베기도 끝");
+        int chain = vfx.ChainCount;
+        Assert.Greater(chain, 0, "끝난 직후엔 잔상이 남아 있다");
+        for (int i = 0; i < 6; i++) vfx.Refresh(1 / 30f); // 착지 뒤 0.23초 — 충격파가 다 퍼졌고(0.22초) 아직 남아 있다(0.3초)
+        Assert.IsTrue(vfx.ShockVisible, "바닥 충격파");
+        Assert.AreEqual(BladeCombat.StormLandRadiusUnits, vfx.ShockRadius, 0.05f, "충격파는 착지 판정 반경까지");
+        for (int i = 0; i < 30; i++) vfx.Refresh(1 / 30f);
+        Assert.AreEqual(0, vfx.ChainCount, "잔상은 먼 쪽부터 터져 다 사라진다");
+        Assert.IsFalse(vfx.ShockVisible, "충격파도 사라진다");
+        yield return null;
     }
 }
 

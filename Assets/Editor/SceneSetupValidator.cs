@@ -153,6 +153,7 @@ namespace ChronoSavior.Editor
             // 그림만 하는 메카닉 장판·살수 스킬 그림(2026-11-08) — 선·메시는 머티리얼이 필요해 연결 칸으로 받는다
             if (player != null && (!player.TryGetComponent(out GunnerFieldVfx fieldVfx) || fieldVfx.FillMaterial == null)) problems.Add("Player에 GunnerFieldVfx(설치기 링크·내부 장판 그림)가 없거나 머티리얼이 비어 있다");
             if (player != null && (!player.TryGetComponent(out BladeVfx bladeVfx) || bladeVfx.LineMaterial == null)) problems.Add("Player에 BladeVfx(살수 집중·궤적·칼날폭풍 그림)가 없거나 머티리얼이 비어 있다");
+            if (player != null && player.TryGetComponent(out BladeVfx bladeVfx2) && (bladeVfx2.GhostMaterial == null || bladeVfx2.DebrisPrefab == null)) problems.Add("Player BladeVfx의 잔상 머티리얼(SpriteFlash) 또는 착지 파편 프리팹(BladeLandDebris)이 비어 있다 — 집중·칼날폭풍 잔상이 색 없이 나오거나 착지 파편이 없다");
             // 쏘는 쪽이 탄 프리팹을 들고 있다(2026-11-05 생성 책임 2-3 — 예전엔 탄을 코드로 지었다)
             if (player != null && player.TryGetComponent(out MageAttack mageKit)) CheckProjectilePrefab(mageKit.BoltPrefab, "Player MageAttack.boltPrefab", problems);
             if (player != null && player.TryGetComponent(out GunnerAttack gunnerKit))

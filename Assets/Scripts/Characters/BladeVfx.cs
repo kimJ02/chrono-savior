@@ -7,83 +7,143 @@ namespace ChronoSavior.Characters
 {
     /// <summary>
     /// 살수(코드 이름 섬영 `Blade*`) 스킬 그림 — 그림만이다(판정·수치는 <see cref="BladeCombat"/>, 기본공격 베기는 <see cref="BladeSlashVfx"/>).
-    /// 2026-11-08 VFX 스프린트, 팀원 문서 '이펙트와 연출':
-    /// - **집중**: "플랫폼이랑 적이 잘 보이게 배경이 어두워지는 효과 + 하트비트" — 배경(-100)과 땅(-5) 사이(<see cref="ShadeSortingOrder"/>)에 검은 반투명 판을 깔고,
-    ///   머리 위에 기가팩 `scifi_heartbeat`(키 <see cref="VfxKeys.AssassinHeartbeat"/>)를 되풀이한다.
-    /// - **궤적**: 원본 `drawBladeTrail`(project_test.html:5670) 그대로 — 지나간 길을 따라 넓은 반투명 하늘색 선 + 가는 밝은 선. 예전 Unity엔 궤적 그림이 없었다.
-    ///   **파열**(4층 궤적 파열)되면 궤적이 한 번 하얗게 번쩍이고, 기가팩 스플래터(`assassin/splatter`)를 길을 따라 일정 간격으로 뿌린다.
-    /// - **칼날폭풍**: Slash Vol 2의 회전베기(`assassin/spin`)를 되풀이하고, 지나간 길에 기가팩 연기(`assassin/smoke`)를 남긴다 — 연기는 사라질 때 투명해진다.
-    /// 선은 머티리얼이 필요해 씬 연결 칸(<see cref="lineMaterial"/>)으로 받는다. 씬의 Player에 놓인다. 라이선스 그림이 없으면(팩을 안 가져온 클론) 그 부분만 안 보인다.
+    /// **2026-11-10 사용자 확정**(지금 모습 캡처 → 다른 게임 사례(Katana Zero 네온 잔상·Megaman Zero 대시·Hollow Knight 사이클론·Hades 마무리 강조) 조사 →
+    /// Codex xhigh 논의 → 도트 격자에 맞춘 움직이는 예시 그림에서 고름):
+    /// - **집중 'B 잔상 복제'**: 배경만 남색으로 어둡게(<see cref="ShadeSortingOrder"/> — 땅·발판·적·캐릭터는 밝게), 켤 때만 캐릭터 뒤 청록 하트비트 + 1px 고동 링 두 번,
+    ///   이동 중 0.1/0.2/0.3초 전 자리에 파란 잔상 3개 + 짧은 속도선. 궤적(판정)은 굵은 관 대신 옅은 1px 점(판정 자리는 보여야 해서 — 예시엔 없던 것, 사용자에게 알림).
+    ///   4층 파열 = 지나온 길을 따라 흰 잔상이 차례로 번쩍 + 맞은 적 자리에 파란 충격(<see cref="BladeCombat.TrailRipHit"/>).
+    /// - **칼날폭풍 '잔상 연쇄 파열 + 착지 폭발'**: 판정 고리·연기는 뺐다. 회전베기 루프는 틱마다 좌우 반전 + 큰 청록 초승달이 좌우 번갈아(<see cref="BladeCombat.StormSpun"/>),
+    ///   바로 뒤 잔상 3개는 틱마다 먼 쪽부터 하얗게 번쩍, 진행 방향(30° 아래) 속도선, 끌려가는 적 잔상. 지나온 길에 <see cref="ChainStep"/>초마다 잔상이 사슬로 남고,
+    ///   끝나면(<see cref="BladeCombat.StormEnded"/>) <see cref="ChainHold"/>초 맥동하다 먼 쪽부터 흰 번쩍 → 청록 번개 베기로 터진다.
+    ///   2층+ 착지(<see cref="BladeCombat.StormLanded"/>) = 흰 섬광 + 가시 충격 고리 + 청록 폭발 + **바닥 충격파가 착지 판정 반경(2.1)까지** + 파편(Particle System) + 먼지 + 화면 흔들림.
+    /// 그림은 판정을 다시 계산하지 않는다 — 판정이 낸 결과(이벤트·공개 상태)만 그린다(Codex). 시간은 게임 시간(일시정지·히트스톱 땐 같이 멈춘다).
+    /// 잔상은 몸 모양만 살려 색으로 칠하는 머티리얼(<see cref="ghostMaterial"/>, SpriteFlash), 충격파는 선 머티리얼(<see cref="lineMaterial"/>), 파편은 프리팹(<see cref="debrisPrefab"/>) — 씬 Player 칸.
+    /// 라이선스 그림이 없으면(팩을 안 가져온 클론) 그 부분만 안 보인다.
     /// </summary>
     [RequireComponent(typeof(BladeCombat))]
     public class BladeVfx : MonoBehaviour
     {
         // ── 집중 ──
-        /// <summary>배경을 덮는 정렬(배경 -100 위, 땅·발판 -5 아래 — 그래서 땅·발판·적·캐릭터는 그대로 밝다).</summary>
+        /// <summary>배경을 덮는 정렬(배경 -100 위, 땅·발판 -5 아래).</summary>
         public const int ShadeSortingOrder = -50;
-        /// <summary>배경 어둡기 — 0.55는 캐릭터·적이 배경과 같이 묻혀 보여 0.4로(2026-11-09 Codex 합의).</summary>
-        public const float ShadeAlpha = 0.4f, ShadeFadeTime = 0.2f;
-        /// <summary>어두운 판 크기(유닛) — 화면(7.5×4.2)보다 넉넉히, 캐릭터를 따라다닌다.</summary>
+        /// <summary>배경 어둡기·색(남색) — 2026-11-10 집중 B.</summary>
+        public const float ShadeAlpha = 0.34f, ShadeFadeTime = 0.15f;
+        static readonly Color ShadeColor = new Color(6 / 255f, 10 / 255f, 30 / 255f);
         const float ShadeSize = 40f;
-        /// <summary>하트비트 그림 위치(몸 중심에서 위로)·재생 속도.</summary>
-        public const float HeartbeatHeight = 0.55f, HeartbeatFps = 15f;
-
-        // ── 궤적(원본 drawBladeTrail) ──
-        /// <summary>원본 넓은 선 26px(×3층 반경 배수)·가는 선 3.4px — 도트 단위로 맞춰 넓은 선 32칸·가는 선 4칸(도트 2개, 2026-11-09). 색과 투명도.</summary>
-        public const float TrailWideWidth = 0.25f, TrailThinWidth = 4f / 128f;
-        static readonly Color TrailWideColor = new Color(143 / 255f, 228 / 255f, 1f, 0.22f), TrailThinColor = new Color(215 / 255f, 245 / 255f, 1f, 0.85f);
-        /// <summary>원본: 궤적 시간이 끝난 뒤(파열 전) 남은 선은 0.75배로 흐리게.</summary>
-        public const float TrailEndedFade = 0.75f;
-        /// <summary>파열 섬광 시간(초)·스플래터 간격(유닛)·배율.</summary>
-        public const float RipFlashTime = 0.18f, SplatterSpacing = 0.5f;
-        public const int SplatterScale = 2;
+        /// <summary>하트비트 — 켤 때만 이만큼(초) 캐릭터 뒤에서, 고동 링은 0초·0.25초 두 번.</summary>
+        public const float HeartbeatTime = 0.55f, HeartbeatFps = 20f, PulseLife = 0.22f;
+        /// <summary>집중 잔상 — 몇 초 전 자리, 색.</summary>
+        static readonly float[] FocusGhostBack = { 0.1f, 0.2f, 0.3f };
+        static readonly Color[] FocusGhostColor = { new Color(100 / 255f, 200 / 255f, 1f, 150 / 255f), new Color(100 / 255f, 200 / 255f, 1f, 105 / 255f), new Color(100 / 255f, 200 / 255f, 1f, 60 / 255f) };
+        /// <summary>이보다 느리면(0.3초 동안 이만큼도 안 움직이면) 잔상·속도선을 안 그린다(유닛).</summary>
+        const float GhostMinTravel = 0.35f;
+        static readonly Color TrailDotColor = new Color(120 / 255f, 225 / 255f, 1f, 0.35f);
+        /// <summary>파열 — 흰 잔상 간격(유닛)·차례 간격(초)·수명(초).</summary>
+        public const float RipGhostSpacing = 0.7f, RipGhostStagger = 0.035f, RipGhostLife = 0.2f;
 
         // ── 칼날폭풍 ──
-        public const float SpinFps = 20f, SmokeSpacing = 0.35f, SmokeFps = 15f, SmokeFade = 0.4f;
-        /// <summary>
-        /// 칼날폭풍 회전베기 판정 범위 고리 간격(초) — 도트 크기를 지키느라 회전베기 그림(1.5유닛)이 판정 지름(2.4)보다 작아,
-        /// 실제로 베이는 범위를 고리로 주기적으로 보인다(2026-11-09 Codex 합의).
-        /// </summary>
-        public const float StormRingInterval = 0.3f;
-        static readonly Color StormRingColor = new Color(0.75f, 0.95f, 1f, 0.7f);
-        float stormRingT;
-        public const int SmokeScale = 2;
-        /// <summary>연기는 땅(-5) 바로 위, 필드 효과·캐릭터 뒤(CLAUDE.md 예약표).</summary>
-        public const int SmokeSortingOrder = -4;
-        /// <summary>폭발·베기 그림 정렬(캐릭터 앞 — 폭발 4와 같은 줄).</summary>
-        public const int EffectSortingOrder = 4;
+        public const float SpinFps = 20f, CrescentFps = 30f, BoltFps = 26f;
+        /// <summary>바로 뒤 잔상 — 몇 초 전 자리(2·4·6프레임), 색(밝은 청록·파랑·어두운 파랑).</summary>
+        static readonly float[] StormGhostBack = { 2 / 30f, 4 / 30f, 6 / 30f };
+        static readonly Color C_W = new Color(244 / 255f, 1f, 1f), C_LC = new Color(84 / 255f, 233 / 255f, 1f), C_C = new Color(34 / 255f, 200 / 255f, 1f),
+            C_B = new Color(63 / 255f, 131 / 255f, 1f), C_D = new Color(23 / 255f, 77 / 255f, 138 / 255f);
+        /// <summary>잔상 사슬 간격(초)·끝난 뒤 남아 있는 시간(초)·먼 쪽부터 터지는 간격(초)·흰 번쩍 시간(초).</summary>
+        public const float ChainStep = 0.05f, ChainHold = 0.35f, ChainStagger = 0.03f, ChainWhite = 2 / 30f;
+        /// <summary>초승달이 몸 중심에서 좌우로 비켜나는 거리(그림 px).</summary>
+        const float CrescentOffsetPx = 10f;
+        /// <summary>속도선 — 칼날폭풍 6줄·집중 3줄, 그림 px 길이 후보, 2프레임마다 다시 뽑는다.</summary>
+        const int StormSpeedLines = 6, FocusSpeedLines = 3;
+        static readonly int[] SpeedLineLengths = { 18, 28, 40 };
+        const float SpeedLineRefresh = 2 / 30f;
+        /// <summary>착지 — 흰 섬광 시간, 충격파가 판정 반경까지 퍼지는 시간·사라지는 시간, 흔들림(원본 px)·시간.</summary>
+        public const float LandFlashTime = 2 / 30f, ShockGrowTime = 0.22f, ShockLife = 0.3f, LandShakePx = 12f, LandShakeTime = 0.16f, ChainShakePx = 5f;
+        public const int EffectSortingOrder = 4, LineSortingOrder = 3, FlashSortingOrder = 5;
 
-        [Tooltip("궤적 선 머티리얼(Assets/Materials/VfxUnlit — 꼭짓점 색을 그대로 칠하는 스프라이트 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
+        [Tooltip("착지 충격파 선 머티리얼(Assets/Materials/VfxUnlit). 외주 효과로 바꿀 땐 이 칸만.")]
         [SerializeField] Material lineMaterial;
+        [Tooltip("잔상 머티리얼(Assets/Materials/SpriteFlash — 몸 모양만 살리고 색으로 칠한다).")]
+        [SerializeField] Material ghostMaterial;
+        [Tooltip("착지 파편 Particle System 프리팹(Assets/Prefabs/Combat/BladeLandDebris).")]
+        [SerializeField] ParticleSystem debrisPrefab;
 
         /// <summary>씬 검증과 테스트가 읽고 넣는다.</summary>
         public Material LineMaterial { get => lineMaterial; set => lineMaterial = value; }
+        public Material GhostMaterial { get => ghostMaterial; set => ghostMaterial = value; }
+        public ParticleSystem DebrisPrefab { get => debrisPrefab; set => debrisPrefab = value; }
 
         BladeCombat blade;
+        SpriteRenderer body;
+        float clock; // 게임 시간
+        // 위치 기록(잔상용)
+        struct Sample { public float t; public Vector2 pos; public Sprite sprite; public bool flip; }
+        readonly List<Sample> history = new List<Sample>();
+
+        // 집중
         SpriteRenderer shade;
-        VfxPlayer heartbeat, spin;
-        LineRenderer trailWide, trailThin;
-        float shadeAlpha, ripFlash;
-        Vector2 lastSmoke;
+        float shadeAlpha;
+        VfxPlayer heartbeat;
+        float heartbeatT = -1f;
+        bool wasFocusing;
+        readonly SpriteRenderer[] closeGhosts = new SpriteRenderer[3];
+        readonly List<SpriteRenderer> trailDots = new List<SpriteRenderer>();
+        struct Pulse { public SpriteRenderer sr; public float t; public Vector2 at; }
+        readonly List<Pulse> pulses = new List<Pulse>();
+        struct Flash { public SpriteRenderer sr; public float t, delay, life; public Vector2 at; public Sprite sprite; public bool flip; public Color color; }
+        readonly List<Flash> flashes = new List<Flash>();
+
+        // 칼날폭풍
+        VfxPlayer spin;
         bool wasStorming;
+        float closeFlashT = 9f, chainNext, chainEndT = -1f, speedLineT;
+        int lastTick;
+        struct Link { public SpriteRenderer sr; public float born; public Vector2 at; public Sprite sprite; public bool flip; public bool done; }
+        readonly List<Link> chain = new List<Link>();
+        readonly List<SpriteRenderer> speedLines = new List<SpriteRenderer>();
+        float enemyGhostT;
+        LineRenderer shock;
+        SpriteRenderer landFlash;
+        float landT = -1f;
+        Vector2 landAt;
+        ParticleSystem debris;
+        readonly Stack<SpriteRenderer> pool = new Stack<SpriteRenderer>();
 
         /// <summary>테스트용.</summary>
         public float ShadeAmount => shadeAlpha;
         public bool HeartbeatVisible => heartbeat != null && heartbeat.gameObject.activeSelf;
         public bool SpinVisible => spin != null && spin.gameObject.activeSelf;
-        public int TrailPointCount => trailWide != null && trailWide.enabled ? trailWide.positionCount : 0;
+        public int TrailPointCount { get { int n = 0; foreach (var d in trailDots) if (d != null && d.gameObject.activeSelf) n++; return n; } }
+        public int CloseGhostCount { get { int n = 0; foreach (var g in closeGhosts) if (g != null && g.gameObject.activeSelf) n++; return n; } }
+        public int ChainCount { get { int n = 0; foreach (var l in chain) if (!l.done) n++; return n; } }
+        public bool ShockVisible => shock != null && shock.enabled;
+        public float ShockRadius { get; private set; }
 
-        void Awake() => blade = GetComponent<BladeCombat>();
+        void Awake()
+        {
+            blade = GetComponent<BladeCombat>();
+            body = GetComponent<SpriteRenderer>();
+        }
 
         void OnEnable()
         {
             if (blade == null) blade = GetComponent<BladeCombat>();
-            if (blade != null) blade.TrailRipped += OnTrailRipped;
+            if (blade == null) return;
+            blade.TrailRipped += OnTrailRipped;
+            blade.TrailRipHit += OnTrailRipHit;
+            blade.StormSpun += OnStormSpun;
+            blade.StormLanded += OnStormLanded;
+            blade.StormEnded += OnStormEnded;
         }
 
         void OnDisable()
         {
-            if (blade != null) blade.TrailRipped -= OnTrailRipped;
+            if (blade != null)
+            {
+                blade.TrailRipped -= OnTrailRipped;
+                blade.TrailRipHit -= OnTrailRipHit;
+                blade.StormSpun -= OnStormSpun;
+                blade.StormLanded -= OnStormLanded;
+                blade.StormEnded -= OnStormEnded;
+            }
             HideAll();
         }
 
@@ -93,22 +153,78 @@ namespace ChronoSavior.Characters
         public void Refresh(float dt)
         {
             if (blade == null) blade = GetComponent<BladeCombat>();
+            if (body == null) body = GetComponent<SpriteRenderer>();
             bool active = blade != null && blade.enabled && GameState.IsRunning;
-            UpdateFocus(active && blade.IsFocusing, dt);
-            UpdateTrail(active, dt);
-            UpdateStorm(active && blade.IsStorming);
+            if (!active) { HideAll(); return; }
+            clock += dt;
+            Record();
+            bool focusing = blade.IsFocusing, storming = blade.IsStorming;
+            UpdateFocus(focusing, dt);
+            UpdateTrailDots();
+            UpdateCloseGhosts(focusing, storming);
+            UpdateSpeedLines(focusing, storming, dt);
+            UpdateStorm(storming, dt);
+            UpdateChain();
+            UpdateLanding(dt);
+            UpdateFlashes(dt);
+            UpdatePulses(dt);
         }
 
-        void HideAll()
+        // ───────── 공통: 위치 기록·잔상 ─────────
+        void Record()
         {
-            shadeAlpha = 0f;
-            if (shade != null) shade.gameObject.SetActive(false);
-            if (heartbeat != null) heartbeat.gameObject.SetActive(false);
-            if (spin != null) spin.gameObject.SetActive(false);
-            if (trailWide != null) { trailWide.enabled = false; trailThin.enabled = false; }
+            history.Add(new Sample { t = clock, pos = transform.position, sprite = body != null ? body.sprite : null, flip = body != null && body.flipX });
+            while (history.Count > 2 && clock - history[1].t > 0.45f) history.RemoveAt(0);
         }
 
-        // ── 집중: 배경 어둡게 + 하트비트 ──
+        bool SampleBack(float back, out Sample s)
+        {
+            s = default;
+            if (history.Count == 0) return false;
+            float want = clock - back;
+            for (int i = history.Count - 1; i >= 0; i--)
+                if (history[i].t <= want) { s = history[i]; return true; }
+            return false;
+        }
+
+        SpriteRenderer Take(string name, int order)
+        {
+            SpriteRenderer sr = null;
+            while (pool.Count > 0 && sr == null) sr = pool.Pop();
+            if (sr == null)
+            {
+                var go = new GameObject(name, typeof(SpriteRenderer));
+                RunTransient.Mark(go);
+                sr = go.GetComponent<SpriteRenderer>();
+            }
+            sr.gameObject.name = name;
+            sr.gameObject.SetActive(true);
+            sr.sortingOrder = order;
+            sr.flipX = false;
+            sr.transform.rotation = Quaternion.identity;
+            return sr;
+        }
+
+        void Give(SpriteRenderer sr)
+        {
+            if (sr == null) return;
+            sr.gameObject.SetActive(false);
+            pool.Push(sr);
+        }
+
+        /// <summary>몸 모양 잔상 하나를 그 자리·그 그림·그 색으로(머티리얼이 없으면 그냥 색을 곱한다).</summary>
+        void PlaceGhost(SpriteRenderer sr, Vector2 at, Sprite sprite, bool flip, Color color)
+        {
+            sr.sprite = sprite;
+            sr.flipX = flip;
+            if (ghostMaterial != null) sr.sharedMaterial = ghostMaterial;
+            sr.color = color;
+            sr.transform.position = at;
+            sr.transform.localScale = transform.lossyScale;
+            if (body != null) { sr.sortingLayerID = body.sortingLayerID; sr.sortingOrder = body.sortingOrder - 1; }
+        }
+
+        // ───────── 집중 ─────────
         void UpdateFocus(bool focusing, float dt)
         {
             shadeAlpha = Mathf.MoveTowards(shadeAlpha, focusing ? ShadeAlpha : 0f, ShadeAlpha * dt / ShadeFadeTime);
@@ -125,137 +241,384 @@ namespace ChronoSavior.Characters
                 }
                 shade.gameObject.SetActive(true);
                 shade.transform.position = transform.position;
-                shade.color = new Color(0f, 0f, 0f, shadeAlpha);
+                shade.color = new Color(ShadeColor.r, ShadeColor.g, ShadeColor.b, shadeAlpha);
             }
             else if (shade != null) shade.gameObject.SetActive(false);
 
-            if (focusing)
+            // 켤 때만 — 캐릭터 뒤 하트비트 + 고동 링 두 번
+            if (focusing && !wasFocusing)
             {
+                heartbeatT = 0f;
+                AddPulse(0f); AddPulse(-0.25f);
+            }
+            wasFocusing = focusing;
+            if (heartbeatT >= 0f)
+            {
+                heartbeatT += dt;
                 if (heartbeat == null) heartbeat = NewLoop("FocusHeartbeat", VfxKeys.AssassinHeartbeat, HeartbeatFps, DotScale.Value);
                 if (heartbeat != null)
                 {
-                    if (!heartbeat.gameObject.activeSelf) { heartbeat.gameObject.SetActive(true); heartbeat.Play(VfxFrames.Get(VfxKeys.AssassinHeartbeat), HeartbeatFps, true, 0f, Color.white); }
-                    heartbeat.transform.position = transform.position + new Vector3(0f, HeartbeatHeight, 0f);
+                    bool on = heartbeatT < HeartbeatTime && focusing;
+                    if (on && !heartbeat.gameObject.activeSelf) { heartbeat.gameObject.SetActive(true); heartbeat.Play(VfxFrames.Get(VfxKeys.AssassinHeartbeat), HeartbeatFps, true, 0f, Color.white); }
+                    if (!on) heartbeat.gameObject.SetActive(false);
+                    heartbeat.transform.position = transform.position;
+                    var hsr = heartbeat.GetComponent<SpriteRenderer>();
+                    if (body != null) hsr.sortingOrder = body.sortingOrder - 1;
                 }
+                if (heartbeatT >= HeartbeatTime) heartbeatT = -1f;
             }
             else if (heartbeat != null) heartbeat.gameObject.SetActive(false);
         }
 
-        // ── 궤적(원본 drawBladeTrail) + 파열 섬광 ──
-        void UpdateTrail(bool active, float dt)
+        void AddPulse(float startT) => pulses.Add(new Pulse { sr = null, t = startT, at = transform.position });
+
+        void UpdatePulses(float dt)
         {
-            if (lineMaterial == null) return; // 씬엔 늘 있다(씬 구성 검증이 본다)
-            var pts = active ? blade.TrailPoints : null;
-            ripFlash = Mathf.Max(0f, ripFlash - dt);
-            bool draw = pts != null && pts.Count >= 2;
-            if (!draw && ripFlash <= 0f)
+            for (int i = pulses.Count - 1; i >= 0; i--)
             {
-                if (trailWide != null) { trailWide.enabled = false; trailThin.enabled = false; }
-                return;
+                var p = pulses[i];
+                p.t += dt;
+                if (p.t >= PulseLife) { Give(p.sr); pulses.RemoveAt(i); continue; }
+                if (p.t >= 0f)
+                {
+                    if (p.sr == null) p.sr = Take("FocusPulse", EffectSortingOrder);
+                    float r = DotScale.Units(8f + p.t * 90f) / 2f * 2f; // 그림 8px에서 0.22초에 ~28px
+                    p.sr.sprite = DotShapes.Ring(Mathf.Round(r / DotScale.Units(2f)) * DotScale.Units(2f)); // 2px 단위로(캐시 크기 제한)
+                    p.sr.sharedMaterial = lineMaterial;
+                    p.sr.transform.localScale = Vector3.one;
+                    p.sr.transform.position = transform.position;
+                    p.sr.color = new Color(C_LC.r, C_LC.g, C_LC.b, 0.9f * (1f - p.t / PulseLife));
+                }
+                pulses[i] = p;
             }
-            EnsureLines();
-            if (draw) SetLinePoints(pts);
-            float fade = blade.TrailLive ? 1f : TrailEndedFade;
-            float wide = TrailWideWidth * blade.TrailWidthScale;
-            if (ripFlash > 0f)
-            {
-                // 파열 섬광 — 마지막 궤적이 하얗게 번쩍였다 사라진다
-                float k = ripFlash / RipFlashTime;
-                trailWide.startColor = trailWide.endColor = new Color(1f, 1f, 1f, 0.6f * k);
-                trailThin.startColor = trailThin.endColor = new Color(1f, 1f, 1f, k);
-                trailWide.widthMultiplier = wide * (1f + 0.6f * k);
-            }
-            else
-            {
-                trailWide.startColor = trailWide.endColor = new Color(TrailWideColor.r, TrailWideColor.g, TrailWideColor.b, TrailWideColor.a * fade);
-                trailThin.startColor = trailThin.endColor = new Color(TrailThinColor.r, TrailThinColor.g, TrailThinColor.b, TrailThinColor.a * fade);
-                trailWide.widthMultiplier = wide;
-            }
-            trailThin.widthMultiplier = TrailThinWidth;
-            trailWide.enabled = trailThin.enabled = true;
         }
 
-        void EnsureLines()
+        /// <summary>궤적(판정 점) — 옅은 1px 점만. 판정 자리는 보여야 해서 남겼다(예시엔 없던 것).</summary>
+        void UpdateTrailDots()
         {
-            if (trailWide != null) return;
-            trailWide = NewLine("BladeTrailWide", EffectSortingOrder - 1); // 캐릭터 앞, 폭발 아래(원본도 궤적을 캐릭터 뒤가 아니라 위에 그린다)
-            trailThin = NewLine("BladeTrailThin", EffectSortingOrder - 1);
-            trailThin.sortingOrder = EffectSortingOrder - 1;
-        }
-
-        LineRenderer NewLine(string name, int order)
-        {
-            var go = new GameObject(name, typeof(LineRenderer));
-            RunTransient.Mark(go);
-            var lr = go.GetComponent<LineRenderer>();
-            lr.sharedMaterial = lineMaterial;
-            lr.useWorldSpace = true;
-            lr.numCapVertices = 4; // 원본 lineCap round
-            lr.numCornerVertices = 2; // 원본 lineJoin round
-            lr.sortingOrder = order;
-            lr.alignment = LineAlignment.TransformZ;
-            return lr;
-        }
-
-        void SetLinePoints(IReadOnlyList<Vector2> pts)
-        {
-            trailWide.positionCount = trailThin.positionCount = pts.Count;
-            for (int i = 0; i < pts.Count; i++)
+            var pts = blade.TrailPoints;
+            int n = pts != null ? pts.Count : 0;
+            trailDots.RemoveAll(d => d == null); // 런이 끝나 치워진 것(RunTransient) — 다음 런에 다시 만든다(Codex 리뷰)
+            while (trailDots.Count < n)
             {
-                trailWide.SetPosition(i, pts[i]);
-                trailThin.SetPosition(i, pts[i]);
+                var go = new GameObject("TrailDot", typeof(SpriteRenderer));
+                RunTransient.Mark(go);
+                var sr = go.GetComponent<SpriteRenderer>();
+                sr.sprite = VfxDots.DotSprite();
+                sr.sortingOrder = LineSortingOrder;
+                go.transform.localScale = new Vector3(0.5f, 0.5f, 1f); // 그림 1px
+                trailDots.Add(sr);
+            }
+            float fade = blade.TrailLive ? 1f : 0.6f;
+            for (int i = 0; i < trailDots.Count; i++)
+            {
+                var d = trailDots[i];
+                if (d == null) continue;
+                bool on = i < n;
+                if (d.gameObject.activeSelf != on) d.gameObject.SetActive(on);
+                if (!on) continue;
+                d.transform.position = GunnerFieldVfx.Snap(pts[i]);
+                d.color = new Color(TrailDotColor.r, TrailDotColor.g, TrailDotColor.b, TrailDotColor.a * fade);
             }
         }
 
         void OnTrailRipped(IReadOnlyList<Vector2> pts)
         {
             if (pts == null || pts.Count == 0) return;
-            if (lineMaterial != null && pts.Count >= 2) { EnsureLines(); SetLinePoints(pts); ripFlash = RipFlashTime; }
-            // 길을 따라 일정 간격으로 스플래터 — 방향은 그 자리의 진행 방향
-            float carry = SplatterSpacing; // 첫 점에도 하나
+            // 지나온 길을 따라 흰 잔상이 차례로 번쩍(먼 쪽 = 궤적 시작부터)
+            float carry = RipGhostSpacing;
+            int k = 0;
+            Sprite sprite = body != null ? body.sprite : null;
             for (int i = 0; i < pts.Count; i++)
             {
-                Vector2 prev = i > 0 ? pts[i - 1] : pts[i];
-                carry += Vector2.Distance(prev, pts[i]);
-                if (carry < SplatterSpacing) continue;
+                if (i > 0) carry += Vector2.Distance(pts[i - 1], pts[i]);
+                if (carry < RipGhostSpacing) continue;
                 carry = 0f;
-                Vector2 dir = i > 0 ? pts[i] - prev : (pts.Count > 1 ? pts[1] - pts[0] : Vector2.right);
-                var v = VfxPlayer.Spawn(VfxKeys.AssassinSplatter, pts[i], SplatterScale, 15f, EffectSortingOrder, false, 0.15f);
-                if (v != null && dir.sqrMagnitude > 1e-6f) v.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+                bool flip = i > 0 ? pts[i].x < pts[i - 1].x : (body != null && body.flipX);
+                flashes.Add(new Flash { delay = k * RipGhostStagger, life = RipGhostLife, at = pts[i], sprite = sprite, flip = flip, color = C_W });
+                k++;
             }
         }
 
-        // ── 칼날폭풍: 회전베기 반복 + 길 따라 연기 ──
-        void UpdateStorm(bool storming)
+        void OnTrailRipHit(Vector2 at) => VfxPlayer.Spawn(VfxKeys.AssassinRipHit, at, DotScale.Value, 30f, EffectSortingOrder);
+
+        void UpdateFlashes(float dt)
         {
+            for (int i = flashes.Count - 1; i >= 0; i--)
+            {
+                var f = flashes[i];
+                f.t += dt;
+                float lt = f.t - f.delay;
+                if (lt >= f.life) { Give(f.sr); flashes.RemoveAt(i); continue; }
+                if (lt >= 0f && f.sprite != null)
+                {
+                    if (f.sr == null) f.sr = Take("RipGhost", 0);
+                    PlaceGhost(f.sr, f.at, f.sprite, f.flip, new Color(f.color.r, f.color.g, f.color.b, 0.86f * (1f - lt / f.life)));
+                }
+                else if (lt >= 0f && f.sr != null) // 이미 놓인 잔상(끌려가는 적) — 옅어지기만
+                    f.sr.color = new Color(f.color.r, f.color.g, f.color.b, 0.43f * (1f - lt / f.life));
+                flashes[i] = f;
+            }
+        }
+
+        // ───────── 잔상 3개(집중·칼날폭풍 공통) ─────────
+        void UpdateCloseGhosts(bool focusing, bool storming)
+        {
+            bool show = (focusing || storming) && SampleBack(0.3f, out var far) && Vector2.Distance(far.pos, transform.position) > GhostMinTravel;
+            if (storming && !show) show = true;
+            float[] backs = storming ? StormGhostBack : FocusGhostBack;
+            for (int j = 0; j < 3; j++)
+            {
+                if (!show || !SampleBack(backs[j], out var s) || s.sprite == null)
+                {
+                    if (closeGhosts[j] != null) closeGhosts[j].gameObject.SetActive(false);
+                    continue;
+                }
+                if (closeGhosts[j] == null) closeGhosts[j] = Take("BladeGhost", 0);
+                closeGhosts[j].gameObject.SetActive(true);
+                Color col;
+                if (storming)
+                {
+                    col = j == 0 ? new Color(C_LC.r, C_LC.g, C_LC.b, 200 / 255f) : j == 1 ? new Color(C_B.r, C_B.g, C_B.b, 150 / 255f) : new Color(C_D.r, C_D.g, C_D.b, 110 / 255f);
+                    // 틱마다 먼 쪽부터 하얗게(3프레임)
+                    int frame = Mathf.FloorToInt(closeFlashT * 30f);
+                    if (frame >= 0 && frame < 3 && frame == 2 - j) col = C_W;
+                }
+                else col = FocusGhostColor[j];
+                PlaceGhost(closeGhosts[j], s.pos, s.sprite, s.flip, col);
+            }
+        }
+
+        // ───────── 속도선 ─────────
+        void UpdateSpeedLines(bool focusing, bool storming, float dt)
+        {
+            int want = 0;
+            Vector2 dir = Vector2.right;
+            if (storming) { want = StormSpeedLines; dir = blade.StormDirection; }
+            else if (focusing && SampleBack(0.1f, out var s) && Vector2.Distance(s.pos, transform.position) > GhostMinTravel * 0.33f)
+            {
+                want = FocusSpeedLines; dir = ((Vector2)transform.position - s.pos).normalized;
+            }
+            speedLineT -= dt;
+            bool reroll = speedLineT <= 0f;
+            if (reroll) speedLineT = SpeedLineRefresh;
+            speedLines.RemoveAll(l => l == null); // 런이 끝나 치워진 것
+            while (speedLines.Count < want) { var sr = Take("SpeedLine", LineSortingOrder); sr.sprite = VfxDots.DotSprite(); speedLines.Add(sr); }
+            float px = DotScale.Units(1f);
+            for (int i = 0; i < speedLines.Count; i++)
+            {
+                var sr = speedLines[i];
+                if (sr == null) continue;
+                bool on = i < want;
+                if (sr.gameObject.activeSelf != on) sr.gameObject.SetActive(on);
+                if (!on || !reroll) continue;
+                // 몸 뒤쪽(진행 반대)에서, 진행 방향으로 기운 1px 선
+                int len = SpeedLineLengths[Random.Range(0, SpeedLineLengths.Length)];
+                Vector2 n = new Vector2(-dir.y, dir.x);
+                Vector2 center = (Vector2)transform.position - dir * (px * (16 + Random.Range(0, 24) + len * 0.5f)) + n * (px * Random.Range(-22, 17));
+                sr.transform.position = GunnerFieldVfx.Snap(center);
+                sr.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+                float unit = sr.sprite.bounds.size.x;
+                sr.transform.localScale = new Vector3(len * px / unit, px / unit, 1f);
+                sr.sharedMaterial = lineMaterial;
+                sr.color = new Color(C_W.r, C_W.g, C_W.b, storming ? 0.82f : 0.63f);
+            }
+        }
+
+        // ───────── 칼날폭풍 ─────────
+        void UpdateStorm(bool storming, float dt)
+        {
+            closeFlashT += dt;
             if (storming)
             {
-                if (spin == null) spin = NewLoop("StormSpin", VfxKeys.AssassinSpin, SpinFps, SpinScale());
+                if (!wasStorming)
+                {
+                    ClearChain(); // 이전 사슬이 아직 남아 있으면 바로 정리(재진입)
+                    chainNext = clock;
+                    chainEndT = -1f;
+                }
+                if (spin == null) spin = NewLoop("StormSpin", VfxKeys.AssassinSpin, SpinFps, DotScale.Value);
                 if (spin != null)
                 {
                     if (!spin.gameObject.activeSelf) { spin.gameObject.SetActive(true); spin.Play(VfxFrames.Get(VfxKeys.AssassinSpin), SpinFps, true, 0f, Color.white); }
                     spin.transform.position = transform.position;
+                    spin.GetComponent<SpriteRenderer>().flipX = lastTick % 2 == 1;
                 }
-                Vector2 here = transform.position;
-                if (!wasStorming) { lastSmoke = here; stormRingT = 0f; }
-                stormRingT -= Time.deltaTime;
-                if (stormRingT <= 0f)
+                // 지나온 길에 잔상 사슬
+                if (clock >= chainNext && body != null && body.sprite != null)
                 {
-                    stormRingT = StormRingInterval;
-                    RangeRing.Show(here, BladeCombat.StormSpinDiameter * 0.5f, StormRingColor, 0.25f);
+                    chainNext = clock + ChainStep;
+                    chain.Add(new Link { sr = null, born = clock, at = transform.position, sprite = body.sprite, flip = body.flipX });
                 }
-                if (Vector2.Distance(here, lastSmoke) >= SmokeSpacing)
+                // 끌려가는 적 잔상(2프레임마다, 짧게)
+                enemyGhostT -= dt;
+                if (enemyGhostT <= 0f)
                 {
-                    lastSmoke = here;
-                    VfxPlayer.Spawn(VfxKeys.AssassinSmoke, here, SmokeScale, SmokeFps, SmokeSortingOrder, false, SmokeFade);
+                    enemyGhostT = 2 / 30f;
+                    foreach (var c in blade.StormGrabbed)
+                    {
+                        var esr = c.GetComponent<SpriteRenderer>();
+                        if (esr == null || esr.sprite == null) continue;
+                        var g = Take("GrabGhost", esr.sortingOrder - 1);
+                        g.sprite = esr.sprite; g.flipX = esr.flipX;
+                        if (ghostMaterial != null) g.sharedMaterial = ghostMaterial;
+                        g.sortingLayerID = esr.sortingLayerID;
+                        g.transform.position = esr.transform.position;
+                        g.transform.localScale = esr.transform.lossyScale;
+                        g.color = new Color(C_C.r, C_C.g, C_C.b, 110 / 255f);
+                        flashes.Add(new Flash { sr = g, delay = 0f, life = 4 / 30f, at = esr.transform.position, sprite = null, color = C_C });
+                    }
                 }
             }
             else if (spin != null) spin.gameObject.SetActive(false);
             wasStorming = storming;
         }
 
-        /// <summary>회전베기 그림 배율 — 공통 도트 배율(96px → 1.5유닛, 판정 지름 2.4와 따로).</summary>
-        static int SpinScale() => DotScale.Value;
+        void OnStormSpun(Vector2 at, int tick)
+        {
+            lastTick = tick;
+            closeFlashT = 0f;
+            bool right = tick % 2 == 0;
+            var p = VfxPlayer.Spawn(VfxKeys.AssassinCrescent, at + new Vector2(DotScale.Units(right ? CrescentOffsetPx : -CrescentOffsetPx), 0f), DotScale.Value, CrescentFps, EffectSortingOrder);
+            if (p != null) p.GetComponent<SpriteRenderer>().flipX = !right;
+        }
+
+        void OnStormEnded() => chainEndT = clock;
+
+        void UpdateChain()
+        {
+            for (int i = 0; i < chain.Count; i++)
+            {
+                var l = chain[i];
+                if (l.done) continue;
+                float age = clock - l.born;
+                if (l.sr == null) l.sr = Take("ChainGhost", 0);
+                Color col = age < 0.1f ? new Color(C_LC.r, C_LC.g, C_LC.b, 200 / 255f) : age < 0.25f ? new Color(C_B.r, C_B.g, C_B.b, 150 / 255f) : new Color(C_D.r, C_D.g, C_D.b, 110 / 255f);
+                if (chainEndT >= 0f)
+                {
+                    float sinceEnd = clock - chainEndT;
+                    float boom = sinceEnd - ChainHold - i * ChainStagger;
+                    if (boom < 0f)
+                    {
+                        if (Mathf.FloorToInt(sinceEnd * 30f) % 6 < 3) col = new Color(C_B.r, C_B.g, C_B.b, 150 / 255f); // 남아 있는 동안 맥동
+                    }
+                    else if (boom < ChainWhite) col = C_W;
+                    else
+                    {
+                        // 터진다 — 청록 번개 베기 + 파란 반짝임
+                        VfxPlayer.Spawn(i % 2 == 0 ? VfxKeys.AssassinBolt2 : VfxKeys.AssassinBolt1, l.at, DotScale.Value, BoltFps, EffectSortingOrder);
+                        VfxPlayer.Spawn(VfxKeys.AssassinBurstSpark, l.at, DotScale.Value, 30f, EffectSortingOrder);
+                        if (i == 0) HitFeel.Shake(ChainShakePx, 0.08f);
+                        Give(l.sr); l.sr = null; l.done = true;
+                        chain[i] = l;
+                        continue;
+                    }
+                }
+                PlaceGhost(l.sr, l.at, l.sprite, l.flip, col);
+                chain[i] = l;
+            }
+            if (chain.Count > 0 && chain.TrueForAll(l => l.done)) chain.Clear();
+        }
+
+        void ClearChain()
+        {
+            foreach (var l in chain) Give(l.sr);
+            chain.Clear();
+            chainEndT = -1f;
+        }
+
+        // ───────── 착지 폭발 ─────────
+        void OnStormLanded(Vector2 feet)
+        {
+            landT = 0f;
+            landAt = feet;
+            VfxPlayer.Spawn(VfxKeys.AssassinLandRing, feet + new Vector2(0f, DotScale.Units(14f)), DotScale.Value, 26f, EffectSortingOrder);
+            VfxPlayer.Spawn(VfxKeys.AssassinLandBurst, feet + new Vector2(0f, DotScale.Units(10f)), DotScale.Value, 26f, EffectSortingOrder);
+            var d1 = VfxPlayer.Spawn(VfxKeys.AssassinLandDust, feet + new Vector2(-DotScale.Units(18f), DotScale.Units(4f)), DotScale.Value, 30f, EffectSortingOrder);
+            var d2 = VfxPlayer.Spawn(VfxKeys.AssassinLandDust, feet + new Vector2(DotScale.Units(18f), DotScale.Units(4f)), DotScale.Value, 30f, EffectSortingOrder);
+            if (d1 != null) d1.GetComponent<SpriteRenderer>().flipX = true;
+            if (debrisPrefab != null)
+            {
+                if (debris == null) { debris = Instantiate(debrisPrefab); RunTransient.Mark(debris.gameObject); }
+                debris.transform.position = feet + new Vector2(0f, DotScale.Units(4f));
+                debris.Play(true);
+            }
+            HitFeel.Shake(LandShakePx, LandShakeTime);
+        }
+
+        void UpdateLanding(float dt)
+        {
+            if (landT < 0f) return;
+            landT += dt;
+            // 흰 섬광(착지점 주변만)
+            if (landFlash == null) { landFlash = Take("LandFlash", FlashSortingOrder); }
+            landFlash.gameObject.SetActive(landT < LandFlashTime);
+            if (landT < LandFlashTime)
+            {
+                landFlash.sprite = DotShapes.Ellipse(DotScale.Units(22f), DotScale.Units(15f));
+                landFlash.sharedMaterial = lineMaterial;
+                landFlash.transform.localScale = Vector3.one;
+                landFlash.transform.position = landAt + new Vector2(0f, DotScale.Units(8f));
+                landFlash.color = new Color(C_W.r, C_W.g, C_W.b, 0.85f);
+            }
+            // 바닥 충격파 — 착지 판정 반경까지 퍼지는 납작한 고리
+            if (lineMaterial != null)
+            {
+                if (shock == null)
+                {
+                    var go = new GameObject("LandShock", typeof(LineRenderer));
+                    RunTransient.Mark(go);
+                    shock = go.GetComponent<LineRenderer>();
+                    shock.sharedMaterial = lineMaterial;
+                    shock.useWorldSpace = true;
+                    shock.loop = true;
+                    shock.positionCount = 64;
+                    shock.widthMultiplier = DotScale.Units(1f);
+                    shock.numCapVertices = shock.numCornerVertices = 0;
+                    shock.alignment = LineAlignment.TransformZ;
+                    shock.sortingOrder = LineSortingOrder;
+                }
+                bool on = landT < ShockLife;
+                shock.enabled = on;
+                if (on)
+                {
+                    float k = Mathf.Clamp01(landT / ShockGrowTime);
+                    float rx = Mathf.Lerp(DotScale.Units(10f), BladeCombat.StormLandRadiusUnits, 1f - (1f - k) * (1f - k));
+                    float ry = rx * 0.12f;
+                    ShockRadius = rx;
+                    for (int i = 0; i < 64; i++)
+                    {
+                        float a = i / 64f * Mathf.PI * 2f;
+                        shock.SetPosition(i, GunnerFieldVfx.Snap(landAt + new Vector2(Mathf.Cos(a) * rx, -DotScale.Units(1f) + Mathf.Sin(a) * ry)));
+                    }
+                    float fade = 1f - landT / ShockLife;
+                    shock.startColor = shock.endColor = new Color(C_LC.r, C_LC.g, C_LC.b, fade);
+                }
+            }
+            if (landT >= Mathf.Max(ShockLife, LandFlashTime)) landT = -1f;
+        }
+
+        void HideAll()
+        {
+            shadeAlpha = 0f;
+            if (shade != null) shade.gameObject.SetActive(false);
+            if (heartbeat != null) heartbeat.gameObject.SetActive(false);
+            heartbeatT = -1f;
+            if (spin != null) spin.gameObject.SetActive(false);
+            foreach (var g in closeGhosts) if (g != null) g.gameObject.SetActive(false);
+            foreach (var d in trailDots) if (d != null) d.gameObject.SetActive(false);
+            foreach (var s in speedLines) if (s != null) s.gameObject.SetActive(false);
+            foreach (var p in pulses) Give(p.sr);
+            pulses.Clear();
+            foreach (var f in flashes) Give(f.sr);
+            flashes.Clear();
+            ClearChain();
+            if (shock != null) shock.enabled = false;
+            if (landFlash != null) landFlash.gameObject.SetActive(false);
+            landT = -1f;
+            history.Clear();
+            wasFocusing = wasStorming = false;
+        }
 
         /// <summary>캐릭터를 따라다니는 반복 그림 하나(월드 오브젝트 — 캐릭터 배율과 무관한 정수 배율). 그림이 없으면 null.</summary>
         static VfxPlayer NewLoop(string name, string key, float fps, int scale)
@@ -271,6 +634,5 @@ namespace ChronoSavior.Characters
             go.SetActive(false);
             return p;
         }
-
     }
 }

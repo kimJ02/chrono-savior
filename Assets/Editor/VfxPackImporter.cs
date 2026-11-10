@@ -39,6 +39,8 @@ namespace ChronoSavior.Editor
             /// <summary>재색(0이면 그대로): 픽셀마다 색상(hue)을 이만큼(도) 돌린 파생 그림을 만든다 — 밝기·채도·투명도는 그대로라
             /// 런타임 틴트(곱하기)로는 탁해지는 색 바꿈(노랑 → 보라)에 쓴다(`HANDOFF.md` 0-3 재색 규칙). 팩 원본은 안 건드린다.</summary>
             public float HueShift;
+            /// <summary>색상 띠 바꾸기(BandTo ≥ 0일 때만): 색상이 [BandMin, BandMax]도이고 채도가 있는 픽셀만 BandTo도로 — 노랑만 청록으로 같은 경우(다른 색은 그대로).</summary>
+            public float BandMin, BandMax, BandTo = -1f;
             /// <summary>시트일 때: 이 색(불투명 바탕)을 투명으로 뺀다(null이면 그대로).</summary>
             public Color32? Matte;
         }
@@ -47,6 +49,7 @@ namespace ChronoSavior.Editor
         static Source Sheet(string key, string pack, string sheet, int cell, int row, int frames) =>
             new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Frames = frames };
         static Source Recolored(Source src, float hueShiftDegrees) { src.HueShift = hueShiftDegrees; return src; }
+        static Source BandRecolored(Source src, float minDeg, float maxDeg, float toDeg) { src.BandMin = minDeg; src.BandMax = maxDeg; src.BandTo = toDeg; return src; }
         static Source Matted(Source src, Color32 background) { src.Matte = background; return src; }
 
         /// <summary>쓰는 효과 목록(2026-11-07 초안 — 효과를 입히며 고른다, `HANDOFF.md` 2절).</summary>
@@ -109,9 +112,17 @@ namespace ChronoSavior.Editor
             yield return Sheet(VfxKeys.AssassinSlash3, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 5, 7);
             // 칼날폭풍 회전베기 — 업데이트 시트 17줄(위에서 0부터, 하양·하늘 타원 회전베기 7장)
             yield return Matted(Sheet(VfxKeys.AssassinSpin, SlashUpdate, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 17, 7), new Color32(157, 137, 108, 255));
-            yield return Frames(VfxKeys.AssassinHeartbeat, Gigapack, "PNG/Sci-fi/scifi_heartbeat_fast_001/scifi_heartbeat_fast_001_large_yellow");
-            yield return Frames(VfxKeys.AssassinSplatter, Gigapack, "PNG/Splatters/directional_splatter_001/directional_splatter_001_small_red");
-            yield return Frames(VfxKeys.AssassinSmoke, Gigapack, "PNG/Smoke Bursts/looping_smoke_burst_002/looping_smoke_burst_002_small_gray");
+            // 집중 하트비트 — 노랑을 살수 청록으로(2026-11-10 집중 B)
+            yield return Recolored(Frames(VfxKeys.AssassinHeartbeat, Gigapack, "PNG/Sci-fi/scifi_heartbeat_fast_001/scifi_heartbeat_fast_001_large_yellow"), 135f);
+            // 칼날폭풍 '잔상 연쇄 파열 + 착지 폭발'(2026-11-10 사용자) — 초승달·번개 베기·반짝임·착지 고리·폭발·먼지, 파열 적중
+            yield return Matted(Sheet(VfxKeys.AssassinCrescent, SlashUpdate, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 13, 7), new Color32(157, 137, 108, 255));
+            yield return BandRecolored(Sheet(VfxKeys.AssassinBolt1, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 13, 7), 22f, 80f, 187f);
+            yield return BandRecolored(Sheet(VfxKeys.AssassinBolt2, Slash, "spritesheet_96x96/sprite_sheet_96x96.png", 96, 15, 7), 22f, 80f, 187f);
+            yield return Frames(VfxKeys.AssassinBurstSpark, Gigapack, "PNG/Magic Bursts/round_sparkle_burst_001/round_sparkle_burst_001_small_blue");
+            yield return Frames(VfxKeys.AssassinLandRing, Gigapack, "PNG/Impacts/symmetrical_impact_002/symmetrical_impact_002_large_blue");
+            yield return BandRecolored(Frames(VfxKeys.AssassinLandBurst, Gigapack, "PNG/Impacts/symmetrical_impact_001/symmetrical_impact_001_large_yellow"), 22f, 80f, 187f);
+            yield return Frames(VfxKeys.AssassinLandDust, Gigapack, "PNG/Smoke Bursts/directional_smoke_burst_001/directional_smoke_burst_001_small_white");
+            yield return Frames(VfxKeys.AssassinRipHit, Gigapack, "PNG/Impacts/directional_impact_001/directional_impact_001_small_blue");
         }
 
         /// <summary>목록이 모든 키를 한 번씩 덮는지(검사·테스트용).</summary>
@@ -159,6 +170,7 @@ namespace ChronoSavior.Editor
                     if (zip == null) { problems.Add($"{src.Key}: 팩을 못 열었다 — '{src.Pack}…'.zip"); continue; }
                     var frames = src.IsSheet ? SliceSheet(zip, src, problems) : ReadFrames(zip, src, problems);
                     if (frames != null && src.HueShift != 0f) frames = frames.Select(f => ShiftHue(f, src.HueShift)).ToList();
+                    if (frames != null && src.BandTo >= 0f) frames = frames.Select(f => ReplaceHueBand(f, src.BandMin, src.BandMax, src.BandTo)).ToList();
                     if (frames != null && frames.Count > 0) ready.Add((src.Key, frames));
                 }
             }
@@ -269,6 +281,31 @@ namespace ChronoSavior.Editor
                 {
                     Color.RGBToHSV(px[i], out float h, out float s, out float v);
                     var c = Color.HSVToRGB(Mathf.Repeat(h + degrees / 360f, 1f), s, v);
+                    c.a = px[i].a;
+                    px[i] = c;
+                }
+                tex.SetPixels(px);
+                tex.Apply();
+                return tex.EncodeToPNG();
+            }
+            finally { Object.DestroyImmediate(tex); }
+        }
+
+        /// <summary>색상이 [minDeg, maxDeg]이고 채도 0.2 넘는 픽셀만 색상을 toDeg로 — 밝기·채도·투명도는 그대로.</summary>
+        public static byte[] ReplaceHueBand(byte[] png, float minDeg, float maxDeg, float toDeg)
+        {
+            var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+            try
+            {
+                tex.LoadImage(png);
+                var px = tex.GetPixels();
+                for (int i = 0; i < px.Length; i++)
+                {
+                    if (px[i].a <= 0f) continue;
+                    Color.RGBToHSV(px[i], out float h, out float s, out float v);
+                    float deg = h * 360f;
+                    if (s <= 0.2f || deg < minDeg || deg > maxDeg) continue;
+                    var c = Color.HSVToRGB(toDeg / 360f, s, v);
                     c.a = px[i].a;
                     px[i] = c;
                 }

@@ -46,6 +46,7 @@ namespace ChronoSavior.Characters
         CharacterMover2D mover;
         Rigidbody2D rb;
         Vector3 lastPos;
+        BladeCombat blade;
         [Tooltip("효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
         [SerializeField] Material ghostMaterial;
 
@@ -73,7 +74,10 @@ namespace ChronoSavior.Characters
             // (2026-10-25 사용자 섬영 플레이 스크린샷). 일시정지·결과 화면은 사냥 화면 위라 그대로 둔다.
             if (ghosts.Count > 0 && LeftTheField) ResetForRun();
             Age(dt);
-            if (dt > 0f && GameState.Current == GameScene.Run && ProfileService.Current.character == CharacterId.Blade)
+            // 살수가 집중·칼날폭풍 중이면 BladeVfx가 자기 잔상(집중 B·잔상 사슬)을 그린다 — 겹치지 않게 여기선 안 남긴다(2026-11-10)
+            if (blade == null) blade = GetComponent<BladeCombat>();
+            bool bladeDraws = blade != null && blade.enabled && (blade.IsFocusing || blade.IsStorming);
+            if (dt > 0f && !bladeDraws && GameState.Current == GameScene.Run && ProfileService.Current.character == CharacterId.Blade)
             {
                 float chance = BladeChance(dt);
                 if (chance > 0f && Random.value < chance) Spawn(transform.position);

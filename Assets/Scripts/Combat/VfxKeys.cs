@@ -68,8 +68,20 @@ namespace ChronoSavior.Combat
         /// <summary>칼날폭풍 회전베기(Slash Vol 2 업데이트 시트).</summary>
         public const string AssassinSpin = "assassin/spin";
         public const string AssassinHeartbeat = "assassin/heartbeat";
-        public const string AssassinSplatter = "assassin/splatter";
-        public const string AssassinSmoke = "assassin/smoke";
+        // 2026-11-10 사용자 확정 — 집중 'B 잔상 복제'·칼날폭풍 '잔상 연쇄 파열 + 착지 폭발'(다른 게임 사례·Codex xhigh·예시 그림). 스플래터·연기는 안 쓴다.
+        /// <summary>칼날폭풍 틱마다 좌우 번갈아 터지는 큰 청록 초승달 — Slash Vol 2 업데이트 시트 13줄.</summary>
+        public const string AssassinCrescent = "assassin/crescent";
+        /// <summary>잔상 사슬이 터질 때 번개 베기 — Slash Vol 2 본 시트 13·15줄(노랑만 청록으로).</summary>
+        public const string AssassinBolt1 = "assassin/bolt_1";
+        public const string AssassinBolt2 = "assassin/bolt_2";
+        /// <summary>잔상이 터질 때 파란 반짝임 — 기가팩 round_sparkle_burst_001 파랑.</summary>
+        public const string AssassinBurstSpark = "assassin/burst_spark";
+        /// <summary>착지 폭발 — 기가팩 symmetrical_impact_002 large 파랑(가시 고리)·symmetrical_impact_001 large(노랑 → 청록)·directional_smoke_burst_001 흰 먼지.</summary>
+        public const string AssassinLandRing = "assassin/land_ring";
+        public const string AssassinLandBurst = "assassin/land_burst";
+        public const string AssassinLandDust = "assassin/land_dust";
+        /// <summary>집중 궤적 파열에 맞은 적 자리 — 기가팩 directional_impact_001 파랑.</summary>
+        public const string AssassinRipHit = "assassin/rip_hit";
 
         /// <summary>모든 키(검사용).</summary>
         public static string[] All
@@ -83,7 +95,8 @@ namespace ChronoSavior.Combat
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
                     MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura,
-                    AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat, AssassinSplatter, AssassinSmoke,
+                    AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat,
+                    AssassinCrescent, AssassinBolt1, AssassinBolt2, AssassinBurstSpark, AssassinLandRing, AssassinLandBurst, AssassinLandDust, AssassinRipHit,
                 };
                 foreach (var part in LaserParts)
                     foreach (var phase in LaserPhases)

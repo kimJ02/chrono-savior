@@ -3957,6 +3957,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   lineMaterial: {fileID: 2100000, guid: a93efdee302a5344e90f6c3c91d9e783, type: 2}
+  ghostMaterial: {fileID: 2100000, guid: 755e32950447ea841a0318c8d55d10e6, type: 2}
+  debrisPrefab: {fileID: 1669965496115283691, guid: faf62ef4554469d4a8537c833cba3b78, type: 3}
 --- !u!114 &1457870356
 MonoBehaviour:
   m_ObjectHideFlags: 0

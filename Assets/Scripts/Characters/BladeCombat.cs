@@ -260,6 +260,23 @@ namespace ChronoSavior.Characters
         /// </summary>
         public event System.Action<IReadOnlyList<Vector2>> TrailRipped;
 
+        // ── 그림 알림(2026-11-10 집중 B·칼날폭풍 '잔상 연쇄 파열 + 착지 폭발') — 판정이 이미 낸 결과를 알릴 뿐이다. 그림은 판정을 다시 계산하지 않는다(Codex). ──
+        /// <summary>궤적 파열이 이 자리의 적에게 피해를 줬다(적 위치).</summary>
+        public event System.Action<Vector2> TrailRipHit;
+        /// <summary>칼날폭풍 회전베기 틱이 돌았다(그 순간 위치, 틱 번호 — 좌우 번갈아 그리기용).</summary>
+        public event System.Action<Vector2, int> StormSpun;
+        /// <summary>2층+ 착지 충격이 터졌다(발 위치) — 반경은 <see cref="StormLandRadiusUnits"/>.</summary>
+        public event System.Action<Vector2> StormLanded;
+        /// <summary>칼날폭풍이 끝났다(착지·벽·최대 시간·재사용·도약 모두).</summary>
+        public event System.Action StormEnded;
+        /// <summary>착지 충격 판정 반경(유닛) — 그림의 바닥 충격파가 이만큼 퍼진다.</summary>
+        public static float StormLandRadiusUnits => StormLandRadius;
+        /// <summary>칼날폭풍 진행 방향(단위 벡터, 30° 아래) — 속도선 그림용.</summary>
+        public Vector2 StormDirection => new Vector2(stormDir * Mathf.Cos(StormAngleDeg * Mathf.Deg2Rad), -Mathf.Sin(StormAngleDeg * Mathf.Deg2Rad));
+        /// <summary>지금 붙잡고 끌고 가는 적(그림이 잔상을 남긴다).</summary>
+        public IEnumerable<Collider2D> StormGrabbed { get { foreach (var g in stormGrab) if (g.col != null) yield return g.col; } }
+        int stormTick;
+
         /// <summary>회전베기(Z)의 남은 쿨다운(초) — 베기 효과(`BladeSlashVfx`)가 '방금 베었다'를 알아채는 데 쓴다(예전엔 비공개 필드를 리플렉션으로 읽었다).</summary>
         public float SpinCooldownLeft => cdTimer;
 
@@ -682,6 +699,7 @@ namespace ChronoSavior.Characters
                         float dirSign = Mathf.Sign(c.transform.position.x - transform.position.x);
                         if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
                         target.TakeDamageWithKnockback(dmg, gameObject, dirSign, FocusT4RipKnockback);
+                        TrailRipHit?.Invoke(c.bounds.center);
                     }
                 }
                 TrailRipped?.Invoke(trailPts.ToArray()); // 그림(섬광·스플래터) — 비우기 전 점을 복사해서
@@ -753,6 +771,7 @@ namespace ChronoSavior.Characters
             stormSpd = Mathf.Max(curSpeedAbs, baseSpeed);
             stormT = 0f;
             stormHitT = 0f;
+            stormTick = 0;
             stormCd = StormCd;
             stormGrab.Clear(); // 원본 `p.stormGrab = []`(:2626).
             storming = true;
@@ -791,7 +810,9 @@ namespace ChronoSavior.Characters
                 stormFalling.Add(new FallRecord { col = g.col, fallVy = 0f });
             }
             stormGrab.Clear();
+            bool was = storming;
             storming = false;
+            if (was) StormEnded?.Invoke();
         }
 
         /// <summary>
@@ -922,6 +943,7 @@ namespace ChronoSavior.Characters
                 stormHitT -= StormTickInterval;
                 float dmgMult = StormDmgMult * SpeedDamageMultiplier(stormSpeedRatio);
                 SpinHit(dmgMult, spinRadius * StormSpinRadiusMult, true, false);
+                StormSpun?.Invoke(pos, stormTick++);
             }
 
             if (pos.y <= FieldBounds.GroundY)
@@ -953,6 +975,7 @@ namespace ChronoSavior.Characters
             float baseDamage = PlayerStatCalculator.ComputeAtk(profile) * dmgMult;
             float critChance = PlayerStatCalculator.ComputeCritChance(profile);
             Vector3 center = transform.position + new Vector3(0f, StormLandYOffset, 0f);
+            StormLanded?.Invoke(transform.position);
 
             foreach (var c in Physics2D.OverlapCircleAll(center, StormLandRadius, enemyMask))
             {
