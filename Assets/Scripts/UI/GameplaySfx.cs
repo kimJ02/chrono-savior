@@ -63,6 +63,8 @@ namespace ChronoSavior.UI
             SfxEvents.AssassinBasicAttack += OnAssassinBasicAttack;
             SfxEvents.AssassinFocusActive += OnAssassinFocusActive;
             SfxEvents.AssassinSpinAttack += OnAssassinSpinAttack;
+            SfxEvents.UiClick += OnUiClick;
+            SfxEvents.UiEsc += OnUiEsc;
             CombatEvents.PlayerDied += OnPlayerDied;
         }
 
@@ -85,6 +87,8 @@ namespace ChronoSavior.UI
             SfxEvents.AssassinBasicAttack -= OnAssassinBasicAttack;
             SfxEvents.AssassinFocusActive -= OnAssassinFocusActive;
             SfxEvents.AssassinSpinAttack -= OnAssassinSpinAttack;
+            SfxEvents.UiClick -= OnUiClick;
+            SfxEvents.UiEsc -= OnUiEsc;
             CombatEvents.PlayerDied -= OnPlayerDied;
             StopLoopImmediate();
         }
@@ -147,6 +151,10 @@ namespace ChronoSavior.UI
             SetLoop(active ? "assassin_slowtime_heartbeat" : null, 0.6f);
         }
         void OnAssassinSpinAttack() => Play("assassin_spin"); // 칼날폭풍 — 음원 없음
+
+        // ── UI ──
+        void OnUiClick() => Play("ui_click");
+        void OnUiEsc() => Play("esc_sound");
 
         string PickOne(params string[] keys) => keys[pitchRandom.Next(keys.Length)];
 

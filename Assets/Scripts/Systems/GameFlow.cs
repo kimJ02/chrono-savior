@@ -300,8 +300,8 @@ namespace ChronoSavior.Systems
             // 설정 창 같은 창이 떠 있으면 ESC는 창 몫이다(창 닫기) — 일시정지까지 같이 풀리지 않게(UiModal, 2026-10-24).
             if (GameInput.PauseDown && !UiModal.OwnsEscape)
             {
-                if (GameState.Current == GameScene.Run) Pause();
-                else if (GameState.Current == GameScene.Pause) Resume();
+                if (GameState.Current == GameScene.Run) { SfxEvents.RaiseUiEsc(); Pause(); }
+                else if (GameState.Current == GameScene.Pause) { SfxEvents.RaiseUiEsc(); Resume(); }
             }
 
             if (GameState.Current != GameScene.Run) return;

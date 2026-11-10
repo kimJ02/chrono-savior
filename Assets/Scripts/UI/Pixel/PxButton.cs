@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using ChronoSavior.Core;
 
 namespace ChronoSavior.UI
 {
@@ -62,7 +63,9 @@ namespace ChronoSavior.UI
 
         public void Click()
         {
-            if (interactable) OnClick?.Invoke();
+            if (!interactable) return;
+            SfxEvents.RaiseUiClick(); // 2026-11-11 공용 버튼 클릭음 — 버튼 종류 안 가리고 전부 여기서 한 번
+            OnClick?.Invoke();
         }
 
         public void OnPointerEnter(PointerEventData e)

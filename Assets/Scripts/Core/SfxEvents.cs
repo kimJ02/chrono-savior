@@ -87,6 +87,17 @@ namespace ChronoSavior.Core
         public static event System.Action AssassinSpinAttack;
         public static void RaiseAssassinSpinAttack() => AssassinSpinAttack?.Invoke();
 
+        // ── UI ──
+        /// <summary>버튼 하나를 눌렀을 때(공용) — <see cref="UI.PxButton.Click"/>에서 올린다. 버튼마다 다른 소리를
+        /// 넘기지 않고 전부 공용 클릭음 하나로 간다(2026-11-11, "일단 클릭음 하나로 통일"). 취소/뒤로가기는
+        /// 이 신호가 아니라 <see cref="UiEsc"/>로 별도(ESC 전용 소리가 따로 있다).</summary>
+        public static event System.Action UiClick;
+        public static void RaiseUiClick() => UiClick?.Invoke();
+        /// <summary>ESC 키로 창을 닫거나 일시정지를 열고/닫을 때 — <see cref="UI.PxScreen"/>(모달 창 닫기)과
+        /// <see cref="Systems.GameFlow"/>(일시정지 열기/닫기) 두 곳에서 올린다(ESC를 읽는 자리가 그 둘뿐).</summary>
+        public static event System.Action UiEsc;
+        public static void RaiseUiEsc() => UiEsc?.Invoke();
+
         /// <summary>테스트 격리용(정적 이벤트라 구독 해제 안 하면 다음 테스트로 새어나간다 — `CombatEvents.Reset`과 같은 이유).</summary>
         public static void Reset()
         {
@@ -107,6 +118,8 @@ namespace ChronoSavior.Core
             AssassinBasicAttack = null;
             AssassinFocusActive = null;
             AssassinSpinAttack = null;
+            UiClick = null;
+            UiEsc = null;
         }
     }
 }
