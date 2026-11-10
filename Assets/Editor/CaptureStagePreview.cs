@@ -156,7 +156,7 @@ namespace ChronoSavior.Editor
             float camX = Mathf.Clamp(x, FieldBounds.MinX + StageArtConfig.ViewHalfWidth, FieldBounds.MaxX - StageArtConfig.ViewHalfWidth);
             cam.transform.position = new Vector3(camX, camYOverride ?? CameraFollow2D.DesiredY(feetY), -10f);
             cam.orthographicSize = StageArtConfig.ViewHalfHeight;
-            visuals.transform.Find("Background").position = StageVisuals.BackgroundPosition(visuals.Art, camX, cam.transform.position.y);
+            visuals.PlaceBackground(camX, cam.transform.position.y); // 로비처럼 배경을 안 쓰는 무대는 건너뛴다
 
             var rt = new RenderTexture(StageArtConfig.RefWidth, StageArtConfig.RefHeight, 24, RenderTextureFormat.ARGB32)
             { filterMode = FilterMode.Point };

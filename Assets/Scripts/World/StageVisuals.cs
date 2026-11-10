@@ -174,6 +174,19 @@ namespace ChronoSavior.World
             background.position = BackgroundPosition(art, c.x, c.y);
         }
 
+        /// <summary>
+        /// 카메라 중심이 (camX, camY)일 때의 자리로 배경을 옮긴다 — 편집기 캡처 도구(`CaptureUiPreview`·`CaptureStagePreview`)가 쓴다
+        /// (도구가 `Background` 자식 이름을 몰라도 되게, 2026-11-10 Codex 상의). 배경을 안 쓰는 무대(로비 — `includeBackground` 꺼짐, 배경은 다른 경로)는
+        /// 아무것도 안 한다. 켜져 있는데 아직 안 세웠으면(`Build` 전) 잘못된 캡처가 성공처럼 보이지 않게 예외.
+        /// </summary>
+        public void PlaceBackground(float camX, float camY)
+        {
+            if (!includeBackground) return;
+            if (background == null)
+                throw new System.InvalidOperationException($"[StageVisuals] {name}: 배경을 쓰는 무대인데 배경이 아직 없다 — Build()를 먼저 부를 것");
+            background.position = BackgroundPosition(art, camX, camY);
+        }
+
         /// <summary>카메라 중심이 (camX, camY)일 때 배경 그림의 위치(그림 가운데 기준).</summary>
         public static Vector3 BackgroundPosition(StageArtSet art, float camX, float camY)
         {
