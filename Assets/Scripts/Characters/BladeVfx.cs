@@ -32,7 +32,7 @@ namespace ChronoSavior.Characters
         /// (페이드아웃으로 검게, 집중이 끝날 때 즘에 다시 페이드인). 전환 시간은 그대로 <see cref="ShadeFadeTime"/>이
         /// 맡는다(아래 <see cref="UpdateFocus"/>의 MoveTowards가 focusing 여부만 보고 자동으로 켜고/끈다).
         /// </summary>
-        public const float ShadeAlpha = 0.97f, ShadeFadeTime = 0.2f;
+        public const float ShadeAlpha = 1f, ShadeFadeTime = 0.2f;
         static readonly Color ShadeColor = Color.black;
         const float ShadeSize = 40f;
         /// <summary>하트비트 — 켤 때만 이만큼(초) 캐릭터 뒤에서, 고동 링은 0초·0.25초 두 번.</summary>

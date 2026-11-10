@@ -276,7 +276,11 @@ namespace ChronoSavior.Core
         public int DoRegression()
         {
             int gain = ShardPreview();
-            if (gain < 1) return 0;
+            // 2026-11-10 사용자 지시 — 던전에 못 들어가게 됐을 때(멸망까지 0일, CanEnterStage=false)는
+            // 정복한 지역이 없어도(gain=0) 회귀를 막지 않는다. 원래 안전장치(gain<1이면 막기)는 "아직
+            // 던전에 들어갈 수 있는데 괜히 회귀로 진행을 날리는 사고"를 막으려는 거라, 더 들어갈 곳이
+            // 없어진 상태에서까지 막으면 아무것도 못 하는 소프트락이 생긴다.
+            if (gain < 1 && CanEnterStage) return 0;
 
             // '각인의 봉인'이 있으면 되돌려줄 값을 미리 잡아둔다(아래에서 복구).
             var keptBranch = mageBranch;

@@ -95,8 +95,11 @@ namespace ChronoSavior.UI
             values[1].text = gain.ToString("N0");
             values[2].text = $"Lv.{HighestLevel(p)}";
             values[3].text = p.stats.totalKills.ToString("N0");
-            ok.Interactable = gain >= 1; // 정복한 지역이 없으면 받을 파편이 없다 — 원본도 회귀를 막는다
-            okLabel.text = gain >= 1 ? $"회귀 (+{gain})" : "회귀 불가";
+            // 2026-11-10 정정 — 던전에 못 들어가게 됐으면(멸망까지 0일) 정복한 지역이 없어도(파편 0)
+            // 회귀를 열어준다. 안 그러면 "날짜 다 떨어졌는데 보스도 못 깼다"에서 아무것도 못 하는 소프트락.
+            bool stuck = !p.CanEnterStage;
+            ok.Interactable = gain >= 1 || stuck;
+            okLabel.text = gain >= 1 ? $"회귀 (+{gain})" : stuck ? "회귀 (파편 없음)" : "회귀 불가";
         }
 
         /// <summary>열린 가장 높은 지역(= 스테이지) 번호.</summary>

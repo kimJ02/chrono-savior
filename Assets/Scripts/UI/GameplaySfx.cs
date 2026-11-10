@@ -28,8 +28,6 @@ namespace ChronoSavior.UI
     {
         const string Root = "Audio/Sfx/";
         const float BaseVolume = 0.8f;
-        /// <summary>집중(살수) 사운드 루프 길이(초) — 실제 집중 지속시간이 아직 확정 전이라 임시로 고정(2026-11-10, 사용자 지시).</summary>
-        const float FocusLoopSeconds = 5f;
 
         static readonly Dictionary<string, AudioClip> cache = new Dictionary<string, AudioClip>();
         readonly System.Random pitchRandom = new System.Random();
@@ -63,7 +61,7 @@ namespace ChronoSavior.UI
             SfxEvents.MechanicTurretOperating += OnMechanicTurretOperating;
             SfxEvents.MechanicSkillReady += OnMechanicSkillReady;
             SfxEvents.AssassinBasicAttack += OnAssassinBasicAttack;
-            SfxEvents.AssassinFocusUsed += OnAssassinFocusUsed;
+            SfxEvents.AssassinFocusActive += OnAssassinFocusActive;
             SfxEvents.AssassinSpinAttack += OnAssassinSpinAttack;
             CombatEvents.PlayerDied += OnPlayerDied;
         }
@@ -85,7 +83,7 @@ namespace ChronoSavior.UI
             SfxEvents.MechanicTurretOperating -= OnMechanicTurretOperating;
             SfxEvents.MechanicSkillReady -= OnMechanicSkillReady;
             SfxEvents.AssassinBasicAttack -= OnAssassinBasicAttack;
-            SfxEvents.AssassinFocusUsed -= OnAssassinFocusUsed;
+            SfxEvents.AssassinFocusActive -= OnAssassinFocusActive;
             SfxEvents.AssassinSpinAttack -= OnAssassinSpinAttack;
             CombatEvents.PlayerDied -= OnPlayerDied;
             StopLoopImmediate();
@@ -139,13 +137,14 @@ namespace ChronoSavior.UI
         }
 
         /// <summary>
-        /// 2026-11-10 정정 — slowtime(시작 신호, 원샷)과 heartbeat(긴장감, 루프)로 나눴다. 실제 집중
-        /// 지속시간이 아직 확정 전이라 heartbeat 루프는 <see cref="FocusLoopSeconds"/>(임시 5초)로 자동 정지한다.
+        /// 2026-11-10 정정 — slowtime(시작 신호, 원샷)과 heartbeat(긴장감, 루프)로 나눴다. 루프를 더 이상
+        /// 고정 시간으로 추측해서 끊지 않는다 — 켜질 때 한 번(slowtime + 루프 시작), 실제 지속시간이 끝나는
+        /// 순간(티어별로 다르다, BladeCombat.UpdateFocus) 정확히 꺼지도록 On/Off 신호를 그대로 따른다.
         /// </summary>
-        void OnAssassinFocusUsed()
+        void OnAssassinFocusActive(bool active)
         {
-            Play("assassin_slowtime");
-            SetLoop("assassin_slowtime_heartbeat", 0.6f, FocusLoopSeconds);
+            if (active) Play("assassin_slowtime");
+            SetLoop(active ? "assassin_slowtime_heartbeat" : null, 0.6f);
         }
         void OnAssassinSpinAttack() => Play("assassin_spin"); // 칼날폭풍 — 음원 없음
 

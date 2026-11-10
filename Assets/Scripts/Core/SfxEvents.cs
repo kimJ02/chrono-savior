@@ -76,9 +76,13 @@ namespace ChronoSavior.Core
         /// </summary>
         public static event System.Action<int> AssassinBasicAttack;
         public static void RaiseAssassinBasicAttack(int index) => AssassinBasicAttack?.Invoke(index);
-        /// <summary>집중(시간 느려짐) 시작.</summary>
-        public static event System.Action AssassinFocusUsed;
-        public static void RaiseAssassinFocusUsed() => AssassinFocusUsed?.Invoke();
+        /// <summary>
+        /// 집중(시간 느려짐) On/Off — 2026-11-10 정정: 한 번 울리고 끝나는 신호가 아니라, 레이저와 같은
+        /// On/Off 전이 신호로 바꿨다. 지속시간이 티어별로 다르고(3~5층 +1초) 이제 고정값으로 추측할 수
+        /// 없어서, 재생기가 고정 시간으로 스스로 끄는 대신 실제로 꺼지는 순간을 그대로 받아 맞춘다.
+        /// </summary>
+        public static event System.Action<bool> AssassinFocusActive;
+        public static void RaiseAssassinFocusActive(bool active) => AssassinFocusActive?.Invoke(active);
         /// <summary>칼날폭풍 시작 — 사운드팩에 아직 전용 음원 없음.</summary>
         public static event System.Action AssassinSpinAttack;
         public static void RaiseAssassinSpinAttack() => AssassinSpinAttack?.Invoke();
@@ -101,7 +105,7 @@ namespace ChronoSavior.Core
             MechanicTurretOperating = null;
             MechanicSkillReady = null;
             AssassinBasicAttack = null;
-            AssassinFocusUsed = null;
+            AssassinFocusActive = null;
             AssassinSpinAttack = null;
         }
     }

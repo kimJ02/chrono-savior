@@ -88,6 +88,7 @@ namespace ChronoSavior.Characters
 
         [Header("집중(1~5층) — CONFIG.blade.focus (project_test.html:627)")]
         const float FocusDur = 2.0f;            // F.dur
+        const float FocusDurTier3Bonus = 1f;    // 2026-11-10 사용자 지시 — 3·4·5층에 지속시간 +1초(누적 아님, 3층부터 고정 +1).
         const float FocusCd = 11f;              // F.cd
         const float FocusAccelMul = 1.7f;       // F.accelMul (1층)
         const float FocusAccelMul2 = 1.4f;      // F.accelMul2 — 2층부터 accelMul에 추가로 곱한다(:2462).
@@ -149,6 +150,7 @@ namespace ChronoSavior.Characters
         // ---- 집중(move 갈래) 상태 ----
         float focusT;
         float focusCd;
+        bool focusSoundOn; // 2026-11-10 사운드 — On/Off 전이 감지용(레이저와 같은 패턴)
         float trailT;
         float trailTickTimer;
         readonly List<Vector2> trailPts = new List<Vector2>();
@@ -230,6 +232,7 @@ namespace ChronoSavior.Characters
             passHitTimestamps.Clear();
             if (mover != null) mover.AccelMultiplier = 1f;
             CombatModifiers.SetFocusSlow(false); // 캐릭터 전환·런 리셋 중엔 집중 둔화가 안 남게
+            if (focusSoundOn) { SfxEvents.RaiseAssassinFocusActive(false); focusSoundOn = false; } // 루프가 안 남게
         }
 
         public void OnDeselected() { }
@@ -575,8 +578,9 @@ namespace ChronoSavior.Characters
 
             if (tier >= 5 && trailPts.Count > 1) RipTrail(); // 남은 궤적부터 먼저 찢는다(:2526).
 
-            SfxEvents.RaiseAssassinFocusUsed(); // 2026-11-10 사운드 — 위 가드를 다 지나 실제로 켜질 때만
-            focusT = FocusDur;
+            // 2026-11-10 사용자 지시 — 3·4·5층에 지속시간 +1초(사운드는 여기서 안 올린다 — 바로 다음에 도는
+            // UpdateFocus의 On/Off 전이 감지가 같은 프레임에 알아서 켠다, 재사용 즉시 중단 케이스도 그쪽에서 끈다).
+            focusT = FocusDur + (tier >= 3 ? FocusDurTier3Bonus : 0f);
             focusCd = FocusCd;
             // bladeTrailLife()(:2537) — 3층 "짙은 잔영"부터 지속시간이 늘어난다. 원본처럼 캐스팅
             // 순간의 티어로 한 번만 계산해 담아 둔다(지속시간은 focus와 별개로 그냥 줄어드는 타이머라
@@ -615,11 +619,16 @@ namespace ChronoSavior.Characters
                 accelMul = FocusT4InstantAccelMultiplier;
                 pendingInstantAccel = false;
             }
-            if (mover != null) mover.AccelMultiplier = focusT > 0f ? accelMul : 1f;
+            bool focusingNow = focusT > 0f;
+            if (mover != null) mover.AccelMultiplier = focusingNow ? accelMul : 1f;
             // 2026-11-10 사용자 지시 — 집중 중엔 몹들 이동속도도 느려져야 한다. Shrine 버프와 같은 자리
             // (CombatModifiers.EnemyMoveSpeedMultiplier)에 곱해 넣는다 — EnemyMove가 이미 매 프레임 읽는다.
-            CombatModifiers.SetFocusSlow(focusT > 0f);
-            if (focusT > 0f) focusT -= dt;
+            CombatModifiers.SetFocusSlow(focusingNow);
+            // 2026-11-10 정정 — 사운드 루프를 더 이상 고정 시간으로 끊지 않는다. On/Off가 "바뀐" 순간만
+            // 알려서(레이저와 같은 패턴) 실제 지속시간(3~5층 +1초 포함)이 끝나는 순간과 정확히 맞춘다.
+            if (focusingNow != focusSoundOn) SfxEvents.RaiseAssassinFocusActive(focusingNow);
+            focusSoundOn = focusingNow;
+            if (focusingNow) focusT -= dt;
 
             UpdateTrail(dt);
         }
