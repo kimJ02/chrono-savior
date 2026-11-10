@@ -239,7 +239,7 @@ namespace ChronoSavior.Systems
         void HandleEnemyKilled(GameObject enemy)
         {
             var (stop, shakeMag, shakeDur) = KillFeel(
-                enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Boss>() != null,
+                enemy != null && enemy.TryGetComponent(out ChronoSavior.Enemies.EnemyHealth eh) && eh.isBoss, // 공통·지역 전용 보스 모두
                 enemy != null && enemy.GetComponent<ChronoSavior.Enemies.Shrine>() != null,
                 enemy != null && enemy.GetComponent<ChronoSavior.Enemies.EnemyElite>() != null);
             CombatEvents.RequestHitstop(stop);

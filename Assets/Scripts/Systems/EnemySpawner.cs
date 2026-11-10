@@ -307,10 +307,11 @@ public class EnemySpawner : MonoBehaviour
     /// </summary>
     void SpawnBoss()
     {
-        var prefab = catalog != null ? catalog.bossPrefab : null;
-        if (prefab == null) { Debug.LogError("[EnemySpawner] 보스 프리팹(MonsterCatalog.bossPrefab)이 없다"); return; }
-
         int region = RunState.Region;
+        // 지역 전용 보스가 있으면 그것(1지역 = 덩어리 지배자, 2026-11-10), 없으면 원본 공통 보스.
+        var prefab = catalog != null ? catalog.BossPrefabFor(region) : null;
+        if (prefab == null) { Debug.LogError("[EnemySpawner] 보스 프리팹(MonsterCatalog.bossPrefab/regionBosses)이 없다"); return; }
+
         float x = Mathf.Lerp(FieldBounds.MinX, FieldBounds.MaxX, 0.62f);
         // Boss 부품(이동·공격 패턴)과 보스 표시(EnemyHealth.isBoss — 레벨 페널티 하한 50%, 원본 `levelFactor` :1652)는 프리팹(Enemy_Boss)에 있다.
         var go = SpawnMonsterAt(prefab, new Vector3(x, FieldBounds.GroundY + EntitySizeConfig.BossHeight / 2f, 0f));
@@ -413,7 +414,7 @@ public class EnemySpawner : MonoBehaviour
     {
         if (enemy == null) return;
         if (enemy.GetComponent<Shrine>() != null) return;
-        if (enemy.GetComponent<Boss>() != null) return;
+        if (enemy.isBoss) return; // 공통 보스·지역 전용 보스 모두(보스 표시는 프리팹의 EnemyHealth.isBoss)
 
         spawnedData.TryGetValue(enemy.gameObject, out var data);
         EnemyRewards.GrantKill(enemy, data);

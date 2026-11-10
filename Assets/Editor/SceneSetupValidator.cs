@@ -273,7 +273,8 @@ namespace ChronoSavior.Editor
         {
             var behaviours = new[] { typeof(ChronoSavior.Enemies.EnemyFlyerMotion), typeof(ChronoSavior.Enemies.EnemyChargerMotion),
                                      typeof(ChronoSavior.Enemies.EnemyShooterMotion), typeof(ChronoSavior.Enemies.EnemySplitOnDeath),
-                                     typeof(ChronoSavior.Enemies.Boss), typeof(ChronoSavior.Enemies.Shrine) };
+                                     typeof(ChronoSavior.Enemies.Boss), typeof(ChronoSavior.Enemies.Shrine),
+                                     typeof(ChronoSavior.Enemies.BlobLordBoss) };
             void Check(GameObject prefab, string what, System.Type expected)
             {
                 if (prefab == null) { problems.Add($"{what} 프리팹이 비어 있다"); return; }
@@ -309,6 +310,23 @@ namespace ChronoSavior.Editor
                 CheckProjectilePrefab(shooterKit.BoltPrefab, "해골 궁수 프리팹 EnemyShooterMotion.boltPrefab", problems);
             if (catalog.bossPrefab != null && catalog.bossPrefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() is { isBoss: false })
                 problems.Add("보스 프리팹의 EnemyHealth.isBoss가 꺼져 있다(레벨 페널티 하한이 보스 값이 아니게 된다)");
+            // 지역 전용 보스(2026-11-10~, 1지역 덩어리 지배자) — 보스 표시·경고·조약돌·들어 올린 돌·투척 선이 다 꽂혀 있는지.
+            foreach (var rb in catalog.regionBosses ?? new ChronoSavior.Core.MonsterCatalog.RegionBoss[0])
+            {
+                if (rb == null) continue;
+                string what = $"{rb.region}지역 전용 보스";
+                if (rb.region < 1 || rb.region > ChronoSavior.Core.RegionConfig.Count) problems.Add($"{what}: 지역 번호가 범위 밖이다");
+                Check(rb.prefab, what, typeof(ChronoSavior.Enemies.BlobLordBoss));
+                if (rb.prefab == null) continue;
+                if (rb.prefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() is { isBoss: false }) problems.Add($"{what} 프리팹의 EnemyHealth.isBoss가 꺼져 있다");
+                if (rb.prefab.TryGetComponent(out ChronoSavior.Enemies.BlobLordBoss blob))
+                {
+                    var so = new SerializedObject(blob);
+                    foreach (var f in new[] { "warningPrefab", "boulderPrefab", "heldBoulder", "throwPathLine" })
+                        if (so.FindProperty(f).objectReferenceValue == null) problems.Add($"{what} 프리팹 BlobLordBoss.{f}가 비어 있다");
+                    if (blob.ThrowPathLine != null && blob.ThrowPathLine.sharedMaterial == null) problems.Add($"{what} 투척 선 머티리얼이 비어 있다(분홍색으로 그려진다)");
+                }
+            }
             Check(catalog.shrinePrefab, "성소", typeof(ChronoSavior.Enemies.Shrine));
             if (catalog.shrinePrefab != null)
             {

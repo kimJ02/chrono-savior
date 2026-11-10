@@ -65,7 +65,11 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     public float edgeMargin = 0.3f;       // 원본 clamp(e.x, 30, mapW-30)의 30px ÷100
 
     /// <summary>스폰 직후 무적 상태인지. 공격 스크립트는 이 몹을 파괴하기 전에 반드시 확인한다.</summary>
-    public bool IsSpawnProtected => spawnProtectTimer > 0f;
+    /// <summary>
+    /// 지금 못 때리는 상태 — 스폰 보호 **또는** 패턴 중 무적(<see cref="IDamageProtection"/>, 덩어리 지배자 도약 중).
+    /// 공격 스크립트·`EnemyHealth`가 이 값 하나만 본다. 이동 정지·반투명은 스폰 보호(<see cref="spawnProtectTimer"/>)만 따른다.
+    /// </summary>
+    public bool IsSpawnProtected => spawnProtectTimer > 0f || (damageProtection != null && damageProtection.IsDamageProtected);
 
     [Header("넉백 (원본 e.kbx)")]
     [Tooltip("넉백 감쇠 계수. 원본 `e.kbx *= max(0, 1 - 9*dt)`(project_test.html:4021) 그대로.")]
@@ -88,6 +92,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     IEnemyMotion motion;
     IEnemyVerticalMotion verticalMotion;
     IEnemyContactDamageModifier contactDamageModifier;
+    IDamageProtection damageProtection;
     int dir = 1; // 원본 e.dir(1 또는 -1) — 추적/배회/가장자리반전이 전부 이 값을 공유
     float wanderTimer;
     // 원본 `e.kbx` — AI 이동 속도를 대체하는 게 아니라 **거기에 더해지는 별도 성분**이다
@@ -125,6 +130,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         motion = GetComponent<IEnemyMotion>();
         verticalMotion = GetComponent<IEnemyVerticalMotion>();
         contactDamageModifier = GetComponent<IEnemyContactDamageModifier>();
+        damageProtection = GetComponent<IDamageProtection>();
         if (verticalMotion != null) rb.gravityScale = 0f; // 비행형은 중력을 안 받는다(원본 wisp 분기)
     }
 
@@ -229,10 +235,12 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         // 보호 중엔 행동 부품도 부르지 않는다 — 부르면 궁수 사격·멧돼지 돌진 같은 상태가 보호 중에 진행된다
         // (원본 `if (e.spawnInvuln > 0) { ...; continue; }`는 AI 전체를 건너뛴다 :4023, 2026-11-07 최종 점검).
         float buffedSpeed = moveSpeed * CombatModifiers.EnemyMoveSpeedMultiplier;
-        float ownSpeed = IsSpawnProtected ? 0f
+        // 멈추는 건 **스폰 보호만**이다 — 패턴 중 무적(IsSpawnProtected의 다른 절반)은 움직이면서 무적이다(덩어리 지배자 도약).
+        bool frozen = spawnProtectTimer > 0f;
+        float ownSpeed = frozen ? 0f
             : motion != null ? motion.GetHorizontalSpeed(Time.fixedDeltaTime, target, buffedSpeed)
             : dir * buffedSpeed;
-        float vx = IsSpawnProtected ? 0f : ownSpeed + knockbackX; // 원본 `e.vx + e.kbx`
+        float vx = frozen ? 0f : ownSpeed + knockbackX; // 원본 `e.vx + e.kbx`
 
         float minX = FieldBounds.MinX + edgeMargin;
         float maxX = FieldBounds.MaxX - edgeMargin;
@@ -242,7 +250,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         if (verticalMotion != null)
         {
             // 비행형: 중력·착지 없이 Y를 직접 놓는다(원본 wisp는 `e.y +=`로 좌표를 직접 옮긴다).
-            float y = IsSpawnProtected
+            float y = frozen
                 ? rb.position.y
                 : verticalMotion.GetVerticalPosition(Time.fixedDeltaTime, target, rb.position.y);
             rb.linearVelocity = new Vector2(vx, 0f);
@@ -348,6 +356,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         if (damageable == null || damageable.IsDead) return;
         // 원본은 멧돼지가 질주 중일 때만 접촉 피해 ×1.4다(`chargeMul`, project_test.html:4147).
         float mul = contactDamageModifier != null ? contactDamageModifier.ContactDamageMultiplier : 1f;
+        if (mul <= 0f) return; // 배수 0 = 지금 몸통 접촉 피해가 없다(덩어리 지배자 — 피해는 예고된 공격으로만)
         // 성소가 살아 있으면 여기에 ×1.3이 더 붙는다(원본 `buffed ? eDmg : 1`, :4148).
         mul *= CombatModifiers.EnemyDamageMultiplier;
         // 피해 난수(±10%)는 원본이 피격자 쪽(damagePlayer)에서 굴리므로 여기선 원본 스탯 그대로 넘긴다.

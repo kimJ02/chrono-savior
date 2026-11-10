@@ -20,6 +20,26 @@ namespace ChronoSavior.Core
         [Tooltip("보스 프리팹(Enemy_Boss — Boss 부품·보스 표시).")]
         public GameObject bossPrefab;
 
+        [Tooltip("지역 전용 보스(2026-11-10~). 여기 지역이 있으면 그 지역은 이 프리팹을 쓰고, 없으면 bossPrefab(원본 공통 보스). 1지역 = 덩어리 지배자(Enemy_BlobLord).")]
+        public RegionBoss[] regionBosses;
+
+        /// <summary>지역 전용 보스 한 칸 — 지역 번호(1부터)와 프리팹. 체력·크기 같은 수치는 그 보스 스크립트가 들고 있다.</summary>
+        [System.Serializable]
+        public class RegionBoss
+        {
+            public int region;
+            public GameObject prefab;
+        }
+
+        /// <summary>그 지역에 세울 보스 프리팹 — 지역 전용이 있으면 그것, 없으면 공통 보스.</summary>
+        public GameObject BossPrefabFor(int region)
+        {
+            if (regionBosses != null)
+                foreach (var b in regionBosses)
+                    if (b != null && b.region == region && b.prefab != null) return b.prefab;
+            return bossPrefab;
+        }
+
         [Tooltip("성소 프리팹(Enemy_Shrine — Shrine 부품·움직이지 않는 구조물).")]
         public GameObject shrinePrefab;
 

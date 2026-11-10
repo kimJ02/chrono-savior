@@ -121,6 +121,8 @@ public static class EnemySetup
     /// </summary>
     public static void SetupBoss(GameObject go, int region, MonsterCatalog catalog)
     {
+        // 지역 전용 보스(1지역 덩어리 지배자, 2026-11-10)는 체력·레벨만 공통 곡선을 쓰고, 그림·크기·공격은 자기 것이다.
+        var blob = go.GetComponent<BlobLordBoss>();
         var health = go.GetComponent<EnemyHealth>();
         if (health != null)
         {
@@ -136,6 +138,13 @@ public static class EnemySetup
             move.attackPower = JsMath.Round(Boss.DamageForRegion(region)
                                             * RegressionConfig.WallEnemyDamage(region, ProfileService.Current.regressions)); // 원본 `Math.round(...)`(:4165)
             move.moveSpeed = Boss.MoveSpeed;
+        }
+
+        if (blob != null)
+        {
+            // 프리팹 그림(기본 도형 덩어리) 그대로, 색 안 칠함. 피해는 플레이어 최대 체력 %라 attackPower를 안 쓴다.
+            FitToWorldSize(go, null, BlobLordBoss.VisualSize, BlobLordBoss.HitRadius);
+            return;
         }
 
         // 원본 w:130 h:150(`:721`) — 고블린(42×46)의 3배쯤 되는 덩치다.

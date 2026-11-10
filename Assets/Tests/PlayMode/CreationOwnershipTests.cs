@@ -43,6 +43,8 @@ public class CreationOwnershipTests
         ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다. 드론 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다. 갈래별 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
+        ["Enemies/BoulderProjectile.cs"]   = (Kind.CombatObject, "덩어리 지배자 조약돌 — 프리팹(Prefabs/Combat/BlobLordBoulder)을 세운다. 프리팹은 보스 프리팹(Enemy_BlobLord)이 넘긴다(2026-11-10)"),
+        ["Enemies/BlobLordBoss.cs"]        = (Kind.VisualEffect, "바닥 빨간 경고 2개(점프·투척) — 프리팹(Prefabs/Combat/GroundWarning)을 보스가 살아 있는 동안 하나씩 세워 재사용, 그림만(판정은 보스가)(2026-11-10)"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다. 문서 드론 그림(라이선스 프레임 재생기)·빛 원·돌아가는 호 자식(2026-11-09)"),
         ["Characters/GunnerTurret.cs"]     = (Kind.CombatObject, "메카닉 설치 포탑 — 프리팹(Prefabs/Combat/GunnerTurret)을 세운다. 프리팹은 GunnerAttack이 넘긴다. 중계기 머리 그림(라이선스 프레임 재생기 자식)·공격 범위 타원·링크 사거리 점선 원을 붙인다"),

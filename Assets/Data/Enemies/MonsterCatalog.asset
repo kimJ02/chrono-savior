@@ -21,6 +21,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: eddf79ee8a67fcc488721c99b2a7f05d, type: 2}
   - {fileID: 11400000, guid: c92429ff7bede6d409e895315a82fd1f, type: 2}
   bossPrefab: {fileID: 7349294530982844747, guid: 1b44ac866ecf04a438e7ace2d27d88a8, type: 3}
+  regionBosses:
+  - region: 1
+    prefab: {fileID: 7103290951828203443, guid: b369f7be9380789499622d23edcd8d0b, type: 3}
   shrinePrefab: {fileID: 7481603669653269769, guid: 3162a3b577e72844aabd179f419d76a6, type: 3}
   boss: {fileID: 21300000, guid: 692531654aefc5044a24f6e50e868b6b, type: 3}
   shrine: {fileID: 21300000, guid: 8afb9b204a0f033499fb23fd273abdba, type: 3}

@@ -521,9 +521,17 @@ public class GameBootTests
             Object.Destroy(spawned.gameObject);
         }
 
-        typeof(EnemySpawner).GetMethod("SpawnBoss", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(spawner, null);
+        // 1지역은 지역 전용 보스(덩어리 지배자, 2026-11-10), 그 밖은 원본 공통 보스 — 둘 다 프리팹에서 선다.
+        var spawnBoss = typeof(EnemySpawner).GetMethod("SpawnBoss", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        spawnBoss.Invoke(spawner, null);
+        var blob = Object.FindFirstObjectByType<ChronoSavior.Enemies.BlobLordBoss>();
+        Assert.IsNotNull(blob, "1지역 보스 프리팹에서 덩어리 지배자가 선다");
+        Assert.IsTrue(blob.GetComponent<ChronoSavior.Enemies.EnemyHealth>().isBoss);
+        Object.Destroy(blob.gameObject);
+        RunState.Begin(2, RunMode.Normal);
+        spawnBoss.Invoke(spawner, null);
         var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
-        Assert.IsNotNull(boss, "보스 프리팹에서 보스가 선다");
+        Assert.IsNotNull(boss, "2지역은 공통 보스 프리팹에서 보스가 선다");
         Assert.IsTrue(boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>().isBoss);
         typeof(EnemySpawner).GetMethod("SpawnShrine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(spawner, null);
         var shrine = Object.FindFirstObjectByType<ChronoSavior.Enemies.Shrine>();
@@ -546,6 +554,17 @@ public class GameBootTests
         var flags = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
         int region = RunState.Region, regressions = ProfileService.Current.regressions;
 
+        // 1지역 전용 보스(덩어리 지배자) — 체력·레벨은 공통 곡선, 그림·판정 크기는 자기 것(2026-11-10).
+        typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
+        var blob = Object.FindFirstObjectByType<ChronoSavior.Enemies.BlobLordBoss>();
+        var blobHealth = blob.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions), blobHealth.MaxHp, 0.01f);
+        Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), blobHealth.Level);
+        AssertSize(blob.gameObject, ChronoSavior.Enemies.BlobLordBoss.VisualSize, ChronoSavior.Enemies.BlobLordBoss.HitRadius);
+        Object.Destroy(blob.gameObject);
+
+        // 그 밖의 지역은 원본 공통 보스
+        RunState.Begin(region = 2, RunMode.Normal);
         typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
         var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
         var bossHealth = boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
@@ -553,7 +572,7 @@ public class GameBootTests
         Assert.AreEqual(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions), bossHealth.MaxHp, 0.01f);
         Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), bossHealth.Level);
         Assert.AreEqual(ChronoSavior.Enemies.Boss.KnockbackMultiplier, bossHealth.knockbackMultiplier, 0.0001f);
-        Assert.AreEqual(ChronoSavior.Enemies.Boss.DamageForRegion(region) * RegressionConfig.WallEnemyDamage(region, regressions), bossMove.attackPower, 0.01f);
+        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.DamageForRegion(region) * RegressionConfig.WallEnemyDamage(region, regressions)), bossMove.attackPower, 0.01f); // SetupBoss가 원본처럼 반올림한다(1지역 30은 정수라 예전엔 안 드러났다)
         Assert.AreEqual(ChronoSavior.Enemies.Boss.MoveSpeed, bossMove.moveSpeed, 0.0001f);
         AssertSize(boss.gameObject, spawner.Catalog.bossSize, Mathf.Min(EntitySizeConfig.BossWidth, EntitySizeConfig.BossHeight) / 2f);
 
@@ -562,7 +581,7 @@ public class GameBootTests
         var shrineHealth = shrine.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
         int baseLevel = RegionConfig.RecommendedLevel(region);
         Assert.That(shrineHealth.Level, Is.InRange(baseLevel, baseLevel + 1), "성소 레벨은 지역 기준 +0~1");
-        Assert.AreEqual(ChronoSavior.Enemies.Shrine.HpForLevel(shrineHealth.Level), shrineHealth.MaxHp, 0.01f);
+        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Shrine.HpForLevel(shrineHealth.Level)), shrineHealth.MaxHp, 0.01f); // 원본처럼 반올림
         Assert.IsTrue(shrine.GetComponent<ChronoSavior.Enemies.EnemyMove>().IsSpawnProtected, "성소는 세워지자마자 잠깐 보호된다");
         AssertSize(shrine.gameObject, spawner.Catalog.shrineSize, Mathf.Min(EntitySizeConfig.ShrineWidth, EntitySizeConfig.ShrineHeight) / 2f);
     }
