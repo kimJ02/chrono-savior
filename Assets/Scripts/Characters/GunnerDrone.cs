@@ -205,6 +205,9 @@ namespace ChronoSavior.Characters
             if (len == 0f) len = 1f;
             dir /= len;
 
+            // 2026-11-10 사운드 — 소환 때 한 번이 아니라 드론이 실제로 쏠 때마다, drone_bullet1~3 중 하나를 랜덤으로(사용자 지시).
+            SfxEvents.RaiseMechanicDroneFired();
+
             // 발사 섬광(D-B) — 탄 방향으로 돌려 드론 앞에
             var flash = VfxPlayer.Spawn(VfxKeys.MechanicDroneMuzzle, pos + dir * MuzzleForward, DotScale.Value, MuzzleFps, MuzzleSortingOrder);
             if (flash != null) flash.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);

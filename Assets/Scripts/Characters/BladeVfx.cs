@@ -9,7 +9,8 @@ namespace ChronoSavior.Characters
     /// 살수(코드 이름 섬영 `Blade*`) 스킬 그림 — 그림만이다(판정·수치는 <see cref="BladeCombat"/>, 기본공격 베기는 <see cref="BladeSlashVfx"/>).
     /// **2026-11-10 사용자 확정**(지금 모습 캡처 → 다른 게임 사례(Katana Zero 네온 잔상·Megaman Zero 대시·Hollow Knight 사이클론·Hades 마무리 강조) 조사 →
     /// Codex xhigh 논의 → 도트 격자에 맞춘 움직이는 예시 그림에서 고름):
-    /// - **집중 'B 잔상 복제'**: 배경만 남색으로 어둡게(<see cref="ShadeSortingOrder"/> — 땅·발판·적·캐릭터는 밝게), 켤 때만 캐릭터 뒤 청록 하트비트 + 1px 고동 링 두 번,
+    /// - **집중 'B 잔상 복제'**: 배경만 완전히 검게 페이드(<see cref="ShadeSortingOrder"/> — 땅·발판·적·캐릭터는 밝게, 2026-11-10 사용자 지시로 남색 반투명에서 승격),
+    ///   켤 때만 캐릭터 뒤 청록 하트비트 + 1px 고동 링 두 번,
     ///   이동 중 0.1/0.2/0.3초 전 자리에 파란 잔상 3개 + 짧은 속도선. 궤적(판정)은 굵은 관 대신 옅은 1px 점(판정 자리는 보여야 해서 — 예시엔 없던 것, 사용자에게 알림).
     ///   4층 파열 = 지나온 길을 따라 흰 잔상이 차례로 번쩍 + 맞은 적 자리에 파란 충격(<see cref="BladeCombat.TrailRipHit"/>).
     /// - **칼날폭풍 '잔상 연쇄 파열 + 착지 폭발'**: 판정 고리·연기는 뺐다. 회전베기 루프는 틱마다 좌우 반전 + 큰 청록 초승달이 좌우 번갈아(<see cref="BladeCombat.StormSpun"/>),
@@ -26,9 +27,13 @@ namespace ChronoSavior.Characters
         // ── 집중 ──
         /// <summary>배경을 덮는 정렬(배경 -100 위, 땅·발판 -5 아래).</summary>
         public const int ShadeSortingOrder = -50;
-        /// <summary>배경 어둡기·색(남색) — 2026-11-10 집중 B.</summary>
-        public const float ShadeAlpha = 0.34f, ShadeFadeTime = 0.15f;
-        static readonly Color ShadeColor = new Color(6 / 255f, 10 / 255f, 30 / 255f);
+        /// <summary>
+        /// 배경 어둡기·색 — 2026-11-10 사용자 지시로 남색 반투명(0.34) 대신 **완전 검은 바탕**으로 올림
+        /// (페이드아웃으로 검게, 집중이 끝날 때 즘에 다시 페이드인). 전환 시간은 그대로 <see cref="ShadeFadeTime"/>이
+        /// 맡는다(아래 <see cref="UpdateFocus"/>의 MoveTowards가 focusing 여부만 보고 자동으로 켜고/끈다).
+        /// </summary>
+        public const float ShadeAlpha = 0.97f, ShadeFadeTime = 0.2f;
+        static readonly Color ShadeColor = Color.black;
         const float ShadeSize = 40f;
         /// <summary>하트비트 — 켤 때만 이만큼(초) 캐릭터 뒤에서, 고동 링은 0초·0.25초 두 번.</summary>
         public const float HeartbeatTime = 0.55f, HeartbeatFps = 20f, PulseLife = 0.22f;

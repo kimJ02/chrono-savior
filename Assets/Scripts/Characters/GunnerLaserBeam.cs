@@ -277,6 +277,13 @@ namespace ChronoSavior.Characters
         public const float BeamHoldTime = 0.35f;
         float beamHold;
 
+        /// <summary>
+        /// 지금 실제로 광선이 "나가고" 있나(그림이 차징이 아니라 빔으로 보이는 상태) — 2026-11-10 사운드.
+        /// <see cref="Active"/>는 누르고만 있어도 true(적이 없어 차징 그림만 나올 때도 포함)라 소리 판단에는
+        /// 못 쓰고, 그림과 같은 기준(<see cref="beamHold"/> — <see cref="UpdateVisual"/>이 채운다)을 그대로 쓴다.
+        /// </summary>
+        public bool IsFiring => beamHold > 0f;
+
         void UpdateVisual()
         {
             if (vfx == null) vfx = GunnerBeamVfx.Create(kit.BeamMaterial, kit.LaserTipPrefab);

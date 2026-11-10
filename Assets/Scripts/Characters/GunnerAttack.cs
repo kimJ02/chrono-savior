@@ -75,7 +75,9 @@ namespace ChronoSavior.Characters
         GunnerLaserBeam beam;
         float cdTimer;
         float ultCdTimer;
-        bool beamWasActive;    // 2026-11-10 사운드 — 레이저가 막 켜진 순간만 소리를 내려고(눌려 있는 동안 매 프레임 true라 켜짐 감지용)
+        // 2026-11-10 정정 — Active(누르고만 있어도 true, 적이 없는 "차징" 포함)가 아니라 beam.IsFiring(차징이 아니라
+        // 실제로 광선이 나가는 상태)이 바뀐 순간만 소리를 낸다. 사용자 지시: "레이저가 나오지않을때는 소리가 안나면 좋겟고".
+        bool laserWasSounding;
         bool ultWasOnCooldown; // 2026-11-10 사운드 — 스킬 쿨다운이 막 다 찬 순간만(both_mechanic_skill_ready)
         // 쿨다운을 **건 순간**의 최대치 — HUD 슬롯 덮개 비율의 분모. 원본 `p.gunnerCdMax`(:2196)·`p.ultCdMax`
         // (:2399·:2414)도 발사·시전 때 정해진다.
@@ -240,11 +242,12 @@ namespace ChronoSavior.Characters
                 // 원본(:3538): `if (!updateGunnerBeam(dt, held) && !p.attacking && p.atkCds.gunner <= 0 && (held || justAtk)) gunnerFire();`
                 // 레이저 빌드는 누르고 있는 동안 광선이 켜져서 총알이 안 나간다.
                 bool held = GameInput.AttackHeld;
-                bool beamOn = UpdateBeam(dt, held);
-                // 2026-11-10 정정 — 레이저는 누르고 있는 동안 계속 들려야 해서, 켜짐/꺼짐이 "바뀐" 프레임에만
-                // (매 프레임 true라서가 아니라 전이 감지로) 상태를 같이 올린다. 재생기가 루프 시작/정지를 맡는다.
-                if (beamOn != beamWasActive) SfxEvents.RaiseMechanicLaserActive(beamOn);
-                beamWasActive = beamOn;
+                bool beamOn = UpdateBeam(dt, held); // 총알 억제용 — 누르고만 있어도 true(차징 포함), 이 값으론 소리를 안 켠다
+                // 2026-11-10 정정 — 적이 없어 "차징" 그림만 보일 땐 소리도 쉰다(beam.IsFiring = 실제로 빔이 나가는 상태,
+                // 시각(GunnerLaserBeam.UpdateVisual)과 같은 기준). 바뀐 순간에만 올려서 매 프레임 재생 재시작을 막는다.
+                bool laserSounding = beam.IsFiring;
+                if (laserSounding != laserWasSounding) SfxEvents.RaiseMechanicLaserActive(laserSounding);
+                laserWasSounding = laserSounding;
                 if (!beamOn && cdTimer <= 0f && (held || GameInput.AttackDown))
                 {
                     SfxEvents.RaiseMechanicBasicAttack();
@@ -323,7 +326,7 @@ namespace ChronoSavior.Characters
                 // 충전 스택은 소환하는 순간 전부 드론 지속시간으로 바뀐다(`consumeGunnerStacks`).
                 int stackSpend = Stacks;
                 Stacks = 0;
-                SfxEvents.RaiseMechanicDroneFired();
+                // 2026-11-10 정정 — 소환 때가 아니라 드론이 실제로 쏠 때마다(GunnerDrone.Shoot) 소리를 낸다.
                 GunnerDrone.Summon(dronePrefab, this, tier, stackSpend);
                 HitFeel.Shake(3f + tier * 0.5f, 0.14f); // 원본 :2401
                 ultCdTimer = ultCdMax = GunnerSpecConfig.DroneUltCooldown(tier) * cdMult;

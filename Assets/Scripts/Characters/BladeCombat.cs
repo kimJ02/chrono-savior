@@ -229,6 +229,7 @@ namespace ChronoSavior.Characters
             stormFalling.Clear();
             passHitTimestamps.Clear();
             if (mover != null) mover.AccelMultiplier = 1f;
+            CombatModifiers.SetFocusSlow(false); // 캐릭터 전환·런 리셋 중엔 집중 둔화가 안 남게
         }
 
         public void OnDeselected() { }
@@ -615,6 +616,9 @@ namespace ChronoSavior.Characters
                 pendingInstantAccel = false;
             }
             if (mover != null) mover.AccelMultiplier = focusT > 0f ? accelMul : 1f;
+            // 2026-11-10 사용자 지시 — 집중 중엔 몹들 이동속도도 느려져야 한다. Shrine 버프와 같은 자리
+            // (CombatModifiers.EnemyMoveSpeedMultiplier)에 곱해 넣는다 — EnemyMove가 이미 매 프레임 읽는다.
+            CombatModifiers.SetFocusSlow(focusT > 0f);
             if (focusT > 0f) focusT -= dt;
 
             UpdateTrail(dt);

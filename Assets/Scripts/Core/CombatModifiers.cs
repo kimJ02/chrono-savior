@@ -87,11 +87,19 @@ namespace ChronoSavior.Core
 
         /// <summary>적이 자기 피해에 곱할 값. 성소가 없으면 1.</summary>
         public static float EnemyDamageMultiplier => ShrineActive ? ShrineEnemyDamageMult : 1f;
-        /// <summary>적이 자기 이동속도에 곱할 값. 성소가 없으면 1.</summary>
-        public static float EnemyMoveSpeedMultiplier => ShrineActive ? ShrineEnemyMoveSpeedMult : 1f;
+        /// <summary>적이 자기 이동속도에 곱할 값. 성소(가속)와 살수 집중(둔화)이 둘 다 걸리면 곱으로 겹친다.</summary>
+        public static float EnemyMoveSpeedMultiplier =>
+            (ShrineActive ? ShrineEnemyMoveSpeedMult : 1f) * (FocusSlowActive ? FocusEnemySlowMult : 1f);
 
         /// <summary>성소가 나타나거나 부서질 때 필드가 알려 준다.</summary>
         public static void SetShrineActive(bool active) => ShrineActive = active;
+
+        /// <summary>집중(Focus) 중 적 이동속도 배수 — 사용자 지시(2026-11-10): "몹들 이동속도가 느려져야할것같고"(튜닝값, 추후 조정 가능).</summary>
+        public const float FocusEnemySlowMult = 0.35f;
+
+        /// <summary>지금 살수 집중(Focus) 둔화가 걸려 있는지 — <see cref="Characters.BladeCombat"/>이 켜고 끈다(Characters→Core, 적 쪽이 읽는다).</summary>
+        public static bool FocusSlowActive { get; private set; }
+        public static void SetFocusSlow(bool active) => FocusSlowActive = active;
 
         // ---- 배수 ----
 
@@ -216,6 +224,7 @@ namespace ChronoSavior.Core
             chainTimeLeft = 0f;
             ShrineBuffLeft = 0f;
             ShrineActive = false;
+            FocusSlowActive = false;
         }
 
         /// <summary>테스트 격리용(정적 상태 오염 방지) — 게임에선 <see cref="ResetForRun"/>.</summary>
