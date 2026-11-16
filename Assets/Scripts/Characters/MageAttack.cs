@@ -53,7 +53,16 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     {
         charging = false;
         chargeT = 0f;
-        if (mover != null) mover.SpeedMultiplier = 1f;
+        firePoseTimer = 0f;
+        if (mover != null) { mover.SpeedMultiplier = 1f; mover.AttackLock = CharacterMover2D.AttackMoveLock.None; }
+    }
+
+    /// <summary>차지 중이거나 발사 자세가 남았으면 땅에서 제자리(공중은 원본대로) — 사용자 결정 2026-11-16, 의도적 편차.</summary>
+    public bool HoldsPosition => charging || firePoseTimer > 0f;
+
+    void ApplyMoveLock()
+    {
+        if (mover != null) mover.AttackLock = HoldsPosition ? CharacterMover2D.AttackMoveLock.RootOnGround : CharacterMover2D.AttackMoveLock.None;
     }
 
     // ---- HUD 스킬 슬롯 (원본 syncHUD 슬롯 부분 :6319~:6352) ----
@@ -93,6 +102,9 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     public float projectileSpeed = 10.8f;  // B.speed 1080px/s
     public float projectileRange = 8.8f;   // B.range 880px
     public float chargeMoveSlow = 0.5f;    // 원본 chargeSlow
+    /// <summary>발사 자세 시간(초) ÷ 공속 배수 — 원본 `p.attackDur = 0.2 / statAs()`(:1939). 원본은 이 동안도 이동 자유(`attackRapid`)지만,
+    /// 2026-11-16부터 땅에선 이 동안 제자리(<see cref="CharacterMover2D.AttackMoveLock.RootOnGround"/>, 의도적 편차).</summary>
+    public const float FirePoseBase = 0.2f;
     public float nearestEnemySearchRadius = 6.2f; // 원본 nearestEnemy(maxDist=620px)(project_test.html:2155)
 
     [Tooltip("마탄 프리팹(Assets/Prefabs/Combat/MageBolt).")]
@@ -109,6 +121,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     float cdTimer;
     bool charging;
     float chargeT;
+    float firePoseTimer; // 발사 뒤 제자리 자세가 남은 시간 — 발사 순간의 공속으로 정한다(도중에 스탯이 바뀌어도 안 흔들리게)
     float ultCdTimer;
     // 쿨다운을 **건 순간**의 최대치 — HUD 슬롯 덮개 비율의 분모. 원본 `p.bowCdMax`(:1942)·`p.ultCdMax`(:2177)도
     // 발사·시전 때 정해진다(`cooldown`은 매 프레임 다시 계산되므로 분모로 쓰면 도중에 스탯이 바뀔 때 튄다).
@@ -158,6 +171,8 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         // 발사(release)되는 바로 그 프레임도 "떼기 직전까지는 차지 중"이었으므로 감속이 맞다.
         // 아래에서 곧바로 charging이 꺼질 수 있어(발사 처리) 순서를 이렇게 잡아야 한다.
         if (mover != null) mover.SpeedMultiplier = charging ? chargeMoveSlow : 1f;
+        firePoseTimer = Mathf.Max(0f, firePoseTimer - Time.deltaTime);
+        ApplyMoveLock();
 
         cdTimer -= Time.deltaTime;
         ultCdTimer -= Time.deltaTime;
@@ -191,8 +206,10 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
                 Fire(k, branch, tier);
                 charging = false;
                 cdTimer = attackCdMax = cooldown;
+                firePoseTimer = FirePoseBase / Mathf.Max(0.01f, PlayerStatCalculator.ComputeAttackSpeedMultiplier(profile));
             }
         }
+        ApplyMoveLock(); // 이번 프레임에 차지를 시작·발사했으면 바로 반영(다음 물리 틱부터)
     }
 
     void Fire(float chargeK, MageBranch branch, int tier)
