@@ -7,14 +7,24 @@ namespace ChronoSavior.Characters
     /// <summary>
     /// 마법사 차지 표시 — 그림만이다(차지 수치·판정은 <see cref="MageAttack"/>).
     ///
-    /// 1. **차지 오라**(2026-11-07 VFX 스프린트, 팀원 문서 '이펙트와 연출' — "이펙트 크기 고정"): 차지하는 동안 몸 중심에 기가팩
-    ///    `scifi_charge_up_001`(키 <see cref="VfxKeys.MageChargeLarge"/>, 96px × 1 = 0.75유닛)이 되풀이된다. 크기는 차지율과 상관없이 고정.
-    ///    색은 갈래마다 — 빌드 없음은 그림 그대로(노랑), 폭발은 주황 틴트, 중력은 가져오기 도구가 색상을 돌려 만든 보라 그림
-    ///    (<see cref="VfxKeys.MageChargeLargeViolet"/> — 팩엔 노랑뿐이고, 보라 틴트를 곱하면 노란 픽셀이 탁한 주황이 됐다). 그림이 없으면(팩을 안 가져온 클론) 안 보인다.
-    /// 2. **완충 깜빡임**(2026-10-25 사용자 "두 번 말고 풀차징 되면 한 번만"): 차지가 다 차는 순간 몸 모양이 한 번 하얗게 번쩍인다
+    /// 1. **완충 깜빡임**(2026-10-25 사용자 "두 번 말고 풀차징 되면 한 번만"): 차지가 다 차는 순간 몸 모양이 한 번 하얗게 번쩍인다
     ///    (몹 피격 플래시와 같은 셰이더·세기·감쇠). 문턱은 원본 `bowFire`의 **완충 99%**(`full = chargeK >= 0.99`, project_test.html:1944·:2047).
+    /// 2. **손 오브**(2026-11-16, 사용자 "차지 애니메이션 폴더 보면 이펙트가 또 따로있음" — `Character_Mage_Attack_OrbEffect_01~11.png`가
+    ///    안 쓰이고 있던 걸 지적받아 추가): 몸 그림과 **같은 캔버스**(70×48, PPU 128, 피벗 0.5/0.546875 — Body·KiEffect 프레임들과 동일,
+    ///    `.meta` 대조로 확인)에 그려진 손의 빛나는 구슬이 11장에 걸쳐 커진다 — 차지율(<see cref="MageAttack.ChargeRatio"/>)에 11등분해
+    ///    그대로 맞춰(루프 아님, 0%=1번 프레임·100%=11번 프레임) 그린다. 같은 캔버스라 변환을 보정할 필요 없이 몸과 같은 부모(Player 루트)에
+    ///    통째로 겹친다.
+    /// 3. **오브 일렁임**(2026-11-16, 사용자 정정 — "KiEffect_01~06는 발사순간이 아니라 차지 9장쯤부터 오브 근처에 일렁이듯
+    ///    반복되는 이펙트" — 처음엔 Attack 발사 순간용으로 잘못 짐작했었다): `Character_Mage_Attack_KiEffect_01~06.png`를
+    ///    오브가 <see cref="KiEffectStartOrbFrame"/>번째 프레임(9번째, 0-based 8)에 들어선 뒤부터 2번과 같은 자리에 겹쳐 반복 재생한다.
+    ///    차지율과 매핑하는 2번과 달리 이건 시간 기반 루프(<see cref="KiEffectFps"/>)다 — 그림 자체가 "일렁임"이라 정지된 프레임이 아니라
+    ///    계속 움직여야 자연스럽다.
     ///
-    /// 원본엔 둘 다 없다(원본의 차지 표시는 버프 줄 "차지 N%"뿐) — 사용자·팀 결정으로 넣은 것. 예전 이름 `MageChargeFlash`(깜빡임만 할 때).
+    /// **오라는 뺐다**(2026-11-16 사용자 "원래 차지할때 캐릭터뒤에 오라같은거는 없애줄래 필요없다" — 2026-11-07 VFX 스프린트에서
+    /// 넣었던 외주 VFX 팩 기반 `scifi_charge_up_001` 오라(`VfxKeys.MageChargeSmall`/`…Violet`)를 통째로 제거. 테스트
+    /// `ChargeAura_*`도 같이 지웠다. 되살릴 땐 `MageChargeVfxTests.cs`의 git 히스토리 참고.
+    ///
+    /// 원본엔 전부 없다(원본의 차지 표시는 버프 줄 "차지 N%"뿐) — 사용자·팀 결정으로 넣은 것. 예전 이름 `MageChargeFlash`(깜빡임만 할 때).
     /// </summary>
     [RequireComponent(typeof(MageAttack))]
     public class MageChargeVfx : MonoBehaviour
@@ -26,12 +36,10 @@ namespace ChronoSavior.Characters
         /// <summary>번쩍임 세기 — 몹 피격 플래시(원본 `flash × 0.75`, :4799)와 같게.</summary>
         public const float Strength = 0.75f;
 
-        /// <summary>차지 오라 재생 속도(팩 기본 15fps).</summary>
-        public const float AuraFps = 15f;
-        /// <summary>오라는 몸 **뒤**(몸 정렬 − 1, 잔상과 같은 자리) — 그림 가운데가 꽉 찬 빛이라 앞에 두면 얼굴을 가린다(캡처로 확인).</summary>
-        public static int AuraSortingOrder(SpriteRenderer body) => (body != null ? body.sortingOrder : 0) - 1;
-        /// <summary>폭발 갈래 오라 틴트(노랑·흰색 그림에 곱하면 주황 — 같은 계열이라 탁해지지 않는다).</summary>
-        public static readonly Color FireTint = new Color(1f, 0.55f, 0.3f);
+        /// <summary>오브가 이 프레임(0-based, 11장 중 9번째=인덱스 8)에 들어서야 일렁임이 같이 보이기 시작한다 — 사용자 "오브 9장쯤부터".</summary>
+        public const int KiEffectStartOrbFrame = 8;
+        /// <summary>일렁임 6장이 도는 속도(시간 기반 루프 — 차지율과 무관).</summary>
+        public const float KiEffectFps = 10f;
 
         [Tooltip("효과 머티리얼(Assets/Materials/SpriteFlash — 그림의 몸 모양(알파)만 살리고 색은 꼭짓점 색으로 칠하는 셰이더). 외주 효과로 바꿀 땐 이 칸만.")]
         [SerializeField] Material flashMaterial;
@@ -40,10 +48,36 @@ namespace ChronoSavior.Characters
         public Material FlashMaterial { get => flashMaterial; set => flashMaterial = value; }
 
         MageAttack mage;
-        SpriteRenderer body, flashSr;
-        VfxPlayer aura;
+        SpriteRenderer body, flashSr, orbSr, kiSr;
         int stage;
         float flash;
+        float kiTimer;
+
+        /// <summary>손 오브 11장(캐시, 캐릭터 공용 — Resources 밖에선 못 읽으니 그림이 아예 없으면 전부 null).</summary>
+        static Sprite[] orbFrames;
+        static Sprite[] OrbFrames()
+        {
+            if (orbFrames == null)
+            {
+                orbFrames = new Sprite[11];
+                for (int i = 0; i < orbFrames.Length; i++)
+                    orbFrames[i] = Resources.Load<Sprite>($"Art/Characters/Mage/Character_Mage_Attack_OrbEffect_{i + 1:00}");
+            }
+            return orbFrames;
+        }
+
+        /// <summary>오브 일렁임 6장(캐시).</summary>
+        static Sprite[] kiFrames;
+        static Sprite[] KiFrames()
+        {
+            if (kiFrames == null)
+            {
+                kiFrames = new Sprite[6];
+                for (int i = 0; i < kiFrames.Length; i++)
+                    kiFrames[i] = Resources.Load<Sprite>($"Art/Characters/Mage/Character_Mage_Attack_KiEffect_{i + 1:00}");
+            }
+            return kiFrames;
+        }
 
         /// <summary>차지율 k에서 몇 단계인지 — 0 = 아직, 1 = 완충.</summary>
         public static int StageAt(float k)
@@ -53,16 +87,12 @@ namespace ChronoSavior.Characters
             return s;
         }
 
-        /// <summary>갈래별 오라 그림 — 중력은 보라 파생 그림, 나머지는 노랑 원본.</summary>
-        public static string AuraKey(MageBranch branch) => branch == MageBranch.Gravity ? VfxKeys.MageChargeSmallViolet : VfxKeys.MageChargeSmall; // 48px × 도트 2 = 0.75유닛(2026-11-09 도트 통일)
-
-        /// <summary>갈래별 오라 틴트 — 폭발만 주황, 나머지는 그림 색 그대로.</summary>
-        public static Color AuraTint(MageBranch branch) => branch == MageBranch.Explosion ? FireTint : Color.white;
-
         /// <summary>지금 번쩍임 세기 0~1(테스트용).</summary>
         public float FlashAmount => flash;
-        /// <summary>차지 오라가 보이는가(테스트용).</summary>
-        public bool AuraVisible => aura != null && aura.gameObject.activeSelf;
+        /// <summary>손 오브가 보이는가(테스트용).</summary>
+        public bool OrbVisible => orbSr != null && orbSr.enabled;
+        /// <summary>오브 일렁임이 보이는가(테스트용).</summary>
+        public bool KiVisible => kiSr != null && kiSr.enabled;
 
         void Awake()
         {
@@ -71,13 +101,15 @@ namespace ChronoSavior.Characters
         }
 
         // MageAttack.Update가 차지율을 올린 뒤에 읽도록 LateUpdate에서.
-        void LateUpdate() => Refresh(Time.deltaTime); // 히트스톱·일시정지 땐 0 — 번쩍임도 같이 멈춘다
+        void LateUpdate() => Refresh(Time.deltaTime); // 히트스톱·일시정지 땐 0 — 번쩍임·일렁임도 같이 멈춘다
 
-        /// <summary>차지 오라를 켜고 끄고, 완충이면 번쩍이고, 번쩍임을 줄여 그린다(테스트가 직접 부른다).</summary>
+        /// <summary>손 오브·오브 일렁임을 켜고 끄고, 완충이면 번쩍이고, 번쩍임을 줄여 그린다(테스트가 직접 부른다).</summary>
         public void Refresh(float dt)
         {
             bool charging = mage != null && mage.enabled && mage.IsCharging;
-            UpdateAura(charging);
+            float ratio = charging ? mage.ChargeRatio : 0f;
+            int orbIdx = UpdateOrb(charging, ratio);
+            UpdateKi(charging, orbIdx, dt);
 
             int now = charging ? StageAt(mage.ChargeRatio) : 0;
             if (now > stage) flash = 1f;
@@ -86,31 +118,58 @@ namespace ChronoSavior.Characters
             DrawFlash();
         }
 
-        void UpdateAura(bool charging)
+        /// <summary>손 오브 — 차지율을 11장에 그대로 매핑(루프 없음, 0%=1번째·100%=11번째). 지금 그린 프레임 인덱스를 돌려준다(안 그렸으면 -1).</summary>
+        int UpdateOrb(bool charging, float ratio)
         {
             if (!charging)
             {
-                if (aura != null) aura.gameObject.SetActive(false);
+                if (orbSr != null) orbSr.enabled = false;
+                return -1;
+            }
+            if (orbSr == null)
+            {
+                var go = new GameObject("ChargeOrb", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false); // 몸과 같은 캔버스·피벗이라 변환 그대로 겹친다(보정 불필요)
+                orbSr = go.GetComponent<SpriteRenderer>();
+                if (body != null) orbSr.sortingLayerID = body.sortingLayerID;
+                orbSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1; // 몸 바로 앞 — 완충 번쩍임·베기 효과와 같은 자리
+            }
+            var frames = OrbFrames();
+            int idx = Mathf.Clamp(Mathf.RoundToInt(ratio * (frames.Length - 1)), 0, frames.Length - 1);
+            var sprite = frames[idx];
+            orbSr.enabled = sprite != null;
+            if (sprite == null) return -1; // 그림이 없으면(이론상 늘 있어야 하지만) 숨긴다 — Resources는 VFX 팩과 달리 git에 들어있다
+            orbSr.sprite = sprite;
+            if (body != null) { orbSr.flipX = body.flipX; orbSr.flipY = body.flipY; }
+            return idx;
+        }
+
+        /// <summary>오브 일렁임 — 오브가 <see cref="KiEffectStartOrbFrame"/> 이상일 때만, 시간 기반으로 6장을 돈다.</summary>
+        void UpdateKi(bool charging, int orbIdx, float dt)
+        {
+            bool show = charging && orbIdx >= KiEffectStartOrbFrame;
+            if (!show)
+            {
+                if (kiSr != null) kiSr.enabled = false;
+                kiTimer = 0f; // 다음에 다시 켜질 때 처음부터
                 return;
             }
-            if (aura != null && aura.gameObject.activeSelf) return; // 차지하는 동안 계속 돈다
-            var branch = ProfileService.Current.mageBranch;
-            var frames = VfxFrames.Get(AuraKey(branch));
-            if (frames.Length == 0) return; // 팩을 안 가져왔으면 그리지 않는다
-            if (aura == null)
+            if (kiSr == null)
             {
-                var go = new GameObject("ChargeAura", typeof(SpriteRenderer));
-                go.transform.SetParent(transform, false); // 몸 중심
-                var sr = go.GetComponent<SpriteRenderer>();
-                if (body != null) sr.sortingLayerID = body.sortingLayerID;
-                sr.sortingOrder = AuraSortingOrder(body);
-                aura = go.AddComponent<VfxPlayer>();
+                var go = new GameObject("ChargeKi", typeof(SpriteRenderer));
+                go.transform.SetParent(transform, false); // 오브와 같은 캔버스·자리
+                kiSr = go.GetComponent<SpriteRenderer>();
+                if (body != null) kiSr.sortingLayerID = body.sortingLayerID;
+                kiSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1;
             }
-            // 플레이어는 캐릭터 그림에 맞춰 배율이 1이 아니다 — 오라는 월드 배율 = 도트 배율(2)이 되게 되돌린다.
-            var s = transform.lossyScale;
-            aura.transform.localScale = new Vector3(DotScale.Value / Mathf.Max(0.01f, Mathf.Abs(s.x)), DotScale.Value / Mathf.Max(0.01f, Mathf.Abs(s.y)), 1f);
-            aura.gameObject.SetActive(true);
-            aura.Play(frames, AuraFps, true, 0f, AuraTint(branch)); // 차지를 새로 시작할 때마다 처음부터
+            kiTimer += dt;
+            var frames = KiFrames();
+            int idx = Mathf.FloorToInt(kiTimer * KiEffectFps) % frames.Length;
+            var sprite = frames[idx];
+            kiSr.enabled = sprite != null;
+            if (sprite == null) return;
+            kiSr.sprite = sprite;
+            if (body != null) { kiSr.flipX = body.flipX; kiSr.flipY = body.flipY; }
         }
 
         void DrawFlash()

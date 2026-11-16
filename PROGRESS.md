@@ -230,11 +230,368 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   암살자→Blade(섬영)는 이름만 다를 뿐 그대로 대응되는데, 워리어는 드루이드(기획 제외) 자리를
   대신하는 건지, 로스터에 없던 5번째 캐릭터인지, 다른 클래스의 리네임인지 불명. 지금은
   `Assets/Resources/Art/Characters/Warrior_Unmapped/`로 분리만 해 두고 매핑·사용 여부는 보류
-  (사용자 확인). **추가로**: 이 프레임들을 실제로 쓰려면 지금 캐릭터당 정지 그림 한 장뿐인
-  `CharacterArtSet`/`PlayerRig`/`LobbyAvatar` 구조를 Animator 기반으로 바꿔야 하는데, 이건
-  `HANDOFF.md` 다음 스프린트가 아직 미정이라 언제·누가 할지도 같이 정해야 함.
+  (사용자 확인). ~~추가로: Animator 기반 구조로 바꿔야 함~~ → **로그 (107)에서 끝남**(워리어 매핑
+  자체는 여전히 미정).
+- **[나, 2026-11-16] `pj4_energy_blast_A_large_red` 폴더명 추정 — 가져오기 확인 필요.** (116)에서 마법사
+  화염탄 완충(차지 50%↑) 그림으로 `VfxKeys.MageFireProjectileLarge`를 추가했는데, 팩 zip 내부를 직접
+  못 봐서 폴더명을 `pj4_dark_matter_small/large_violet`(기존 중력탄 쌍)과 같은 규칙으로 그냥 추정해
+  `VfxPackImporter.cs`에 적었다. 실제 이름이 다르면 메뉴 `ChronoSavior/VFX 팩 가져오기`가 조용히
+  안 넘어가고 오류로 알려준다(기존 정책) — 그 오류 메시지가 보여주는 실제 경로를 알려주면 바로
+  고친다. 중력 갈래 쪽(`MageGravityOrbLarge`)은 2026-11-07부터 이미 있던 키를 탄에 재사용만 한
+  거라 이 문제 없음.
+  - **2026-11-16 추가**: 같은 이유로 `MageBasicProjectile`/`Large`(`pj4_energy_blast_B_small/large_blue`,
+    0차 기본탄)도 추정이다 — 이번엔 사용자가 "에너지 블래스트 B 블루"라고 폴더 계열까지 직접
+    짚어 줘서 `_A_`보다는 확실하지만, `_large_blue` 쪽 폴더가 실제로 있는지는 여전히 가져오기를
+    돌려봐야 안다.
+- **[나, 2026-11-16] Animator 전이 우선순위·Unity 컴파일 — 둘 다 아직 에디터에서 눈으로 확인 못 함.**
+  로그 (107)에서 `PlayerRig`/`LobbyAvatar`/`CharacterArtSet`에 Animator 연결 코드를 넣었는데, 이번
+  세션은 디바이스 브리지로 파일만 넣었을 뿐 Unity 에디터를 직접 열 수 없어 **컴파일 에러 여부를
+  못 봤다** — 다음에 에디터 켜면 콘솔부터 확인 필요. 전이 우선순위(AnyState에서 Hit/Attack이
+  Grounded 전이보다 먼저인지, 공격 중 피격이 끼어드는 느낌 등)도 `CharacterBase.controller`를
+  에디터가 직접 만든 1차 기본값 그대로라 Play 모드에서 실제로 돌려보고 다듬어야 한다(로그 (106)에서
+  이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-16 (121)** — **[나] 살수 공격 애니메이션 6장 → 좌우반전 6장(07~12) 추가해 12장으로 — 쌍칼이라 "다른 손으로
+  한 번 더 베기" 콤보처럼 자연스럽게 이어짐**(사용자 "모션을 좌우반전해서 한번더 출력하면 1~12같은느낌으로
+  쓸수있지않을까" → "1로가자"로 확정, 반전 결과물로 **새 PNG 6장을 실제로 생성**하는 방식 선택).
+  - 먼저 그림을 확대해서 직접 확인 — 1~6번은 앞손(왼쪽) 칼이 크게 휘두르는 동작, 5~6번에서 등 뒤에 숨어있던
+    **뒷손(오른쪽) 칼**이 드러나며 회수되는 구조였다. 처음엔 "한손 무기"로 잘못 보고 반전하면 무기가 손을
+    순간이동한 것처럼 보일 거라고 답했는데, 사용자가 "쌍칼인데"로 바로잡아줘서 다시 확대해서 재확인 —
+    쌍칼이 맞았고, 그러면 반전은 "같은 손이 반대쪽에서 다시"가 아니라 **"이번엔 다른 손으로 한 번 더"**로
+    읽혀서 오히려 자연스럽다.
+  - `Assets/Resources/Art/Characters/Blade/Character_Blade_Attack_01~06.png`를 PIL로 좌우반전해서
+    `_07~12.png`로 저장(01→07, 02→08 … 06→12, 같은 순서 그대로 한 번 더) + 짝 맞춰 `.meta` 6개 수작업
+    생성(원본 메타에서 `spritePivot`·가로세로(70×48)를 그대로 읽어와 썼다 — alignment 9·pivot
+    (0.5, 0.546875)·PPU 128, `docs/pixel-standard.md` 캐릭터 규칙 그대로). 반전한 그림을 확대해서
+    직접 다시 확인 — 칼 궤적이 거울상으로 자연스럽게 뒤집혀 있고 어색한 부분 없음.
+  - **코드 수정 없음** — `Assets/Editor/BuildCharacterAnimations.cs`의 `LoadFrames()`가 폴더 안에서
+    `Character_Blade_Attack_` 접두사가 붙은 스프라이트를 이름순(Ordinal)으로 전부 긁어모으는 구조라
+    `_07~12`도 자동으로 잡힌다(`"06" < "07" < … < "12"` 문자열 비교로 순서도 정확히 맞음) — **다음에 메뉴
+    `ChronoSavior/캐릭터 애니메이션 만들기`를 실행하면 `Character_Blade_Attack` 클립이 자동으로 12프레임이
+    된다**(아직 그 메뉴 자체를 실행한 적이 없어서(로그 (106) 참고) 지금은 에셋만 준비된 상태).
+  - **확인 필요**: 에디터로 아직 못 봄 — (106)의 "아직 실행도 안 했다" 애니메이션 생성 메뉴를 실제로
+    돌려서 12프레임 클립이 의도대로(한 바퀴 재생에 시간이 2배로 늘어나는 게 맞는지, AttackFps 그대로 둬도
+    되는지) 만들어지는지 확인 필요.
+
+- **2026-11-16 (120)** — **[나] 보스 '이동' 그림, 걷기가 아니라 넉백 슬라이딩에 연결**(사용자가 (119)의 "이동은 안
+  입혔다"는 보고에 "보스도 이동하잖아 그 이동에 넣으면 되는거아닌가"라고 반박 — 다시 코드를 확인해서 맞는 말이었다).
+  - **재확인해서 알게 된 것**: "걷기(자기 의지로 방향키 누른 듯한 이동)"는 정말 없지만, **맞아서 밀리는 넉백
+    슬라이딩은 있었다** — `EnemyMove.FixedUpdate`(`vx = frozen ? 0f : ownSpeed + knockbackX`)가 이 보스의
+    own speed(땅에 있을 땐 늘 0)와 무관하게 `knockbackX`를 그냥 더하기 때문에, 지상에서 맞으면 실제로 옆으로
+    미끄러진다. 이 보스는 `IsDamageProtected`가 공중에서만 켜져서(`IsAirborne`) 지상 상태 전부(대기·점프
+    준비/후딜·투척 준비/조준/후딜)에서 맞을 수 있고, `Enemy_Base.prefab` 기준 `knockbackSpeed=2.4`·
+    `knockbackMultiplier=1`·`knockbackDecay=9`로 보스도 기본값 그대로라 맞을 때마다 ~0.25~0.4초 정도
+    실제로 슬라이딩한다. **처음에 "걷지 않는다"는 사실만 보고 이동 그림 전체가 쓸모없다고 결론 낸 게
+    성급했다** — 걷기와 넉백 슬라이딩은 별개였다.
+  - 받아 온 이동 그림 4장을 실제로 열어 확인 — 발 달린 걸음걸이가 아니라 몸 전체가 살짝 출렁이는 애니메이션
+    (대기 그림과 포즈가 거의 같고 출렁임 폭만 큼) — 다리 없는 덩어리라 "걷는 모습"보다 "밀리는 동안의 흔들림"에
+    오히려 더 잘 맞는 그림이었다.
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Move_01~04` 신설(80×64, PPU 128, 같은 방식).
+  - `Enemies/EnemyMove.cs`: `public float KnockbackMagnitude => Mathf.Abs(knockbackX);` 추가(기존
+    `Direction` 공개 프로퍼티와 같은 자리·같은 이유 — 비공개 필드를 다른 스크립트가 읽어야 함).
+  - `Enemies/BlobLordBoss.cs`: `UpdateBodySprite`에 **피격(최우선) 다음, 상태별 그림(튀어오르기·투척)보다 위**
+    우선순위로 넉백 슬라이딩 분기 추가 — `mover.KnockbackMagnitude`가 문턱(`KnockbackSlideThreshold=0.05`)을
+    넘는 동안 이동 4장을 10fps(`MoveFrameFps`)로 순환시키고(`moveCycleT`, 멎으면 0으로 리셋 — 다음 밀림은 처음
+    프레임부터), 안 밀리면 기존 상태 분기로 그대로 넘어간다. 어느 상태에서 맞든(투척 준비 중이든 대기 중이든)
+    적용된다 — 몸이 밀리는 동안은 그게 가장 눈에 띄는 동작이라 상태별 그림보다 우선했다.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(이동 그림도 이제 쓴다 — 걷기가 아니라 넉백 슬라이딩).
+  - **확인 필요**: 역시 에디터로 못 봄 — 넉백 슬라이딩 지속 시간(~0.25~0.4초)에 10fps 4프레임이 자연스럽게
+    맞물리는지, 멎을 때 기본 그림으로 바로 끊기듯 돌아가는 게 어색하지 않은지는 실제로 맞아 봐야 안다.
+
+- **2026-11-16 (119)** — **[나] 보스 애니메이션 나머지 3종 연결(조약돌 투척·피격·사망) + 사망 그림을 위해 `EnemyHealth`에
+  새 훅 추가 — 이동(4장)은 보류하고 사용자에게 물음**(사용자 "나머지도 연결해줘", (118)에서 대기·튀어오르기만
+  입히고 남겨 둔 것).
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Throw_01~04`·`_Hit_01`·`_Death_01~08` 신설(80×64,
+    PPU 128, 피벗 0.5/0.5 — (118)과 같은 방식·같은 캔버스, `.meta` 13개 수작업 생성).
+  - **조약돌 투척**: `BlobLordBoss.UpdateBodySprite`에 `State.ThrowPrep`(들어 올림, 1~2번째)·
+    `State.ThrowWarn`(조준 고정, 3~4번째) 분기 추가 — 점프의 "123 올라갈 때/456 내려올 때" 분배와 같은 방식.
+  - **피격**: `CombatEvents.EnemyDamaged`(적 전체가 같이 쓰는 전역 이벤트, `Core/CombatEvents.cs`)를
+    `OnEnable`/`OnDisable`로 구독해 **`gameObject` 일치**로 걸러 받는다(`HandleDamaged`) — 맞으면 0.15초
+    (`HitFlashDuration`) 동안 피격 그림 1장을 다른 모든 그림보다 우선해서 보여주고(`UpdateBodySprite` 맨 위에서
+    검사), 흰 피격 깜빡임(`EnemyHealth.ShowFlash`, 알파 덧칠)과는 별개로 같이 겹쳐 보인다. 화상 등 지속 피해는
+    `EnemyDamaged`를 안 올려서 자연히 제외.
+  - **사망**: `EnemyHealth.Die()`가 지금까지 **모든 적**(고블린 포함)을 조건 없이 즉시 `Destroy`했는데, 그러면
+    사망 그림 8장을 한 프레임도 못 보여준다. **`Core/IDeathAnimated.cs` 신설**(멤버 하나짜리 마커 인터페이스,
+    `PlayDeathAndDestroy()`) — `Die()`가 `GetComponent<IDeathAnimated>()`를 찾으면 그쪽에 Destroy를 맡기고,
+    없으면(고블린 등 보통 몹) 지금처럼 즉시 Destroy한다(동작 변화 없음). `BlobLordBoss`가 이걸 구현해서 죽는
+    순간 들고 있던 돌·경고 표시를 바로 치우고 사망 그림 8장을 8fps(`DeathFrameFps`)로 재생한 뒤 스스로 Destroy.
+    재생 중엔 `GetHorizontalSpeed`/`GetVerticalPosition`이 맨 위에서 `health.IsDead`를 보고 즉시 멈춰서(0 반환/
+    현재 Y 유지) 상태머신이 계속 돌며 다음 패턴을 고르거나 `UpdateBodySprite`가 사망 그림을 매 프레임 덮어쓰는
+    일이 없게 했다 — **`EnemyMove.FixedUpdate`는 `IsDead`를 안 보고 매 프레임 `GetHorizontalSpeed`를 계속
+    부르므로** 이 가드가 없으면 죽은 채로 계속 움직이거나 다음 공격을 준비했을 것(코드로 확인, `EnemyMove.cs`
+    224줄 근방). 뜬 자세로는 못 죽으므로(공중=무적, `IsDamageProtected`) 항상 지상에 서 있던 자리에서 멈춘다.
+  - **이동(4장)은 이번에도 안 입혔다 — 사용자 확인 필요**. 이 보스는 애초에 걷지 않는다(명세 밖,
+    "Codex 상의로 정한 것" 클래스 doc 콜아웃 — `State.Idle`이 수평 이동을 전혀 만들지 않고, 유일하게 X가
+    바뀌는 건 공중 추적 점프뿐인데 그건 이미 튀어오르기 그림을 쓴다). 지상에서 걷는 상태 자체가 없어 자연스러운
+    자리를 못 찾았다 — 억지로 아무 상태에나 끼워 넣기보다 사용자에게 물어서 정하는 쪽을 택함. 받아 온 그림
+    6종 중 유일하게 미사용.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(투척·피격·사망도 입혔다고 반영, 이동만 미사용으로 남김).
+  - **확인 필요**:
+    1. **여전히 Unity 에디터로 못 봄** — 컴파일·Play 모드로 투척/피격/사망 전환이 실제로 매끄러운지,
+       `EnemyHealth.Die()` 변경이 다른 적(고블린 등)의 사망 타이밍에 의도치 않은 영향을 주지 않는지(이론상
+       `IDeathAnimated` 미구현이면 그대로 즉시 Destroy라 영향 없어야 하지만 확인 필요).
+    2. **`이동` 애니메이션을 어디에 쓸지** — 위 설명대로 현재 상태머신에 걷는 상태가 없어서 그대로 두었다.
+       사용자가 원하면 (a) 지금은 안 쓰고 남겨 둔다 (b) 다른 자리(예: 추적 점프 준비 중 몸을 좌우로 살짝
+       흔드는 용도 등)로 재해석한다 (c) 그 밖의 용도 — 중 선택 필요.
+    3. (118)의 "새 `.meta` 수작업 생성" 확인 필요가 이번 13개에도 똑같이 적용된다(GUID 충돌 가능성은
+       낮음, 전부 새 랜덤값).
+
+- **2026-11-16 (118)** — **[나] 1지역 보스 '덩어리 지배자' 실제 아트 적용 + 추적 점프 강하 패턴에 튀어오르기 그림**
+  (사용자가 보스 애니메이션 zip을 올리고 "보스파일 받아왔는데 적용가능하니" → 이어서 "보스패턴중에 점프후
+  낙하하는 패턴에서 튀어오르기 123을 올라갈때 내려올때 456으로 적용좀").
+  - zip 안 폴더 6개(대기 4장·이동 4장·조약돌 투척 4장·튀어오르기 6장·피격 1장·사망 8장, 전부 80×64 캔버스)를
+    확인 — 전부 `BlobLordBoss`(1지역 보스, 추적 점프 강하·대형 조약돌 투척 두 패턴)용. **이번엔 대기 1장(틀 그림
+    교체용) + 튀어오르기 6장만 적용**, 나머지 넷은 zip에 받아 뒀지만 아직 안 입힘(아래 "확인 필요").
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Idle_01~04`·`_Bounce_01~06` 신설(80×64, PPU 128,
+    피벗 중앙 0.5/0.5 — 캐릭터 아트와 같은 방식, Resources.Load로 읽는 1인칭 자산이라 git에 들어간다. 외주
+    VFX 팩과 다른 카테고리, (116) 때와 같은 구분). `Assets/Resources/Art/Enemies/`(신규) 폴더도 생겼다.
+  - `Assets/Prefabs/Enemies/Enemy_BlobLord.prefab`: 몸 `SpriteRenderer`의 `m_Sprite` 오버라이드를 예전 기본
+    도형(`Assets/Sprites/Pixel/BlobLord.png`)에서 `Enemy_BlobLord_Idle_01`로 교체.
+  - `Enemies/BlobLordBoss.cs`: `Awake`에서 프리팹이 들고 있는 그 틀 그림을 `defaultSprite`로 캐시 + 새
+    `UpdateBodySprite()`(매 물리 프레임, `GetHorizontalSpeed` 끝에서 호출) — **올라갈 때**(`State.JumpRise`)
+    진행률로 튀어오르기 1~3번째, **정점에서 추적**(`State.JumpTrack`)은 3번째를 그대로 유지, **낙하**
+    (`State.JumpFall`)는 진행률로 4~6번째, 그 밖(대기·준비·후딜·투척 전체)은 `defaultSprite`. 사용자가 말한
+    "123/456"을 그대로: 123=올라갈 때, 456=내려올 때.
+  - **크기 계산을 코드로 확인하고 맞췄다(눈으로 아직 못 봄)**: `EnemySetup.FitToWorldSize`가 스폰 **그 순간의
+    스프라이트 크기**를 기준으로 `transform.localScale`을 **가로·세로 따로** 계산해 `BlobLordBoss.VisualSize`
+    (2.0×1.625)에 맞춘다 — 한 번만 계산하고 그 뒤로는 안 바뀐다. 그래서 틀 그림(대기 01)과 튀어오르기가
+    **같은 80×64 캔버스·같은 PPU(128)**가 아니면 튀어오르기로 바뀌는 순간 보스 크기가 눈에 보이게 틀어진다
+    — 전부 같은 캔버스로 맞춰서 이 문제는 없을 것으로 계산했다(코드만 확인, 에디터로 직접 못 봄).
+    `BlobLordBossTests.cs:111`("그림 크기")은 폭을 `VisualSize.x`와 비교하는데, 이 테스트는 **어느 그림을
+    기준으로 스케일을 잡았든 결과가 항상 `VisualSize`와 같게 나오는 구조**(`FitToWorldSize`가 역산해서
+    맞추므로)라 그대로 통과할 것으로 본다 — 역시 배치 실행으로 확인 못 함.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(실제 아트 적용 + "새 상태 그림을 추가할 땐 같은 캔버스로"
+    경고 추가).
+  - **확인 필요**:
+    1. **Unity 에디터로 직접 못 봄** — 컴파일·Play 모드로 실제 크기·점프 모션이 맞는지 확인 필요.
+    2. **나머지 네 상태(이동·조약돌 투척·피격·사망)는 그림만 받아 뒀고 코드에 아직 안 연결했다** — 다음에
+       할지 사용자 의사 확인.
+    3. 새 `.meta` 파일(GUID·internalID 등)을 전부 수작업으로 생성했다 — Unity가 임포트할 때 포맷을
+       못 알아보거나 GUID 충돌이 나면(가능성 낮음, 전부 새 랜덤값) 알려 줄 것.
+
+- **2026-11-16 (117)** — **[나] 0차(갈래 없음) 기본탄에도 그림 추가**(사용자 "지금 이펙트가 없는
+  메이지 기본공격도 슈퍼픽셀 프로젝타일 팩 4에 에너지 블래스트 B 블루도 스몰 라지 적용가능?" —
+  (116)에서 완충 여부로 small/large를 바꾼 걸 기본공격에도 똑같이 적용해 달라는 요청).
+  - `MageAttack.FireAimed()`를 다시 보니 **0차도 `charged`(차지 50%↑) 값을 이미 계산해서
+    `MageProjectile.Spawn`에 넘기고 있었다** — 그동안 `BoltKey`가 `gravityOrb`/`explosive`가 둘 다
+    아니면 그냥 null을 줘서 프리팹의 원을 색칠하는 걸로 끝났을 뿐, 새 문턱을 만들 필요 없이 기존
+    값을 그대로 쓸 수 있었다.
+  - `Combat/VfxKeys`에 `MageBasicProjectile`/`MageBasicProjectileLarge`("mage/basic_projectile[_large]")
+    신설, `Assets/Editor/VfxPackImporter.cs` Manifest에 `pj4_energy_blast_B_small/large_blue`로 추가
+    (사용자가 "에너지 블래스트 B 블루"라고 직접 지정 — `_A_` 때보다 폴더명 확신도는 높지만 `_large_`
+    쪽은 여전히 추정, 위 "확인 필요"에 추가).
+  - `Characters/MageProjectile.BoltKey`가 `gravityOrb`도 `explosive`도 아닌 경우(=0차) `null` 대신
+    `charged ? MageBasicProjectileLarge : MageBasicProjectile`을 돌려주게 끝 분기 하나만 바꿨다.
+  - `ShowArt`를 부르는 회전 조건도 `explosive` 플래그 대신 `!gravityOrb`로 넓혔다 — 기본탄도
+    energy_blast 계열(혜성 모양, 오른쪽을 향함)이라 화염탄과 똑같이 날아가는 방향으로 돌려야
+    해서(보라 구체=중력 갈래만 원형이라 안 돈다).
+  - `docs/asset-swap-points.md` 마법사 탄 그림 줄에 0차 기본탄 키 추가 반영.
+  - **확인 못 함**: 역시 에디터로 가져오기 돌려서 두 폴더가 실제로 풀리는지 — 디바이스 브리지로는
+    파일만 넣었다.
+
+- **2026-11-16 (116)** — **[나] 마법사 탄 그림, 완충이면 큰 그림으로**(사용자 "발사체가 차지했을때랑
+  안했을때랑 크기가 같으면 사용자가 알기 어렵지않을까 ... 차지했을때 발사체는 large에서 차지가
+  덜되거나 안되었을때는 small에서 가져오는게 맞는것같은데" — 직전에 "판정 상자만 커지고 그림은
+  차지와 무관하게 고정"이라고 답했던 것에 대한 개선 요청).
+  - `Combat/VfxKeys`에 `MageFireProjectileLarge`("mage/fire_projectile_large") 신설. 중력 갈래는
+    `MageGravityOrbSmall`/`Large` 둘 다 2026-11-07부터 있었는데 `Large`는 지금까지 `GravityVortexVfx`
+    (중력장 구체, **중첩 수** 기준 전환)에서만 쓰고 탄 자체는 늘 `Small`만 썼다 — 이제 탄에도 같이
+    쓴다(쓰는 기준이 서로 다르다는 걸 `docs/asset-swap-points.md`에 명시).
+  - `Characters/MageProjectile.cs`: 새 `static string BoltKey(gravityOrb, explosive, charged)`가
+    **완충**(`charged` — `chargeK >= 0.5`, 번 스택·착탄마다 폭발 여부에 이미 쓰던 기존 문턱 그대로
+    재사용, 새 문턱 안 만듦) 여부로 small/large를 고른다. `ShowArt`의 혜성 그림 회전 조건을
+    `key == MageFireProjectile` 문자열 비교에서 `explosive` 플래그 인자로 바꿔 large 키에서도
+    똑같이 회전되게 함께 고쳤다.
+  - `Assets/Editor/VfxPackImporter.cs` Manifest에 `MageFireProjectileLarge ← PNG/pj4_energy_blast_A_large_red`
+    추가 — **폴더명은 dark_matter small/large 쌍과 같은 규칙으로 추정**(zip 안을 직접 못 봄). 확인
+    필요 항목으로 위에 남김.
+  - `docs/asset-swap-points.md`: 마법사 탄 그림 줄을 완충 기준으로 다시 썼고, 2026-11-07 스프린트 때
+    적어 둔 "판정 폭에 가장 가까운 정수 배율(`VfxPlayer.WholeScale`)" 문장이 그 뒤 모든 그림이
+    `DotScale` 고정으로 바뀌면서 틀린 채로 남아 있던 걸 사용자 질문에 답하다가 발견해 같이 고쳤다.
+  - **확인 못 함**: Unity 에디터에서 `ChronoSavior/VFX 팩 가져오기`를 다시 돌려 `mage/fire_projectile_large`
+    폴더가 실제로 풀리는지 — 디바이스 브리지로는 파일만 넣었고 에디터를 직접 못 열어 컴파일도
+    아직 못 봤다.
+
+- **2026-11-16 (115)** — **[나] (114) 오라 삭제로 터진 컴파일 에러 수정**(사용자 "컴파일 에러 떳는데 오라
+  관련" — 스크린샷). (114)에서 `MageChargeVfx`의 `AuraKey`/`AuraFps`/`AuraSortingOrder`/`AuraTint`를
+  지웠는데, **그걸 쓰는 다른 파일을 못 찾고 놓쳤다** — `Assets/Editor/CaptureUiPreview.cs`의
+  `RunMageVfx()`(마법사 이펙트를 전투 화면 배율로 캡처하는 에디터 도구, `-executeMethod`로 배치 실행)가
+  갈래별 오라를 찍던 블록(CS0117 5건, 167~171줄)에서 그 네 멤버를 그대로 참조하고 있었음. 로컬 grep이
+  스테이징된 파일만 보는 한계라 전체 레포를 못 훑은 게 원인 — 다음엔 공개 API를 지울 때 에디터 스크립트까지
+  훑을 것.
+  수정: 그 블록을 **실제 씬의 Player에 이미 붙어 있는 `MageChargeVfx`/`MageAttack`을 그대로 써서** 차지율
+  0.3·0.85·1.0 세 단계를 리플렉션으로 강제로 넣고 `Refresh()`를 불러 찍게 바꿨다(`mage_charge_orb_early`·
+  `_orb_ki`·`_orb_full`) — 오브·일렁임이 실제로 뭘 그리는지 그대로 캡처된다. 찍고 나면 `charging=false`로
+  되돌려 다음 캡처 블록에 안 남게.
+
+- **2026-11-16 (114)** — **[나] KiEffect 용도 정정(발사 순간→차지 일렁임) + 차지 오라 삭제**
+  (사용자 "KiEffect_01~06는 발사순간이 아니라 차지 9장쯤부터 오브 근처에 일렁이듯 반복되는 이펙트고
+  원래 차지할때 캐릭터뒤에 오라같은거는 없애줄래 필요없다" — (112)에서 내가 "발사 순간용인가 보다"라고
+  잘못 짐작했던 걸 사용자가 직접 정정).
+  1. **KiEffect = 오브 일렁임**: `MageChargeVfx.UpdateKi()` 신설 — 오브가 9번째 프레임(0-based 인덱스 8,
+     `KiEffectStartOrbFrame`)에 들어선 **이후부터** 오브와 같은 자리에 겹쳐서, 차지율이 아니라 **시간 기반**으로
+     6장을 10fps 루프(`KiEffectFps`)로 돈다 — "일렁인다"는 표현상 정지된 프레임이 아니라 계속 움직여야
+     자연스럽다고 판단. `Refresh()`가 `UpdateOrb()`의 반환값(지금 그린 오브 프레임 인덱스)을 그대로 넘겨 받아
+     문턱을 판단한다.
+  2. **차지 오라 삭제**: 2026-11-07 VFX 스프린트에서 넣었던 외주 팩 기반 오라(`scifi_charge_up_001`,
+     `VfxKeys.MageChargeSmall`/`…Violet`, 몸 뒤)를 통째로 뺐다 — `UpdateAura()`·`aura` 필드·`AuraFps`·
+     `AuraSortingOrder`·`AuraKey`·`AuraTint`·`FireTint`·`AuraVisible` 전부 삭제. 테스트도 같이 지움
+     (`ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale`·`ChargeAura_ColorPerBranch` → 대신
+     `Orb_ShowsOnlyWhileCharging_MapsChargeRatioToFrame`·`Ki_ShowsOnlyOnceOrbReachesFrame9` 신설).
+     `docs/asset-swap-points.md`도 갱신 — "마법사 차지 오라" 행 삭제, 대신 손 오브·일렁임을
+     "바로 바꿀 수 있는 곳"(캐릭터 아트, 외주 팩 아님)에 새 행으로. `CreationOwnershipTests.cs`의
+     `MageChargeVfx.cs` 설명 문구도 현행화.
+  **아직 Play 확인 전** — 차지 9장 즈음부터 오브 주변이 일렁이는지, 캐릭터 뒤 오라가 완전히 사라졌는지.
+
+- **2026-11-16 (113)** — **[나] 공격 사운드 추가로 -4dB 더 낮춤**(사용자 "공격 사운드들이 대체로
+  너무 큰것같아" — (112)의 평균화 이후에도 여전히 크게 느껴진다는 지적). (112)는 28개를 **한 목표치**로
+  평균화한 것뿐이라 공격음도 다른 효과음과 같은 레벨(~-21dB)이었는데, 공격음은 전투 중 **반복 재생
+  빈도가 압도적으로 높아서** 같은 데시벨이라도 체감 피로도가 다른 효과음보다 훨씬 크다 — 이번엔
+  평균치가 아니라 **"자주 울리는 소리는 따로 더 낮춘다"**는 별도 기준 적용.
+  대상은 이름에 `_attack`이 붙은 것 중 **플레이어가 직접 쏘는 쪽만** 7개 — `assassin_attack1~3`,
+  `mage_basic_attack`, `mechanic_basic_attack`, `fire_attack`(마법사 폭발 갈래), `gravity_attack`
+  (마법사 중력 갈래). `player_attacked`(플레이어가 맞는 소리, 공격이 아니라 피격 피드백이라 범주가
+  다름)는 그대로 뒀다 — 이것도 낮춰야 하면 말씀해주세요.
+  (112)에서 만든 파일 위에 추가로 `volume=-4dB`만 걸어 재인코딩(192kbps 유지) — 결과 평균
+  -25.5~-27.4dB로, 나머지 효과음(-21~-26dB대)보다 뚜렷하게 조용해짐. 스킬(`fire_skill`·`gravity_skill`·
+  `assassin_spin`, 쿨다운이 길어 자주 안 울림)은 이번엔 안 건드림 — 이것도 같이 낮출지는 확인 필요.
+  **아직 Play 확인 전.**
+
+- **2026-11-16 (112)** — **[나] 차지 손 오브 추가 + 차지·점프 동시 발생 버그 수정 + SFX 음량 평균화**
+  (사용자 세 가지 동시 지적 — "차지 애니메이션 보면 이펙트도 있잖아 이것도 추가해주고" / "차지중에 점프하면
+  점프랑 차지랑 모션 둘다 출력되려고해서 되게 이상하게보이는데" / "사운드들 있잖아 ... 평균으로 맞춰주는것도
+  되려나"). 세 건 다 (111)과 무관한 별개 버그·요청.
+  1. **손 오브**: 차지 오라(`MageChargeVfx` 1번)와 헷갈려서 먼저 "그거 말고 다른 거냐"고 되물었더니
+     "차지 애니메이션 폴더 보면 이펙트가 또 따로있음"이라고 확인받음 — `Character_Mage_Attack_OrbEffect_01~11.png`
+     (몸 그림과 **똑같은 캔버스** 70×48·PPU128·피벗 0.5/0.546875, `.meta` 대조로 확인)가 안 쓰이고 있었음.
+     차지율을 11장에 그대로 매핑(루프 아님, 0%=1번·100%=11번)해서 몸 바로 앞(sortingOrder+1)에 겹쳐 그리게
+     `MageChargeVfx.UpdateOrb()` 신설. 같은 폴더의 `Character_Mage_Attack_KiEffect_01~06.png`(발사 순간 불꽃
+     6장)도 안 쓰이고 있는데, 이건 차지가 아니라 **Attack 클립**(발사 순간) 쪽이라 범위가 달라서 안 건드림 —
+     아래 "확인 필요"에 남김.
+  2. **차지+점프 동시 깜빡임 버그**: `CharacterBase.controller`의 AnyState 우선순위가
+     `[Hit, Attack, Charging→Charge, Grounded→JumpFall]` 순이었는데, 이미 Charge 상태에 있을 때
+     `Can Transition To Self: 0`이 그 전이를 막으면(자기 자신으로는 못 감) Mecanim이 그냥 포기하는 게
+     아니라 **우선순위상 다음 AnyState 전이(JumpFall)로 넘어가 버린다** — 공중에서 차지 중이면
+     Charge↔JumpFall을 매 프레임 왕복하며 그림이 번갈아 바뀌어 "둘 다 나오려는" 것처럼 보였음. (110)에서
+     JumpFall 자체는 맨 끝 우선순위라 막혀도 그냥 안 움직여서 괜찮았는데, Charge는 중간 순위라 막히면
+     다음 걸로 새는 게 문제. 수정: JumpFall 전이 조건에 `Charging IfNot`을 추가해(`Grounded IfNot` AND
+     `Charging IfNot`) 애초에 차지 중엔 이 전이 자체가 조건을 못 만족하게 — Charge가 자기 자신 전이로
+     막혀도 JumpFall로 샐 길이 없어짐(차지가 끝나야 비로소 조건이 둘 다 맞아 JumpFall로 간다).
+  3. **SFX 음량 평균화**: `Assets/Resources/Audio/Sfx/` 28개(.mp3 27·.ogg 1) 전부 ffmpeg `volumedetect`로
+     평균 음량(mean_volume) 측정 — 가장 작은 게 -31.0dB(assassin_attack3), 가장 큰 게 -4.8dB
+     (assassin_slowtime), 26dB 차이. 28개 평균(-21.3dB)을 목표로 각 파일에 게인을 적용하되, 피크가
+     -1dB를 넘겨 클리핑(찢어짐)하지 않게 게인을 자동으로 깎았다(피크 여유가 없는 타격감 위주 효과음
+     — both_mechanic_skill_ready·mechanic_drone_bullet류·ui_click 등 — 은 원래도 어택 타임이 짧아
+     "평균=피크"에 가까워서 목표치까지 못 올리고 -23~-26dB에서 멈춤, 이게 한계). 결과 분포 -26.3~-21.0dB
+     (5.3dB 차이)로 좁혀짐. mp3는 libmp3lame 192kbps, ogg는 libvorbis q6로 다시 인코딩(둘 다 원본 비트레이트와
+     비슷하거나 더 낮아 용량은 안 늘었음). **원본 파일을 덮어썼다** — 되돌리려면 git 히스토리에서.
+  **셋 다 아직 사용자 확인 전**(Play로 차지 오브가 손에 커지는지, 차지 중 점프해도 안 깜빡이는지, 사운드가
+  귀로 들었을 때 고르게 느껴지는지).
+
+- **2026-11-16 (111)** — **[나] 마법사 차지 모션 신설 — `Charge` 애니메이터 상태 추가**(사용자 "메이지 차지중 모션도
+  있을텐데 적용이 안되어있는것같다" — 지적대로 **애초에 그런 상태 자체가 Animator에 없었다**, 버그가 아니라
+  누락). `MageAttack.IsCharging`은 전부터 있었는데(`MageChargeVfx`의 깜빡임 표시가 읽음) 그림(Animator) 쪽엔
+  아무 연결이 안 돼 있어서, Z를 눌러 차지하는 동안 캐릭터는 그냥 Idle/Move 그대로였음.
+  - `Character_Mage_Attack_Body_01~03.png`(차지~시전 동작 중 앞부분, 직접 세 장 열어서 확인 — 01~03이 모아
+    당기는 듯한 자세, 04~07이 더 역동적인 시전/반동 동작이라 01~03을 차지 루프로 골랐다) 3장을 6fps 루프로
+    묶은 새 클립 `Data/Characters/Animations/Character_Mage_Charge.anim` 신설(손으로 YAML 작성 —
+    `BuildCharacterAnimations.cs`는 손 안 댐, 기존 7장짜리 Attack 클립과도 별개).
+  - `CharacterBase.controller`에 bool 파라미터 `Charging` + 상태 `Charge`(위 클립 재생) + 전이 2개 추가:
+    `AnyState→Charge`(`Charging==true`, **`Can Transition To Self: 0`으로 처음부터 넣음** — (110)에서
+    JumpFall이 당했던 것과 똑같은 함정이라 미리 막음) / `Charge→Idle`(`Charging==false`, 조건 불릴 때만).
+    AnyState 우선순위는 `Hit > Attack > Charging > Grounded(JumpFall)` 순으로 넣음(차지 중 피격/발사는
+    차지보다 먼저 보여야 하니 그대로 두고, 차지는 JumpFall보다 우선 — 공중에서 차지해도 차지 자세가 보임,
+    이건 디자인 판단이라 팀 확인 필요 항목으로 아래 추가). 베이스 컨트롤러 하나만 고쳐서 메카닉/섬영
+    override에도 `Charging` 파라미터가 생기지만, 그 둘은 아무도 이 값을 `true`로 안 보내니(차지 메커닉
+    자체가 없음) Charge 상태엔 평생 안 들어감 — 안전.
+  - `PlayerRig.UpdateAnimatorParams()`에서 `CurrentKit is MageAttack mage && mage.IsCharging`를 매 프레임
+    읽어 `Charging` bool을 갱신(`Characters` 같은 층 안의 형제 클래스 직접 참조라 계층 규칙 위반 아님 —
+    Gunner/Blade에도 "차지류" 동작이 생기면 그때 `ICharacterKit`에 공용 프로퍼티로 올릴지 고려).
+  **아직 사용자가 Play로 확인 전** — Z를 눌러 차지하는 동안 실제로 그림이 바뀌는지, 발사 순간 Attack으로
+  자연스럽게 넘어가는지 볼 것.
+
+- **2026-11-16 (110)** — **[나] 점프 애니메이션이 첫 프레임에 고정 — `CharacterBase.controller`를 직접 고침(처음으로
+  코드가 아니라 컨트롤러 자체를 수정)**(사용자 "점프가 제대로 적용이 안된것같은데"). 원인은 (108)의 공격 버그와
+  **같은 종류인데 더 심하게 나는 경우** — `AnyState→JumpFall` 전이(`Grounded==false`일 때)가
+  `m_CanTransitionToSelf: 1`로 되어 있어서, **공중에 떠 있는 동안 내내(Grounded가 계속 false) 매 프레임
+  스스로를 재진입시켜 JumpFall 클립을 계속 0프레임부터 다시 틀었다.** Attack은 트리거라 공격이 하나 끝나야
+  다음 트리거가 들어오니 "가끔" 끊겼지만, Grounded는 bool이라 **떠 있는 동안 조건이 한 번도 안 풀려서
+  점프할 때마다 100% 재현**되는 차이 — 그래서 코드 가드(이미 Attack 상태인지 검사하는 식)로는 못 막고,
+  bool 조건 자체가 매 프레임 참인 걸 또 트랜지션으로 인정하지 않게 **컨트롤러의 `m_CanTransitionToSelf`를
+  직접 `0`으로 고쳐야 했다**(파일 안 fileID `-6969518924967145165`, `AnyState→JumpFall` 전이 하나만 — Hit·Attack
+  전이는 그대로 둠, 그쪽은 재진입이 오히려 "맞을 때마다/칠 때마다 다시 번쩍"이는 의도된 연출일 수 있어서
+  손 안 댐). 베이스 컨트롤러 하나만 고치면 되므로 Mage/Gunner/Blade override controller 세 개 전부 동시에
+  적용됨(얘네는 Attack 클립만 따로 바꿔 끼우고 상태 머신 구조 자체는 베이스를 그대로 참조). **아직 사용자가
+  Play로 재확인 전** — 점프 중에 JumpFall 프레임이 실제로 넘어가는지 볼 것.
+
+- **2026-11-16 (109)** — **[나] 로비 애니메이션 안 돎 — `Animator.updateMode`가 기본값(Normal)이라 `timeScale 0`에
+  멈춰있었음**(사용자 "전투에서는 잘나오는데 왜 로비에선 안나오지"). 원인: 로비는 설계상 시간이 멈춘 채
+  (`timeScale 0`, `LobbyWorld`가 캐릭터 이동에 `Time.unscaledDeltaTime`을 쓰는 것도 이 때문) 캐릭터만 실제
+  시간으로 움직이는 화면인데(`CLAUDE.md`/`LobbyWorld.cs` 머리 주석), `LobbyAvatar.Awake()`에서 붙인
+  `Animator`는 기본 `AnimatorUpdateMode.Normal`을 써서 **`Time.timeScale`을 그대로 따라간다** — `timeScale 0`
+  에선 Animator 내부 시계가 아예 안 돌아서 Idle/Move가 멈춘 프레임 그대로 보임. 전투는 `timeScale 1`이라 이
+  문제가 안 드러났던 것. `LobbyAvatar.Awake()`에서 `anim.updateMode = AnimatorUpdateMode.UnscaledTime;`
+  한 줄 추가로 수정(`PlayerRig`는 전투가 정상 시간으로 돌아서 그대로 둠 — 일시정지로 `timeScale 0`이 되면
+  애니메이션도 같이 멈추는 게 오히려 맞는 동작이라 손 안 댐). Idle 프레임 6장 자체는 직접 PNG를 열어 확인
+  — 서로 다르게 그려진 그림이라(미세한 흔들림 정도) 그림 자체 문제는 아니었음.
+  **아직 사용자가 Play로 재확인 전.**
+
+- **2026-11-16 (108)** — **[나] 애니메이션 버그 2건 수정 — 공격 연타 시 첫 프레임만 반복 / 좌우 반전 전혀 안 됨**
+  (사용자가 Play로 직접 확인: "꾹눌러서 사용할텐데 그 경우 애니메이션 첫프레임만 반복적으로 나오네" / "오른쪽으로
+  이동하려고하는데 캐릭터는 왼쪽을 바라보고 있거든"). 둘 다 `PlayerRig.cs`/`LobbyAvatar.cs`만 고치고
+  `CharacterBase.controller`(로그 (106))는 안 건드림.
+  1. **공격 반복 시 첫 프레임 고정** — 원인: 공격 속도(쿨다운)가 Attack 클립 재생 시간보다 빠르면 매 공격마다
+     `anim.SetTrigger(Attack)`를 다시 넣게 되는데, `AnyState→Attack` 전이의 `Can Transition To Self`가 켜져 있어서
+     **이미 Attack 상태로 재생 중이어도 다시 트리거가 들어오면 그 상태를 처음부터 다시 들여보낸다** — 그래서
+     클립이 1프레임도 못 넘기고 계속 리셋되는 것처럼 보임. 고친 방법: `PlayerRig.FireAttack()`에서
+     `anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")`이면 새 트리거를 그냥 무시하고 지금 재생 중인
+     모션을 끝까지 보여주게 함(실제 공격 판정·쿨다운 로직은 전투 스크립트가 그대로 처리하므로 게임플레이엔
+     영향 없음, 그림만 담당하는 메서드라 안전). **컨트롤러 쪽 설정(Can Transition To Self 끄기 등)으로도 고칠 수
+     있는 문제지만, 에디터를 직접 못 여는 세션이라 코드 쪽에서 막는 쪽을 택함** — 나중에 에디터에서 열어서
+     전이 자체를 손보고 싶으면 이 코드 가드는 걷어내도 됨.
+  2. **좌우 반전이 아예 없었음** — 원인: `CharacterMover2D.Facing`은 (106) 이전부터 있던 값인데 **공격 방향
+     계산에만 쓰였고, 실제로 그림을 뒤집는 코드가 어디에도 없었다**(좌우 대칭인 임시 흰 네모 도형일 땐 안
+     보이다가 실제 캐릭터 그림이 들어오며 드러남). 반입된 원본 프레임 기본값은 왼쪽을 보는 그림이라(실측),
+     `PlayerRig.UpdateFacing()`(매 프레임) · `LobbyAvatar.UpdateMoving()`(걷는 방향 dx 부호)에서 오른쪽을
+     볼 때만(`Facing > 0` / `dx > 0`) `SpriteRenderer.flipX`로 뒤집게 추가. `transform.localScale`은 안 건드림
+     (콜라이더 반지름 계산이 그 값을 쓰므로, `ApplySprite` 참고) — `flipX`는 렌더링만 뒤집고 물리·판정엔
+     영향 없음.
+  **아직 사용자가 Play로 재확인 전** — 공격 연타해도 매끄럽게 재생되는지, 좌우 이동 둘 다 방향 맞게 뒤집히는지
+  다음에 볼 것. 전이 우선순위(공격 중 피격 등) 세부 튜닝은 여전히 미뤄둔 상태 그대로(로그 (106)·(107) 참고).
+
+- **2026-11-16 (107)** — **[나] Animator 런타임 연결 — `CharacterArtSet`/`PlayerRig`/`LobbyAvatar` 5개 파일**(사용자가
+  (106)에서 만든 클립·컨트롤러를 유니티에서 직접 메뉴 실행해 확인("다 되어있음") → "하자"로 진행 확정). 로그 (106)이
+  "다음 단계(별도 작업)"로 미뤄뒀던 바로 그 연결 코드.
+  1. `Core/CharacterArtSet.cs` — `sprites`/`tints`/`heights`와 나란히 `animators: RuntimeAnimatorController[]` 배열 +
+     `AnimatorOf(id)` 추가. 비어 있으면(드루이드) null — 기존 정지그림 폴백 그대로 유지.
+  2. `Data/Characters/CharacterArtSet.asset` — 위 배열에 `CharacterAnim_Mage/Gunner/Blade.overrideController`를
+     guid로 직접 꽂음(`b0b009b0…`/`7559f22d…`/`5564435…`, 전부 `mainObjectFileID: 22100000`). 드루이드는 `{fileID: 0}`.
+  3. `Characters/PlayerRig.cs` — `Awake()`에서 `Animator` 없으면 `AddComponent`(프리팹을 따로 안 건드려도 되게). 선택
+     캐릭터 바뀔 때(`ApplySelection`) `ApplySprite` 직후 `ApplyAnimator(id)`를 불러 `art.AnimatorOf(id)`가 있으면
+     컨트롤러를 꽂고 켜고, 없으면 Animator를 꺼서 지금처럼 정지그림(`sr.sprite`)만 보이게 함. 공격/피격 트리거는
+     **기존 공격 스크립트를 전혀 안 건드리고** `SfxEvents.MageBasicAttack`/`MechanicBasicAttack`/`AssassinBasicAttack`/
+     `PlayerDamaged`(이미 사운드용으로 올라가고 있던 이벤트, `GameplaySfx`가 구독하는 것과 같은 지점)를 `OnEnable`에서
+     구독해 `Attack`/`Hit` 트리거로 그대로 연결 — 플레이어가 하나뿐이고 안 쓰는 캐릭터 키트는 꺼져 있어 캐릭터별로
+     걸러낼 필요가 없었음. `Update()`에 `UpdateAnimatorParams()`를 추가해 매 프레임 `Moving`(수평 속도 절대값 >0.05)·
+     `Grounded`를 갱신.
+  4. `Characters/CharacterMover2D.cs` — 기존 private `grounded` 필드를 `PlayerRig`가 읽을 수 있게 `public bool
+     Grounded => grounded;` + `public Vector2 Velocity => rb?.linearVelocity ?? Vector2.zero;` 읽기 전용 프로퍼티만
+     추가(기존 로직은 전혀 안 건드림).
+  5. `UI/Lobby/LobbyAvatar.cs` — 전투와 같은 에셋을 보되 로비는 전투가 없으니 Idle/Move만(Attack/Hit 트리거 없음),
+     `Grounded`는 항상 true(로비엔 점프가 없다). 로비는 물리가 아니라 `LobbyWorld`가 `transform.position`을 직접
+     옮기므로(Rigidbody2D 속도를 못 읽음) `Moving`은 프레임 사이 x좌표 변화량으로 판정(`UpdateMoving`).
+  **파라미터 이름은 `CharacterBase.controller`를 직접 읽어서 확인한 그대로**(`Moving`/`Grounded`는 bool, `Attack`/`Hit`은
+  trigger — 짐작으로 안 넣음). 워리어 로스터 매핑은 여전히 보류 상태 그대로(별개 사안).
+  **버그 발견·수정(같은 날, 사용자 Play 테스트)**: 컴파일은 에러 없이 끝났는데 Play해보니 Player/로비 아바타에
+  Animator 컴포넌트는 코드대로 붙었지만 **Controller 칸이 "Missing"**으로 표시됨 — `CharacterArtSet.asset`에 손으로
+  써넣은 `animators` 배열의 참조가 `{..., type: 3}`이었던 게 원인. 같은 파일 안에서 이미 멀쩡히 동작하던 `sprites`
+  배열(TextureImporter가 만든 Sprite 참조, `type: 3`이 맞음)을 보고 그대로 베껴 썼는데, `AnimatorOverrideController`는
+  `NativeFormatImporter`로 만들어지는 자산이라 **이 프로젝트의 기존 관례상 `type: 2`를 써야 한다**(씬 파일의
+  `PlayerRig.art`/`LobbyAvatar.art` 참조가 실제로 `type: 2`로 저장돼 있는 걸 대조해서 확인). `{fileID: 22100000,
+  guid: …, type: 3}` → `type: 2`로 세 줄(Mage/Gunner/Blade) 수정해서 다시 커밋. **아직 사용자가 Play로 재확인 전**
+  — 다음에 Play해서 Controller 칸이 채워지고 실제로 Idle 애니메이션이 도는지 볼 것.
 
 - **2026-11-16 (106)** — **[나] 캐릭터 애니메이션 — AnimationClip·AnimatorController를 에디터가 직접 생성(Editor 스크립트, 아직 실행 전)**(사용자 "애니메이션 삽입... 지금 하고싶다" → 손으로 쓴 YAML 대신 유니티가 직접 만들게 하는 방식(b) 선택). `Assets/Editor/BuildCharacterAnimations.cs` 신설, 메뉴 `ChronoSavior/캐릭터 애니메이션 만들기`. 실행하면: `Shared/`의 Idle(8fps·루프)·Move(12fps·루프)·JumpFall(10fps·루프)·Hit(12fps·1회) 공용 클립 4개 + `Mage/Gunner/Blade`의 Attack 클립 3개(각 폴더 `*_Attack_Body`/`*_Attack` 프레임만 — 마법사의 기/구체 이펙트는 몸 그림이 아니라 별도 VFX 레이어 몫이라 제외, 기존 `MageChargeVfx` 패턴처럼 나중에 따로)를 `Assets/Data/Characters/Animations/`에 생성. 베이스 `AnimatorController`(`Assets/Data/Characters/Animators/CharacterBase.controller`, 파라미터 `Moving`·`Grounded`(bool, 기본 true)·`Attack`·`Hit`(trigger), 상태 Idle/Move/JumpFall/Hit/Attack) + 캐릭터별 `AnimatorOverrideController` 3개(`CharacterAnim_Mage/Gunner/Blade` — Attack 클립만 교체)도 같이 생성. **전이 우선순위는 1차 기본값**: AnyState에서 Hit·Attack(트리거)을 Grounded==false보다 먼저 보게 해서 공중에서도 Hit/Attack이 씹히지 않게 했지만, 실제 느낌(공격 중 피격이 끼어들지 등)은 Animator 창에서 열어보고 다듬을 것. **PlayerRig.cs/PlayerBody.cs/LobbyAvatar.cs 읽어서 확인**: 지금은 `ApplySprite`/`Refresh`가 캐릭터 선택 시 1회 `transform.localScale`을 `EntitySizeConfig.ScaleToHeight(sprite, art.HeightOf(id))`로 고정하는 구조라, `CharacterArtSet.sprites[id]`(지금도 `chara_temp_01` 참조)를 그 스케일 기준으로 그대로 두고 **새 Animator는 별도 필드로 추가하는 설계**면 기존 동작을 안 깨고 끼울 수 있을 것으로 봄(아직 구현 전, 다음 로그에서 확정). **아직 실행도 안 했다** — 다음에 유니티에서 메뉴 눌러서 클립 7개·컨트롤러 4개가 에러 없이 만들어지는지 확인 필요. **다음 단계(별도 작업)**: `CharacterArtSet`에 오버라이드 컨트롤러 연결 필드 추가, `PlayerRig`·`LobbyAvatar`가 Animator를 붙이는 런타임 코드, `MageAttack`·`GunnerAttack`·`BladeCombat`·`PlayerHealth`에서 실제 공격/피격 시점에 `Attack`·`Hit` 트리거를 쏘는 코드 — 이건 기존 전투 코드를 건드리는 작업이라 에셋 생성과 분리.
 

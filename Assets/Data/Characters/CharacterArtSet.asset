@@ -27,3 +27,8 @@ MonoBehaviour:
   - 0.5
   - 0.5
   - 0.5
+  animators:
+  - {fileID: 22100000, guid: b0b009b0c6260c6488ccf084dd4fa4e7, type: 2}
+  - {fileID: 22100000, guid: 7559f22d87442ab448f104a62065c636, type: 2}
+  - {fileID: 22100000, guid: 5564435732dbd2843b392aa697356df8, type: 2}
+  - {fileID: 0}

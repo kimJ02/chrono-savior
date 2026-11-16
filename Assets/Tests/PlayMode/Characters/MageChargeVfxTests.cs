@@ -49,43 +49,53 @@ public class MageChargeVfxTests
         return mage;
     }
 
-    /// <summary>차지 오라(2026-11-07 VFX): 차지하는 동안만 보이고, 크기는 월드 배율 1로 고정, 색은 갈래마다. 그림이 없는 클론은 생략.</summary>
+    /// <summary>손 오브(2026-11-16): 차지하는 동안만 보이고, 차지율을 11장에 그대로 매핑한다(0%=1번째·100%=11번째). 그림이 없는 클론은 생략.</summary>
     [Test]
-    public void ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale()
+    public void Orb_ShowsOnlyWhileCharging_MapsChargeRatioToFrame()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
-        ProfileService.Current.mageBranch = MageBranch.Gravity;
+        Assume.That(Resources.Load<Sprite>("Art/Characters/Mage/Character_Mage_Attack_OrbEffect_01") != null, "캐릭터 아트가 없는 클론 — 미설치로 생략");
         var mage = NewMage();
-        mage.transform.localScale = new Vector3(0.8f, 0.8f, 1f); // 씬의 Player처럼 1이 아닌 배율
         var vfx = mage.GetComponent<MageChargeVfx>();
         vfx.Refresh(0.016f);
-        Assert.IsFalse(vfx.AuraVisible, "차지 전엔 안 보인다");
+        Assert.IsFalse(vfx.OrbVisible, "차지 전엔 안 보인다");
 
         Charging.SetValue(mage, true);
-        ChargeT.SetValue(mage, 0.1f);
+        ChargeT.SetValue(mage, 0f);
         vfx.Refresh(0.016f);
-        Assert.IsTrue(vfx.AuraVisible, "차지하는 동안 보인다");
-        var aura = mage.transform.Find("ChargeAura");
-        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "크기 고정 — 공통 도트 배율");
-        ChargeT.SetValue(mage, 1f);
+        Assert.IsTrue(vfx.OrbVisible, "차지하는 동안 보인다");
+        var orb = mage.transform.Find("ChargeOrb").GetComponent<SpriteRenderer>();
+        Assert.AreSame(Resources.Load<Sprite>("Art/Characters/Mage/Character_Mage_Attack_OrbEffect_01"), orb.sprite, "0%는 1번 프레임");
+
+        ChargeT.SetValue(mage, 1f); // chargeMax 기본 1초라 ChargeRatio=1
         vfx.Refresh(0.016f);
-        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
-        CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), aura.GetComponent<SpriteRenderer>().sprite, "중력 갈래는 보라 파생 그림");
-        Assert.AreEqual(Color.white, aura.GetComponent<SpriteRenderer>().color, "파생 그림이라 틴트 없음");
+        Assert.AreSame(Resources.Load<Sprite>("Art/Characters/Mage/Character_Mage_Attack_OrbEffect_11"), orb.sprite, "100%는 11번 프레임");
 
         Charging.SetValue(mage, false);
         vfx.Refresh(0.016f);
-        Assert.IsFalse(vfx.AuraVisible, "차지가 끝나면 사라진다");
+        Assert.IsFalse(vfx.OrbVisible, "차지가 끝나면 사라진다");
     }
 
+    /// <summary>오브 일렁임(2026-11-16, 사용자 "KiEffect는 발사순간이 아니라 차지 9장쯤부터 오브 근처에 일렁이듯"):
+    /// 오브가 9번째 프레임(0-based 인덱스 8)에 들어서야 비로소 같이 보인다.</summary>
     [Test]
-    public void ChargeAura_ColorPerBranch()
+    public void Ki_ShowsOnlyOnceOrbReachesFrame9()
     {
-        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.None), "빌드 없음은 그림 그대로");
-        Assert.AreEqual(MageChargeVfx.FireTint, MageChargeVfx.AuraTint(MageBranch.Explosion));
-        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.Gravity), "중력은 틴트 대신 보라 파생 그림");
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet, MageChargeVfx.AuraKey(MageBranch.Gravity));
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmall, MageChargeVfx.AuraKey(MageBranch.Explosion));
+        Assume.That(Resources.Load<Sprite>("Art/Characters/Mage/Character_Mage_Attack_KiEffect_01") != null, "캐릭터 아트가 없는 클론 — 미설치로 생략");
+        var mage = NewMage();
+        var vfx = mage.GetComponent<MageChargeVfx>();
+        Charging.SetValue(mage, true);
+
+        ChargeT.SetValue(mage, 0.7f); // 오브 인덱스 round(0.7*10)=7 — 아직 9번째(인덱스 8) 전
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.KiVisible, "오브가 9번째에 닿기 전엔 일렁임이 안 보인다");
+
+        ChargeT.SetValue(mage, 0.8f); // round(0.8*10)=8 — 9번째(인덱스 8)
+        vfx.Refresh(0.016f);
+        Assert.IsTrue(vfx.KiVisible, "9번째부터 같이 보인다");
+
+        ChargeT.SetValue(mage, 0.5f); // 다시 내려가면(이론상 안 그러지만) 꺼진다
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.KiVisible);
     }
 
     /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>

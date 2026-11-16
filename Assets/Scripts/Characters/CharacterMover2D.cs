@@ -99,6 +99,12 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
     Rigidbody2D rb;
     Collider2D col;
     bool grounded;
+
+    /// <summary>지금 접지 여부 — `PlayerRig`가 Animator의 Grounded 파라미터로 그대로 넘긴다(2026-11-16 애니메이션 연결).</summary>
+    public bool Grounded => grounded;
+
+    /// <summary>지금 몸 속도 — `PlayerRig`가 수평 성분만 보고 Animator의 Moving 파라미터를 결정한다(2026-11-16).</summary>
+    public Vector2 Velocity => rb != null ? rb.linearVelocity : Vector2.zero;
     // 아래키 발판 관통 — 통과 중인 동안 무시한 발판 콜라이더들과 남은 시간.
     readonly System.Collections.Generic.List<Collider2D> ignoredPlatforms = new System.Collections.Generic.List<Collider2D>();
     float dropTimer;

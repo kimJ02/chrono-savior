@@ -26,12 +26,24 @@ namespace ChronoSavior.Enemies
     /// 이동은 `EnemyMove`에 수평 속도(<see cref="IEnemyMotion"/>)와 Y(<see cref="IEnemyVerticalMotion"/>)를 넘겨서 한다 — Y는 언제나
     /// 이 스크립트가 정한다(서 있을 땐 표면 위, 뛸 땐 포물선). 그래서 땅과의 물리 충돌을 끈다(<see cref="Awake"/>).
     /// 구성은 프리팹(`Prefabs/Enemies/Enemy_BlobLord` — 경고·조약돌 프리팹, 들어 올린 돌 그림, 투척 경로 선).
+    ///
+    /// **그림(2026-11-16)**: 팀원이 받아 온 실제 아트로 기본 도형을 교체했다 — 틀 그림은 `Art/Enemies/BlobLord/Enemy_BlobLord_Idle_01`
+    /// (프리팹의 `m_Sprite` 오버라이드), 추적 점프 강하 중엔 <see cref="UpdateBodySprite"/>가 튀어오르기 6장을 덧씌운다.
+    /// **(2026-11-16, "나머지도 연결해줘")** 조약돌 투척(<see cref="State.ThrowPrep"/> 2장 + <see cref="State.ThrowWarn"/> 2장)·
+    /// 피격(<see cref="HandleDamaged"/>, 직접 타격마다 짧게 1장)·사망(<see cref="PlayDeathAndDestroy"/>, 8장을 재생한 뒤에야 Destroy — `IDeathAnimated`로
+    /// `EnemyHealth.Die()`의 즉시 Destroy를 늦춘다)도 입혔다.
+    /// **이동(4장, 2026-11-16 사용자 "보스도 이동하잖아 그 이동에 넣으면 되는거 아닌가")**: 처음엔 "이 보스는 걷지 않는다"며 미사용으로
+    /// 남겼는데, 다시 코드를 보니 **걷기(자기 의지)는 없어도 맞아서 밀리는 넉백 슬라이딩은 있다** — `EnemyMove.FixedUpdate`가
+    /// `ownSpeed`(이 스크립트가 주는, 땅에 있을 땐 늘 0)와 무관하게 `knockbackX`를 더해서(:line 243 근방) 지상에서 맞으면 실제로
+    /// 옆으로 미끄러진다(이 보스는 `IsDamageProtected`가 공중에서만 켜지므로 지상 상태 전부에서 맞을 수 있다). 그 슬라이딩 동안
+    /// (<see cref="EnemyMove.KnockbackMagnitude"/>로 판정) 이동 4장을 순환시킨다 — 피격 1장보다는 낮고 상태별 그림(튀어오르기·투척)보다는
+    /// 높은 우선순위(몸이 밀리는 동안은 어떤 상태든 그게 가장 눈에 띄는 움직임이라).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyMove))]
     [RequireComponent(typeof(EnemyHealth))]
     public class BlobLordBoss : MonoBehaviour, IEnemyMotion, IEnemyVerticalMotion, IEnemyContactDamageModifier,
-                                IDamageProtection, IGrabExempt
+                                IDamageProtection, IGrabExempt, IDeathAnimated
     {
         // ── 몸 ──
         /// <summary>그림 크기(가로·세로, 유닛) — 중대형(명세 1절). 그림 128×104px를 도트 배율 2로.</summary>
@@ -117,6 +129,27 @@ namespace ChronoSavior.Enemies
         Vector3 baseScale;
         bool baseScaleKnown;
 
+        // 그림(2026-11-16, 팀원이 받아 온 실제 보스 아트 적용 — 그전엔 기본 도형 하나뿐이었다).
+        // 몸 기본 그림은 프리팹이 들고 있는 걸(지금은 `Art/Enemies/BlobLord/Enemy_BlobLord_Idle_01`) 그대로 캐시해 둔다 —
+        // `EnemySetup.FitToWorldSize`가 스폰 때 **그 순간의 스프라이트 크기 기준**으로 `transform.localScale`을
+        // 비균등(x·y 따로)으로 한 번만 계산해 `VisualSize`에 맞추기 때문에, 틀 그림(대기 01)과 아래 튀어오르기
+        // 그림이 **같은 80×64 캔버스·같은 PPU**를 쓰는 한 그 스케일 그대로 맞게 나온다(치수가 다른 그림을
+        // 아무 때나 섞어 쓰면 틀어진다 — 새 상태 그림을 추가할 땐 반드시 이 캔버스에 맞춰 만들 것).
+        Sprite defaultSprite;
+
+        // 피격 그림(2026-11-16) — 흰 피격 깜빡임(EnemyHealth.ShowFlash, 알파 덧칠)과는 다른, 자세 자체가 바뀌는 그림(1장).
+        // 직접 타격마다 짧게 보여준다 — 지속 피해(화상 등)는 EnemyHealth가 CombatEvents.EnemyDamaged를 안 올려서 자연히 제외된다.
+        public const float HitFlashDuration = 0.15f;
+        float hitTimer;
+
+        // 사망 그림(2026-11-16) — EnemyHealth.Die()가 IDeathAnimated를 찾아 Destroy를 늦춰준 동안 재생한다.
+        public const float DeathFrameFps = 8f;
+
+        // 이동 그림(2026-11-16) — 걸어서가 아니라 **맞아서 밀리는 동안**(EnemyMove.KnockbackMagnitude) 순환.
+        public const float MoveFrameFps = 10f;
+        public const float KnockbackSlideThreshold = 0.05f; // 이 밑은 감쇠 꼬리라 눈에 안 보임
+        float moveCycleT;
+
         public State CurrentState => state;
         public Pattern LastPattern => last;
         public bool IsAirborne => state == State.JumpRise || state == State.JumpTrack || state == State.JumpFall;
@@ -139,6 +172,7 @@ namespace ChronoSavior.Enemies
             mover = GetComponent<EnemyMove>();
             health = GetComponent<EnemyHealth>();
             body = GetComponent<SpriteRenderer>();
+            defaultSprite = body != null ? body.sprite : null;
             // Y는 이 스크립트가 정한다 — 땅·발판 콜라이더와 부딪히면 내려찍기가 발판에 걸리거나 밀려난다.
             var rb = GetComponent<Rigidbody2D>();
             int ground = LayerMask.NameToLayer("Ground");
@@ -165,6 +199,20 @@ namespace ChronoSavior.Enemies
             transform.position = new Vector3(p.x, standSurfaceY + HalfHeight, p.z);
         }
 
+        void OnEnable() => CombatEvents.EnemyDamaged += HandleDamaged;
+        void OnDisable() => CombatEvents.EnemyDamaged -= HandleDamaged;
+
+        /// <summary>
+        /// 직접 타격마다(지속 피해 제외) 피격 그림을 잠깐 띄운다. `CombatEvents.EnemyDamaged`는 **적 전체**가 같이
+        /// 올리는 전역 이벤트라 이 보스 걸 걸러야 한다(2026-11-16) — `EnemyHealth.TakeDamageWithKnockback`이
+        /// `IsDead`면 맨 위에서 걸러서 이미 죽은 뒤엔 이 이벤트가 다시 안 온다(사망 그림과 안 겹친다).
+        /// </summary>
+        void HandleDamaged(GameObject go)
+        {
+            if (go != gameObject) return;
+            hitTimer = HitFlashDuration;
+        }
+
         void OnDestroy()
         {
             if (jumpWarning != null) Destroy(jumpWarning.gameObject);
@@ -175,6 +223,11 @@ namespace ChronoSavior.Enemies
 
         public float GetHorizontalSpeed(float dt, Transform target, float baseSpeed)
         {
+            // 2026-11-16 — 사망 그림(8장)이 재생되는 동안 상태 기계를 멈춘다. `EnemyMove.FixedUpdate`는
+            // IsDead를 보지 않고 매 프레임 이걸 계속 부르므로(EnemyHealth.Die()가 IDeathAnimated 때문에
+            // Destroy를 늦췄다), 여기서 안 막으면 죽은 채로 다음 패턴을 고르거나 UpdateBodySprite가
+            // DeathSequence 코루틴이 입힌 사망 그림을 매 프레임 덮어써 버린다.
+            if (health != null && health.IsDead) return 0f;
             if (!baseScaleKnown) { baseScale = transform.localScale; baseScaleKnown = true; }
             if (float.IsNaN(standSurfaceY)) standSurfaceY = FieldLayout.SurfaceBelow(transform.position.x, transform.position.y);
             clock += dt;
@@ -241,12 +294,132 @@ namespace ChronoSavior.Enemies
                     break;
             }
 
+            UpdateBodySprite(dt);
+
             // EnemyMove가 넉백을 더하므로 공중에선 그만큼 빼서 정확히 표식 위로 간다(넉백 배수 0.08이라 작다).
             return dt > 0f ? (desiredX - x) / dt : 0f;
         }
 
+        /// <summary>
+        /// 몸 그림 — 상태머신 외에 **피격이 최우선**이다(2026-11-16, 맞은 순간은 어떤 상태든 짧게 덮어쓴다 — 죽으면서
+        /// 맞는 건 불가능하므로(공중=무적, 지상에서만 맞음) 사망 그림과는 안 겹친다).
+        ///
+        /// 추적 점프 강하 패턴엔 튀어오르기(<c>Enemy_BlobLord_Bounce_01~06</c>) 그림을 맞춘다(2026-11-16 사용자
+        /// "점프후 낙하하는 패턴에서 튀어오르기 123을 올라갈때 내려올때 456으로"). 뛰어오르는 동안(<see cref="State.JumpRise"/>)
+        /// 1~3번째를 차지 순서대로, 정점에서 추적하는 동안(<see cref="State.JumpTrack"/>)은 3번째(맨 위로 뛴 자세)를 그대로
+        /// 들고 있다가, 낙하하는 동안(<see cref="State.JumpFall"/>) 4~6번째로 넘어간다.
+        ///
+        /// 조약돌 투척은 들어 올리는 <see cref="State.ThrowPrep"/>에 1~2번째, 조준을 고정한 <see cref="State.ThrowWarn"/>에
+        /// 3~4번째(2026-11-16 "나머지도 연결해줘" — 점프의 123/456 분배와 같은 패턴).
+        ///
+        /// **이동**(2026-11-16 "보스도 이동하잖아") — 상태로 분기하지 않는다. 상태와 무관하게 지금 넉백으로 밀리고
+        /// 있으면(<see cref="EnemyMove.KnockbackMagnitude"/>) 그걸 최우선으로 보여준다(피격 다음, 상태별 그림보다 위) —
+        /// 맞고 밀리는 동안은 어느 상태에 있었든 그게 가장 눈에 띄는 움직임이라서.
+        ///
+        /// 그 밖의 상태는 기본 그림(대기 01)으로.
+        /// </summary>
+        void UpdateBodySprite(float dt)
+        {
+            if (body == null) return;
+            if (hitTimer > 0f)
+            {
+                hitTimer = Mathf.Max(0f, hitTimer - dt);
+                var hit = HitSprite();
+                if (hit != null) { body.sprite = hit; return; }
+            }
+            // 2026-11-16 — 걸어서 움직이는 상태는 없지만, 맞아서 밀리는 동안은 실제로 지상에서 미끄러진다
+            // (이 스크립트가 주는 own speed는 땅에선 늘 0이라 상태머신만 보면 "제자리"지만, EnemyMove가
+            // 넉백을 그 위에 그냥 더한다). 그 슬라이딩 동안은 어떤 상태든 이동 그림을 우선해서 보여준다.
+            if (mover != null && mover.KnockbackMagnitude > KnockbackSlideThreshold)
+            {
+                moveCycleT += dt;
+                var mv = MoveSprite(Mathf.FloorToInt(moveCycleT * MoveFrameFps) % 4);
+                if (mv != null) { body.sprite = mv; return; }
+            }
+            else moveCycleT = 0f; // 다음 슬라이딩은 처음부터 다시(멎을 때마다 리셋 — 자연스러운 한 번의 "밀림" 동작)
+            Sprite s;
+            switch (state)
+            {
+                case State.JumpRise:
+                    s = BounceSprite(Mathf.Clamp(Mathf.FloorToInt(stateT / JumpRise * 3f), 0, 2));
+                    break;
+                case State.JumpTrack:
+                    s = BounceSprite(2); // 정점에서 떠 있는 동안은 "올라갈 때"의 마지막 자세(3번째)를 유지
+                    break;
+                case State.JumpFall:
+                    s = BounceSprite(3 + Mathf.Clamp(Mathf.FloorToInt(stateT / JumpFall * 3f), 0, 2));
+                    break;
+                case State.ThrowPrep:
+                    s = ThrowSprite(Mathf.Clamp(Mathf.FloorToInt(stateT / ThrowPrep * 2f), 0, 1));
+                    break;
+                case State.ThrowWarn:
+                    s = ThrowSprite(2 + Mathf.Clamp(Mathf.FloorToInt(stateT / ThrowWarn * 2f), 0, 1));
+                    break;
+                default:
+                    s = defaultSprite;
+                    break;
+            }
+            if (s != null) body.sprite = s;
+        }
+
+        static Sprite[] bounceFrames, throwFrames, hitFrames, deathFrames, moveFrames;
+
+        /// <summary>튀어오르기 그림 6장(0~5) — 캐릭터 아트와 같은 방식으로 <c>Resources.Load</c>(git에 들어있는 1인칭 자산, 외주 VFX 팩과 다름).</summary>
+        static Sprite BounceSprite(int idx) => Load(ref bounceFrames, 6, "Bounce")[idx];
+
+        /// <summary>조약돌 투척 그림 4장(0~3).</summary>
+        static Sprite ThrowSprite(int idx) => Load(ref throwFrames, 4, "Throw")[idx];
+
+        /// <summary>이동(=넉백 슬라이딩) 그림 4장(0~3).</summary>
+        static Sprite MoveSprite(int idx) => Load(ref moveFrames, 4, "Move")[idx];
+
+        /// <summary>피격 그림 1장.</summary>
+        static Sprite HitSprite() => Load(ref hitFrames, 1, "Hit")[0];
+
+        /// <summary>사망 그림 8장(0~7).</summary>
+        static Sprite[] DeathFrames() => Load(ref deathFrames, 8, "Death");
+
+        static Sprite[] Load(ref Sprite[] cache, int count, string action)
+        {
+            if (cache == null)
+            {
+                cache = new Sprite[count];
+                for (int i = 0; i < count; i++)
+                    cache[i] = Resources.Load<Sprite>($"Art/Enemies/BlobLord/Enemy_BlobLord_{action}_{i + 1:00}");
+            }
+            return cache;
+        }
+
+        /// <summary>
+        /// <see cref="IDeathAnimated"/> — <see cref="EnemyHealth.Die"/>가 즉시 Destroy하는 대신 이걸 부른다.
+        /// 사망 그림 8장을 <see cref="DeathFrameFps"/>로 재생한 뒤 스스로 Destroy한다(2026-11-16). 그동안
+        /// <see cref="GetHorizontalSpeed"/>가 맨 위에서 <c>health.IsDead</c>를 보고 멈추므로 상태머신·넉백·그 외
+        /// 그림 갱신이 끼어들지 않는다 — 떠 있는 자세로는 못 죽으므로(공중=무적) 서 있던 자리에서 그대로 멈춘다.
+        /// 들고 있던 돌·경고 표시는 죽는 순간 바로 치운다(투척 패턴 중에 죽어도 화면에 안 남게).
+        /// </summary>
+        public void PlayDeathAndDestroy()
+        {
+            if (heldBoulder != null) heldBoulder.enabled = false;
+            if (throwPathLine != null) throwPathLine.enabled = false;
+            if (jumpWarning != null) jumpWarning.gameObject.SetActive(false);
+            if (throwWarning != null) throwWarning.gameObject.SetActive(false);
+            StartCoroutine(DeathSequence());
+        }
+
+        System.Collections.IEnumerator DeathSequence()
+        {
+            var frames = DeathFrames();
+            for (int i = 0; i < frames.Length; i++)
+            {
+                if (body != null && frames[i] != null) body.sprite = frames[i];
+                yield return new WaitForSeconds(1f / DeathFrameFps);
+            }
+            Destroy(gameObject);
+        }
+
         public float GetVerticalPosition(float dt, Transform target, float currentY)
         {
+            if (health != null && health.IsDead) return currentY; // 사망 그림 재생 중 — 서 있던 자리에 그대로
             switch (state)
             {
                 case State.JumpRise:

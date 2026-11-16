@@ -161,16 +161,21 @@ namespace ChronoSavior.Editor
             var made = new System.Collections.Generic.List<GameObject>();
             void Clear() { foreach (var go in made) if (go != null) Object.DestroyImmediate(go); made.Clear(); }
 
-            // 1. 차지 오라 — 갈래마다 색(MageChargeVfx와 같은 키·배율·색)
-            foreach (var branch in new[] { MageBranch.None, MageBranch.Explosion, MageBranch.Gravity })
+            // 1. 차지 손 오브·오브 일렁임(2026-11-16, 외주 팩 오라는 사용자 요청으로 뺐다) — 몇 단계 차지율을 강제로 넣어 찍는다.
             {
-                var auraKey = ChronoSavior.Characters.MageChargeVfx.AuraKey(branch);
-                var aura = ChronoSavior.Combat.VfxPlayer.Spawn(auraKey, player.transform.position, 1f,
-                    ChronoSavior.Characters.MageChargeVfx.AuraFps, ChronoSavior.Characters.MageChargeVfx.AuraSortingOrder(player.GetComponent<SpriteRenderer>()), true, 0f,
-                    ChronoSavior.Characters.MageChargeVfx.AuraTint(branch));
-                if (aura != null) { aura.Play(ChronoSavior.Combat.VfxFrames.Get(auraKey).Skip(5).ToArray(), 15f, true, 0f, ChronoSavior.Characters.MageChargeVfx.AuraTint(branch)); made.Add(aura.gameObject); }
-                Render(pc, cam, outDir, "mage_charge_" + branch.ToString().ToLowerInvariant(), 1920, 1080, 3f);
-                Clear();
+                var mageAttack = player.GetComponent<ChronoSavior.Characters.MageAttack>();
+                var chargeVfx = player.GetComponent<ChronoSavior.Characters.MageChargeVfx>();
+                var chargingField = typeof(ChronoSavior.Characters.MageAttack).GetField("charging", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                var chargeTField = typeof(ChronoSavior.Characters.MageAttack).GetField("chargeT", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                foreach (var (label, ratio) in new[] { ("orb_early", 0.3f), ("orb_ki", 0.85f), ("orb_full", 1f) })
+                {
+                    chargingField.SetValue(mageAttack, true);
+                    chargeTField.SetValue(mageAttack, ratio * mageAttack.chargeMax);
+                    chargeVfx.Refresh(0f);
+                    Render(pc, cam, outDir, "mage_charge_" + label, 1920, 1080, 3f);
+                }
+                chargingField.SetValue(mageAttack, false);
+                chargeVfx.Refresh(0f); // 오브·일렁임을 다시 끈다 — 다음 캡처 블록에 안 남게
             }
 
             // 2. 탄 — 차지 0·완충(크기 1·1.9), 0차·폭발·중력

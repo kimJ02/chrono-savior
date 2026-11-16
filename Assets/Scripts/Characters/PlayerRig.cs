@@ -42,10 +42,25 @@ namespace ChronoSavior.Characters
         CharacterMover2D mover;
         SpriteRenderer sr;
 
+        /// <summary>
+        /// 캐릭터 애니메이션(2026-11-16) — `CharacterArtSet.AnimatorOf`가 null이면(아직 애니메이션 없는 캐릭터) 꺼둔 채로
+        /// 둬서 <see cref="ApplySprite"/>가 그려 넣는 정지그림이 그대로 보이게 한다. 씬에 미리 붙어 있지 않아도
+        /// 여기서 직접 붙인다 — 프리팹을 따로 안 건드려도 되게.
+        /// </summary>
+        Animator anim;
+
+        static readonly int AnimMoving = Animator.StringToHash("Moving");
+        static readonly int AnimGrounded = Animator.StringToHash("Grounded");
+        static readonly int AnimAttack = Animator.StringToHash("Attack");
+        static readonly int AnimHit = Animator.StringToHash("Hit");
+        static readonly int AnimCharging = Animator.StringToHash("Charging");
+
         void Awake()
         {
             mover = GetComponent<CharacterMover2D>();
             sr = GetComponent<SpriteRenderer>();
+            anim = GetComponent<Animator>();
+            if (anim == null) anim = gameObject.AddComponent<Animator>();
             // 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)는 씬의 Player에 붙어 있다(2026-11-05 — 예전엔 씬을 다시
             // 굽지 않으려고 여기서 붙였다). 씬 검사(`Editor/SceneSetupValidator`)가 빠졌는지 본다.
             kits.Clear();
@@ -55,6 +70,47 @@ namespace ChronoSavior.Characters
             var wanted = ProfileService.Current.character;
             Current = HasKit(wanted) ? wanted : CharacterId.Mage;
             ApplySelection(Current, notifyPrevious: false);
+        }
+
+        /// <summary>
+        /// 공격/피격 트리거 — 사운드와 같은 지점(`SfxEvents`)을 그대로 재사용한다(2026-11-16). 공격 스크립트를
+        /// 전혀 안 건드려도 되는 이유: 이 이벤트들은 이미 사운드 재생을 위해 올라가고 있었다.
+        /// 이 컴포넌트는 플레이어마다 하나뿐이고 안 쓰는 캐릭터의 키트는 꺼져 있으므로, 지금 켜진 캐릭터의
+        /// 이벤트만 실제로 올라온다 — 캐릭터별로 걸러낼 필요가 없다.
+        /// </summary>
+        void OnEnable()
+        {
+            SfxEvents.MageBasicAttack += FireAttack;
+            SfxEvents.MechanicBasicAttack += FireAttack;
+            SfxEvents.AssassinBasicAttack += FireAttackIndexed;
+            SfxEvents.PlayerDamaged += FireHit;
+        }
+
+        void OnDisable()
+        {
+            SfxEvents.MageBasicAttack -= FireAttack;
+            SfxEvents.MechanicBasicAttack -= FireAttack;
+            SfxEvents.AssassinBasicAttack -= FireAttackIndexed;
+            SfxEvents.PlayerDamaged -= FireHit;
+        }
+
+        void FireAttack()
+        {
+            if (anim == null || !anim.enabled) return;
+            // 공격이 애니메이션 클립보다 빠르게 반복되면(연사 등) 매번 다시 트리거를 넣는 게 Animator를
+            // Attack 상태로 처음부터 다시 들여보내서 "첫 프레임만 반복 재생"되는 것처럼 보인다(2026-11-16
+            // 사용자 발견 — 꾹 눌러 공격을 반복했을 때). 이미 Attack 상태로 재생 중이면 새 트리거는 무시하고
+            // 지금 재생 중인 모션을 끝까지 보여준다 — 실제 공격 판정 자체는 전투 스크립트가 그대로 처리하니
+            // (이 메서드는 그림만 담당) 게임플레이에는 영향 없다.
+            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")) return;
+            anim.SetTrigger(AnimAttack);
+        }
+
+        void FireAttackIndexed(int index) => FireAttack();
+
+        void FireHit()
+        {
+            if (anim != null && anim.enabled) anim.SetTrigger(AnimHit);
         }
 
 
@@ -92,9 +148,46 @@ namespace ChronoSavior.Characters
         void Update()
         {
             var profile = ProfileService.Current;
-            if (profile.character == Current) return;
-            if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
-            else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
+            if (profile.character != Current)
+            {
+                if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
+                else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
+            }
+
+            UpdateAnimatorParams();
+            UpdateFacing();
+        }
+
+        /// <summary>
+        /// 매 프레임 이동 상태를 Animator에 반영(2026-11-16) — 캐릭터 전환 여부와 무관하게 항상 돈다.
+        /// Animator가 꺼져 있으면(이 캐릭터는 애니메이션 없음) 아무것도 안 한다.
+        /// </summary>
+        void UpdateAnimatorParams()
+        {
+            if (anim == null || !anim.enabled || mover == null) return;
+            anim.SetBool(AnimMoving, Mathf.Abs(mover.Velocity.x) > 0.05f);
+            anim.SetBool(AnimGrounded, mover.Grounded);
+            // 마법사 차지(Z를 누르고 있는 동안, MageAttack.IsCharging) 전용 — 다른 캐릭터는 이 값이 항상
+            // false라 Charge 상태에 아예 안 들어간다(2026-11-16 사용자 발견: "차지중 모션도 있을텐데 적용이
+            // 안되어있다" — `Charge` 상태 자체가 Animator에 없었다). `CurrentKit`을 `MageAttack`으로 캐스팅
+            // 하는 건 같은 `Characters` 층 안이라(= 같은 도메인, cross-domain 아님) 문제없음 — Gunner/Blade
+            // 전용 "차지 같은" 동작이 생기면 그때 `ICharacterKit`에 공용 프로퍼티로 올리는 걸 고려할 것.
+            anim.SetBool(AnimCharging, CurrentKit is MageAttack mage && mage.IsCharging);
+        }
+
+        /// <summary>
+        /// 그림 좌우 반전(2026-11-16 사용자 발견 — 오른쪽으로 이동해도 캐릭터가 계속 왼쪽을 보고 있었다).
+        /// 지금까지 `CharacterMover2D.Facing`은 공격 방향 계산에만 쓰이고 **그림을 실제로 뒤집는 코드가
+        /// 아예 없었다** — 좌우 대칭인 임시 흰 네모 도형일 땐 안 보이던 문제가 실제 캐릭터 그림으로
+        /// 바뀌며 드러난 것. 반입된 원본 프레임은 기본값이 왼쪽을 보는 그림이라(실측), 오른쪽(Facing
+        /// &gt; 0)일 때만 `SpriteRenderer.flipX`로 뒤집는다 — `transform.localScale`은 건드리지 않아
+        /// (콜라이더 반지름 계산이 그 값을 쓴다, <see cref="ApplySprite"/>) 판정 크기에 영향이 없다.
+        /// Animator가 꺼져 있어도(정지그림 캐릭터) 그대로 적용된다.
+        /// </summary>
+        void UpdateFacing()
+        {
+            if (sr == null || mover == null) return;
+            sr.flipX = mover.Facing > 0;
         }
 
         /// <summary>
@@ -126,6 +219,24 @@ namespace ChronoSavior.Characters
             if (col != null) col.radius = EntitySizeConfig.PlayerRadius / scale;
         }
 
+        /// <summary>
+        /// 선택된 캐릭터의 Animator 컨트롤러를 갈아끼운다(2026-11-16). `CharacterArtSet.AnimatorOf`가 null이면
+        /// (아직 애니메이션이 없는 캐릭터 — 드루이드 등) Animator를 꺼서 <see cref="ApplySprite"/>가 넣은 정지그림이
+        /// 그대로 유지되게 한다 — SpriteRenderer를 Animator가 매 프레임 덮어쓰지 않도록.
+        /// </summary>
+        void ApplyAnimator(CharacterId id)
+        {
+            if (anim == null) return;
+            var controller = art != null ? art.AnimatorOf(id) : null;
+            if (controller == null)
+            {
+                anim.enabled = false;
+                return;
+            }
+            anim.runtimeAnimatorController = controller;
+            anim.enabled = true;
+        }
+
         void ApplySelection(CharacterId id, bool notifyPrevious)
         {
             foreach (var kit in kits)
@@ -143,6 +254,7 @@ namespace ChronoSavior.Characters
             Current = id;
             ProfileService.Current.SetSelectedCharacter(id);
             ApplySprite(id);
+            ApplyAnimator(id);
 
             foreach (var kit in kits)
             {
