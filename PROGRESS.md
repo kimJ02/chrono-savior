@@ -68,8 +68,9 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 > 계획·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md). 사용자 결정으로 트랙 A·B를 **둘 다 사용자 세션이** 한다
 > (팀원은 그동안 애니메이션 쪽 작업 쉼). 다 끝나면 main에 한 번에 합친다.
 > **손대지 말 것**: `Characters/PlayerRig.cs`·`MageAttack.cs`·`GunnerAttack.cs`·`BladeCombat.cs`·`BladeSlashVfx.cs`·`PlayerHealth.cs`·`MageChargeVfx.cs`·
-> `CharacterMover2D.cs`, `UI/Lobby/LobbyAvatar.cs`, `Core/CharacterArtSet.cs`, `Enemies/BlobLordBoss.cs`·`EnemyHealth.cs`, `Prefabs/Enemies/Enemy_BlobLord.prefab`,
-> `Assets/Data/Characters/`, `Assets/Resources/Art/Characters/`·`Art/Enemies/BlobLord/`, `Editor/BuildCharacterAnimations.cs`, 씬 `20_Combat`·`10_Lobby`.
+> `CharacterMover2D.cs`, `UI/Lobby/LobbyAvatar.cs`, `Core/CharacterArtSet.cs`,
+> `Assets/Data/Characters/`, `Assets/Resources/Art/Characters/`, `Editor/BuildCharacterAnimations.cs`, 씬 `20_Combat`·`10_Lobby`.
+> 보스(`BlobLordBoss`·`Enemy_BlobLord`)는 팀원이 작업 중이라 이 목록에서 뺐다(2026-11-17).
 > 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
@@ -278,6 +279,19 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-17 (129)** — **[사용자 세션] 몬스터 그림 적용 — 박쥐 자리 까마귀·고블린 자리 쥐·멧돼지·오우거 자리 오크통, 1지역부터**
+  (팀원 요청 "2스테이지에 몬스터 적용" + 드라이브 `몬스터 모음.zip` 8종(32×32, 움직임 4 + 피격 1) → 사용자 "4종 배정" → "1스테이지도 바꿔라").
+  - `Core/EnemyData.regionSkins`(`RegionSkin`: fromRegion·움직임 `SpriteFlipbook`·피격·왼쪽 그림 여부·도트 배율) + `SkinFor(region)`. 지금은 전부 1지역부터라 옛 `sprite`는 안 쓰인다
+    (지역마다 다른 그림이 필요해지면 fromRegion이 큰 칸을 추가). `Systems/EnemySetup`이 스킨 첫 장을 꽂고 그 도트 높이로 크기를 잰다.
+  - `Enemies/EnemySkinAnimator`(몹 공용 프리팹 `Enemy_Base`에 배치 — 종류별 프리팹이 물려받음): 게임 시간으로 4장 되풀이(시작점 흩음), 직접 타격마다 0.15초 피격 그림, 걷는 방향으로 좌우 반전.
+  - `Editor/BuildEnemySkins`(메뉴 `ChronoSavior/몬스터 지역 그림 연결`): 가져오기 설정·움직임 에셋 제자리 갱신·배정표대로 연결·프리팹 부품. **배정표가 원본.**
+    민들레·상자·새싹·슬라임은 그림·움직임 에셋만(배정 미정). 슬라임·오크통·쥐는 피격 파일이 따로 없어 5번째 장을 피격으로.
+  - **오크통만 도트 4**(GPT 상의): 관례(그림 높이 = 판정 지름, 오우거 0.87)에 도트 2(0.5)면 0.19 떠 보여서 가장 가까운 정수 배율(1.0, 0.065 묻힘). `docs/pixel-standard.md`에 예외로.
+    **남은 것(별도 작업)**: 그림 전용 자식 렌더러로 발을 판정 바닥에 맞추기 + 엘리트가 뜨는 문제(판정만 ×1.35 — main에 원래 있던 현상).
+  - 공용 타입 `Core/SpriteFlipbook`·`CharacterPose`·`CharacterAnimSet`(+`SpriteFlipbookTests`)도 이 커밋으로 main에 — 애니메이션 플립북 전환이 이어서 쓴다.
+  - 테스트: `EnemySkinTests` 3개, `DotScaleTests.EnemiesWithRealArt`가 스킨 프레임(PPU 128·같은 크기·도트 배율)을 본다, `MageChargeVfxTests.Bolt_ShowsBranchArt` 기대값(0차도 그림·완충 큰 그림) 갱신.
+    전체 548 중 543 통과 — 실패 5는 애니메이터 쪽(소유권 1·그림 3)과 마법사 도트 0.5(팀장 결정 대기), 이 작업과 무관. 캡처(`CaptureUiPreview.RunEnemySkins`)로 1·2지역 확인.
 
 - **2026-11-17 (128)** — **[사용자 세션] 블랙홀(중력) 법사 차지 손 구체·일렁임을 보라로**(사용자 "블랙홀 법사가 손에서 불이 차징되는 게
   문제 — 빨간색을 다른 색으로" → 후보 3개(보라·속이 어두운 블랙홀·색상 회전) 미리보기 중 **A "중력탄 보라"** 선택).

@@ -26,6 +26,12 @@ MonoBehaviour:
   visualHeight: 0.5
   color: {r: 0.56, g: 0.85, b: 1, a: 1}
   sprite: {fileID: 21300000, guid: b5e6490650b4af14c9a1fb12818b58cf, type: 3}
+  regionSkins:
+  - fromRegion: 1
+    move: {fileID: 11400000, guid: 61355bfc7053a56438b0ef1181e20bd4, type: 2}
+    hit: {fileID: 21300000, guid: 011ea0184d9aa20458adb9d722cd2dbf, type: 3}
+    facesLeft: 1
+    dotScale: 2
   shape: 2
   originalWidthPx: 34
   originalHeightPx: 34

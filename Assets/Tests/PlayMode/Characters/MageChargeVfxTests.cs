@@ -122,28 +122,30 @@ public class MageChargeVfxTests
         }
     }
 
-    /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>
+    /// <summary>갈래·완충별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄도 2026-11-16부터 그림(파랑). 그림이 없는 클론은 생략.</summary>
     [Test]
     public void Bolt_ShowsBranchArt_HitboxUnchanged()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageFireProjectile), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
-        MageProjectile Bolt(bool explosive, bool gravity) => MageProjectile.Spawn(TestPrefabs.MageBolt, new Vector3(5f, 3f, 0f), Vector2.zero, 1f, 1, 5f, 1.9f,
-            Color.cyan, false, false, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageBasicProjectileLarge), "이펙트 팩을 안 가져온(또는 2026-11-16 이전에 가져온) 클론 — 미설치로 생략");
+        MageProjectile Bolt(bool explosive, bool gravity, bool charged) => MageProjectile.Spawn(TestPrefabs.MageBolt, new Vector3(5f, 3f, 0f), Vector2.zero, 1f, 1, 5f, 1.9f,
+            Color.cyan, false, charged, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
 
-        foreach (var (explosive, gravity, key) in new[] { (true, false, ChronoSavior.Combat.VfxKeys.MageFireProjectile), (false, true, ChronoSavior.Combat.VfxKeys.MageGravityOrbSmall) })
+        // 2026-11-16(팀원 로그 116·117): 갈래마다 완충이면 큰 그림, 아니면 작은 그림. 0차(갈래 없음)도 이제 그림이 있다(energy_blast B 파랑).
+        foreach (var (explosive, gravity, charged, key) in new[]
         {
-            var bolt = Bolt(explosive, gravity);
+            (true, false, false, ChronoSavior.Combat.VfxKeys.MageFireProjectile), (true, false, true, ChronoSavior.Combat.VfxKeys.MageFireProjectileLarge),
+            (false, true, false, ChronoSavior.Combat.VfxKeys.MageGravityOrbSmall), (false, true, true, ChronoSavior.Combat.VfxKeys.MageGravityOrbLarge),
+            (false, false, false, ChronoSavior.Combat.VfxKeys.MageBasicProjectile), (false, false, true, ChronoSavior.Combat.VfxKeys.MageBasicProjectileLarge),
+        })
+        {
+            var bolt = Bolt(explosive, gravity, charged);
             Assert.AreEqual(new Vector2(0.4f * 1.9f, 0.3f * 1.9f), bolt.GetComponent<BoxCollider2D>().size, "판정 상자는 그대로");
             var player = bolt.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>();
             Assert.IsNotNull(player, $"{key} 그림이 돈다");
             float s = player.transform.localScale.x;
             Assert.AreEqual(Mathf.Round(s), s, 1e-4f, "정수 배율");
-            CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(key), player.GetComponent<SpriteRenderer>().sprite, "그 갈래의 그림");
+            CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(key), player.GetComponent<SpriteRenderer>().sprite, $"{key} — 그 갈래·완충 여부의 그림");
         }
-
-        var plain = Bolt(false, false);
-        Assert.IsNull(plain.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>(), "0차 탄은 예전 원 그림");
-        Assert.AreEqual(Color.cyan, plain.GetComponentInChildren<SpriteRenderer>().color);
     }
 
     [Test]

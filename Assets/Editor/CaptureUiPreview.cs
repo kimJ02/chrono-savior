@@ -143,6 +143,45 @@ namespace ChronoSavior.Editor
         /// 마법사 이펙트(2026-11-07 VFX 스프린트)를 실제 전투 화면 배율로 찍는다 — `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunMageVfx`.
         /// 그림이 없는 클론이면 빈 화면만 찍힌다(팩을 먼저 가져올 것). 편집 화면이라 애니메이션은 첫 프레임 — 프레임 진행은 테스트가 본다.
         /// </summary>
+        /// <summary>
+        /// 몹 지역 그림 캡처(2026-11-17 2스테이지 몬스터) — 같은 종류 넷(박쥐·고블린·멧돼지·오우거 자리)을 1지역·2지역으로 실제 스폰 코드(`EnemySetup.Apply`)로 세워
+        /// `enemy_skins_region1/2`로 찍는다. 배치: `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunEnemySkins -captureOut &lt;폴더&gt;`.
+        /// </summary>
+        public static void RunEnemySkins()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            HideAll(pc);
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var types = new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Brute };
+            foreach (int region in new[] { 1, 2 })
+            {
+                RunState.Begin(region, RunMode.Normal);
+                var made = new System.Collections.Generic.List<GameObject>();
+                for (int i = 0; i < types.Length; i++)
+                {
+                    var data = System.Array.Find(catalog.types, d => d != null && d.type == types[i]);
+                    var go = Object.Instantiate(data.prefab);
+                    go.transform.position = new Vector3(6.9f + i * 0.75f, FieldBounds.GroundY + 0.5f + (types[i] == EnemyType.Flyer ? 0.6f : 0f), 0f);
+                    ChronoSavior.Systems.EnemySetup.Apply(go, data, allowElite: false, eliteChance: 0f, shapeSprite: null);
+                    made.Add(go);
+                }
+                Render(pc, cam, outDir, "enemy_skins_region" + region, 1920, 1080, 3f);
+                foreach (var go in made) Object.DestroyImmediate(go);
+            }
+            RunState.Reset();
+        }
+
         public static void RunMageVfx()
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
