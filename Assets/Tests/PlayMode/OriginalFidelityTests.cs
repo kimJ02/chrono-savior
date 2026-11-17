@@ -413,6 +413,8 @@ public class OriginalFidelityTests
             ("EnemySpawnPlacement.TryPick", "EnemySpawnPlacement.cs"), // EnemySpawner.SpawnWaveOf
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
+            ("LobbyJumpDown",              "GameInput.cs"),        // LobbyWorld(로비 점프 트리거, 2026-11-18)
+            ("SetGrounded",                "LobbyAvatar.cs"),      // LobbyWorld(점프 중 Animator Grounded 끄기, 2026-11-18)
         };
 
         var scriptFiles = Directory.GetFiles(

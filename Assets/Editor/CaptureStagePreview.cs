@@ -58,7 +58,7 @@ namespace ChronoSavior.Editor
 
             float l1 = FieldLayout.PlatformTopY(0), l2 = FieldLayout.PlatformTopY(4);
             float x1 = FieldLayout.Platforms[0, 0], x2 = FieldLayout.Platforms[4, 0];
-            float off = StageArtConfig.CameraYOffset, min = CameraFollow2D.MinY;
+            float off = StageArtConfig.CameraOffsetAt(0f), min = CameraFollow2D.MinY;
             float Rule2(float f) => Mathf.Max(min, f + off - l1);
             float Rule3(float f) => min + 0.5f * (f - FieldBounds.GroundY);
             Shot(cam, visuals, player, outDir, "A1_지금_1층", x1, l1);

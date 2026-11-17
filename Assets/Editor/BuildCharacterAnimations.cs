@@ -29,6 +29,15 @@ namespace ChronoSavior.Editor
     /// (예: Attack 도중 Hit이 끼어들지, JumpFall이 Attack을 끊을지 등 — 지금은 AnyState 우선순위로
     /// Hit·Attack을 Grounded보다 먼저 보게만 해 뒀다).
     ///
+    /// ⚠️ **이 메뉴는 매번 컨트롤러를 통째로 지우고 코드에 적힌 대로만 처음부터 다시 만든다**
+    /// (`BuildBaseController`가 `DeleteAsset` 뒤 `CreateAnimatorControllerAtPath`) — **Animator 창에서 직접
+    /// 손으로 추가한 상태·전이는 다음에 이 메뉴를 다시 돌리는 순간 전부 사라진다.** 실제로 2026-11-16에
+    /// 이 사고가 났다: `Charge`(차지) 상태를 Animator 창에서 손으로 추가해 "차지 모션이 안 나온다" 버그를
+    /// 고쳐 놨는데, 이 스크립트엔 그 상태가 없어서 살수 공격 프레임만 반영하려고 메뉴를 다시 돌렸다가 Charge
+    /// 상태가 통째로 날아갔다. **그래서 Charge 상태·파라미터를 이 자리에 코드로 영구히 박아 넣었다** —
+    /// 앞으로 메뉴를 몇 번을 다시 돌려도 안 사라진다. **새로 손으로 상태/전이를 추가해야 하면,
+    /// 이 메뉴를 다시 쓰지 말고 Animator 창에서만 고치거나, 이 스크립트에 코드로 추가할 것.**
+    ///
     /// 실행: 메뉴 `ChronoSavior/캐릭터 애니메이션 만들기`.
     /// </summary>
     public static class BuildCharacterAnimations
@@ -67,8 +76,15 @@ namespace ChronoSavior.Editor
                 return;
             }
 
+            // ── 마법사 전용 차지(Charge) 클립 — 이 스크립트가 굽는 게 아니라 Animation 창에서 손으로 만든
+            // 기존 에셋을 그대로 참조만 한다(3프레임, 루프). 없으면 Charge 상태 없이 경고만 찍고 계속 진행
+            // — 다른 캐릭터는 원래 이 상태를 안 쓰므로 막을 이유가 없다.
+            var mageCharge = AssetDatabase.LoadAssetAtPath<AnimationClip>($"{ClipRoot}/Character_Mage_Charge.anim");
+            if (mageCharge == null)
+                Debug.LogWarning("[BuildCharacterAnimations] Character_Mage_Charge.anim을 못 찾음 — Charge 상태 없이 생성(차지 모션 없음).");
+
             // ── 베이스 컨트롤러(Attack 상태는 일단 마법사 공격을 기본으로 — 캐릭터별 오버라이드가 실제로 쓸 값으로 바꾼다) ──
-            var baseController = BuildBaseController(idle, move, jumpFall, hit, mageAttack);
+            var baseController = BuildBaseController(idle, move, jumpFall, hit, mageAttack, mageCharge);
 
             // ── 캐릭터별 오버라이드(Attack 클립만 교체) ──
             BuildOverride("CharacterAnim_Mage", baseController, mageAttack, mageAttack);
@@ -147,7 +163,7 @@ namespace ChronoSavior.Editor
         }
 
         static AnimatorController BuildBaseController(AnimationClip idle, AnimationClip move, AnimationClip jumpFall,
-            AnimationClip hit, AnimationClip attack)
+            AnimationClip hit, AnimationClip attack, AnimationClip charge)
         {
             string path = $"{ControllerRoot}/CharacterBase.controller";
             if (AssetDatabase.LoadAssetAtPath<AnimatorController>(path) != null) AssetDatabase.DeleteAsset(path);
@@ -163,6 +179,10 @@ namespace ChronoSavior.Editor
             }).ToArray();
             controller.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
+            // 마법사 차지(Z를 누르고 있는 동안, PlayerRig.UpdateAnimatorParams) — 다른 캐릭터는 늘 false라
+            // Charge 상태에 안 들어간다. 2026-11-16: 전에 Animator 창에서 손으로 추가했던 걸 이 메뉴를
+            // 다시 돌리며 날려 먹은 적이 있어 코드로 옮겨 박았다(위 클래스 설명 참고) — 지우지 말 것.
+            controller.AddParameter("Charging", AnimatorControllerParameterType.Bool);
 
             var root = controller.layers[0].stateMachine;
             var idleState = root.AddState("Idle");
@@ -175,6 +195,12 @@ namespace ChronoSavior.Editor
             hitState.motion = hit;
             var attackState = root.AddState("Attack");
             attackState.motion = attack;
+            AnimatorState chargeState = null;
+            if (charge != null)
+            {
+                chargeState = root.AddState("Charge");
+                chargeState.motion = charge;
+            }
 
             root.defaultState = idleState;
 
@@ -199,6 +225,21 @@ namespace ChronoSavior.Editor
             toAttack.hasExitTime = false;
             toAttack.duration = 0f;
             toAttack.AddCondition(AnimatorConditionMode.If, 0, "Attack");
+
+            // AnyState -> Charge(Charging) — Hit·Attack과 같은 우선순위 층(Grounded 체크보다 먼저 보게).
+            if (chargeState != null)
+            {
+                var toCharge = root.AddAnyStateTransition(chargeState);
+                toCharge.hasExitTime = false;
+                toCharge.duration = 0f;
+                toCharge.AddCondition(AnimatorConditionMode.If, 0, "Charging");
+
+                // Charge -> Idle(Charging이 풀리면 즉시) — 그 다음 프레임에 Moving이면 Idle->Move가 바로 받는다.
+                var chargeToIdle = chargeState.AddTransition(idleState);
+                chargeToIdle.hasExitTime = false;
+                chargeToIdle.duration = 0f;
+                chargeToIdle.AddCondition(AnimatorConditionMode.IfNot, 0, "Charging");
+            }
 
             // AnyState -> JumpFall (Grounded == false)
             var toJumpFall = root.AddAnyStateTransition(jumpFallState);

@@ -44,13 +44,19 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 ### 다음 할 일
 
-**바로 다음(2026-11-17, 사용자 요청) — `BuildCharacterAnimations.cs`에 Charge 상태 영구 보존 수정 다시 적용.**
-로그 (122) 참고: discard로 한 번 적용했던 수정이 같이 날아갔다 — 메뉴 `ChronoSavior/캐릭터 애니메이션 만들기`를
-다시 돌리면 손으로 추가한 `Charge` Animator 상태가 또 지워지는 버그가 **아직 안 고쳐진 채로 남아있다.** 로그
-(122) 바로 위(지워진 옛 로그 기준 (122) 본문)에 정확한 수정 내용이 적혀 있었음 — `Character_Mage_Charge.anim`을
-`AssetDatabase.LoadAssetAtPath`로 불러와 `BuildBaseController`에 넘기고, `Charging`(Bool) 파라미터 + `Charge`
-상태 + `AnyState→Charge`(Hit·Attack과 같은 우선순위, Grounded 체크보다 먼저) + `Charge→Idle` 전이를 코드에
-박아 넣는 방식. 지금 당장 메뉴를 돌릴 계획은 없으니 급하진 않지만, 다음 세션 시작하자마자 처리할 것.
+**바로 다음(2026-11-18) — 아래 로그 (123)~(126) 다섯 가지를 에디터에서 직접 눈으로 확인할 것** — 이 세션은 디바이스
+브리지로 파일만 썼을 뿐 Unity 에디터를 못 열어서 다섯 다 실제로 돌려본 적이 없다:
+1. `ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 **이번엔 재생성 후에도 살아있는지**.
+2. 1스테이지 전투 배경(새 합성 그림)이 실제 플레이 화면에서 **상하 범위·좌우 팬 느낌이 어색하지 않은지**
+   — `backgroundGrassYPx`(340)·`backgroundTopPx`(0)는 계산으로 추정한 값이라 에디터로 확인 전엔 확정이 아니다.
+3. **카메라 상하 프레이밍 보간 수정**((124)) — PlayMode 전체(특히 `StageVisualsTests.cs`)가 통과하는지,
+   그리고 1층·맨 위 발판에서 실제로 플레이해보고 체감이 맞는지. 커밋 직후 `LobbyWorld.cs`의 참조 누락을
+   컴파일 에러로 잡은 적이 있어 — 컴파일 자체는 전수 검색으로 재확인했지만 실행/플레이 확인은 아직 없음.
+4. **발판 옆 공중 뜨는 버그 수정**((125), `PlatformEffector2D.surfaceArc` 180→120) — **에디터를 열어서
+   가장 먼저 `20_Combat.unity`가 깨짐 없이 로드되는지부터 확인할 것**(씬 파일을 에디터 없이 텍스트로
+   직접 고쳤다). 로드가 되면 발판 옆에 점프해서 붙어보고 실제로 떨어지는지 확인.
+5. **로비 점프 추가**((126)) — 로비에서 C를 누르면 캐릭터가 떴다가 내려오는지, JumpFall 애니메이션이
+   자연스러운지, 건물 진입(F/↑)이 점프 중에도 그대로 되는지.
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
@@ -260,6 +266,124 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-18 (126)** — **[나] 로비에서 점프가 안 되던 걸 고침**(사용자 "로비에서 점프가 안되는데 점프할수있게 해줄래").
+  - **진짜 원인(처음엔 몰랐던 것)**: `LobbyWorld`/`LobbyAvatar`엔 원래 "점프는 꾸밈일 뿐 로비엔 발판이 없다"는
+    의도적 설계(코드 주석에 명시)가 있어서, 처음엔 "점프 자체를 새로 만들어야 하나"로 접근했다. 그런데 실제
+    입력 경로를 보니 `GameInput.JumpDown`은 `CombatKey(0, true)`를 거치고, 그 함수는 **`GameState.IsRunning`
+    (`Current == GameScene.Run`)이 아니면 무조건 꺼진다** — 2026-10-25에 "로비에서 Z(공격)가 새 나가는" 버그를
+    막으려고 Jump·Attack·Ult 세 키를 한 문으로 묶어 "사냥 중에만" 읽게 한 게 원인이었다. 로비는 `GameScene.Lobby`라
+    이 문에 걸려서 **C를 눌러도 `JumpDown`이 항상 false** — 점프가 "안 만들어진 게" 아니라 "입력부터 막혀 있던" 거였다.
+  - **수정 1 — `Core/GameInput.cs`**: 공격·스킬은 계속 "사냥 중에만"으로 막아야 하므로(그 2026-10-25 버그가
+    재현되면 안 됨) `JumpDown`은 그대로 두고, **점프만 따로** `LobbyJumpDown`(`GameState.Current ==
+    GameScene.Lobby && !IsTransitioning && Input.GetKeyDown(KeyCode.C)`)을 새로 만들어 래칭 로직과 무관하게 읽게 했다.
+  - **수정 2 — `UI/Lobby/LobbyWorld.cs`**: 로비는 물리(Rigidbody2D)도 발판도 없어서(의도적) 점프를 실제 물리로
+    만들 수 없다 — 좌우 걷기가 이미 하던 방식(시간이 멈춘 채 `Time.unscaledDeltaTime`으로 `player.position`을
+    직접 옮김)과 같은 자리에서, **직접 적분한 포물선**으로 꾸밈 점프를 추가했다(`UpdateJump`). 초기 속도는 전투
+    `CharacterMover2D.jumpSpeed`와 같은 9.6(`JumpSpeed` 상수), 중력은 `Physics2D.gravity.y`(ProjectSettings
+    값, 전투와 같은 자리에서 읽음 — 로비는 물리 시뮬레이션이 안 돌아서 직접 적분해야 함)를 그대로 썼다. 창이
+    열려 있으면 좌우 걷기처럼 점프도 같이 멈춘다. `GroundStandY`(땅+반지름) 헬퍼로 `EnterLobby`의 기존 두 자리
+    (카메라 기준점·캐릭터 시작 위치) 수식도 같이 정리(중복 제거).
+  - **수정 3 — `UI/Lobby/LobbyAvatar.cs`**: `SetGrounded(bool)` 공개 메서드 추가 — `LobbyWorld`가 점프
+    시작/종료 때 불러서 Animator의 `Grounded`를 끄고 켠다. 기존에 이미 있던 `JumpFall` 애니메이션 상태(전투와
+    같은 `AnyState → JumpFall(Grounded==false)` 전이, `Editor/BuildCharacterAnimations.cs`)를 그대로 재사용할
+    뿐, 애니메이션 쪽은 새로 만든 게 없다.
+  - **발판이 없는 이유는 그대로 유지**: 점프해서 갈 수 있는 곳은 안 늘렸다(건물 진입 판정은 그대로 x좌표만
+    본다) — "C를 누르면 반응은 한다"는 것만 고쳤을 뿐, 로비 지형 자체를 바꾸는 건 범위 밖이라고 판단.
+  - **`Tests/PlayMode/OriginalFidelityTests.cs`에 `LobbyJumpDown`·`SetGrounded` 2개를
+    `DefinedApis_AreActuallyCalledSomewhere` 목록에 추가** — 정의(`GameInput.cs`/`LobbyAvatar.cs`)와 호출부
+    (`LobbyWorld.cs`)가 다른 파일이라, CLAUDE.md가 경고하는 "정의만 하고 호출부를 안 만드는" 부류에 해당해서
+    등록해 둠.
+  - **확인 필요**: 이 세션은 에디터에 접근할 수 없어 실제로 돌려본 적이 없다. 로비에서 C를 누르면 캐릭터가
+    떴다가 바닥으로 돌아오는지, 그 사이 JumpFall 애니메이션이 자연스럽게 재생되는지(캐릭터별로 그림이 다
+    있는 경우에만 — 정지그림 캐릭터는 `SetGrounded`가 무시되고 그대로다), 건물 진입 판정이 점프 중에도
+    문제없이 동작하는지.
+
+- **2026-11-17 (125)** — **[나] 발판 옆에 붙어 공중에 뜬 채 안 내려오는 버그 — `PlatformEffector2D.surfaceArc`를
+  180→120으로(사용자가 직접 플레이해보고 발견, "플랫폼이 정확한 직사각형이 아니라서 점프해서 플랫폼 옆에
+  붙으면 공중에 뜬채로 안 내려올 수 있다").**
+  - **원인**: 발판은 실제로는 전부 정확한 직사각형(`BoxCollider2D`)이다 — 사용자의 추정("직사각형이 아니라서")은
+    증상의 원인 추정이고 콜라이더 모양 자체는 문제가 아니었다. 진짜 원인은 `20_Combat.unity`의 발판 18개
+    (`Platforms_Normal`의 `Platform_0~13`·`Platforms_Boss`의 `Platform_0~2`, 그리고 이름이 안 겹치는
+    `Platform_14` 하나 — 총 18개, `FieldLayout`의 17개보다 하나 많다, 아래 "확인 필요" 참고) 전부에 붙은
+    `PlatformEffector2D.m_SurfaceArc`가 **180(Unity 컴포넌트 기본값, 손대지 않은 채 남아 있었다)**이었던 것.
+    SurfaceArc는 "이 각도 범위 안의 충돌 노멀만 원웨이 발판의 '바닥'으로 친다"는 설정인데, 180은 수직
+    기준 ±90°, 즉 **완전히 수평인 충돌까지도 전부 '바닥에 착지'로 인정**한다는 뜻이다. 플레이어
+    콜라이더(`CircleCollider2D`)가 발판 모서리에 옆으로 붙으면, 원이 모서리를 타고 도는 접촉 노멀 각도가
+    0°(완전히 위)부터 거의 90°(완전히 옆)까지 연속적으로 나오는데, SurfaceArc 180은 그 전부를 "바닥"으로
+    받아들여서 **옆에서 누르고 있어도 원웨이 이펙터가 떠받쳐 버린다** — 그게 "공중에 뜬 채 안 내려온다"는
+    증상이다.
+  - **수정**: 18개 전부의 `m_SurfaceArc: 180` → `120`(수직 기준 ±60°)으로 일괄 변경. 발판 위에 평평하게 서
+    있을 때 접촉 노멀은 항상 거의 0°(수직)라 ±60° 안에 넉넉히 들어오므로 정상 착지엔 전혀 영향 없고,
+    거의 수평(80~90°)인 모서리 옆구리 접촉만 "바닥 아님"으로 바뀌어 더는 안 떠받친다.
+  - **어떻게 고쳤는지(주의)**: 이 세션은 Unity 에디터에 접근할 수 없어 `20_Combat.unity`를 **텍스트
+    파일로 직접 읽고 `m_SurfaceArc: 180` 문자열만 일괄 치환**했다(다른 줄은 전혀 건드리지 않음, 치환 전후
+    개수 18/0으로 확인). YAML 구조 자체를 건드리는 편집이 아니라 스칼라 값 하나만 바꾼 것이라 씬이 깨질
+    위험은 낮다고 판단했지만, **에디터로 한 번 열어서 깨짐 없이 로드되는지, 그리고 Git diff가 이 18줄만인지
+    확인이 필요하다**(`CLAUDE.md` "배치로 씬을 열어 저장할 때 주의" 항목과 같은 이유로 — 이번엔 배치
+    실행도 아니고 아예 에디터를 거치지 않은 수정이라 더 조심해야 함).
+  - **확인 필요**: (1) 실제로 발판 옆에 점프해서 붙어봤을 때 이제 바로 떨어지는지(위/아래 양쪽 모서리
+    전부). (2) 발판이 18개인 이유 — `FieldLayout.NormalPlatforms`(14)+`BossPlatforms`(3)=17인데 씬엔
+    `Platform_14`라는 이름의 객체가 하나 더 있다. 이번 수정과 무관하게 전부 SurfaceArc를 고쳤으니 동작엔
+    문제없지만, 왜 하나가 더 있는지는 별도로 짚을 필요가 있다(테스트용 잔존 오브젝트일 가능성).
+
+- **2026-11-17 (124)** — **[나] 카메라 상하 프레이밍을 발판 층에 따라 보간하도록 변경 — "1층에선 바닥이 화면을
+  너무 차지하고 맨 위층에선 아래가 안 보인다"(사용자가 직접 플레이해보고 지적).**
+  - **원인**: `StageArtConfig.GroundScreenFraction`(0.275, 고정값) 하나를 땅부터 맨 위 발판까지 어디서나
+    똑같이 적용했다 — 1층(위로만 갈 수 있음)에서도, 맨 위 발판(아래로만 갈 수 있음)에서도 같은 비율로
+    화면을 나눠서, "더 갈 수 있는 쪽"을 오히려 적게 보여주는 게 구조적 문제였다(값 튜닝으로는 못 고침).
+  - **수정**: `StageArtConfig.cs`에 고정 상수 대신 `GroundScreenFractionAtFloor`(0.15, 땅)·
+    `GroundScreenFractionAtTop`(0.65, 맨 위 발판) 둘 + `ScreenFractionAt(t)`/`CameraOffsetAt(t)`(t=0~1 보간)
+    를 추가. `CameraFollow2D.cs`엔 `TopPlatformSurfaceY()`(발판 중 가장 높은 윗면, 없으면 땅)를 새로 공개하고
+    `MinY`/`MaxY`/`DesiredY(feetY)`를 전부 이 t-보간 공식으로 바꿨다(`NextFollowY`의 공중 캐치업 로직은
+    범위 밖이라 그대로 둠).
+  - **참조 전부 갱신**: `StageVisuals.cs`(1곳, 배경 풀밭 높이 계산) · `Editor/CaptureStagePreview.cs`(1곳, 10/24
+    일회성 비교 도구) · `Tests/PlayMode/World/StageVisualsTests.cs`(기존 3개 테스트 이름/기대값 변경 +
+    맨 위 발판 케이스용 신규 테스트 1개 추가).
+  - **커밋 직후 사용자가 실제 컴파일 에러로 알려줘서 잡은 누락**: `Assets/Scripts/UI/Lobby/LobbyWorld.cs:199`가
+    같은 상수(`CameraYOffset`)를 쓰고 있었는데 이전 참조 검색(Tests/Editor/`CombatDirector`/
+    `CombatMinimapView`만 확인)에서 안 걸렸다 — **UI/Lobby 폴더를 검색 범위에서 빼먹은 것**. 로비는 카메라가
+    안 움직이니 항상 `t=0`(땅)이라 `StageArtConfig.CameraOffsetAt(0f)`로 교체.
+  - **이 실수로 재검증**: `Assets/Scripts/`·`Assets/Editor/`·`Assets/Tests/PlayMode/` **전체(.cs 약 250개)**를
+    디바이스에서 스테이징해 `CameraYOffset`/`GroundScreenFraction` 문자열을 전수 검색 — 남은 건 주석 2곳
+    (`StageArtConfig.cs`의 "옛 상수" 설명, `LobbyWorld.cs`의 변경 이력 주석)뿐이고 실제 코드 참조는 없음을
+    확인(`StageVisuals.cs`의 스테일 주석 1곳도 `GroundScreenFractionAtFloor`로 같이 고쳤다).
+  - **확인 필요**(이 세션은 디바이스 브리지로 파일만 썼을 뿐 Unity 에디터·테스트 실행기에 접근할 수 없다):
+    1. `Tests/PlayMode/World/StageVisualsTests.cs`를 포함한 전체 PlayMode가 실제로 통과하는지(컴파일만
+       정적으로 확인했을 뿐 실행은 못 해봄).
+    2. 1층·맨 위 발판 양쪽에서 실제로 플레이해보고 체감이 자연스러운지(0.15/0.65라는 값 자체는 추정치).
+
+- **2026-11-17 (123)** — **[나] Charge 영구 보존 수정 재적용 + 1스테이지 전투 배경을 새 그림(5겹 합성)으로 교체**
+  (사용자가 전날 discard로 같이 날아간 Charge 수정을 다시 해달라고 요청 + 새 전투 배경 그림 5장(`bg_.zip`)을
+  올려줌 — "하는김에 폴더 이름 크로노세이비어로 바꿀수있나"는 오늘 작업 끝나고 마지막에 처리하기로 사용자와
+  합의, 아직 안 함).
+  - **세션 연결 폴더가 어제와 다름** — 어제는 `D:\chrono-savior`, 오늘은 `D:\그냥 과제 파일들\yokai_unity-main\
+    yokai_unity`(다른 기기). 사용자 확인: "기기가 달라서 명칭이 다를뿐 어차피 똑같은 파일 넣어야하는 폴더임"
+    — 실제로 `CLAUDE.md`/`PROGRESS.md`/코드 상태가 어제 끝낸 지점과 정확히 일치함을 직접 확인하고 진행.
+  - **Charge 수정**: 로그 (122)에서 설명한 것과 완전히 같은 내용을 `BuildCharacterAnimations.cs`에 다시
+    적용 — `Character_Mage_Charge.anim`을 `AssetDatabase.LoadAssetAtPath`로 불러와 `BuildBaseController`에
+    넘기고, `Charging`(Bool) 파라미터 + `Charge` 상태 + `AnyState→Charge`(Hit·Attack과 같은 우선순위,
+    Grounded 체크보다 먼저) + `Charge→Idle` 전이를 코드에 박아 넣음. 재적용 전에 이 기기의 `CharacterBase.
+    controller`에 Charge 상태가 멀쩡히 있는 것도 확인(어제 discard로 되돌아간 그 버전과 동일).
+  - **전투 배경 교체**: 사용자가 올린 `1.png~5.png`(640×360, 하늘→먼 산→먼 폐허→중간 폐허→가까운 폐허 순
+    5겹)를 확인한 결과, 지금 `StageArtSet`/`StageVisuals`는 배경 그림 **1장만 쓰는 구조**(진짜 다중 레이어
+    시차는 없음, 카메라 위치에 따라 큰 그림 안에서 보여줄 범위만 옮기는 방식)였다 — 사용자에게 "5장을 합쳐서
+    기존 구조에 교체" vs "진짜 레이어별 시차로 구조 확장"을 물어서 **합치는 쪽으로 결정**(빠름·안전, 구조
+    변경 없음).
+    - PIL로 5→4→3→2→1 순서(뒤에서 앞으로, alpha_composite) 합성 — 전부 같은 640×360 캔버스라 리사이즈
+      없이 그대로 겹침. 결과물은 완전 불투명(하늘이 맨 밑에 깔려 투명 구멍 없음), 육안으로도 이상 없음.
+    - `Assets/Resources/Art/Figma/Stage1/bg_forest.png`를 이 합성 그림으로 **덮어쓰기**(같은 파일명·같은
+      640×360 RGBA·같은 GUID 유지 — `StageArt_Forest.asset`의 `background` 참조·.meta 둘 다 안 건드려도 됨).
+    - `StageArt_Forest.asset`의 `backgroundTopPx`(19→**0**, 옛 숲 그림의 바위 테두리가 없어져서)·
+      `backgroundGrassYPx`(181.8→**340**, 새 그림엔 또렷한 풀밭 줄이 없어서 가장 가까운 폐허 실루엣이
+      바닥에 닿는 높이로 근사 — 1.png 실루엣 상단 y가 x축마다 233~333px, 평균 304px라는 픽셀 분석 기반
+      추정치)로 변경. `backgroundViewLeftPx`/`backgroundViewRightPx`(240/400)는 그대로 둠(새 그림이 가로로
+      비슷한 패턴이 반복돼 특별히 바꿀 이유를 못 찾음).
+    - 배경 그림 이름(`bg_forest`)과 내용(폐허)이 안 맞게 됐는데, 이번 요청 범위 밖이라 이름은 안 건드림 —
+      사용자가 원하면 나중에 따로.
+  - **확인 필요**(둘 다 에디터 접근 없이 코드/수치 추정만으로 처리함 — 위 "다음 할 일" 참고): Charge 상태가
+    메뉴 재실행 후에도 실제로 살아있는지, 그리고 `backgroundGrassYPx`/`backgroundTopPx` 추정치가 실제 플레이
+    화면에서 자연스러운지.
 
 - **2026-11-16 (122)** — **[나] 바로 아래 (121)의 "좌우반전 12프레임" 작업 전체 폐기 — 되돌림(discard) + 07~12 프레임
   파일 삭제로 재커밋**(사용자가 실제로 플레이해보고 "좌우반전이 말 그대로 양쪽을 다 보여준다"고 지적 — 의도와

@@ -59,6 +59,17 @@ namespace ChronoSavior.Core
         public static bool JumpHeld => CombatKey(0, false);
         public static bool JumpDown => CombatKey(0, true);
 
+        /// <summary>
+        /// 로비에서의 점프 키(C) — **<see cref="JumpDown"/>과 다른 경로다.** `CombatKey`(Jump·Attack·Ult가 같이
+        /// 쓰는 함수)는 `GameState.IsRunning`(= `Current == GameScene.Run`)이 아니면 무조건 꺼진다 — 사냥 중이
+        /// 아닐 때 공격(Z)·스킬(X)이 새 나가지 못하게 2026-10-25에 일부러 막은 문(위 주석 참고)인데, 로비는
+        /// `GameScene.Lobby`라 이 문에 걸려서 **점프까지 같이 막혀 있었다**(2026-11-18, 사용자 "로비에서
+        /// 점프가 안 되는데 점프할 수 있게 해줄래" — 로비 쪽 점프 동작 자체가 없던 게 아니라 이 게이트가 원인).
+        /// 공격·스킬은 로비에서 계속 막아야 하므로(그 버그가 재현되면 안 됨) 점프만 따로 빼서 로비 화면에서만
+        /// 추가로 허용한다 — `CombatKey`의 래칭(사냥 재진입 시 누르고 있던 키 무시)과는 무관한, 완전히 별도의 읽기.
+        /// </summary>
+        public static bool LobbyJumpDown => GameState.Current == GameScene.Lobby && !GameState.IsTransitioning && Input.GetKeyDown(KeyCode.C);
+
         // ---- 공격 (원본 atkBow, 마법사 Z) ----
         public static bool AttackHeld => CombatKey(1, false);
         public static bool AttackDown => CombatKey(1, true);
