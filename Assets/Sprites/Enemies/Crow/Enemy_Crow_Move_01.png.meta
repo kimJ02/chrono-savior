@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,23 +100,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemy_Crow_Move_01_0
+      name: Enemy_Crow_Move_01
       rect:
         serializedVersion: 2
-        x: 1
-        y: 6
-        width: 30
-        height: 26
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: d86ba86a7115c2dd0800000000000000
-      internalID: -2509541730332002675
+      spriteID: 38ab40165c7b6344186653c5bba11e28
+      internalID: -2129081980
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Crow_Move_01_Elite
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: dd874ea3a94d0b74d84796e33280877e
+      internalID: -110072479
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Enemy_Crow_Move_01_0: -2509541730332002675
+      Enemy_Crow_Move_01: -2129081980
+      Enemy_Crow_Move_01_Elite: -110072479
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

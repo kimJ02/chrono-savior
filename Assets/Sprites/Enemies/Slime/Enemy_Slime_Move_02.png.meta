@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,23 +100,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemy_Slime_Move_02_0
+      name: Enemy_Slime_Move_02
       rect:
         serializedVersion: 2
-        x: 5
-        y: 9
-        width: 25
-        height: 17
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8d6c122ae0958a020800000000000000
-      internalID: 2353228724685620952
+      spriteID: 8c56a223d7867d24d9e81cbd4974d1fe
+      internalID: -2117531064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Slime_Move_02_Elite
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 415e3cd9b918fc745a4ab9ece7bb45d4
+      internalID: 338703808
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Enemy_Slime_Move_02_0: 2353228724685620952
+      Enemy_Slime_Move_02: -2117531064
+      Enemy_Slime_Move_02_Elite: 338703808
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

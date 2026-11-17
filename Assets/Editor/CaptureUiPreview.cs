@@ -163,17 +163,22 @@ namespace ChronoSavior.Editor
             var pc = PixelCanvas.Create(cam);
             HideAll(pc);
             var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
-            var types = new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Brute };
+            // (종류, 엘리트) — 땅에 서는 몹은 물리가 쉬는 자리(판정 바닥 = 지면)에 세운다. 발이 땅에 붙는지 보는 캡처(2026-11-17).
+            var lineup = new[] { (EnemyType.Flyer, false), (EnemyType.Grunt, false), (EnemyType.Grunt, true), (EnemyType.Charger, false), (EnemyType.Charger, true), (EnemyType.Brute, false) };
             foreach (int region in new[] { 1, 2 })
             {
                 RunState.Begin(region, RunMode.Normal);
                 var made = new System.Collections.Generic.List<GameObject>();
-                for (int i = 0; i < types.Length; i++)
+                for (int i = 0; i < lineup.Length; i++)
                 {
-                    var data = System.Array.Find(catalog.types, d => d != null && d.type == types[i]);
+                    var (type, elite) = lineup[i];
+                    var data = System.Array.Find(catalog.types, d => d != null && d.type == type);
                     var go = Object.Instantiate(data.prefab);
-                    go.transform.position = new Vector3(6.9f + i * 0.75f, FieldBounds.GroundY + 0.5f + (types[i] == EnemyType.Flyer ? 0.6f : 0f), 0f);
-                    ChronoSavior.Systems.EnemySetup.Apply(go, data, allowElite: false, eliteChance: 0f, shapeSprite: null);
+                    go.transform.position = new Vector3(6.8f + i * 0.62f, FieldBounds.GroundY + 0.5f, 0f);
+                    ChronoSavior.Systems.EnemySetup.Apply(go, data, allowElite: elite, eliteChance: elite ? 1000f : 0f, shapeSprite: null);
+                    var col = go.GetComponent<CircleCollider2D>();
+                    float y = type == EnemyType.Flyer ? FieldBounds.GroundY + 1.1f : FieldBounds.GroundY + col.radius * go.transform.localScale.y;
+                    go.transform.position = new Vector3(go.transform.position.x, y, 0f);
                     made.Add(go);
                 }
                 Render(pc, cam, outDir, "enemy_skins_region" + region, 1920, 1080, 3f);

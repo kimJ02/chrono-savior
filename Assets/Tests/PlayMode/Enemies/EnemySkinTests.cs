@@ -58,7 +58,7 @@ public class EnemySkinTests
     }
 
     [Test]
-    public void Spawn_AnimatesAtDotScale_BarrelSitsOnItsHitbox()
+    public void Spawn_AnimatesAtDotScale()
     {
         var grunt = Data(EnemyType.Grunt);
         foreach (int region in new[] { 1, 2 })
@@ -76,12 +76,53 @@ public class EnemySkinTests
         }
 
         var barrel = Spawn(Data(EnemyType.Brute), 1);
-        var bsr = barrel.GetComponent<SpriteRenderer>();
-        var col = barrel.GetComponent<CircleCollider2D>();
-        Assert.AreEqual(1f, bsr.bounds.size.y, 1e-3f, "오크통은 도트 4(32px → 1.0유닛)");
-        float colBottom = barrel.transform.position.y + col.offset.y * barrel.transform.localScale.y - col.radius * barrel.transform.localScale.y; // 물리 동기화 전이라 bounds 대신 계산
-        Assert.AreEqual(colBottom, bsr.bounds.min.y, 0.07f, "그림 바닥이 판정 바닥과 거의 같다(묻힘 0.065 이내)");
-        Assert.LessOrEqual(bsr.bounds.min.y, colBottom + 1e-3f, "뜨지 않는다");
+        Assert.AreEqual(1f, barrel.GetComponent<SpriteRenderer>().bounds.size.y, 1e-3f, "오크통은 도트 4(32px → 1.0유닛)");
+    }
+
+    /// <summary>그 그림들 중 가장 낮은 불투명 줄(아래 투명 줄 수) — 파일을 직접 읽는다.</summary>
+    static int FeetGap(Sprite[] frames)
+    {
+        int best = int.MaxValue;
+        foreach (var f in frames)
+        {
+            var tex = new Texture2D(2, 2);
+            tex.LoadImage(System.IO.File.ReadAllBytes(UnityEditor.AssetDatabase.GetAssetPath(f.texture)));
+            int gap = tex.height;
+            for (int y = 0; y < tex.height && gap == tex.height; y++)
+                for (int x = 0; x < tex.width; x++)
+                    if (tex.GetPixel(x, y).a > 0.01f) { gap = y; break; }
+            Object.DestroyImmediate(tex);
+            best = Mathf.Min(best, gap);
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// 2026-11-17 사용자 "몬스터들 바닥에서 뜨는 거" — 땅에 서는 종류는 그림의 발(가장 낮은 불투명 줄)이 판정 바닥과 같은 높이다(엘리트도 — 판정만 ×1.35).
+    /// 루트(= 판정 중심)는 그대로라 지면·발판 로직은 안 바뀐다.
+    /// </summary>
+    [Test]
+    public void GroundedMonsters_FeetSitOnHitboxBottom_EliteToo()
+    {
+        foreach (var type in new[] { EnemyType.Grunt, EnemyType.Charger, EnemyType.Brute })
+            foreach (bool elite in new[] { false, true })
+            {
+                var data = Data(type);
+                RunState.Begin(1, RunMode.Normal);
+                var go = Object.Instantiate(data.prefab);
+                go.name = "TestSkin_" + type + (elite ? "_Elite" : "");
+                EnemySetup.Apply(go, data, allowElite: elite, eliteChance: elite ? 1000f : 0f, shapeSprite: null);
+                Assert.AreEqual(elite, go.GetComponent<EnemyElite>() != null, $"{type}: 엘리트 여부");
+                var sr = go.GetComponent<SpriteRenderer>();
+                var col = go.GetComponent<CircleCollider2D>();
+                float scale = go.transform.localScale.y;
+                float colBottom = go.transform.position.y + (col.offset.y - col.radius) * scale; // 물리 동기화 전이라 bounds 대신 계산
+                var skin = data.SkinFor(1);
+                float px = sr.bounds.size.y / sr.sprite.rect.height;
+                float feet = sr.bounds.min.y + FeetGap(skin.move.frames) * px;
+                Assert.AreEqual(colBottom, feet, 1e-3f, $"{type}{(elite ? " 엘리트" : "")}: 발 = 판정 바닥");
+                CollectionAssert.Contains(skin.MoveFor(elite).frames, sr.sprite, "엘리트면 엘리트 기준점 그림");
+            }
     }
 
     [Test]

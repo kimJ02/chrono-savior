@@ -72,7 +72,7 @@ public static class EnemySetup
             if (sr != null && skin != null)
             {
                 // 지역 그림(2026-11-17 — 예: 2지역 고블린 자리 = 쥐). 첫 장을 꽂아 크기를 재고, 움직임은 그림 부품(EnemySkinAnimator)이 넘긴다.
-                sr.sprite = skin.move.frames[0];
+                sr.sprite = skin.MoveFor(elite).frames[0];
                 sr.color = Color.white;
             }
             else if (sr != null)
@@ -98,7 +98,7 @@ public static class EnemySetup
         // ⚠️ 스프라이트를 꽂은 **뒤에** 크기를 정한다 — 그림 높이를 보고 스케일을 계산하기 때문.
         // 지역 그림은 도트 배율로(보통 2 — 32px → 0.5유닛, 오크통만 4), 판정은 그 종류 값 그대로.
         ApplySize(monster, data, elite, skin != null ? skin.VisualHeight : 0f);
-        if (skin != null && monster.TryGetComponent(out EnemySkinAnimator anim)) anim.Play(skin);
+        if (skin != null && monster.TryGetComponent(out EnemySkinAnimator anim)) anim.Play(skin, elite);
     }
 
     /// <summary>

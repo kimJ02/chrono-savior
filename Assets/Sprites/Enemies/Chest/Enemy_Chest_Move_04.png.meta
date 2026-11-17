@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,23 +100,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemy_Chest_Move_04_0
+      name: Enemy_Chest_Move_04
       rect:
         serializedVersion: 2
-        x: 2
-        y: 2
-        width: 27
-        height: 25
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 95bb664dbb5cbac60800000000000000
-      internalID: 7830569787626797913
+      spriteID: 8fcda65cb7761f54ea59d93db0a970ef
+      internalID: 1864032798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Chest_Move_04_Elite
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5f82902012d02c14ca092143a79f4834
+      internalID: 1847188598
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Enemy_Chest_Move_04_0: 7830569787626797913
+      Enemy_Chest_Move_04: 1864032798
+      Enemy_Chest_Move_04_Elite: 1847188598
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

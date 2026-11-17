@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,23 +100,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemy_Sprout_Move_04_0
+      name: Enemy_Sprout_Move_04
       rect:
         serializedVersion: 2
-        x: 3
-        y: 2
-        width: 27
-        height: 27
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: c644cb8be617c74c0800000000000000
-      internalID: -4288428024803867540
+      spriteID: c7c5722271b658d4c9e4c8e1215744b9
+      internalID: -1731081163
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Sprout_Move_04_Elite
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d696d1e6ae76f9c439bf248b0f32e260
+      internalID: -919861132
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Enemy_Sprout_Move_04_0: -4288428024803867540
+      Enemy_Sprout_Move_04: -1731081163
+      Enemy_Sprout_Move_04_Elite: -919861132
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

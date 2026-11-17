@@ -33,10 +33,17 @@ namespace ChronoSavior.Core
         public SpriteFlipbook move;
         [Tooltip("맞았을 때 잠깐 보이는 그림(없으면 움직임 그대로 + 흰 깜빡임만).")]
         public Sprite hit;
+        [Tooltip("엘리트용 — 같은 그림이되 기준점만 엘리트 판정(×1.35) 바닥에 발이 오게 잡은 것(그림은 안 커지고 판정만 커져서). 비면 위 move/hit.")]
+        public SpriteFlipbook eliteMove;
+        public Sprite eliteHit;
         [Tooltip("그림이 왼쪽을 보고 그려졌나 — 그러면 오른쪽으로 갈 때 뒤집는다.")]
         public bool facesLeft = true;
         [Tooltip("도트 배율 — 보통 Core.DotScale(2). 덩치 큰 종류(오우거 자리 오크통)만 4: 그림 높이 = 판정 지름 관례(BuildEnemyData)에 가장 가까운 정수 배율.")]
         [Min(1)] public int dotScale = DotScale.Value;
+
+        /// <summary>엘리트면 엘리트용 묶음(없으면 일반).</summary>
+        public SpriteFlipbook MoveFor(bool elite) => elite && eliteMove != null && eliteMove.Count > 0 ? eliteMove : move;
+        public Sprite HitFor(bool elite) => elite && eliteHit != null ? eliteHit : hit;
 
         /// <summary>화면 높이(유닛) = 그림 픽셀 × 도트 배율 ÷ 격자 PPU(128).</summary>
         public float VisualHeight => move != null && move.Count > 0 && move.frames[0] != null

@@ -46,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -100,23 +100,45 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Enemy_Boar_Move_01_0
+      name: Enemy_Boar_Move_01
       rect:
         serializedVersion: 2
         x: 0
-        y: 4
+        y: 0
         width: 32
-        height: 24
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.6779891}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 0c2e8bde75a7f4ef0800000000000000
-      internalID: -121744146846653760
+      spriteID: 13b841e9f0b6b3f43b20a79a3364fd10
+      internalID: -1146403306
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Enemy_Boar_Move_01_Elite
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 32
+        height: 32
+      alignment: 9
+      pivot: {x: 0.5, y: 0.86059785}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 14b1f6bc488bd094f9006d2ca32dd748
+      internalID: -554359400
       vertices: []
       indices: 
       edges: []
@@ -135,7 +157,8 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Enemy_Boar_Move_01_0: -121744146846653760
+      Enemy_Boar_Move_01: -1146403306
+      Enemy_Boar_Move_01_Elite: -554359400
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -29,7 +29,9 @@ MonoBehaviour:
   regionSkins:
   - fromRegion: 1
     move: {fileID: 11400000, guid: 6838c82ab719e864fa90b975f1ac999a, type: 2}
-    hit: {fileID: 21300000, guid: 0aba2a5c222ac074c843f0a293299972, type: 3}
+    hit: {fileID: 1425561053, guid: 0aba2a5c222ac074c843f0a293299972, type: 3}
+    eliteMove: {fileID: 11400000, guid: 7e48aeeafb58d7f42b538049c4d8562d, type: 2}
+    eliteHit: {fileID: -1751561243, guid: 0aba2a5c222ac074c843f0a293299972, type: 3}
     facesLeft: 1
     dotScale: 4
   shape: 0

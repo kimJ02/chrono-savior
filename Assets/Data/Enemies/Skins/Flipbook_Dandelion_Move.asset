@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: Flipbook_Dandelion_Move
   m_EditorClassIdentifier: 
   frames:
-  - {fileID: 21300000, guid: 97940e06224891b4c9dcc6e75568bbe2, type: 3}
-  - {fileID: 21300000, guid: 965547c5228015a449318feccd99169a, type: 3}
-  - {fileID: 21300000, guid: 274c1662679f801419aa6e5ac01a40b4, type: 3}
-  - {fileID: 21300000, guid: d514667d8aafb4640bc0fa4d950e4f33, type: 3}
+  - {fileID: -1454568771, guid: 97940e06224891b4c9dcc6e75568bbe2, type: 3}
+  - {fileID: -976975280, guid: 965547c5228015a449318feccd99169a, type: 3}
+  - {fileID: -276914354, guid: 274c1662679f801419aa6e5ac01a40b4, type: 3}
+  - {fileID: 451094659, guid: d514667d8aafb4640bc0fa4d950e4f33, type: 3}
   fps: 8
   loop: 1

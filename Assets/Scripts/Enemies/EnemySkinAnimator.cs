@@ -21,6 +21,8 @@ namespace ChronoSavior.Enemies
         SpriteRenderer sr;
         EnemyMove mover;
         RegionSkin skin;
+        SpriteFlipbook move;
+        Sprite hit;
         float t, hitTimer;
 
         /// <summary>지금 재생 중인 지역 그림(없으면 null — 테스트용).</summary>
@@ -35,18 +37,23 @@ namespace ChronoSavior.Enemies
         void OnEnable() => CombatEvents.EnemyDamaged += HandleDamaged;
         void OnDisable() => CombatEvents.EnemyDamaged -= HandleDamaged;
 
-        /// <summary>이 그림으로 재생을 시작한다(스폰 때 한 번).</summary>
-        public void Play(RegionSkin regionSkin)
+        /// <summary>
+        /// 이 그림으로 재생을 시작한다(스폰 때 한 번). 엘리트면 엘리트용 프레임 — 그림은 같고 기준점만 엘리트 판정 바닥에 발이 오게 잡혀 있다
+        /// (그림은 도트 그대로, 판정만 ×1.35라 일반 기준점이면 떠 보인다 — `Editor/BuildEnemySkins`).
+        /// </summary>
+        public void Play(RegionSkin regionSkin, bool elite = false)
         {
             skin = regionSkin;
-            t = Random.value * (skin != null && skin.move != null ? skin.move.Duration : 0f); // 한 웨이브가 똑같이 날갯짓하지 않게 시작점만 흩는다
+            move = skin != null ? skin.MoveFor(elite) : null;
+            hit = skin != null ? skin.HitFor(elite) : null;
+            t = Random.value * (move != null ? move.Duration : 0f); // 한 웨이브가 똑같이 날갯짓하지 않게 시작점만 흩는다
             hitTimer = 0f;
             Refresh(0f);
         }
 
         void HandleDamaged(GameObject go)
         {
-            if (go == gameObject && skin != null && skin.hit != null) hitTimer = HitDuration;
+            if (go == gameObject && hit != null) hitTimer = HitDuration;
         }
 
         void LateUpdate() => Refresh(Time.deltaTime);
@@ -54,10 +61,10 @@ namespace ChronoSavior.Enemies
         /// <summary>그림을 고른다(테스트가 직접 부른다).</summary>
         public void Refresh(float dt)
         {
-            if (skin == null || sr == null || skin.move == null) return;
+            if (skin == null || sr == null || move == null) return;
             t += dt;
             if (hitTimer > 0f) hitTimer = Mathf.Max(0f, hitTimer - dt);
-            var frame = hitTimer > 0f ? skin.hit : skin.move.FrameAt(t);
+            var frame = hitTimer > 0f ? hit : move.FrameAt(t);
             if (frame != null) sr.sprite = frame;
             int dir = mover != null ? mover.Direction : 0;
             if (dir != 0) sr.flipX = skin.facesLeft ? dir > 0 : dir < 0;

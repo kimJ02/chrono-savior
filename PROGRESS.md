@@ -280,6 +280,14 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-17 (130)** — **[사용자 세션] 몬스터가 바닥에서 떠 보이던 것 — 발 기준점으로 해결(엘리트 포함)**(사용자 "몬스터들 바닥에서 뜨는 거 해결 안 되나?").
+  원인 둘: 그림 아래 투명 줄(쥐 3px·멧돼지 5px·오크통 2px·슬라임 10px), 엘리트는 판정만 ×1.35(그림 그대로 — main에 원래 있던 현상). GPT 상의로 **P안**:
+  `Editor/BuildEnemySkins`가 땅에 서는 종류의 그림 기준점을 "발(움직임 프레임 중 가장 낮은 불투명 줄) + 판정 반지름" 높이에 둔다 — 루트(= 판정 중심)는 그대로라
+  `EnemyMove`의 지면·발판 Y 로직은 안 바뀌고 그림만 내려온다. 엘리트용 기준점(반지름 ×1.35)은 같은 텍스처의 둘째 그림(`_Elite`, 텍스처를 Multiple로)이고
+  `RegionSkin.eliteMove`/`eliteHit` → `EnemySkinAnimator.Play(skin, elite)`. 까마귀(비행)·미배정 그림은 가운데 기준점. 오크통은 이제 도트 4에서도 묻히지 않고 정확히 닿는다.
+  테스트 `EnemySkinTests.GroundedMonsters_FeetSitOnHitboxBottom_EliteToo`(쥐·멧돼지·오크통 × 일반/엘리트 — 발 = 판정 바닥). 전체 549 중 544 통과(실패 5는 애니메이터 쪽·마법사 도트, 무관).
+  캡처 `CaptureUiPreview.RunEnemySkins`가 이제 물리가 쉬는 높이에 세우고 엘리트도 찍는다. **고블린·박쥐 옛 그림(지금 안 쓰임)과 다른 몹 종류(궁수·슬라임)는 그대로.**
+
 - **2026-11-17 (129)** — **[사용자 세션] 몬스터 그림 적용 — 박쥐 자리 까마귀·고블린 자리 쥐·멧돼지·오우거 자리 오크통, 1지역부터**
   (팀원 요청 "2스테이지에 몬스터 적용" + 드라이브 `몬스터 모음.zip` 8종(32×32, 움직임 4 + 피격 1) → 사용자 "4종 배정" → "1스테이지도 바꿔라").
   - `Core/EnemyData.regionSkins`(`RegionSkin`: fromRegion·움직임 `SpriteFlipbook`·피격·왼쪽 그림 여부·도트 배율) + `SkinFor(region)`. 지금은 전부 1지역부터라 옛 `sprite`는 안 쓰인다
@@ -288,7 +296,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   - `Editor/BuildEnemySkins`(메뉴 `ChronoSavior/몬스터 지역 그림 연결`): 가져오기 설정·움직임 에셋 제자리 갱신·배정표대로 연결·프리팹 부품. **배정표가 원본.**
     민들레·상자·새싹·슬라임은 그림·움직임 에셋만(배정 미정). 슬라임·오크통·쥐는 피격 파일이 따로 없어 5번째 장을 피격으로.
   - **오크통만 도트 4**(GPT 상의): 관례(그림 높이 = 판정 지름, 오우거 0.87)에 도트 2(0.5)면 0.19 떠 보여서 가장 가까운 정수 배율(1.0, 0.065 묻힘). `docs/pixel-standard.md`에 예외로.
-    **남은 것(별도 작업)**: 그림 전용 자식 렌더러로 발을 판정 바닥에 맞추기 + 엘리트가 뜨는 문제(판정만 ×1.35 — main에 원래 있던 현상).
+    ~~남은 것: 발을 판정 바닥에 맞추기 + 엘리트 뜸~~ → (130)에서 발 기준점으로 해결.
   - 공용 타입 `Core/SpriteFlipbook`·`CharacterPose`·`CharacterAnimSet`(+`SpriteFlipbookTests`)도 이 커밋으로 main에 — 애니메이션 플립북 전환이 이어서 쓴다.
   - 테스트: `EnemySkinTests` 3개, `DotScaleTests.EnemiesWithRealArt`가 스킨 프레임(PPU 128·같은 크기·도트 배율)을 본다, `MageChargeVfxTests.Bolt_ShowsBranchArt` 기대값(0차도 그림·완충 큰 그림) 갱신.
     전체 548 중 543 통과 — 실패 5는 애니메이터 쪽(소유권 1·그림 3)과 마법사 도트 0.5(팀장 결정 대기), 이 작업과 무관. 캡처(`CaptureUiPreview.RunEnemySkins`)로 1·2지역 확인.
