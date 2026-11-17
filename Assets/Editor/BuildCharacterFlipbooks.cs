@@ -58,6 +58,7 @@ namespace ChronoSavior.Editor
             ["Idle"] = ("Shared", "Character_Idle_"), ["Move"] = ("Shared", "Character_Move_"), ["JumpFall"] = ("Shared", "Character_JumpFall_"),
             ["Hit"] = ("Shared", "Character_Hit_"), ["MageBody"] = ("Mage", "Character_Mage_Attack_Body_"),
             ["GunnerBody"] = ("Gunner", "Character_Gunner_Attack_"), ["BladeBody"] = ("Blade", "Character_Blade_Attack_"),
+            ["Static"] = ("", "chara_temp_"), // 애니메이션 없는 캐릭터용 정지 그림(CharacterArtSet.sprites) — 같은 규칙으로 발을 맞춘다
         };
 
         [MenuItem("ChronoSavior/캐릭터 애니메이션 연결")]
@@ -92,6 +93,8 @@ namespace ChronoSavior.Editor
                 if (sprites.Count != picked.Count) continue;
                 books[b.name] = Upsert<SpriteFlipbook>($"{OutRoot}/Flipbook_{b.name}.asset", fb => { fb.frames = sprites.ToArray(); fb.fps = b.fps; fb.loop = b.loop; });
             }
+            if (pivots.TryGetValue("Static", out var staticPivot))
+                foreach (var p in Paths("", "chara_temp_")) ApplyImport(p, staticPivot, problems);
             SpriteFlipbook B(string n) => books.TryGetValue(n, out var f) ? f : null;
 
             // ③ 캐릭터별 묶음 + CharacterArtSet
@@ -123,7 +126,7 @@ namespace ChronoSavior.Editor
         }
 
         static List<string> Paths(string folder, string prefix) =>
-            Directory.GetFiles($"{ArtRoot}/{folder}", prefix + "*.png").Select(p => p.Replace(Path.DirectorySeparatorChar, '/'))
+            Directory.GetFiles(folder.Length > 0 ? $"{ArtRoot}/{folder}" : ArtRoot, prefix + "*.png").Select(p => p.Replace(Path.DirectorySeparatorChar, '/'))
                 // "OrbEffect_"가 "OrbEffectGravity_"를 안 잡게 — 앞부분 뒤가 바로 숫자인 것만
                 .Where(p => char.IsDigit(Path.GetFileNameWithoutExtension(p)[prefix.Length]))
                 .OrderBy(p => p, System.StringComparer.Ordinal).ToList();

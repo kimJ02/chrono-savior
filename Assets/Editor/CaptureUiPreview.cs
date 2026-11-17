@@ -646,13 +646,16 @@ namespace ChronoSavior.Editor
             var sr = player.GetComponentInChildren<SpriteRenderer>();
             var rig = player.GetComponent<ChronoSavior.Characters.PlayerRig>();
             var art = rig != null ? rig.Art : null;
-            if (sr != null && art != null && art.SpriteOf(CharacterId.Mage) != null)
+            // 게임과 같게(2026-11-17 플립북): 애니메이션이 있으면 서기 첫 장, 높이는 CharacterArtSet.HeightOf
+            var set = art != null ? art.AnimSetOf(CharacterId.Mage) : null;
+            var sprite = set != null && set.idle != null && set.idle.Count > 0 ? set.idle.frames[0] : art != null ? art.SpriteOf(CharacterId.Mage) : null;
+            if (sr != null && sprite != null)
             {
-                sr.sprite = art.SpriteOf(CharacterId.Mage);
+                sr.sprite = sprite;
                 sr.color = art.TintOf(CharacterId.Mage);
             }
             if (sr == null || sr.sprite == null) return;
-            float s = EntitySizeConfig.PlayerHeight / sr.sprite.bounds.size.y;
+            float s = (art != null ? art.HeightOf(CharacterId.Mage) : EntitySizeConfig.PlayerHeight) / sr.sprite.bounds.size.y;
             sr.transform.localScale = new Vector3(s, s, 1f);
         }
 

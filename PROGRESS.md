@@ -277,6 +277,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
+  선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
+  정지 그림 `chara_temp_01`도 같은 규칙으로 기준점. **판정(지름 0.5)·이동은 그대로, 그림만 1.5배.** 캡처 `CaptureUiPreview.RunEnemySkins`(플레이어도 실제 애니메이션 첫 장·높이로)·`RunCharacterPoses`.
+  `DotScaleTests.Characters`가 드디어 통과 — 팀원 규칙(Transform 배율 1)과의 표준 결정 자체는 여전히 팀 확인(`HANDOFF.md`).
+
 - **2026-11-17 (133)** — **[사용자 세션] 플립북 전환 목표 마저 — 전체 566 중 565 통과(남은 1 = 마법사 도트 0.5, 팀장 결정 대기)**(사용자 "목표 달성해봐, main 올리지 말고").
   - `UI/GameplaySfx`: 루프용 AudioSource를 코드로 붙이던 것(생성 책임 위반 — `CreationOwnershipTests` 실패의 마지막 원인) → 씬 `00_Persistent` › Audio › **SfxLoop** 자식에 배치하고 `[SerializeField] loopSource`로 연결
     (일회용 에디터 스크립트로 놓고 지움). 씬 구성 검증에 루프 소스 검사. ⚠️ 저장 때 PixelPerfectCamera가 카메라 Viewport Rect를 (0,0.125,1,0.75)로 바꿔 놓아 손으로 (0,0,1,1)로 되돌렸다(CLAUDE.md 경고 그대로).

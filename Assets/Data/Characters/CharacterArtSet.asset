@@ -23,10 +23,10 @@ MonoBehaviour:
   - {r: 1, g: 1, b: 1, a: 1}
   - {r: 1, g: 1, b: 1, a: 1}
   heights:
-  - 0.5
-  - 0.5
-  - 0.5
-  - 0.5
+  - 0.75
+  - 0.75
+  - 0.75
+  - 1
   animSets:
   - {fileID: 11400000, guid: 7436e37c77e4fec42a45d312ebf4850a, type: 2}
   - {fileID: 11400000, guid: 1ff7a99c3b38b4f4694cd2b92248c2d0, type: 2}
