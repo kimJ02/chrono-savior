@@ -1,3 +1,5 @@
+using UnityEngine;
+
 namespace ChronoSavior.World
 {
     /// <summary>
@@ -17,11 +19,27 @@ namespace ChronoSavior.World
         public const float ViewHalfWidth = RefWidth / (2f * PixelsPerUnit);   // 3.75
         public const float ViewHalfHeight = RefHeight / (2f * PixelsPerUnit); // 2.109375
 
-        /// <summary>땅에 서 있을 때 지면이 화면 아래에서 이 비율 높이에 온다(미리보기와 같은 구도).</summary>
-        public const float GroundScreenFraction = 0.275f;
+        /// <summary>
+        /// 땅(더 내려갈 데 없음)에 서 있을 때 지면이 화면 아래에서 이 비율 높이에 온다 — 아래는 버리는 공간이라
+        /// 작게, 위를 넉넉히 보여준다. (2026-11-17, 사용자가 실제로 플레이해보고 지적: "1층에 있을 때는 위로밖에
+        /// 못 가는데 화면은 바닥이 2~30%를 차지한다" — 옛 `GroundScreenFraction`(0.275, 위아래 어디서나 똑같았다)을
+        /// 이 값과 <see cref="GroundScreenFractionAtTop"/> 둘로 나눠 바닥~맨 위 발판 사이를 보간한다(<see cref="ScreenFractionAt"/>).)
+        /// </summary>
+        public const float GroundScreenFractionAtFloor = 0.15f;
 
-        /// <summary>서 있는 발 높이 → 카메라 중심 높이. 지면이 <see cref="GroundScreenFraction"/>에 오게.</summary>
-        public const float CameraYOffset = ViewHalfHeight * 2f * (0.5f - GroundScreenFraction);
+        /// <summary>
+        /// 맨 위 발판(더 올라갈 데 없음)에 서 있을 때 그 발판이 화면 아래에서 이 비율 높이에 온다 — 위는 버리는
+        /// 공간이라 작게, 아래를 넉넉히 보여준다. (2026-11-17, 같은 지적의 반대쪽: "맨 위 플랫폼일 때는 위에 뭐가
+        /// 없고 밑을 봐야 하는데 화면은 위에 있어서 밑이 안 보인다.")
+        /// </summary>
+        public const float GroundScreenFractionAtTop = 0.65f;
+
+        /// <summary>t(0 = 땅, 1 = 맨 위 발판, 그 사이는 보간)에서의 화면 비율.</summary>
+        public static float ScreenFractionAt(float t) => Mathf.Lerp(GroundScreenFractionAtFloor, GroundScreenFractionAtTop, t);
+
+        /// <summary>그 t에서의 카메라 오프셋(서 있는 발 높이 → 카메라 중심 높이 차이) — 비율이 <see cref="ScreenFractionAt"/>에 오게.
+        /// 옛 고정 상수 `CameraYOffset`을 대신한다(2026-11-17 — t=0일 때 값이 옛 상수와 같은 공식이다).</summary>
+        public static float CameraOffsetAt(float t) => ViewHalfHeight * 2f * (0.5f - ScreenFractionAt(t));
 
         /// <summary>공중에서는 머리가 화면 위 이 거리 안으로 들어올 때만 카메라가 따라 올라간다.</summary>
         public const float CameraAirTopMargin = 0.75f;

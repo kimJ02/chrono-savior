@@ -117,22 +117,34 @@ namespace ChronoSavior.World
             transform.position = basePos + LastShakeOffset;
         }
 
-        /// <summary>카메라 중심 높이의 아래·위 한계 — 땅에 설 때가 아래 끝, 가장 높은 발판에 설 때가 위 끝.</summary>
-        public static float MinY => FieldBounds.GroundY + StageArtConfig.CameraYOffset;
-
-        public static float MaxY
+        /// <summary>가장 높은 발판의 윗면 높이 — 발판이 없으면 땅. <see cref="MaxY"/>·<see cref="DesiredY"/>가 같이 쓰라고 공개
+        /// (테스트도 이걸로 기대값을 계산한다 — 2026-11-17, 중복 계산 방지).</summary>
+        public static float TopPlatformSurfaceY()
         {
-            get
-            {
-                float top = FieldBounds.GroundY;
-                var p = FieldLayout.Platforms;
-                for (int i = 0; i < p.GetLength(0); i++) top = Mathf.Max(top, FieldLayout.PlatformTopY(i));
-                return top + StageArtConfig.CameraYOffset;
-            }
+            float top = FieldBounds.GroundY;
+            var p = FieldLayout.Platforms;
+            for (int i = 0; i < p.GetLength(0); i++) top = Mathf.Max(top, FieldLayout.PlatformTopY(i));
+            return top;
         }
 
-        /// <summary>그 발 높이에 서 있을 때 카메라 중심 높이.</summary>
-        public static float DesiredY(float feetY) => Mathf.Clamp(feetY + StageArtConfig.CameraYOffset, MinY, MaxY);
+        /// <summary>카메라 중심 높이의 아래·위 한계 — 땅에 설 때가 아래 끝, 가장 높은 발판에 설 때가 위 끝.</summary>
+        public static float MinY => FieldBounds.GroundY + StageArtConfig.CameraOffsetAt(0f);
+
+        public static float MaxY => TopPlatformSurfaceY() + StageArtConfig.CameraOffsetAt(1f);
+
+        /// <summary>
+        /// 그 발 높이에 서 있을 때 카메라 중심 높이 — 땅(t=0)과 맨 위 발판(t=1) 사이 어디 있는지에 따라 화면 비율을
+        /// 보간한다(<see cref="StageArtConfig.CameraOffsetAt"/>). 2026-11-17, 사용자가 플레이해보고 지적: 옛 고정
+        /// 오프셋은 1층(위로밖에 못 가는데 바닥이 화면을 많이 차지)과 맨 위층(아래로밖에 못 가는데 위가 많이 보임)
+        /// 둘 다에서 "더 갈 수 있는 쪽"을 오히려 적게 보여줬다 — 더 갈 수 있는 쪽을 넉넉히 보여주게 바꿨다.
+        /// </summary>
+        public static float DesiredY(float feetY)
+        {
+            float groundY = FieldBounds.GroundY;
+            float topY = TopPlatformSurfaceY();
+            float t = topY > groundY ? Mathf.InverseLerp(groundY, topY, feetY) : 0f;
+            return Mathf.Clamp(feetY + StageArtConfig.CameraOffsetAt(t), MinY, MaxY);
+        }
 
         /// <summary>
         /// 다음 목표 높이. 서 있으면 그 높이로, 공중이면 머리가 화면 위 여유(<see cref="StageArtConfig.CameraAirTopMargin"/>)를

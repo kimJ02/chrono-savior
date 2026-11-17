@@ -19,7 +19,7 @@ MonoBehaviour:
   backgroundScale: 2
   backgroundViewLeftPx: 240
   backgroundViewRightPx: 400
-  backgroundGrassYPx: 181.8
-  backgroundTopPx: 19
+  backgroundGrassYPx: 340
+  backgroundTopPx: 0
   portal: {fileID: 21300000, guid: e38567fdd53146a09e8437979a646118, type: 3}
   portalScale: 2

@@ -25,9 +25,10 @@ namespace ChronoSavior.UI
 
         /// <summary>
         /// 로비 애니메이션(2026-11-16) — 전투의 `PlayerRig`와 같은 에셋(`CharacterArtSet.AnimatorOf`)을 쓰되, 로비엔
-        /// 전투가 없으니 Idle/Move만 쓴다(Attack/Hit 트리거는 안 걸음). 점프가 없는 화면이라 Grounded는 항상 true.
-        /// 로비는 물리가 아니라 `LobbyWorld`가 `transform.position`을 직접 옮기므로, Moving은 프레임 사이 위치
-        /// 변화량으로 판정한다(전투처럼 Rigidbody2D 속도를 읽을 수 없다).
+        /// 전투가 없으니 Idle/Move/JumpFall만 쓴다(Attack/Hit 트리거는 안 걸음). 로비는 물리가 아니라 `LobbyWorld`가
+        /// `transform.position`을 직접 옮기므로, Moving은 프레임 사이 위치 변화량으로 판정한다(전투처럼 Rigidbody2D
+        /// 속도를 읽을 수 없다). Grounded는 기본 true — **2026-11-18, 꾸밈용 점프가 생기면서** `LobbyWorld`가
+        /// 점프 중에만 <see cref="SetGrounded"/>로 꺼 준다(발판이 없어 실제로 바닥이 바뀌는 건 아니다).
         /// </summary>
         Animator anim;
         Vector3 lastPos;
@@ -37,6 +38,12 @@ namespace ChronoSavior.UI
 
         /// <summary>지금 입고 있는 캐릭터 — 아직 안 입었으면 null.</summary>
         public CharacterId? Shown => shown;
+
+        /// <summary>`LobbyWorld`가 점프 시작/종료 때 부른다 — Animator가 있고 켜져 있을 때만 반영(정지그림 캐릭터는 그냥 무시).</summary>
+        public void SetGrounded(bool grounded)
+        {
+            if (anim != null && anim.enabled) anim.SetBool(AnimGrounded, grounded);
+        }
 
         void Awake()
         {
