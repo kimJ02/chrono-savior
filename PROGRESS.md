@@ -63,13 +63,19 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    Animator → 코드 플립북으로 통째로 바뀌면서(로그 (132)) 깨졌던 `CreationOwnershipTests`·`GameBootTests`·
    `LobbySceneTests`가 다시 "그 캐릭터 자세 묶음을 입었나"로 바뀌어 통과한다고 로그 (133)·(134)에 적혀
    있다(전체 566/566). 이 세션은 에디터로 직접 돌려본 적은 없으니 다음에 에디터 열면 그 숫자만 한 번 더 확인.
-7. **(135, 신규) 2지역 보스 "부서진 여신상" — 코드는 끝났고 에디터 작업이 남았다** — 아래 로그 (135) 전체
-   참고. ① **2026-11-18 사용자가 실제로 돌려서 6개 실패를 찾아줬고(CreationOwnershipTests 1 + BrokenGoddessBossTests 5,
-   둘 다 원인 파악·수정 완료, 위 추가 로그 참고) 다시 전체 통과하는지 재확인 필요** — 이 세션은 에디터에
-   접근 못 해서 고친 뒤 재실행은 못 했다. ② 프리팹 `Enemy_BrokenGoddess` 생성(`BlobLordBoss` 프리팹
-   복제 후 컴포넌트 교체, `warningPrefab` 연결, `EnemyHealth.isBoss` 체크) ③ `MonsterCatalog.regionBosses`에
-   2지역 항목 등록(SO 에셋, 코드 아님) ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어
-   붙잡힘·보스 중간 파괴 시 영구 미해제 버그 여부).
+7. **(135, 신규) 2지역 보스 "부서진 여신상" — 코드·프리팹·카탈로그 등록 전부 끝났고 에디터 확인만 남았다** —
+   아래 로그 (135)와 "2026-11-18 추가 3" 전체 참고. ① **2026-11-18 사용자가 실제로 돌려서 6개 실패를 찾아줬고
+   (CreationOwnershipTests 1 + BrokenGoddessBossTests 5, 둘 다 원인 파악·수정 완료) 사용자가 재실행해 "오류없이
+   잘되네"로 확인함** — 전체 재실행 숫자(몇/몇)는 다음에 에디터 연 사람이 한 번 더 적어둘 것.
+   ② ~~프리팹 `Enemy_BrokenGoddess` 생성~~ → **2026-11-18 완료** — `Enemy_BlobLord.prefab`(1지역 보스)의
+   PrefabInstance YAML 구조를 그대로 본떠 `Enemy_Base.prefab` 변형으로 손으로 작성(`m_Name`·`isBoss=1` 오버라이드 +
+   `BrokenGoddessBoss` MonoBehaviour 추가, `warningPrefab`은 공용 `GroundWarning` 프리팹 그대로 재사용). **이 세션은
+   에디터를 열어본 적이 없으니, 다음에 에디터를 연 사람이 인스펙터에서 정상인지 반드시 확인할 것**(스크립트 연결
+   여부, 필드 값, Enemy 레이어/태그가 `Enemy_Base` 그대로 상속됐는지). ③ ~~`MonsterCatalog.regionBosses`에 2지역
+   항목 등록~~ → **2026-11-18 완료** — `Assets/Data/Enemies/MonsterCatalog.asset`에 `region: 2` 항목을 1지역 항목과
+   같은 형식(`{fileID: <새 프리팹의 stripped 루트 GameObject fileID>, guid: <새 prefab.meta의 guid>, type: 3}`)으로
+   직접 추가. ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어 붙잡힘·보스 중간 파괴 시
+   영구 미해제 버그 여부) — **아직 미완료, 이 세션은 플레이 자체를 할 수 없음.**
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
@@ -344,14 +350,12 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   - **이 세션은 Unity 에디터에 접근할 수 없어서(디바이스 브리지로 파일만 씀) 아래는 전혀 실행해 본 적이
     없다 — 사용자가 에디터에서 직접 확인 필요**:
     1. 새 PlayMode 테스트 7개가 실제로 통과하는지(컴파일만 눈으로 확인했을 뿐 배치 실행을 못 했음).
-    2. **프리팹 `Enemy_BrokenGoddess` 생성** — 기존 `Enemy_BlobLordBoss`(또는 공용 보스 베이스)를 복제해
-       `BrokenGoddessBoss` 컴포넌트로 교체, `warningPrefab` 필드에 기존 `GroundWarning` 프리팹 연결,
-       `EnemyHealth.isBoss` 체크.
-    3. **`Core/MonsterCatalog.cs`의 `regionBosses`에 2지역 항목 등록**(코드가 아니라 SO 에셋 쪽 데이터라
-       에디터에서 Inspector로 넣어야 함).
+       → **2026-11-18 사용자가 실제로 돌려 확인, 아래 "2026-11-18 추가"·"추가 2" 참고.**
+    2. ~~프리팹 `Enemy_BrokenGoddess` 생성~~ → **2026-11-18 완료, 아래 "추가 3" 참고.**
+    3. ~~`MonsterCatalog`의 `regionBosses`에 2지역 항목 등록~~ → **2026-11-18 완료, 아래 "추가 3" 참고.**
     4. 실제 플레이로 잡기/휘두르기 둘 다 눈으로 확인(경고 모양이 사각/부채꼴로 제대로 보이는지, 잡힌
        플레이어가 입력이 막힌 채 끌려오는지, 보스를 중간에 죽이거나 씬을 바꿔도 플레이어가 영구히
-       안 풀리는 버그가 없는지).
+       안 풀리는 버그가 없는지). **아직 미완료 — 이 세션은 플레이 자체를 할 수 없음.**
   - **확인 필요(명세서의 "선택 적용" 두 가지, 이번엔 구현 안 함)**: (1) 회피 무적 중엔 잡기가 실패하게
     하는 선택 규칙 — `Characters`의 무적 판정을 더 들여다봐야 해서 범위를 넘는다고 판단해 보류.
     (2) 돌 조각이 흩날리는 비주얼 — 애니메이션/VFX라 이번 작업 범위(message.txt가 명시적으로 제외)
@@ -382,6 +386,35 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
     안 건드렸고, 로그 (131)에 이미 "`BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서
     통과(타이밍 불안정으로 보임)"로 같은 부류의 기존 불안정 테스트가 적혀 있다 — 한 번 더 돌려서 재현되는지
     볼 것(계속 깨지면 그건 별도로 봐야 할 기존 이슈).
+  - **2026-11-18 추가 3(사용자가 "어 오류없이 잘되네"로 테스트 확인한 뒤, 남은 프리팹·카탈로그 등록도 요청)**:
+    프리팹 `Enemy_BrokenGoddess.prefab`과 카탈로그 등록을 **에디터 없이 YAML을 손으로 작성해** 끝냈다 —
+    `Enemy_BlobLord.prefab`(1지역 보스, `Enemy_Base.prefab`의 PrefabInstance 변형)을 그대로 읽어 구조를
+    본떴다: `PrefabInstance.m_Modifications`로 `m_Name`→"Enemy_BrokenGoddess"·`isBoss`→1 오버라이드(둘 다
+    `Enemy_Base.prefab`의 실제 fileID/guid를 `target`으로), `m_AddedComponents`로 `BrokenGoddessBoss`
+    MonoBehaviour 하나 추가(스크립트 guid는 `BrokenGoddessBoss.cs.meta`에서 그대로 읽음), 그 필드
+    `warningPrefab`은 BlobLord와 **같은 공용 `GroundWarning.prefab` 참조**(별도 경고 프리팹을 새로 만들
+    필요 없음, `GroundWarning.ShowCustom`을 재사용하는 설계라 하나로 충분). BlobLord와 달리 추가 자식
+    GameObject(들고 있는 돌·투척 경로선 등)가 없어서 `m_AddedGameObjects: []`로 그만큼 더 단순하다.
+    새 fileID·새 guid는 무작위 생성(19자리 십진수 fileID, 32자리 16진 guid). `MonsterCatalog.asset`의
+    `regionBosses`에는 1지역 항목과 **정확히 같은 참조 규칙**으로 `region: 2` 항목을 추가했다 —
+    `prefab.guid`는 1지역처럼 "변형이 상속한 베이스의 guid"가 아니라 **그 변형 프리팹 자신의 `.meta` guid**,
+    `prefab.fileID`는 그 변형이 새로 갖는 "stripped 루트 GameObject"의 fileID다(1지역 항목의 guid
+    `b369f7be9380789499622d23edcd8d0b`가 실제로 `Enemy_BlobLord.prefab.meta`의 guid와 일치하는 걸 직접
+    대조해서 확인한 규칙). **이 세션은 에디터를 한 번도 열어본 적이 없어 손으로 쓴 YAML이 실제로 Unity가
+    읽을 때 깨지지 않는지 전혀 검증 못 했다** — 다음에 에디터를 연 사람이 가장 먼저 할 일은 (a) 콘솔에
+    import 에러가 없는지, (b) 프리팹을 선택해 인스펙터에 `BrokenGoddessBoss` 컴포넌트와 `warningPrefab`
+    필드가 정상으로 보이는지, (c) `MonsterCatalog` 에셋의 `regionBosses` 리스트 2번째 항목이 인스펙터에서
+    이 프리팹을 정상으로 가리키는지 확인하는 것. 위 "다음 할 일" 7번 ④(실제 플레이 확인)는 여전히 남아있다.
+  - **2026-11-18 추가 4(사용자가 에디터에서 열자마자 콘솔 오류로 잡은 것)**: `Worker2: Failed to convert
+    9589630643815358719 to a signed 64 bit int in file 'Assets/Data/Enemies/MonsterCatalog.asset'` —
+    바로 위 "추가 3"에서 무작위로 만든 stripped GameObject fileID(`9589630643815358719`, ≈9.59×10¹⁸)가
+    **Unity의 fileID가 signed 64비트 정수(최댓값 `9223372036854775807`, ≈9.22×10¹⁸)로 파싱된다는 걸
+    놓쳐서** 그 한도를 넘어버린 것 — 무작위 생성 때 자릿수(19자리)만 맞추고 실제 범위는 확인하지 않은
+    실수. `MonsterCatalog.asset`의 region 2 `prefab.fileID`와 `Enemy_BrokenGoddess.prefab`의 stripped
+    GameObject id(`--- !u!1 &9589630643815358719 stripped`)·`m_GameObject` 참조 두 곳 모두 같은 값을 써서
+    같이 깨져 있었다. 범위 안의 새 값(`6017654334565820054`, int64 최댓값 미만)으로 두 파일 다 맞춰
+    고쳤다. **다음부터 비슷한 fileID를 무작위 생성할 땐 `random.randint(10**18, 9223372036854775807)`처럼
+    상한을 int64 최댓값으로 명시할 것** — 19자리 숫자라고 다 안전한 게 아니다.
 
 - **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
   선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
