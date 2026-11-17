@@ -98,6 +98,30 @@ public class MageChargeVfxTests
         Assert.IsFalse(vfx.KiVisible);
     }
 
+    /// <summary>블랙홀(중력) 갈래는 보라 그림, 폭발·0차는 빨강 원본(2026-11-17 사용자 "블랙홀 법사 손에서 불이 차징되는 게 문제" → 후보 A).</summary>
+    [Test]
+    public void OrbAndKi_GravityBranchUsesVioletFrames()
+    {
+        Assume.That(Resources.Load<Sprite>(MageChargeVfx.FrameName("OrbEffect", MageBranch.Gravity, 1)) != null, "캐릭터 아트가 없는 클론 — 미설치로 생략");
+        for (int i = 1; i <= 11; i++) Assert.IsNotNull(Resources.Load<Sprite>(MageChargeVfx.FrameName("OrbEffect", MageBranch.Gravity, i)), $"보라 오브 {i}번");
+        for (int i = 1; i <= 6; i++) Assert.IsNotNull(Resources.Load<Sprite>(MageChargeVfx.FrameName("KiEffect", MageBranch.Gravity, i)), $"보라 일렁임 {i}번");
+
+        var mage = NewMage();
+        var vfx = mage.GetComponent<MageChargeVfx>();
+        Charging.SetValue(mage, true);
+        ChargeT.SetValue(mage, 1f);
+
+        foreach (var (branch, violet) in new[] { (MageBranch.Gravity, true), (MageBranch.Explosion, false), (MageBranch.None, false) })
+        {
+            ProfileService.Current.mageBranch = branch;
+            vfx.Refresh(0.016f);
+            var orb = mage.transform.Find("ChargeOrb").GetComponent<SpriteRenderer>();
+            var ki = mage.transform.Find("ChargeKi").GetComponent<SpriteRenderer>();
+            Assert.AreSame(Resources.Load<Sprite>(MageChargeVfx.FrameName("OrbEffect", branch, 11)), orb.sprite, $"{branch} 오브");
+            Assert.AreEqual(violet, ki.sprite.name.Contains("Gravity"), $"{branch} 일렁임");
+        }
+    }
+
     /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>
     [Test]
     public void Bolt_ShowsBranchArt_HitboxUnchanged()

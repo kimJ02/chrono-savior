@@ -53,31 +53,33 @@ namespace ChronoSavior.Characters
         float flash;
         float kiTimer;
 
-        /// <summary>손 오브 11장(캐시, 캐릭터 공용 — Resources 밖에선 못 읽으니 그림이 아예 없으면 전부 null).</summary>
-        static Sprite[] orbFrames;
-        static Sprite[] OrbFrames()
+        /// <summary>
+        /// 손 오브 11장·오브 일렁임 6장(캐시, 캐릭터 공용 — Resources 밖에선 못 읽으니 그림이 아예 없으면 전부 null).
+        /// **중력(블랙홀) 갈래는 보라 그림**(`…_OrbEffectGravity_NN`·`…_KiEffectGravity_NN`, 2026-11-17 사용자 "블랙홀 법사가 손에서 불이
+        /// 차징되는 게 문제" → 후보 A "중력탄 색" 선택). 원본 빨강 그림의 6색을 중력탄(`mage/gravity_orb_small`, dark_matter 보라)
+        /// 팔레트로 1:1 바꾼 사본이다 — 런타임 틴트(곱하기)로는 빨강이 탁한 자주가 돼서 그림을 따로 둔다. 폭발·0차는 빨강 그대로.
+        /// </summary>
+        static Sprite[] orbFrames, orbFramesGravity, kiFrames, kiFramesGravity;
+
+        /// <summary>그 갈래가 쓰는 그림 이름 — 중력만 `Gravity`가 붙는다(테스트도 이걸로 확인).</summary>
+        public static string FrameName(string kind, MageBranch branch, int index1) =>
+            $"Art/Characters/Mage/Character_Mage_Attack_{kind}{(branch == MageBranch.Gravity ? "Gravity" : "")}_{index1:00}";
+
+        static Sprite[] Frames(ref Sprite[] cache, string kind, MageBranch branch, int count)
         {
-            if (orbFrames == null)
+            if (cache == null)
             {
-                orbFrames = new Sprite[11];
-                for (int i = 0; i < orbFrames.Length; i++)
-                    orbFrames[i] = Resources.Load<Sprite>($"Art/Characters/Mage/Character_Mage_Attack_OrbEffect_{i + 1:00}");
+                cache = new Sprite[count];
+                for (int i = 0; i < count; i++) cache[i] = Resources.Load<Sprite>(FrameName(kind, branch, i + 1));
             }
-            return orbFrames;
+            return cache;
         }
 
-        /// <summary>오브 일렁임 6장(캐시).</summary>
-        static Sprite[] kiFrames;
-        static Sprite[] KiFrames()
-        {
-            if (kiFrames == null)
-            {
-                kiFrames = new Sprite[6];
-                for (int i = 0; i < kiFrames.Length; i++)
-                    kiFrames[i] = Resources.Load<Sprite>($"Art/Characters/Mage/Character_Mage_Attack_KiEffect_{i + 1:00}");
-            }
-            return kiFrames;
-        }
+        static Sprite[] OrbFrames(MageBranch branch) => branch == MageBranch.Gravity
+            ? Frames(ref orbFramesGravity, "OrbEffect", branch, 11) : Frames(ref orbFrames, "OrbEffect", MageBranch.None, 11);
+
+        static Sprite[] KiFrames(MageBranch branch) => branch == MageBranch.Gravity
+            ? Frames(ref kiFramesGravity, "KiEffect", branch, 6) : Frames(ref kiFrames, "KiEffect", MageBranch.None, 6);
 
         /// <summary>차지율 k에서 몇 단계인지 — 0 = 아직, 1 = 완충.</summary>
         public static int StageAt(float k)
@@ -134,7 +136,7 @@ namespace ChronoSavior.Characters
                 if (body != null) orbSr.sortingLayerID = body.sortingLayerID;
                 orbSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1; // 몸 바로 앞 — 완충 번쩍임·베기 효과와 같은 자리
             }
-            var frames = OrbFrames();
+            var frames = OrbFrames(ProfileService.Current.mageBranch);
             int idx = Mathf.Clamp(Mathf.RoundToInt(ratio * (frames.Length - 1)), 0, frames.Length - 1);
             var sprite = frames[idx];
             orbSr.enabled = sprite != null;
@@ -163,7 +165,7 @@ namespace ChronoSavior.Characters
                 kiSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1;
             }
             kiTimer += dt;
-            var frames = KiFrames();
+            var frames = KiFrames(ProfileService.Current.mageBranch);
             int idx = Mathf.FloorToInt(kiTimer * KiEffectFps) % frames.Length;
             var sprite = frames[idx];
             kiSr.enabled = sprite != null;

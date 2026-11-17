@@ -276,6 +276,14 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-17 (128)** — **[사용자 세션] 블랙홀(중력) 법사 차지 손 구체·일렁임을 보라로**(사용자 "블랙홀 법사가 손에서 불이 차징되는 게
+  문제 — 빨간색을 다른 색으로" → 후보 3개(보라·속이 어두운 블랙홀·색상 회전) 미리보기 중 **A "중력탄 보라"** 선택).
+  `Art/Characters/Mage/Character_Mage_Attack_OrbEffectGravity_01~11`·`…_KiEffectGravity_01~06` 17장 추가 — 원본 빨강 그림의 7색을
+  중력탄(`mage/gravity_orb_small`, dark_matter 보라) 팔레트로 1:1 바꾼 사본(가져오기 설정은 원본 .meta 그대로, GUID만 새로).
+  `MageChargeVfx`가 `mageBranch == Gravity`면 이 그림을, 폭발·0차는 빨강 원본을 쓴다(`FrameName`). 런타임 틴트는 빨강이 탁한 자주가 돼서
+  그림을 따로 뒀다. 불러오는 방식(`Resources.Load` 경로)은 기존 코드 그대로 — 직렬화로 바꾸는 건 `docs/animation-flipbook-proposal.md` 트랙 B.
+  테스트 `MageChargeVfxTests.OrbAndKi_GravityBranchUsesVioletFrames` 추가. 사용자가 에디터에서 직접 보고 확인.
+
 - **2026-11-17 (127)** — **[사용자 세션] 캐릭터 애니메이션 방식 제안서 — Animator → 코드 플립북 통일(문서만, 코드 변경 없음).**
   > **병합 메모(2026-11-18, 번호 충돌 해결)**: 이 항목은 `main` 쪽 원래 번호가 **(122)**였으나, 같은 커밋(공통 조상)에서
   > 이미 (122)를 쓰고 있는 "2026-11-16 — 좌우반전 12프레임 폐기" 항목과 겹쳐서(아래 그대로 있음) **(127)로 재번호**했다 —
