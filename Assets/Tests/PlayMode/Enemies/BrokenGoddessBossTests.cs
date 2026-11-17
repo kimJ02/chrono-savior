@@ -66,18 +66,38 @@ public class BrokenGoddessBossTests
         GameInput.PlayerGrabbed = false;
     }
 
-    /// <summary>프리팹 없이 — 필요한 컴포넌트를 직접 붙여 세운다(위 클래스 설명 참고).</summary>
+    /// <summary>
+    /// 프리팹 없이 — 필요한 컴포넌트를 직접 붙여 세운다(위 클래스 설명 참고).
+    /// **비활성 상태에서 전부 붙이고 마지막에 켠다** — `new GameObject(name, typeof(A), typeof(B), ...)`로
+    /// 한 번에 붙이면(활성 오브젝트라) 각 타입이 붙는 순간 바로 `Awake()`가 돈다. `EnemyMove.Awake()`가
+    /// `CacheTypeBehaviour()`에서 `GetComponent&lt;IEnemyMotion&gt;()`로 같은 오브젝트의 `BrokenGoddessBoss`를
+    /// 찾는데, 목록에서 `EnemyMove`가 `BrokenGoddessBoss`보다 앞에 있으면 그 시점엔 아직 안 붙어 있어 null로
+    /// 캐시되고 — 그러면 `BrokenGoddessBoss.GetHorizontalSpeed`가 영영 안 불려서 상태머신이 Idle에서
+    /// 멈춘다(실제로 테스트 5개가 전부 이 이유로 타임아웃났다, 2026-11-18). 실제 게임의 프리팹 경로는
+    /// 인스턴스화 때 컴포넌트가 전부 먼저 붙은 뒤에 Awake가 도므로 이 문제가 없다 — **테스트 전용 함정**.
+    /// 비활성 상태로 다 붙인 뒤 `SetActive(true)`로 한꺼번에 깨우면, 그때는 전부 이미 붙어 있어 순서와
+    /// 무관하게 안전하다.
+    /// </summary>
     static BrokenGoddessBoss NewBoss(float x, Transform target)
     {
-        var go = new GameObject("TestGoddess", typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(SpriteRenderer),
-                                 typeof(EnemyMove), typeof(EnemyHealth), typeof(BrokenGoddessBoss));
+        var go = new GameObject("TestGoddess");
+        go.SetActive(false);
+        go.AddComponent<Rigidbody2D>();
+        go.AddComponent<CircleCollider2D>();
+        go.AddComponent<SpriteRenderer>();
+        go.AddComponent<EnemyMove>();
+        go.AddComponent<EnemyHealth>();
+        var boss = go.AddComponent<BrokenGoddessBoss>();
+
         go.transform.position = new Vector3(x, 0.25f, 0f); // 바닥(y=0) 위, 반지름만큼 띄워서 시작(실제 스폰과 같은 방식)
         go.GetComponent<CircleCollider2D>().radius = 0.25f;
         var move = go.GetComponent<EnemyMove>();
         move.SetSpawnProtection(0f);
         move.Target = target;
         go.GetComponent<EnemyHealth>().SetMaxHp(1000f);
-        return go.GetComponent<BrokenGoddessBoss>();
+
+        go.SetActive(true); // 여기서 전부의 Awake가 한꺼번에 돈다 — 이미 서로 다 붙어 있어 순서 무관
+        return boss;
     }
 
     static Dummy NewTarget(float x)
@@ -152,12 +172,19 @@ public class BrokenGoddessBossTests
         if (boss.CurrentState != BrokenGoddessBoss.State.GrabThrust)
             yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabThrust, 8f);
 
+        // 먼저 휘두르기가 골랐다 치면 그 한 번은 실제로 맞아서(사거리 안이라) damageable에 이미 타격이 쌓여 있을 수
+        // 있다(2026-11-18 실제로 이 경우로 깨짐 — "한 번만 맞아야 한다"가 휘두르기 몫까지 세고 있었다). 그래서
+        // 지금부터 보는 "이번 잡기 한 번"만 비교하려고 여기서 기준점을 찍는다 — 우연히 먼저 골린 휘두르기는
+        // 이 테스트가 보는 범위 밖(그건 Sweep 쪽 테스트가 따로 검증).
+        int hitsBefore = damageable.hits;
+        float takenBefore = damageable.taken;
+
         yield return Until(() => player.IsGrabbed, 2f);
         Assert.IsTrue(GameInput.PlayerGrabbed, "붙잡힌 동안은 점프·공격·스킬도 잠긴다");
 
         yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
-        Assert.AreEqual(1, damageable.hits, "한 번만 맞아야 한다");
-        Assert.AreEqual(200f * BrokenGoddessBoss.GrabDamagePct, damageable.taken, 0.01f);
+        Assert.AreEqual(1, damageable.hits - hitsBefore, "이번 잡기로는 한 번만 맞아야 한다");
+        Assert.AreEqual(200f * BrokenGoddessBoss.GrabDamagePct, damageable.taken - takenBefore, 0.01f);
         Assert.IsFalse(player.IsGrabbed, "끝나면 풀려난다");
         Assert.IsFalse(GameInput.PlayerGrabbed, "풀려나면 입력 잠금도 같이 풀린다");
     }
@@ -181,12 +208,16 @@ public class BrokenGoddessBossTests
             yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabPrep, 8f);
         }
 
+        // 먼저 휘두르기가 골랐다면 사거리 안이라 실제로 맞았을 수 있다(위 성공 테스트와 같은 이유, 2026-11-18) —
+        // 그건 이번에 보는 "이번 잡기 시도"와 무관하니 여기서 기준점을 찍어 그 이후 변화만 본다.
+        int hitsBefore = damageable.hits;
+
         // 준비·경고가 끝나기 전에 플레이어를 사거리(3유닛) 밖으로 뺀다 — 팔을 뻗었을 때 아무도 없게.
         player.transform.position = new Vector3(player.transform.position.x + 10f, 0f, 0f);
         player.GetComponent<Rigidbody2D>().position = player.transform.position; // Kinematic도 rb.position을 직접 맞춰 둬야 바로 반영된다
 
         yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
-        Assert.AreEqual(0, damageable.hits, "실패하면 피해 없음");
+        Assert.AreEqual(hitsBefore, damageable.hits, "이번 잡기 시도는 실패했으니 피해가 늘면 안 된다");
         Assert.IsFalse(player.IsGrabbed, "애초에 붙잡히지 않았다");
     }
 

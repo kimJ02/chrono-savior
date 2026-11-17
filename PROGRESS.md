@@ -64,8 +64,9 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    `LobbySceneTests`가 다시 "그 캐릭터 자세 묶음을 입었나"로 바뀌어 통과한다고 로그 (133)·(134)에 적혀
    있다(전체 566/566). 이 세션은 에디터로 직접 돌려본 적은 없으니 다음에 에디터 열면 그 숫자만 한 번 더 확인.
 7. **(135, 신규) 2지역 보스 "부서진 여신상" — 코드는 끝났고 에디터 작업이 남았다** — 아래 로그 (135) 전체
-   참고. 이 세션은 에디터에 접근 못 해서 **하나도 실행해 본 적이 없다**: ① 새 PlayMode 테스트
-   (`BrokenGoddessBossTests.cs`) 7개 통과 확인 ② 프리팹 `Enemy_BrokenGoddess` 생성(`BlobLordBoss` 프리팹
+   참고. ① **2026-11-18 사용자가 실제로 돌려서 6개 실패를 찾아줬고(CreationOwnershipTests 1 + BrokenGoddessBossTests 5,
+   둘 다 원인 파악·수정 완료, 위 추가 로그 참고) 다시 전체 통과하는지 재확인 필요** — 이 세션은 에디터에
+   접근 못 해서 고친 뒤 재실행은 못 했다. ② 프리팹 `Enemy_BrokenGoddess` 생성(`BlobLordBoss` 프리팹
    복제 후 컴포넌트 교체, `warningPrefab` 연결, `EnemyHealth.isBoss` 체크) ③ `MonsterCatalog.regionBosses`에
    2지역 항목 등록(SO 에셋, 코드 아님) ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어
    붙잡힘·보스 중간 파괴 시 영구 미해제 버그 여부).
@@ -355,6 +356,32 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
     하는 선택 규칙 — `Characters`의 무적 판정을 더 들여다봐야 해서 범위를 넘는다고 판단해 보류.
     (2) 돌 조각이 흩날리는 비주얼 — 애니메이션/VFX라 이번 작업 범위(message.txt가 명시적으로 제외)
     밖이라 손대지 않음. 둘 다 사용자가 필요하다고 하면 다음 스프린트에서.
+  - **2026-11-18 추가(사용자가 실제로 에디터에서 돌려 보고 잡은 것)**: `CreationOwnershipTests.OnlyListedOwners_CreateObjectsOrAttachComponents`
+    실패 — `Enemies/BrokenGoddessBoss.cs`가 경고 2개를 `Instantiate`하는데 생성 담당 목록에 안 적어 둠. `BlobLordBoss.cs`와 같은
+    칸으로 등록(이유 동일 — 경고 프리팹 재사용, 판정은 보스가). 그리고 `BrokenGoddessBossTests` 5개(순수 판정 2개 제외 전부)가
+    전부 타임아웃으로 실패 — **원인은 테스트 쪽 `NewBoss` 헬퍼**: `new GameObject(name, typeof(EnemyMove), ..., typeof(BrokenGoddessBoss))`처럼
+    활성 오브젝트에 한 번에 여러 타입을 붙이면 **타입마다 붙는 즉시 `Awake()`가 돈다** — 목록에서 `EnemyMove`가
+    `BrokenGoddessBoss`보다 앞이라 `EnemyMove.Awake()`의 `GetComponent<IEnemyMotion>()`이 그 시점엔 아직 없는
+    `BrokenGoddessBoss`를 찾다가 null로 캐시해서, 보스의 `GetHorizontalSpeed`가 한 번도 안 불리고 상태머신이 Idle에
+    영원히 머물렀다(그래서 거기 의존하는 테스트 5개가 몽땅 타임아웃). **프리팹으로 세우는 실제 게임 경로는 문제없다**
+    (인스턴스화 때 컴포넌트가 전부 먼저 붙고 나서 Awake가 돈다 — 운영 코드가 아니라 테스트 헬퍼만의 함정). 고치는 법:
+    오브젝트를 비활성 상태로 만들어 두고 전부 `AddComponent`로 붙인 뒤 맨 마지막에 `SetActive(true)`(그때는 전부 이미
+    붙어 있어 어느 쪽 `Awake`가 먼저 돌든 상관없다). `BrokenGoddessBossTests.cs`의 `NewBoss`를 이 방식으로 고침.
+  - **2026-11-18 추가 2(사용자가 고친 뒤 다시 돌려서 또 잡은 것)**: 위 두 가지를 고치고 다시 돌리니
+    `Grab_SuccessPullsAndDamagesOncePercentOfMaxHp`가 "한 번만 맞아야 한다 Expected: 1 But was: 2"로 깨짐 —
+    **보스 코드 버그가 아니라 테스트 자체의 설계 결함**이었다. 테스트가 "처음 고른 패턴이 휘두르기면 건너뛰고
+    잡기가 나올 때까지 한 번 더 기다린다"는 분기를 넣어 뒀는데, **그 먼저 나온 휘두르기도 사거리 안이라 실제로
+    맞는다** — 그래서 더미의 `hits`가 그 휘두르기 몫 1 + 뒤이은 잡기 몫 1 = 2가 돼서 "한 번만"이 깨졌다
+    (요청서가 틀려서가 아니라, 랜덤으로 휘두르기가 먼저 골리는 실행에서만 50%쯤 걸리는 테스트 설계 결함 —
+    `Choose()`가 매번 `Random.value`로 고르니). `Grab_FailsWhenTargetLeavesRangeBeforeThrust_NoDamageNoPull`도
+    같은 구멍이 있어서 같이 고쳤다(`Sweep_MissesWhenTargetMovesBehindAfterDirectionLocked`는 `NewTarget`을
+    써서 애초에 `IGrabbable`이 없는 대상이라 잡기가 걸려도 안 맞으므로 이 문제가 없다 — 안 고침). 고치는 법:
+    "이번 잡기 시도" 직전에 `damageable.hits`/`.taken`을 기준점으로 찍어 두고, 그 뒤로 **늘어난 양**만 비교하게
+    바꿔서, 우연히 먼저 골린 휘두르기 몫은 범위 밖으로 뺐다. **함께 보고된 `SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange`
+    (섬영 `BladeCombatTests`) 실패는 이 작업과 무관해 보인다** — 이 세션은 `BladeCombat.cs`·그 테스트 파일을 전혀
+    안 건드렸고, 로그 (131)에 이미 "`BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서
+    통과(타이밍 불안정으로 보임)"로 같은 부류의 기존 불안정 테스트가 적혀 있다 — 한 번 더 돌려서 재현되는지
+    볼 것(계속 깨지면 그건 별도로 봐야 할 기존 이슈).
 
 - **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
   선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
