@@ -415,6 +415,14 @@ public class OriginalFidelityTests
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
             ("LobbyJumpDown",              "GameInput.cs"),        // LobbyWorld(로비 점프 트리거, 2026-11-18)
             ("SetGrounded",                "LobbyAvatar.cs"),      // LobbyWorld(점프 중 Animator Grounded 끄기, 2026-11-18)
+            // 2지역 보스 '부서진 여신상' 잡기 패턴(2026-11-18) — IGrabbable 경로
+            ("PlayerGrabbed",              "GameInput.cs"),        // CharacterMover2D.BeginGrab/EndGrab
+            ("BeginGrab",                  "CharacterMover2D.cs"), // BrokenGoddessBoss.TryGrab
+            ("MoveGrabbedTo",              "CharacterMover2D.cs"), // BrokenGoddessBoss.UpdatePull/HoldGrabbed
+            ("EndGrab",                    "CharacterMover2D.cs"), // BrokenGoddessBoss.ReleaseGrabbedTarget
+            ("ShowCustom",                 "GroundWarning.cs"),    // BrokenGoddessBoss(잡기 사각·휘두르기 부채꼴 경고)
+            ("DotShapes.Rect",             "DotShapes.cs"),        // BrokenGoddessBoss.BeginGrabWarn(이름이 흔해 클래스까지 적는다)
+            ("DotShapes.Wedge",            "DotShapes.cs"),        // BrokenGoddessBoss.BeginSweepWarn
         };
 
         var scriptFiles = Directory.GetFiles(

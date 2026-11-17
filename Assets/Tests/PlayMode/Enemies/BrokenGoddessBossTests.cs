@@ -1,0 +1,268 @@
+using System.Collections;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.TestTools;
+using ChronoSavior.Core;
+using ChronoSavior.Characters;
+using ChronoSavior.Enemies;
+
+namespace ChronoSavior.Tests.PlayMode
+{
+
+/// <summary>
+/// 2지역 보스 부서진 여신상(`Enemies/BrokenGoddessBoss`, 사용자 2026-11-18 요청서) — CLAUDE.md "테스트"
+/// 규칙대로 Rigidbody2D/Collider2D가 얽힌 로직(잡기·휘두르기 판정)을 PlayMode에서 검증한다.
+///
+/// **1지역 `BlobLordBossTests`와 달리 프리팹을 쓰지 않는다** — `Enemy_BrokenGoddess` 프리팹은 아직
+/// Unity 에디터에서 수동으로 만들어야 하는 상태(PROGRESS.md "확인 필요" 참고)라, 여기서는 핵심 보스
+/// 로직을 프리팹 없이도 검증할 수 있게 `AddComponent`로 직접 세운다. 프리팹이 만들어진 뒤엔
+/// `BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss`처럼 카탈로그 연결 테스트를
+/// 추가할 것.
+/// </summary>
+public class BrokenGoddessBossTests
+{
+    /// <summary>맞는 쪽 — 플레이어 대신(붙잡기가 필요 없는 테스트용, 휘두르기 등).</summary>
+    class Dummy : MonoBehaviour, IDamageable, IHealthView
+    {
+        public float maxHp = 100f;
+        public float taken; public int hits; public bool dead;
+        public float CurrentHp => maxHp - taken;
+        public float MaxHp => maxHp;
+        public bool IsDead => dead;
+        public void TakeDamage(float amount, GameObject source) { taken += amount; hits++; }
+    }
+
+    float savedTimeScale;
+
+    [SetUp]
+    public void Setup()
+    {
+        Reset();
+        savedTimeScale = Time.timeScale;
+        Time.timeScale = 4f; // 패턴 한 바퀴가 몇 초쯤 — 빨리 감는다(물리 프레임 수는 같다, BlobLordBossTests와 같은 방식)
+
+        // 이 보스는 BlobLordBoss와 달리 Y를 직접 정하지 않고(IEnemyVerticalMotion 미구현) EnemyMove의
+        // 기본 중력·착지에 맡긴다 — 실제 게임에선 늘 발판/바닥 위에 선다. 이 테스트 씬엔 바닥이 없어서
+        // 그냥 두면 보스가 계속 떨어져 몇 초 뒤 잡기 판정 높이·사거리를 완전히 벗어난다(테스트 의도와
+        // 무관한 실패). 그래서 평평한 바닥 하나를 직접 만들어 둔다.
+        var ground = new GameObject("TestGround", typeof(BoxCollider2D));
+        ground.layer = LayerMask.NameToLayer("Ground");
+        ground.transform.position = new Vector3(13f, -0.1f, 0f);
+        ground.GetComponent<BoxCollider2D>().size = new Vector2(60f, 0.2f);
+    }
+
+    [TearDown]
+    public void Teardown()
+    {
+        Time.timeScale = savedTimeScale;
+        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
+            if (go != null && go.name.StartsWith("Test"))
+                Object.DestroyImmediate(go);
+        Reset();
+    }
+
+    static void Reset()
+    {
+        GameInput.PlayerGrabbed = false;
+    }
+
+    /// <summary>프리팹 없이 — 필요한 컴포넌트를 직접 붙여 세운다(위 클래스 설명 참고).</summary>
+    static BrokenGoddessBoss NewBoss(float x, Transform target)
+    {
+        var go = new GameObject("TestGoddess", typeof(Rigidbody2D), typeof(CircleCollider2D), typeof(SpriteRenderer),
+                                 typeof(EnemyMove), typeof(EnemyHealth), typeof(BrokenGoddessBoss));
+        go.transform.position = new Vector3(x, 0.25f, 0f); // 바닥(y=0) 위, 반지름만큼 띄워서 시작(실제 스폰과 같은 방식)
+        go.GetComponent<CircleCollider2D>().radius = 0.25f;
+        var move = go.GetComponent<EnemyMove>();
+        move.SetSpawnProtection(0f);
+        move.Target = target;
+        go.GetComponent<EnemyHealth>().SetMaxHp(1000f);
+        return go.GetComponent<BrokenGoddessBoss>();
+    }
+
+    static Dummy NewTarget(float x)
+    {
+        var go = new GameObject("TestTarget");
+        go.tag = "Player";
+        go.transform.position = new Vector3(x, 0f, 0f);
+        var rb = go.AddComponent<Rigidbody2D>(); rb.bodyType = RigidbodyType2D.Kinematic;
+        go.AddComponent<CircleCollider2D>().radius = 0.25f;
+        return go.AddComponent<Dummy>();
+    }
+
+    /// <summary>
+    /// 잡기 패턴을 실제로 받는 쪽 — IGrabbable까지 진짜 `CharacterMover2D`로 검증한다(가짜로 대체하지 않음).
+    /// 몸은 Kinematic — `CharacterMover2D`는 중력·착지를 실제 발판이 있어야 다루는데 이 테스트엔 발판이
+    /// 없다(BlobLordBossTests의 `NewTarget`과 같은 이유로 Kinematic을 쓴다 — 중력으로 계속 떨어지면
+    /// 몇 초 뒤 잡기 판정 높이를 벗어나 테스트가 의도와 무관하게 깨진다).
+    /// </summary>
+    static CharacterMover2D NewGrabbablePlayer(float x, out Dummy damageable)
+    {
+        var go = new GameObject("TestGrabbablePlayer", typeof(Rigidbody2D), typeof(CircleCollider2D));
+        go.tag = "Player";
+        go.transform.position = new Vector3(x, 0f, 0f);
+        go.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic;
+        go.GetComponent<CircleCollider2D>().radius = 0.25f;
+        damageable = go.AddComponent<Dummy>();
+        return go.AddComponent<CharacterMover2D>();
+    }
+
+    static IEnumerator Until(System.Func<bool> cond, float maxSeconds = 10f)
+    {
+        float t = 0f;
+        while (!cond() && t < maxSeconds) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
+        Assert.IsTrue(cond(), "시간 안에 조건이 안 됐다");
+    }
+
+    // ───────────────────────── 판정 기하(순수 함수) ─────────────────────────
+
+    [Test]
+    public void InGrabBox_FrontWithinRangeAndHeight_HitsOnlyThere()
+    {
+        Vector2 origin = Vector2.zero;
+        Assert.IsTrue(BrokenGoddessBoss.InGrabBox(origin, 1, BrokenGoddessBoss.GrabRange, BrokenGoddessBoss.GrabHeight, new Vector2(2f, 0.5f)), "전방·사거리·높이 안");
+        Assert.IsFalse(BrokenGoddessBoss.InGrabBox(origin, 1, BrokenGoddessBoss.GrabRange, BrokenGoddessBoss.GrabHeight, new Vector2(-1f, 0f)), "보는 방향 반대쪽(뒤)");
+        Assert.IsFalse(BrokenGoddessBoss.InGrabBox(origin, 1, BrokenGoddessBoss.GrabRange, BrokenGoddessBoss.GrabHeight, new Vector2(BrokenGoddessBoss.GrabRange + 0.5f, 0f)), "사거리 밖");
+        Assert.IsFalse(BrokenGoddessBoss.InGrabBox(origin, 1, BrokenGoddessBoss.GrabRange, BrokenGoddessBoss.GrabHeight, new Vector2(1f, BrokenGoddessBoss.GrabHeight)), "판정 높이 밖");
+        // 반대로 보고 있으면(facing -1) 왼쪽이 전방이 된다.
+        Assert.IsTrue(BrokenGoddessBoss.InGrabBox(origin, -1, BrokenGoddessBoss.GrabRange, BrokenGoddessBoss.GrabHeight, new Vector2(-2f, 0f)));
+    }
+
+    [Test]
+    public void InSweepArea_FrontArcWithinRadius_HitsOnlyThere()
+    {
+        Vector2 origin = Vector2.zero;
+        Assert.IsTrue(BrokenGoddessBoss.InSweepArea(origin, 1, BrokenGoddessBoss.SweepRadius, BrokenGoddessBoss.SweepHalfAngleDeg, new Vector2(2f, 1f)), "전방 부채꼴 안");
+        Assert.IsFalse(BrokenGoddessBoss.InSweepArea(origin, 1, BrokenGoddessBoss.SweepRadius, BrokenGoddessBoss.SweepHalfAngleDeg, new Vector2(-2f, 0f)), "정반대 뒤쪽은 160도 밖(요청서: 보스 뒤로 빠지면 안 맞음)");
+        Assert.IsFalse(BrokenGoddessBoss.InSweepArea(origin, 1, BrokenGoddessBoss.SweepRadius, BrokenGoddessBoss.SweepHalfAngleDeg, new Vector2(BrokenGoddessBoss.SweepRadius + 1f, 0f)), "반경 밖");
+    }
+
+    // ───────────────────────── 잡기 ─────────────────────────
+
+    /// <summary>요청서 2절 전체 흐름 — 사거리 안에서 성공, 끌려오고, 한 번만 피해(최대 체력 20%), 끝나면 풀려난다.</summary>
+    [UnityTest]
+    public IEnumerator Grab_SuccessPullsAndDamagesOncePercentOfMaxHp()
+    {
+        var player = NewGrabbablePlayer(8f, out Dummy damageable);
+        damageable.maxHp = 200f;
+        var boss = NewBoss(9f, player.transform); // 사거리(3유닛) 안
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabThrust || boss.CurrentState == BrokenGoddessBoss.State.SweepActive, 6f);
+        // 둘 중 뭐가 먼저 골렸을 수도 있으니(랜덤) 잡기가 아니면 이번엔 건너뛰지 않고 다음 선택까지 기다린다.
+        if (boss.CurrentState != BrokenGoddessBoss.State.GrabThrust)
+            yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabThrust, 8f);
+
+        yield return Until(() => player.IsGrabbed, 2f);
+        Assert.IsTrue(GameInput.PlayerGrabbed, "붙잡힌 동안은 점프·공격·스킬도 잠긴다");
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
+        Assert.AreEqual(1, damageable.hits, "한 번만 맞아야 한다");
+        Assert.AreEqual(200f * BrokenGoddessBoss.GrabDamagePct, damageable.taken, 0.01f);
+        Assert.IsFalse(player.IsGrabbed, "끝나면 풀려난다");
+        Assert.IsFalse(GameInput.PlayerGrabbed, "풀려나면 입력 잠금도 같이 풀린다");
+    }
+
+    /// <summary>요청서 2절 "잡기에 실패하면 피해를 주지 않는다 / 바로 후딜레이로" — 판정이 열리기 전에 플레이어가 멀어지면 실패.</summary>
+    [UnityTest]
+    public IEnumerator Grab_FailsWhenTargetLeavesRangeBeforeThrust_NoDamageNoPull()
+    {
+        var player = NewGrabbablePlayer(8f, out Dummy damageable);
+        var boss = NewBoss(9f, player.transform);
+
+        bool wasGrabPrep = false;
+        yield return Until(() =>
+        {
+            if (boss.CurrentState == BrokenGoddessBoss.State.GrabPrep) wasGrabPrep = true;
+            return wasGrabPrep || boss.CurrentState == BrokenGoddessBoss.State.SweepActive;
+        }, 6f);
+        if (!wasGrabPrep)
+        {
+            // 처음에 휘두르기가 골렸으면 다음 번엔 쿨 때문에 반드시 잡기가 골린다(Choose의 쿨+연속제한 상호작용).
+            yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabPrep, 8f);
+        }
+
+        // 준비·경고가 끝나기 전에 플레이어를 사거리(3유닛) 밖으로 뺀다 — 팔을 뻗었을 때 아무도 없게.
+        player.transform.position = new Vector3(player.transform.position.x + 10f, 0f, 0f);
+        player.GetComponent<Rigidbody2D>().position = player.transform.position; // Kinematic도 rb.position을 직접 맞춰 둬야 바로 반영된다
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
+        Assert.AreEqual(0, damageable.hits, "실패하면 피해 없음");
+        Assert.IsFalse(player.IsGrabbed, "애초에 붙잡히지 않았다");
+    }
+
+    // ───────────────────────── 휘두르기 ─────────────────────────
+
+    /// <summary>요청서 3절 — 경고 범위(전방 160도) 밖이면(보스 뒤로 빠짐) 안 맞는다. 범위 안이면 1회 피해(최대 체력 15%).</summary>
+    [UnityTest]
+    public IEnumerator Sweep_MissesWhenTargetMovesBehindAfterDirectionLocked()
+    {
+        var target = NewTarget(8f);
+        target.maxHp = 200f;
+        var boss = NewBoss(9f, target.transform); // 보스가 왼쪽(target)을 보도록 방향이 고정된다
+
+        bool wasSweepPrep = false;
+        yield return Until(() =>
+        {
+            if (boss.CurrentState == BrokenGoddessBoss.State.SweepPrep) wasSweepPrep = true;
+            return wasSweepPrep || boss.CurrentState == BrokenGoddessBoss.State.GrabThrust;
+        }, 6f);
+        if (!wasSweepPrep)
+            yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.SweepPrep, 8f);
+
+        // 방향이 고정된 뒤(준비 중) 플레이어를 보스 반대편(뒤쪽)으로 옮긴다 — "추적 판정을 추가하지 않는다".
+        // +2(반경 3유닛 안 — 거리로는 맞을 수 있었지만 보스가 보는 방향 반대쪽이라 각도로 걸러져야 한다).
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.SweepWarn, 2f);
+        target.transform.position = new Vector3(boss.transform.position.x + 2f, target.transform.position.y, 0f);
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.SweepRecover, 4f);
+        Assert.AreEqual(0, target.hits, "보스 뒤로 빠졌으니 안 맞아야 한다");
+    }
+
+    // ───────────────────────── 고르기 ─────────────────────────
+
+    /// <summary>요청서 4절 "같은 패턴이 지나치게 반복되지 않도록" — 쓴 패턴은 자기 쿨타임에 걸려 다음 번엔 반드시 다른 패턴이 골린다.</summary>
+    [UnityTest]
+    public IEnumerator Choose_SecondPickAlwaysDiffersFromFirst()
+    {
+        var target = NewTarget(8f);
+        var boss = NewBoss(9f, target.transform);
+
+        yield return Until(() => boss.LastPattern != BrokenGoddessBoss.Pattern.None, 6f);
+        var first = boss.LastPattern;
+
+        // 두 번째 선택이 일어나는 순간(=Idle을 벗어나는 순간) LastPattern이 바로 바뀐다 — Idle로 돌아올
+        // 때까지 기다리면 그 변화의 순간을 놓친다.
+        yield return Until(() => boss.LastPattern != first, 8f);
+        Assert.AreNotEqual(first, boss.LastPattern, "먼저 쓴 패턴은 쿨타임에 걸려 바로 다음엔 못 쓴다");
+    }
+
+    // ───────────────────────── 예외 처리 ─────────────────────────
+
+    /// <summary>요청서 "보스가 사망하거나 공격이 중단되면 잡힌 플레이어를 즉시 해제한다" — 비활성화만으로도 풀려야 한다.</summary>
+    [UnityTest]
+    public IEnumerator BossDisabled_ReleasesGrabbedTargetImmediately()
+    {
+        var player = NewGrabbablePlayer(8f, out Dummy damageable);
+        var boss = NewBoss(9f, player.transform);
+
+        bool grabStarted = false;
+        yield return Until(() =>
+        {
+            if (player.IsGrabbed) grabStarted = true;
+            return grabStarted || boss.CurrentState == BrokenGoddessBoss.State.SweepActive;
+        }, 10f);
+
+        if (!grabStarted)
+        {
+            // 먼저 휘두르기가 골렸으면 한 바퀴 더 기다려 잡기를 받는다(쿨타임 상호작용으로 다음 번엔 반드시 잡기).
+            yield return Until(() => player.IsGrabbed, 10f);
+        }
+
+        Assert.IsTrue(player.IsGrabbed);
+        boss.gameObject.SetActive(false); // 파괴 대신 비활성화만 — OnDisable 경로를 직접 검증
+
+        Assert.IsFalse(player.IsGrabbed, "보스가 꺼지면 즉시 풀려나야 한다");
+        Assert.IsFalse(GameInput.PlayerGrabbed);
+    }
+}
+}

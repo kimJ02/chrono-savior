@@ -59,6 +59,37 @@ namespace ChronoSavior.Combat
             });
         }
 
+        /// <summary>
+        /// 속이 찬 직사각형(가로 w·세로 h 유닛) — 2지역 보스 "부서진 여신상"의 잡기 경고(전방으로 길게
+        /// 뻗는 직사각형, 사용자 2026-11-18 요청서 5절). <see cref="Ellipse"/>와 같은 방식으로 **정확한
+        /// 크기를 그대로** 굽는다 — 쓰는 쪽은 스케일을 다시 계산할 필요 없이 (1,1,1)로 놓으면 된다.
+        /// </summary>
+        public static Sprite Rect(float w, float h)
+        {
+            int pw = Mathf.Max(2, Mathf.RoundToInt(w * Ppu)), ph = Mathf.Max(2, Mathf.RoundToInt(h * Ppu));
+            return Get($"rect{pw}x{ph}", pw, ph, (x, y, c) => true, center: false);
+        }
+
+        /// <summary>
+        /// 속이 찬 부채꼴(반지름 radius 유닛, 중심각 ±halfAngle 라디안) — 2지역 보스 "부서진 여신상"의
+        /// 휘두르기 경고(전방 호형 범위, 사용자 2026-11-18 요청서 3절 "공격 각도 전방 160도")에 쓴다.
+        /// <see cref="Arc"/>와 달리 테두리가 아니라 **속을 채운다**. 그림은 언제나 +X 방향으로 열린
+        /// 모양으로 굽는다 — <see cref="Arc"/> 주석과 같은 이유로 회전시키면 도트가 깨지므로, 반대
+        /// 방향을 보여줄 땐 굽는 대신 쓰는 쪽이 가로 스케일을 -1로 뒤집는다(<c>GroundWarning.ShowCustom</c>).
+        /// </summary>
+        public static Sprite Wedge(float radius, float halfAngle)
+        {
+            int r = Mathf.Max(2, Mathf.RoundToInt(radius * Ppu));
+            return Get($"wedge{r}_{Mathf.RoundToInt(halfAngle * 1000f)}", r * 2 + 3, r * 2 + 3, (x, y, c) =>
+            {
+                float dx = x - c.x, dy = y - c.y;
+                float d = Mathf.Sqrt(dx * dx + dy * dy);
+                if (d > r) return false;
+                float a = Mathf.Atan2(dy, dx); // -PI..PI, 0 = +X(정면)
+                return Mathf.Abs(a) <= halfAngle;
+            });
+        }
+
         static Sprite Get(string key, int w, int h, System.Func<int, int, Vector2, bool> on, bool center = true)
         {
             if (cache.TryGetValue(key, out var s) && s != null) return s;

@@ -50,6 +50,25 @@ namespace ChronoSavior.Enemies
             Apply();
         }
 
+        /// <summary>
+        /// 원 모양이 아닌 경고(사각·부채꼴 등)를 띄운다 — 2지역 보스 "부서진 여신상"의 잡기(직사각형)·
+        /// 휘두르기(부채꼴) 경고(사용자 2026-11-18 요청서 5절 "두 공격의 경고 표시를 구분할 수 있도록").
+        /// <paramref name="sprite"/>는 <c>Combat/DotShapes</c>로 **그 모양을 실제 크기 그대로** 구운 것이라
+        /// (<see cref="Show"/>처럼 반경에 맞춰 다시 늘릴 필요가 없다) 스케일은 기본 (1,1,1).
+        /// 좌우가 대칭이 아닌 모양(부채꼴)은 <paramref name="scale"/>의 x에 -1을 넘겨 보스가 보는 방향에
+        /// 맞게 뒤집는다(그림을 돌리면 도트가 비스듬히 깨지므로 회전 대신 반전 — `DotShapes` 주석과 같은 이유).
+        /// </summary>
+        public void ShowCustom(Vector2 point, Sprite sprite, Vector3? scale = null)
+        {
+            Radius = 0f; // 사각·부채꼴엔 반경 개념이 없다 — 판정은 부르는 쪽이 직접 계산한다
+            transform.localScale = scale ?? Vector3.one;
+            transform.position = point;
+            mode = Mode.Tracking; t = 0f;
+            sr.enabled = true;
+            sr.sprite = sprite;
+            Apply();
+        }
+
         public void MoveTo(Vector2 point) => transform.position = point;
 
         /// <summary>자리를 고정한다 — 이후로는 안 움직인다(그림만 바뀐다. 움직임을 멈추는 건 부르는 쪽).</summary>

@@ -61,6 +61,12 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    LobbyAvatar)·`GameBootTests`×2·`LobbySceneTests`×1이 애니메이터 방식 전환(팀원 2026-11-16 커밋) 때문에
    정지 그림이 아니라 Animator 프레임을 보고 있어 깨짐. 코드 플립북 통일 제안(바로 아래 ⚠️ 블록)이 합의되기
    전까진 손대지 말 것 — 지금은 "깨져 있다"는 사실만 기록.
+7. **(128, 신규) 2지역 보스 "부서진 여신상" — 코드는 끝났고 에디터 작업이 남았다** — 아래 로그 (128) 전체
+   참고. 이 세션은 에디터에 접근 못 해서 **하나도 실행해 본 적이 없다**: ① 새 PlayMode 테스트
+   (`BrokenGoddessBossTests.cs`) 7개 통과 확인 ② 프리팹 `Enemy_BrokenGoddess` 생성(`BlobLordBoss` 프리팹
+   복제 후 컴포넌트 교체, `warningPrefab` 연결, `EnemyHealth.isBoss` 체크) ③ `MonsterCatalog.regionBosses`에
+   2지역 항목 등록(SO 에셋, 코드 아님) ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어
+   붙잡힘·보스 중간 파괴 시 영구 미해제 버그 여부).
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
@@ -276,13 +282,72 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
-- **2026-11-17 (128)** — **[사용자 세션] 블랙홀(중력) 법사 차지 손 구체·일렁임을 보라로**(사용자 "블랙홀 법사가 손에서 불이 차징되는 게
-  문제 — 빨간색을 다른 색으로" → 후보 3개(보라·속이 어두운 블랙홀·색상 회전) 미리보기 중 **A "중력탄 보라"** 선택).
-  `Art/Characters/Mage/Character_Mage_Attack_OrbEffectGravity_01~11`·`…_KiEffectGravity_01~06` 17장 추가 — 원본 빨강 그림의 7색을
-  중력탄(`mage/gravity_orb_small`, dark_matter 보라) 팔레트로 1:1 바꾼 사본(가져오기 설정은 원본 .meta 그대로, GUID만 새로).
-  `MageChargeVfx`가 `mageBranch == Gravity`면 이 그림을, 폭발·0차는 빨강 원본을 쓴다(`FrameName`). 런타임 틴트는 빨강이 탁한 자주가 돼서
-  그림을 따로 뒀다. 불러오는 방식(`Resources.Load` 경로)은 기존 코드 그대로 — 직렬화로 바꾸는 건 `docs/animation-flipbook-proposal.md` 트랙 B.
-  테스트 `MageChargeVfxTests.OrbAndKi_GravityBranchUsesVioletFrames` 추가. 사용자가 에디터에서 직접 보고 확인.
+- **2026-11-18 (128)** — **[나] 2지역 보스 "부서진 여신상" 신규 구현 — 잡기·휘두르기 2패턴**(사용자가 올린
+  명세서 `부서진_여신상_스킬_구현_명세서.docx` + 별도 요청서 `message.txt`를 근거로, **요청서의 확정 단일값이
+  명세서의 범위값보다 우선 적용된다**고 사용자가 직접 밝힘).
+  - **범위**: 이번엔 **잡기·휘두르기 둘 뿐**이다. 애니메이션·보스 체력바 UI·사운드·카메라 흔들림·추가
+    패턴(명세서에 더 있었더라도)은 사용자가 명시적으로 범위 밖이라고 선언해서 손대지 않았다. 애니메이션이
+    빠진 자리는 지금 다른 보스와 같은 기본 도형 그림(임시) 그대로다.
+  - **설계는 1지역 보스 `BlobLordBoss`의 틀을 그대로 따른다**(`CLAUDE.md`가 정한 "커스텀 보스" 패턴) —
+    `IEnemyMotion` 구현, `Pattern`/`State` 두 enum, 패턴마다 Telegraph(경고)→Attack(판정)→Recovery(회복)
+    상태머신, `VisualSize`/`HitRadius` static 필드, `Systems/EnemySetup.SetupBoss`에 타입 분기 추가.
+  - **새 파일 — `Enemies/BrokenGoddessBoss.cs`(신규, ~470줄)**: 메인 보스 스크립트.
+    - **잡기(Grab)**: 사각 경고(`DotShapes.Rect`, 새로 만든 모양) → 돌진 → 성공 시 플레이어를
+      `Core.IGrabbable`로 붙잡아 보스 쪽으로 당겼다가(이즈아웃 보간) 잠깐 들고 있다 최대체력 20% 피해를
+      1회만 주고 놓아준다. 범위를 벗어나면 그대로 실패(피해 없음).
+    - **휘두르기(Sweep)**: 부채꼴 경고(`DotShapes.Wedge`, 새로 만든 모양) → 판정(최대체력 15% 피해, 1회) —
+      판정은 거리뿐 아니라 **방향 고정 시점의 각도**(`Mathf.DeltaAngle`)까지 봐서, 경고가 뜬 뒤 대상이
+      뒤로 돌아가면 맞지 않는다.
+    - 패턴 선택은 `BlobLordBoss`처럼 각자 쿨다운 + "연속 같은 패턴 금지" 규칙, 둘 다 가능하면 50/50.
+    - 공격 판정은 프로젝트 관례대로 `Physics2D.OverlapBox` 대신 **수동 AABB/각도 계산**
+      (`InGrabBox`/`InSweepArea`, 둘 다 `public static`)으로 — 명세서가 OverlapBox를 "써도 된다"고만
+      했고 강제하지 않아서, 기존 `Boss.DoSlam`/`BlobLordBoss.InImpactArea`와 같은 방식으로 맞췄다.
+    - 몸통 접촉 피해는 `IEnemyContactDamageModifier.ContactDamageMultiplier => 0`(없음) — **확인 필요**:
+      명세서·요청서 둘 다 몸통 접촉 피해를 요구하지 않아서 0으로 뒀는데, 팀장이 다르게 원하면 이 한
+      줄만 고치면 된다.
+    - `IGrabExempt`도 구현(보스 자신은 다른 보스의 "붙잡기 면제" 대상과 같은 식으로 처리해 둠 — 섬영
+      칼날폭풍의 "끌고 다니기"에 잡기 보스가 끌려가지 않게 하는 기존 관례와 동일).
+  - **새 파일 — `Core/IGrabbable.cs`**: `BeginGrab`/`MoveGrabbedTo`/`EndGrab`/`IsGrabbed` — 플레이어가
+    어떤 보스에게도 똑같이 "붙잡히는" 인터페이스. `Core`에 둔 이유: `Enemies`(보스)가 `Characters`를
+    직접 참조하면 계층 위반(둘 다 2층)이라, 낮은 층 인터페이스로 방향을 뒤집는 기존 패턴
+    (`ISpawnProtectable`과 같은 자리) 그대로 따름.
+  - **수정 — `Characters/CharacterMover2D.cs`**: `IGrabbable` 구현 추가. 잡혀 있는 동안 `Update`/
+    `FixedUpdate`를 전부 건너뛰고(이동·점프 입력 무시), 중력을 0으로 꺼서 보스가 옮기는 위치에 그대로
+    따라간다. `GameInput.PlayerGrabbed = true/false`를 같이 토글. `OnDisable`/`ResetForRun`에서도 잡힌
+    상태를 반드시 풀어서(`EndGrab`) 런 재시작·캐릭터 전환 때 중력 0이 영구히 남는 버그를 막음.
+  - **수정 — `Core/GameInput.cs`**: `public static bool PlayerGrabbed` 추가, `CombatKey`(공격/스킬 공용
+    입력 문)가 `PlayerGrabbed`일 때도 꺼지게 — 잡혀 있는 동안 플레이어가 공격/스킬을 못 쓰게 막는다
+    (명세서 취지상 당연한 처리로 판단, 별도 확인 문구는 없었음).
+  - **수정 — `Enemies/GroundWarning.cs`**: 기존 `Show(point, radius)`(원형 경고)에 더해 **사각/부채꼴 같은
+    임의 스프라이트**를 쓰는 `ShowCustom(point, sprite, scale)`을 추가 — 원형 전용이던 기존 경고 오브젝트를
+    그대로 재사용하기 위함(새 경고 클래스를 안 만들고 1지역 보스와 같은 자원 재사용).
+  - **수정 — `Combat/DotShapes.cs`**: `Rect(w,h)`·`Wedge(radius, halfAngle)` 두 모양 추가(기존
+    `Ring`/`Ellipse`/`Arc` 캐시 패턴 그대로).
+  - **수정 — `Systems/EnemySetup.cs`**: `SetupBoss`에 `BrokenGoddessBoss` 분기 추가(`BlobLordBoss` 분기
+    바로 옆, 같은 `FitToWorldSize` 호출 패턴).
+  - **수정 — `Tests/PlayMode/OriginalFidelityTests.cs`**: 이번에 새로 만든 cross-file 공개 API
+    (`PlayerGrabbed`·`BeginGrab`/`MoveGrabbedTo`/`EndGrab`·`ShowCustom`·`DotShapes.Rect`/`Wedge`) 7개를
+    `mustBeWired` 목록에 등록 — CLAUDE.md가 경고하는 "정의만 하고 호출부를 안 만드는" 부류 사고를 막기 위해.
+  - **새 파일 — `Tests/PlayMode/Enemies/BrokenGoddessBossTests.cs`**(신규): `CLAUDE.md`의
+    "Rigidbody2D/Collider2D가 얽힌 로직은 PlayMode 테스트 필수" 규칙에 따라, 프리팹이 아직 없어도
+    `AddComponent`로 보스를 직접 구성해 테스트 7개(순수 판정 함수 2개 + 플레이 흐름 5개: 잡기 성공,
+    잡기 실패(사거리 벗어남), 휘두르기 빗나감(방향 고정 후 대상이 뒤로 이동), 패턴 연속 선택 금지,
+    보스 비활성화 시 즉시 풀려나는지)를 새로 작성.
+  - **이 세션은 Unity 에디터에 접근할 수 없어서(디바이스 브리지로 파일만 씀) 아래는 전혀 실행해 본 적이
+    없다 — 사용자가 에디터에서 직접 확인 필요**:
+    1. 새 PlayMode 테스트 7개가 실제로 통과하는지(컴파일만 눈으로 확인했을 뿐 배치 실행을 못 했음).
+    2. **프리팹 `Enemy_BrokenGoddess` 생성** — 기존 `Enemy_BlobLordBoss`(또는 공용 보스 베이스)를 복제해
+       `BrokenGoddessBoss` 컴포넌트로 교체, `warningPrefab` 필드에 기존 `GroundWarning` 프리팹 연결,
+       `EnemyHealth.isBoss` 체크.
+    3. **`Core/MonsterCatalog.cs`의 `regionBosses`에 2지역 항목 등록**(코드가 아니라 SO 에셋 쪽 데이터라
+       에디터에서 Inspector로 넣어야 함).
+    4. 실제 플레이로 잡기/휘두르기 둘 다 눈으로 확인(경고 모양이 사각/부채꼴로 제대로 보이는지, 잡힌
+       플레이어가 입력이 막힌 채 끌려오는지, 보스를 중간에 죽이거나 씬을 바꿔도 플레이어가 영구히
+       안 풀리는 버그가 없는지).
+  - **확인 필요(명세서의 "선택 적용" 두 가지, 이번엔 구현 안 함)**: (1) 회피 무적 중엔 잡기가 실패하게
+    하는 선택 규칙 — `Characters`의 무적 판정을 더 들여다봐야 해서 범위를 넘는다고 판단해 보류.
+    (2) 돌 조각이 흩날리는 비주얼 — 애니메이션/VFX라 이번 작업 범위(message.txt가 명시적으로 제외)
+    밖이라 손대지 않음. 둘 다 사용자가 필요하다고 하면 다음 스프린트에서.
 
 - **2026-11-17 (127)** — **[사용자 세션] 캐릭터 애니메이션 방식 제안서 — Animator → 코드 플립북 통일(문서만, 코드 변경 없음).**
   > **병합 메모(2026-11-18, 번호 충돌 해결)**: 이 항목은 `main` 쪽 원래 번호가 **(122)**였으나, 같은 커밋(공통 조상)에서
