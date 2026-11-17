@@ -64,10 +64,13 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
-> **⚠️ 2026-11-17 — 캐릭터 애니메이션 방식 합의 대기: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md)부터 읽을 것.**
-> 2026-11-16에 올라온 Animator 방식을 코드 플립북으로 통일하자는 제안(팀원 확인 전). 합의될 때까지
-> `PlayerRig.cs`·`LobbyAvatar.cs`·`CharacterBase.controller`·`BuildCharacterAnimations.cs`는 더 고치지 말 것.
-> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 같은 문서 끝 "팀원이 먼저 할 일".
+> **🚧 2026-11-17~ 애니메이션 플립북 전환 진행 중 (사용자 세션, 브랜치 `feature/anim-flipbook`) — 아래 파일은 끝날 때까지 손대지 말 것.**
+> 계획·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md). 사용자 결정으로 트랙 A·B를 **둘 다 사용자 세션이** 한다
+> (팀원은 그동안 애니메이션 쪽 작업 쉼). 다 끝나면 main에 한 번에 합친다.
+> **손대지 말 것**: `Characters/PlayerRig.cs`·`MageAttack.cs`·`GunnerAttack.cs`·`BladeCombat.cs`·`BladeSlashVfx.cs`·`PlayerHealth.cs`·`MageChargeVfx.cs`·
+> `CharacterMover2D.cs`, `UI/Lobby/LobbyAvatar.cs`, `Core/CharacterArtSet.cs`, `Enemies/BlobLordBoss.cs`·`EnemyHealth.cs`, `Prefabs/Enemies/Enemy_BlobLord.prefab`,
+> `Assets/Data/Characters/`, `Assets/Resources/Art/Characters/`·`Art/Enemies/BlobLord/`, `Editor/BuildCharacterAnimations.cs`, 씬 `20_Combat`·`10_Lobby`.
+> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
 예전 "단계 1/2/3"(9/9 회의)은 더 쓰지 않는다(2026-09-30 정리 — 일정표의 "2단계"와 이름이 겹쳐 헷갈렸다).
