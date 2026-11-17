@@ -101,6 +101,7 @@ namespace ChronoSavior.Editor
             }
 
             EnsureAnimatorOnBasePrefab(problems);
+            BuildBossArt(problems);
             AssetDatabase.SaveAssets();
             foreach (var p in problems) Debug.LogError("[BuildEnemySkins] " + p);
             Debug.Log($"[BuildEnemySkins] 그림 {books.Count}종, 배정 {Assignments.Length}개" + (problems.Count > 0 ? $", 문제 {problems.Count}개" : ""));
@@ -192,6 +193,48 @@ namespace ChronoSavior.Editor
             if (isNew) AssetDatabase.CreateAsset(book, path);
             else EditorUtility.SetDirty(book);
             return book;
+        }
+
+        const string BossArtRoot = "Assets/Resources/Art/Enemies/BlobLord";
+        const string BossPrefab = "Assets/Prefabs/Enemies/Enemy_BlobLord.prefab";
+
+        /// <summary>
+        /// 1지역 보스 '덩어리 지배자' 몸 그림(2026-11-17 — 팀원 2026-11-16 그림, 예전엔 `BlobLordBoss`가 경로 문자열로 불러왔다): 동작마다 `SpriteFlipbook`
+        /// (`Flipbook_BlobLord_&lt;동작&gt;`)을 만들어 보스 프리팹 칸에 꽂는다. 가져오기 설정(80×64 캔버스·기준점)은 팀원 것 그대로 둔다.
+        /// 튀어오르기·투척은 상태 진행도로 몇 번째 장인지 고르고(fps는 안 쓴다), 이동(넉백 슬라이딩)·사망은 fps로 돈다.
+        /// </summary>
+        static readonly (string action, float fps, bool loop, System.Action<BlobLordBoss, SpriteFlipbook> set)[] BossBooks =
+        {
+            ("Bounce", 10f, false, (b, f) => b.BounceArt = f),
+            ("Throw", 10f, false, (b, f) => b.ThrowArt = f),
+            ("Move", 10f, true, (b, f) => b.MoveArt = f),
+            ("Hit", 10f, false, (b, f) => b.HitArt = f),
+            ("Death", 8f, false, (b, f) => b.DeathArt = f),
+        };
+
+        static void BuildBossArt(List<string> problems)
+        {
+            var root = PrefabUtility.LoadPrefabContents(BossPrefab);
+            if (root == null) { problems.Add("Enemy_BlobLord 프리팹을 못 열었다"); return; }
+            try
+            {
+                var boss = root.GetComponent<BlobLordBoss>();
+                if (boss == null) { problems.Add("Enemy_BlobLord에 BlobLordBoss가 없다"); return; }
+                foreach (var (action, fps, loop, set) in BossBooks)
+                {
+                    var frames = Paths(BossArtRoot, $"Enemy_BlobLord_{action}_").Select(AssetDatabase.LoadAssetAtPath<Sprite>).ToList();
+                    if (frames.Count == 0 || frames.Any(f => f == null)) { problems.Add($"보스 그림이 없다: {BossArtRoot}/Enemy_BlobLord_{action}_NN"); continue; }
+                    string path = $"{OutRoot}/Flipbook_BlobLord_{action}.asset";
+                    var book = AssetDatabase.LoadAssetAtPath<SpriteFlipbook>(path);
+                    bool isNew = book == null;
+                    if (isNew) book = ScriptableObject.CreateInstance<SpriteFlipbook>();
+                    book.frames = frames.ToArray(); book.fps = fps; book.loop = loop;
+                    if (isNew) AssetDatabase.CreateAsset(book, path); else EditorUtility.SetDirty(book);
+                    set(boss, book);
+                }
+                PrefabUtility.SaveAsPrefabAsset(root, BossPrefab);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         static void EnsureAnimatorOnBasePrefab(List<string> problems)

@@ -30,7 +30,7 @@ namespace ChronoSavior.Enemies
     /// **그림(2026-11-16)**: 팀원이 받아 온 실제 아트로 기본 도형을 교체했다 — 틀 그림은 `Art/Enemies/BlobLord/Enemy_BlobLord_Idle_01`
     /// (프리팹의 `m_Sprite` 오버라이드), 추적 점프 강하 중엔 <see cref="UpdateBodySprite"/>가 튀어오르기 6장을 덧씌운다.
     /// **(2026-11-16, "나머지도 연결해줘")** 조약돌 투척(<see cref="State.ThrowPrep"/> 2장 + <see cref="State.ThrowWarn"/> 2장)·
-    /// 피격(<see cref="HandleDamaged"/>, 직접 타격마다 짧게 1장)·사망(<see cref="PlayDeathAndDestroy"/>, 8장을 재생한 뒤에야 Destroy — `IDeathAnimated`로
+    /// 피격(<see cref="HandleDamaged"/>, 직접 타격마다 짧게 1장)·사망(<see cref="PlayDeathAndDestroy"/>, 8장을 재생한 뒤에야 Destroy — 그동안 콜라이더 끔 — `IDeathAnimated`로
     /// `EnemyHealth.Die()`의 즉시 Destroy를 늦춘다)도 입혔다.
     /// **이동(4장, 2026-11-16 사용자 "보스도 이동하잖아 그 이동에 넣으면 되는거 아닌가")**: 처음엔 "이 보스는 걷지 않는다"며 미사용으로
     /// 남겼는데, 다시 코드를 보니 **걷기(자기 의지)는 없어도 맞아서 밀리는 넉백 슬라이딩은 있다** — `EnemyMove.FixedUpdate`가
@@ -102,6 +102,25 @@ namespace ChronoSavior.Enemies
         [Tooltip("투척 경로 경고 선 — 프리팹 자식(VfxUnlit 머티리얼).")]
         [SerializeField] LineRenderer throwPathLine;
 
+        [Header("몸 그림(2026-11-17 — 경로 문자열 로드 대신 에셋, 메뉴 ChronoSavior/몬스터 지역 그림 연결이 채운다)")]
+        [Tooltip("튀어오르기 6장 — 추적 점프 강하: 오를 때 1~3, 정점 3, 낙하 4~6.")]
+        [SerializeField] SpriteFlipbook bounceArt;
+        [Tooltip("조약돌 투척 4장 — 드는 중 1~2, 조준 고정 3~4.")]
+        [SerializeField] SpriteFlipbook throwArt;
+        [Tooltip("이동 4장 — 맞아서 밀리는 동안(넉백 슬라이딩) 되풀이(fps는 에셋).")]
+        [SerializeField] SpriteFlipbook moveArt;
+        [Tooltip("피격 1장 — 직접 타격마다 잠깐.")]
+        [SerializeField] SpriteFlipbook hitArt;
+        [Tooltip("사망 8장 — 다 돌고 사라진다(fps는 에셋).")]
+        [SerializeField] SpriteFlipbook deathArt;
+
+        /// <summary>씬 검증·테스트·에디터 도구가 읽고 넣는다.</summary>
+        public SpriteFlipbook BounceArt { get => bounceArt; set => bounceArt = value; }
+        public SpriteFlipbook ThrowArt { get => throwArt; set => throwArt = value; }
+        public SpriteFlipbook MoveArt { get => moveArt; set => moveArt = value; }
+        public SpriteFlipbook HitArt { get => hitArt; set => hitArt = value; }
+        public SpriteFlipbook DeathArt { get => deathArt; set => deathArt = value; }
+
         public GroundWarning WarningPrefab { get => warningPrefab; set => warningPrefab = value; }
         public BoulderProjectile BoulderPrefab { get => boulderPrefab; set => boulderPrefab = value; }
 
@@ -142,11 +161,9 @@ namespace ChronoSavior.Enemies
         public const float HitFlashDuration = 0.15f;
         float hitTimer;
 
-        // 사망 그림(2026-11-16) — EnemyHealth.Die()가 IDeathAnimated를 찾아 Destroy를 늦춰준 동안 재생한다.
-        public const float DeathFrameFps = 8f;
+        // 사망 그림(2026-11-16) — EnemyHealth.Die()가 IDeathAnimated를 찾아 Destroy를 늦춰준 동안 재생한다(fps는 deathArt 에셋, 8).
 
-        // 이동 그림(2026-11-16) — 걸어서가 아니라 **맞아서 밀리는 동안**(EnemyMove.KnockbackMagnitude) 순환.
-        public const float MoveFrameFps = 10f;
+        // 이동 그림(2026-11-16) — 걸어서가 아니라 **맞아서 밀리는 동안**(EnemyMove.KnockbackMagnitude) 순환(fps는 moveArt 에셋, 10).
         public const float KnockbackSlideThreshold = 0.05f; // 이 밑은 감쇠 꼬리라 눈에 안 보임
         float moveCycleT;
 
@@ -197,6 +214,13 @@ namespace ChronoSavior.Enemies
             Vector3 p = transform.position;
             standSurfaceY = FieldLayout.SurfaceBelow(p.x, p.y);
             transform.position = new Vector3(p.x, standSurfaceY + HalfHeight, p.z);
+        }
+
+        // 그림은 그리기 직전에(2026-11-17 — 예전엔 물리 틱인 GetHorizontalSpeed 안에서 바꿨다). 죽은 뒤엔 사망 연출(DeathSequence)이 그린다.
+        void LateUpdate()
+        {
+            if (health != null && health.IsDead) return;
+            UpdateBodySprite(Time.deltaTime);
         }
 
         void OnEnable() => CombatEvents.EnemyDamaged += HandleDamaged;
@@ -294,8 +318,6 @@ namespace ChronoSavior.Enemies
                     break;
             }
 
-            UpdateBodySprite(dt);
-
             // EnemyMove가 넉백을 더하므로 공중에선 그만큼 빼서 정확히 표식 위로 간다(넉백 배수 0.08이라 작다).
             return dt > 0f ? (desiredX - x) / dt : 0f;
         }
@@ -333,7 +355,7 @@ namespace ChronoSavior.Enemies
             if (mover != null && mover.KnockbackMagnitude > KnockbackSlideThreshold)
             {
                 moveCycleT += dt;
-                var mv = MoveSprite(Mathf.FloorToInt(moveCycleT * MoveFrameFps) % 4);
+                var mv = moveArt != null ? moveArt.FrameAt(moveCycleT) : null;
                 if (mv != null) { body.sprite = mv; return; }
             }
             else moveCycleT = 0f; // 다음 슬라이딩은 처음부터 다시(멎을 때마다 리셋 — 자연스러운 한 번의 "밀림" 동작)
@@ -362,37 +384,14 @@ namespace ChronoSavior.Enemies
             if (s != null) body.sprite = s;
         }
 
-        static Sprite[] bounceFrames, throwFrames, hitFrames, deathFrames, moveFrames;
-
-        /// <summary>튀어오르기 그림 6장(0~5) — 캐릭터 아트와 같은 방식으로 <c>Resources.Load</c>(git에 들어있는 1인칭 자산, 외주 VFX 팩과 다름).</summary>
-        static Sprite BounceSprite(int idx) => Load(ref bounceFrames, 6, "Bounce")[idx];
-
-        /// <summary>조약돌 투척 그림 4장(0~3).</summary>
-        static Sprite ThrowSprite(int idx) => Load(ref throwFrames, 4, "Throw")[idx];
-
-        /// <summary>이동(=넉백 슬라이딩) 그림 4장(0~3).</summary>
-        static Sprite MoveSprite(int idx) => Load(ref moveFrames, 4, "Move")[idx];
-
-        /// <summary>피격 그림 1장.</summary>
-        static Sprite HitSprite() => Load(ref hitFrames, 1, "Hit")[0];
-
-        /// <summary>사망 그림 8장(0~7).</summary>
-        static Sprite[] DeathFrames() => Load(ref deathFrames, 8, "Death");
-
-        static Sprite[] Load(ref Sprite[] cache, int count, string action)
-        {
-            if (cache == null)
-            {
-                cache = new Sprite[count];
-                for (int i = 0; i < count; i++)
-                    cache[i] = Resources.Load<Sprite>($"Art/Enemies/BlobLord/Enemy_BlobLord_{action}_{i + 1:00}");
-            }
-            return cache;
-        }
+        static Sprite At(SpriteFlipbook b, int idx) => b != null && idx >= 0 && idx < b.Count ? b.frames[idx] : null;
+        Sprite BounceSprite(int idx) => At(bounceArt, idx);
+        Sprite ThrowSprite(int idx) => At(throwArt, idx);
+        Sprite HitSprite() => At(hitArt, 0);
 
         /// <summary>
         /// <see cref="IDeathAnimated"/> — <see cref="EnemyHealth.Die"/>가 즉시 Destroy하는 대신 이걸 부른다.
-        /// 사망 그림 8장을 <see cref="DeathFrameFps"/>로 재생한 뒤 스스로 Destroy한다(2026-11-16). 그동안
+        /// 사망 그림 8장(<see cref="deathArt"/>)을 재생한 뒤 스스로 Destroy한다(2026-11-16). 2026-11-17부터 시작할 때 콜라이더를 끈다. 그동안
         /// <see cref="GetHorizontalSpeed"/>가 맨 위에서 <c>health.IsDead</c>를 보고 멈추므로 상태머신·넉백·그 외
         /// 그림 갱신이 끼어들지 않는다 — 떠 있는 자세로는 못 죽으므로(공중=무적) 서 있던 자리에서 그대로 멈춘다.
         /// 들고 있던 돌·경고 표시는 죽는 순간 바로 치운다(투척 패턴 중에 죽어도 화면에 안 남게).
@@ -403,16 +402,19 @@ namespace ChronoSavior.Enemies
             if (throwPathLine != null) throwPathLine.enabled = false;
             if (jumpWarning != null) jumpWarning.gameObject.SetActive(false);
             if (throwWarning != null) throwWarning.gameObject.SetActive(false);
+            // 사망 그림이 도는 동안 시체를 겨누거나 맞히지 않게(2026-11-17 — 레이저·유도 대상 고르기는 콜라이더로 찾는다)
+            foreach (var c in GetComponents<Collider2D>()) c.enabled = false;
             StartCoroutine(DeathSequence());
         }
 
         System.Collections.IEnumerator DeathSequence()
         {
-            var frames = DeathFrames();
-            for (int i = 0; i < frames.Length; i++)
+            int n = deathArt != null ? deathArt.Count : 0;
+            float step = deathArt != null && deathArt.fps > 0f ? 1f / deathArt.fps : 0.125f;
+            for (int i = 0; i < n; i++)
             {
-                if (body != null && frames[i] != null) body.sprite = frames[i];
-                yield return new WaitForSeconds(1f / DeathFrameFps);
+                if (body != null && deathArt.frames[i] != null) body.sprite = deathArt.frames[i];
+                yield return new WaitForSeconds(step); // 게임 시간 — 히트스톱·일시정지 땐 같이 멈춘다(제안서 7절 결정 6)
             }
             Destroy(gameObject);
         }

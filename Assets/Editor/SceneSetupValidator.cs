@@ -77,6 +77,13 @@ namespace ChronoSavior.Editor
             One<GameBoot>(persistent, problems);
             var flow = One<GameFlow>(persistent, problems);
             One<AutoSave>(persistent, problems);
+            var sfx = One<GameplaySfx>(persistent, problems);
+            if (sfx != null)
+            {
+                var loop = sfx.LoopSource;
+                if (loop == null || loop == sfx.GetComponent<AudioSource>()) problems.Add("GameplaySfx의 루프용 AudioSource(SfxLoop 자식)가 비었거나 원샷 소스와 같다");
+                else if (loop.playOnAwake || loop.spatialBlend != 0f) problems.Add("GameplaySfx 루프용 AudioSource는 자동 재생 끔·2D여야 한다");
+            }
             var hitSound = One<HitSound>(persistent, problems);
             if (hitSound != null)
             {

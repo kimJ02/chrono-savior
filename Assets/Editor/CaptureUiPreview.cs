@@ -249,6 +249,97 @@ namespace ChronoSavior.Editor
             player.SetActive(true);
         }
 
+        /// <summary>
+        /// 마법사 차지 손 오브·일렁임 캡처(2026-11-17) — 씬 Player의 `MageChargeVfx` 칸에 연결된 그림 그대로, 차지 몸 그림 위에 겹쳐(오브 +1·일렁임 +2) 찍는다.
+        /// 위 줄 0차·폭발(빨강), 아래 줄 블랙홀(보라) — 차지 30%·60%·85%(일렁임 시작)·100%, 그리고 오른쪽을 본 100%.
+        /// 배치: `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunMageOrb -captureOut &lt;폴더&gt;`.
+        /// </summary>
+        public static void RunMageOrb()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            player.SetActive(false);
+            var pc = PixelCanvas.Create(cam);
+            HideAll(pc);
+            var charge = player.GetComponent<ChronoSavior.Characters.MageChargeVfx>();
+            var art = AssetDatabase.LoadAssetAtPath<CharacterArtSet>("Assets/Data/Characters/CharacterArtSet.asset");
+            var set = art.AnimSetOf(CharacterId.Mage);
+            float scale = EntitySizeConfig.ScaleToHeight(set.idle.frames[0], art.HeightOf(CharacterId.Mage));
+            var made = new System.Collections.Generic.List<GameObject>();
+            SpriteRenderer Put(string n, Sprite s, Vector3 pos, bool flip, int order)
+            {
+                var go = new GameObject(n);
+                go.transform.position = pos;
+                go.transform.localScale = new Vector3(scale, scale, 1f);
+                var sr = go.AddComponent<SpriteRenderer>();
+                sr.sprite = s; sr.flipX = flip; sr.sortingOrder = order;
+                made.Add(go);
+                return sr;
+            }
+            var ratios = new[] { 0.3f, 0.6f, 0.85f, 1f, 1f };
+            var branches = new[] { MageBranch.None, MageBranch.Gravity };
+            for (int row = 0; row < branches.Length; row++)
+            {
+                var orb = charge.OrbFrames(branches[row]);
+                var ki = charge.KiFrames(branches[row]);
+                for (int i = 0; i < ratios.Length; i++)
+                {
+                    bool flip = i == ratios.Length - 1;
+                    var pos = new Vector3(4.2f + i * 0.75f, FieldBounds.GroundY + (row == 0 ? 2.05f : 1.0f) + EntitySizeConfig.PlayerRadius, 0f);
+                    Put("Body", set.charge.frames[i % set.charge.Count], pos, flip, 0);
+                    int idx = Mathf.Clamp(Mathf.RoundToInt(ratios[i] * (orb.Length - 1)), 0, orb.Length - 1);
+                    Put("Orb", orb[idx], pos, flip, 1);
+                    if (idx >= ChronoSavior.Characters.MageChargeVfx.KiEffectStartOrbFrame) Put("Ki", ki[i % ki.Length], pos, flip, 2);
+                }
+            }
+            Render(pc, cam, outDir, "mage_orb_red_violet", 1920, 1080, 3f);
+            foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            player.SetActive(true);
+        }
+
+        /// <summary>
+        /// 보스 '덩어리 지배자' 몸 그림 캡처(2026-11-17) — 프리팹 칸에 연결된 묶음(튀어오르기·투척·이동·피격·사망)에서 한 장씩, 실제 스폰 크기 계산(`EnemySetup`)으로 세운다.
+        /// 배치: `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunBossArt -captureOut &lt;폴더&gt;`.
+        /// </summary>
+        public static void RunBossArt()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 4f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            HideAll(pc);
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var prefab = catalog.BossPrefabFor(1);
+            var probe = prefab.GetComponent<ChronoSavior.Enemies.BlobLordBoss>();
+            var shots = new[] { probe.BounceArt.frames[2], probe.ThrowArt.frames[3], probe.MoveArt.frames[1], probe.HitArt.frames[0], probe.DeathArt.frames[4] };
+            var made = new System.Collections.Generic.List<GameObject>();
+            for (int i = 0; i < shots.Length; i++)
+            {
+                var go = Object.Instantiate(prefab);
+                go.transform.position = new Vector3(4.9f + i * 1.15f, FieldBounds.GroundY + 0.6f, 0f);
+                ChronoSavior.Systems.EnemySetup.SetupBoss(go, 1, catalog);
+                go.GetComponent<SpriteRenderer>().sprite = shots[i];
+                made.Add(go);
+            }
+            Render(pc, cam, outDir, "boss_art", 1920, 1080, 3f);
+            foreach (var go in made) Object.DestroyImmediate(go);
+        }
+
         public static void RunMageVfx()
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");

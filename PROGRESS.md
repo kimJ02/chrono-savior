@@ -67,7 +67,7 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 > **✅ 2026-11-17 캐릭터 애니메이션은 코드 플립북이다(Animator 없음)** — 몸 그림은 `Characters/CharacterFlipbook`(씬의 Player·로비 아바타에 배치)이 넘기고,
 > 자세는 게임 코드가 정한다(루프: `PlayerRig`·`LobbyAvatar`, 공격·피격: `MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격).
 > 그림·순서·fps·기준점은 메뉴 **`ChronoSavior/캐릭터 애니메이션 연결`**(`Editor/BuildCharacterFlipbooks`의 표가 원본 — 에셋을 손으로 고치지 말 것). 경위·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md).
-> 보스(`BlobLordBoss`)는 팀원 담당 — 제안서 트랙 B의 보스 세 가지(경로 문자열 그림 → `SpriteFlipbook`, 그림 갱신을 물리 밖으로, 사망 연출 중 콜라이더)는 보스 작업 때 같이.
+> 보스 세 가지(그림 에셋 연결·그림 갱신을 `LateUpdate`로·사망 연출 중 콜라이더 끔)도 이 브랜치에서 했다(로그 133) — **팀원이 보스를 만지는 중이면 `BlobLordBoss.cs`·`Enemy_BlobLord.prefab`이 겹칠 수 있다**, 합치기 전에 확인.
 > 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
@@ -276,6 +276,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-17 (133)** — **[사용자 세션] 플립북 전환 목표 마저 — 전체 566 중 565 통과(남은 1 = 마법사 도트 0.5, 팀장 결정 대기)**(사용자 "목표 달성해봐, main 올리지 말고").
+  - `UI/GameplaySfx`: 루프용 AudioSource를 코드로 붙이던 것(생성 책임 위반 — `CreationOwnershipTests` 실패의 마지막 원인) → 씬 `00_Persistent` › Audio › **SfxLoop** 자식에 배치하고 `[SerializeField] loopSource`로 연결
+    (일회용 에디터 스크립트로 놓고 지움). 씬 구성 검증에 루프 소스 검사. ⚠️ 저장 때 PixelPerfectCamera가 카메라 Viewport Rect를 (0,0.125,1,0.75)로 바꿔 놓아 손으로 (0,0,1,1)로 되돌렸다(CLAUDE.md 경고 그대로).
+  - **보스 '덩어리 지배자'**(제안서 트랙 B — 팀원이 보스를 만진다 해서 미뤘던 것, 사용자 지시로 이 브랜치에서): `BlobLordBoss` 그림을 경로 문자열 대신 프리팹 칸 `SpriteFlipbook`(튀어오르기 6·투척 4·이동 4·피격 1·사망 8,
+    `Assets/Data/Enemies/Skins/Flipbook_BlobLord_*`, 메뉴 `ChronoSavior/몬스터 지역 그림 연결`이 채움 — 가져오기 설정은 팀원 것 그대로), 그림 갱신을 물리 콜백(`GetHorizontalSpeed`)에서 `LateUpdate`로,
+    **사망 연출이 시작될 때 콜라이더를 끈다**(시체를 겨누지 않게). 이동·사망 fps는 에셋(10·8). 테스트 `BlobLordBossTests.BodyArt_IsWiredOnThePrefab`·`Death_TurnsCollidersOff_WhileDeathArtPlays`.
+  - 96×48 재캔버스 대신 묶음별 기준점으로 한 것 — GPT 재확인 "유지"(사본은 프레임 픽셀을 다시 옮기지 않는 한 이점 없음).
+  - 캡처 추가: `CaptureUiPreview.RunMageOrb`(빨강/보라 오브·일렁임이 손에, 좌우 반전 포함)·`RunBossArt`(보스 묶음이 프리팹에서 나온다).
+  - **남은 것(결정 필요)**: 캐릭터가 깨져 보이는 건 높이 0.5유닛 = 도트 1.33배(정수 아님)라서 — 0.75(도트 2, 1.5배 커짐)로 갈지 팀장·사용자 결정(`DotScaleTests.Characters` 실패가 이것).
 
 - **2026-11-17 (132)** — **[사용자 세션] 캐릭터 애니메이션 Animator → 코드 플립북 전환 완료**(`docs/animation-flipbook-proposal.md` 트랙 A + 마법사 차지 그림, GPT와 계획·결정).
   - `Characters/CharacterFlipbook`(씬 `20_Combat` Player·`10_Lobby` 아바타에 배치, 로비는 실제 시간): 우선순위 피격 > 공격(한 번, 재생 중 재공격은 재시작 안 함) > 유지(레이저 — 누르는 동안 공격 마지막 프레임) > 루프(차지 > 상승/하강 > 이동 > 서기).
