@@ -46,6 +46,11 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
+> **⚠️ 2026-11-17 — 캐릭터 애니메이션 방식 합의 대기: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md)부터 읽을 것.**
+> 2026-11-16에 올라온 Animator 방식을 코드 플립북으로 통일하자는 제안(팀원 확인 전). 합의될 때까지
+> `PlayerRig.cs`·`LobbyAvatar.cs`·`CharacterBase.controller`·`BuildCharacterAnimations.cs`는 더 고치지 말 것.
+> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 같은 문서 끝 "팀원이 먼저 할 일".
+
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
 예전 "단계 1/2/3"(9/9 회의)은 더 쓰지 않는다(2026-09-30 정리 — 일정표의 "2단계"와 이름이 겹쳐 헷갈렸다).
 옛 단계 1(모든 캐릭터 0차 + 모든 몬스터)은 2026-09-28에 끝났다 — 섬영 0차 병합, 드루이드는 기획 제외.
@@ -252,6 +257,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-17 (122)** — **[사용자 세션] 캐릭터 애니메이션 방식 제안서 — Animator → 코드 플립북 통일(문서만, 코드 변경 없음).**
+  main `668231c`·`057c9c8`(팀원, 2026-11-16)을 Claude + GPT(Codex 학교 프로필, gpt-6-luna)로 리뷰. 2026-11-15에 사용자 세션이
+  "코드 플립북 + 96×48 공통 캔버스"로 정해 놓고 문서에 안 남긴 게 원인 — 팀원 잘못 아님. 문제 11개(효과음 이벤트에 묶인 공격·피격 모션,
+  생성 메뉴가 손으로 넣은 Charge 상태를 지움, 런타임 `AddComponent<Animator>`, 경로 문자열 그림 로드, 보스 그림 갱신이 물리 콜백 안,
+  죽은 보스가 1초간 대상으로 남음 등)와 공유 계약·트랙 A/B 분업·결정 8개를 [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md)에.
+  **main 그대로 테스트(2026-11-17)**: 컴파일 OK, 539 중 516 통과·실패 5 — 새로 깨진 4개(`CreationOwnershipTests`에 PlayerRig·LobbyAvatar,
+  `GameBootTests`×2·`LobbySceneTests`×1이 정지 그림 대신 Animator 프레임을 봄) + 예전부터의 `DotScaleTests`(마법사 0.5, 팀장 결정 대기).
+  **"이펙트가 안 보인다"**: 코드 문제 아님 — `Assets/Resources/Vfx/`는 git 밖이라 각자 팩을 받아 메뉴 `ChronoSavior/VFX 팩 가져오기`를 돌려야 한다
+  (팀원이 새로 쓴 `pj4_energy_blast_A_large_red`·`B_small_blue`·`B_large_blue` 폴더는 팩 안에 실제로 있음을 확인).
 
 - **2026-11-16 (121)** — **[나] 살수 공격 애니메이션 6장 → 좌우반전 6장(07~12) 추가해 12장으로 — 쌍칼이라 "다른 손으로
   한 번 더 베기" 콤보처럼 자연스럽게 이어짐**(사용자 "모션을 좌우반전해서 한번더 출력하면 1~12같은느낌으로
