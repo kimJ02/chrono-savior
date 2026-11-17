@@ -46,7 +46,9 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **바로 다음(2026-11-18) — 아래 로그 (123)~(126) 다섯 가지를 에디터에서 직접 눈으로 확인할 것** — 이 세션은 디바이스
 브리지로 파일만 썼을 뿐 Unity 에디터를 못 열어서 다섯 다 실제로 돌려본 적이 없다:
-1. `ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 **이번엔 재생성 후에도 살아있는지**.
+1. ~~`ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 재생성 후에도 살아있는지~~ →
+   **더는 할 일 아님**(2026-11-18 병합으로 확인) — 그 메뉴·Animator 자체가 로그 (132)에서 삭제되고
+   코드 플립북(`ChronoSavior/캐릭터 애니메이션 연결`)으로 통째로 바뀌었다.
 2. 1스테이지 전투 배경(새 합성 그림)이 실제 플레이 화면에서 **상하 범위·좌우 팬 느낌이 어색하지 않은지**
    — `backgroundGrassYPx`(340)·`backgroundTopPx`(0)는 계산으로 추정한 값이라 에디터로 확인 전엔 확정이 아니다.
 3. **카메라 상하 프레이밍 보간 수정**((124)) — PlayMode 전체(특히 `StageVisualsTests.cs`)가 통과하는지,
@@ -57,11 +59,11 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    직접 고쳤다). 로드가 되면 발판 옆에 점프해서 붙어보고 실제로 떨어지는지 확인.
 5. **로비 점프 추가**((126)) — 로비에서 C를 누르면 캐릭터가 떴다가 내려오는지, JumpFall 애니메이션이
    자연스러운지, 건물 진입(F/↑)이 점프 중에도 그대로 되는지.
-6. **(127, 병합으로 새로 들어온 항목) `main`에 새로 깨진 테스트 4개 확인** — `CreationOwnershipTests`(PlayerRig·
-   LobbyAvatar)·`GameBootTests`×2·`LobbySceneTests`×1이 애니메이터 방식 전환(팀원 2026-11-16 커밋) 때문에
-   정지 그림이 아니라 Animator 프레임을 보고 있어 깨짐. 코드 플립북 통일 제안(바로 아래 ⚠️ 블록)이 합의되기
-   전까진 손대지 말 것 — 지금은 "깨져 있다"는 사실만 기록.
-7. **(128, 신규) 2지역 보스 "부서진 여신상" — 코드는 끝났고 에디터 작업이 남았다** — 아래 로그 (128) 전체
+6. ~~(127) `main`에 새로 깨진 테스트 4개 확인~~ → **2026-11-18 병합으로 해결 확인** — 그 뒤 애니메이션이
+   Animator → 코드 플립북으로 통째로 바뀌면서(로그 (132)) 깨졌던 `CreationOwnershipTests`·`GameBootTests`·
+   `LobbySceneTests`가 다시 "그 캐릭터 자세 묶음을 입었나"로 바뀌어 통과한다고 로그 (133)·(134)에 적혀
+   있다(전체 566/566). 이 세션은 에디터로 직접 돌려본 적은 없으니 다음에 에디터 열면 그 숫자만 한 번 더 확인.
+7. **(135, 신규) 2지역 보스 "부서진 여신상" — 코드는 끝났고 에디터 작업이 남았다** — 아래 로그 (135) 전체
    참고. 이 세션은 에디터에 접근 못 해서 **하나도 실행해 본 적이 없다**: ① 새 PlayMode 테스트
    (`BrokenGoddessBossTests.cs`) 7개 통과 확인 ② 프리팹 `Enemy_BrokenGoddess` 생성(`BlobLordBoss` 프리팹
    복제 후 컴포넌트 교체, `warningPrefab` 연결, `EnemyHealth.isBoss` 체크) ③ `MonsterCatalog.regionBosses`에
@@ -70,10 +72,11 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
-> **⚠️ 2026-11-17 — 캐릭터 애니메이션 방식 합의 대기: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md)부터 읽을 것.**
-> 2026-11-16에 올라온 Animator 방식을 코드 플립북으로 통일하자는 제안(팀원 확인 전). 합의될 때까지
-> `PlayerRig.cs`·`LobbyAvatar.cs`·`CharacterBase.controller`·`BuildCharacterAnimations.cs`는 더 고치지 말 것.
-> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 같은 문서 끝 "팀원이 먼저 할 일".
+> **✅ 2026-11-17 캐릭터 애니메이션은 코드 플립북이다(Animator 없음)** — 몸 그림은 `Characters/CharacterFlipbook`(씬의 Player·로비 아바타에 배치)이 넘기고,
+> 자세는 게임 코드가 정한다(루프: `PlayerRig`·`LobbyAvatar`, 공격·피격: `MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격).
+> 그림·순서·fps·기준점은 메뉴 **`ChronoSavior/캐릭터 애니메이션 연결`**(`Editor/BuildCharacterFlipbooks`의 표가 원본 — 에셋을 손으로 고치지 말 것). 경위·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md).
+> 보스 세 가지(그림 에셋 연결·그림 갱신을 `LateUpdate`로·사망 연출 중 콜라이더 끔)도 이 브랜치에서 했다(로그 133) — **팀원이 보스를 만지는 중이면 `BlobLordBoss.cs`·`Enemy_BlobLord.prefab`이 겹칠 수 있다**, 합치기 전에 확인.
+> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
 예전 "단계 1/2/3"(9/9 회의)은 더 쓰지 않는다(2026-09-30 정리 — 일정표의 "2단계"와 이름이 겹쳐 헷갈렸다).
@@ -282,7 +285,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
-- **2026-11-18 (128)** — **[나] 2지역 보스 "부서진 여신상" 신규 구현 — 잡기·휘두르기 2패턴**(사용자가 올린
+> **병합 메모(2026-11-18, 번호 충돌 해결)**: 아래 (135)는 `labo3` 로컬에서는 (128)로 쓰여 있었으나, 그사이 `main`이
+> (128)~(134)를 다른 내용(플립북 전환·몹 그림·공격 중 이동 잠금 등)으로 이미 채워 넣어서 **(135)로 재번호**했다 —
+> 내용·날짜·작성자 표시는 그대로이며 번호만 바꿨다. 아래 "다음 할 일" 목록의 항목 7도 같이 (135)로 맞췄다.
+
+- **2026-11-18 (135)** — **[나] 2지역 보스 "부서진 여신상" 신규 구현 — 잡기·휘두르기 2패턴**(사용자가 올린
   명세서 `부서진_여신상_스킬_구현_명세서.docx` + 별도 요청서 `message.txt`를 근거로, **요청서의 확정 단일값이
   명세서의 범위값보다 우선 적용된다**고 사용자가 직접 밝힘).
   - **범위**: 이번엔 **잡기·휘두르기 둘 뿐**이다. 애니메이션·보스 체력바 UI·사운드·카메라 흔들림·추가
@@ -348,6 +355,68 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
     하는 선택 규칙 — `Characters`의 무적 판정을 더 들여다봐야 해서 범위를 넘는다고 판단해 보류.
     (2) 돌 조각이 흩날리는 비주얼 — 애니메이션/VFX라 이번 작업 범위(message.txt가 명시적으로 제외)
     밖이라 손대지 않음. 둘 다 사용자가 필요하다고 하면 다음 스프린트에서.
+
+- **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
+  선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
+  정지 그림 `chara_temp_01`도 같은 규칙으로 기준점. **판정(지름 0.5)·이동은 그대로, 그림만 1.5배.** 캡처 `CaptureUiPreview.RunEnemySkins`(플레이어도 실제 애니메이션 첫 장·높이로)·`RunCharacterPoses`.
+  `DotScaleTests.Characters`가 드디어 통과 — 팀원 규칙(Transform 배율 1)과의 표준 결정 자체는 여전히 팀 확인(`HANDOFF.md`).
+
+- **2026-11-17 (133)** — **[사용자 세션] 플립북 전환 목표 마저 — 전체 566 중 565 통과(남은 1 = 마법사 도트 0.5, 팀장 결정 대기)**(사용자 "목표 달성해봐, main 올리지 말고").
+  - `UI/GameplaySfx`: 루프용 AudioSource를 코드로 붙이던 것(생성 책임 위반 — `CreationOwnershipTests` 실패의 마지막 원인) → 씬 `00_Persistent` › Audio › **SfxLoop** 자식에 배치하고 `[SerializeField] loopSource`로 연결
+    (일회용 에디터 스크립트로 놓고 지움). 씬 구성 검증에 루프 소스 검사. ⚠️ 저장 때 PixelPerfectCamera가 카메라 Viewport Rect를 (0,0.125,1,0.75)로 바꿔 놓아 손으로 (0,0,1,1)로 되돌렸다(CLAUDE.md 경고 그대로).
+  - **보스 '덩어리 지배자'**(제안서 트랙 B — 팀원이 보스를 만진다 해서 미뤘던 것, 사용자 지시로 이 브랜치에서): `BlobLordBoss` 그림을 경로 문자열 대신 프리팹 칸 `SpriteFlipbook`(튀어오르기 6·투척 4·이동 4·피격 1·사망 8,
+    `Assets/Data/Enemies/Skins/Flipbook_BlobLord_*`, 메뉴 `ChronoSavior/몬스터 지역 그림 연결`이 채움 — 가져오기 설정은 팀원 것 그대로), 그림 갱신을 물리 콜백(`GetHorizontalSpeed`)에서 `LateUpdate`로,
+    **사망 연출이 시작될 때 콜라이더를 끈다**(시체를 겨누지 않게). 이동·사망 fps는 에셋(10·8). 테스트 `BlobLordBossTests.BodyArt_IsWiredOnThePrefab`·`Death_TurnsCollidersOff_WhileDeathArtPlays`.
+  - 96×48 재캔버스 대신 묶음별 기준점으로 한 것 — GPT 재확인 "유지"(사본은 프레임 픽셀을 다시 옮기지 않는 한 이점 없음).
+  - 캡처 추가: `CaptureUiPreview.RunMageOrb`(빨강/보라 오브·일렁임이 손에, 좌우 반전 포함)·`RunBossArt`(보스 묶음이 프리팹에서 나온다).
+  - **남은 것(결정 필요)**: 캐릭터가 깨져 보이는 건 높이 0.5유닛 = 도트 1.33배(정수 아님)라서 — 0.75(도트 2, 1.5배 커짐)로 갈지 팀장·사용자 결정(`DotScaleTests.Characters` 실패가 이것).
+
+- **2026-11-17 (132)** — **[사용자 세션] 캐릭터 애니메이션 Animator → 코드 플립북 전환 완료**(`docs/animation-flipbook-proposal.md` 트랙 A + 마법사 차지 그림, GPT와 계획·결정).
+  - `Characters/CharacterFlipbook`(씬 `20_Combat` Player·`10_Lobby` 아바타에 배치, 로비는 실제 시간): 우선순위 피격 > 공격(한 번, 재생 중 재공격은 재시작 안 함) > 유지(레이저 — 누르는 동안 공격 마지막 프레임) > 루프(차지 > 상승/하강 > 이동 > 서기).
+    `PlayerRig.LoopPose`가 매 프레임 루프 자세를 정하고, 공격·피격은 일어난 곳에서 직접: `MageAttack` 발사(**갈래 무관 — 예전엔 효과음 이벤트 중 기본 공격 것만 들어서 불·블랙홀 법사는 공격 모션이 안 나왔다**), `GunnerAttack` 사격·레이저 유지/해제,
+    `BladeSlashVfx` 베기(번갈이 숫자 원본), `PlayerHealth` 피격. `SfxEvents`는 다시 소리 전용.
+  - `Editor/BuildCharacterFlipbooks`(메뉴 `ChronoSavior/캐릭터 애니메이션 연결`, 표가 원본): 프레임 가져오기 설정 + **묶음마다 기준점** — 가로는 머리 가운데(공격 그림 70px 캔버스는 몸이 오른쪽이라
+    가운데 기준이면 공격할 때 몸이 10px 옆으로 튀었다), 세로는 "발 + 판정 반지름"(발이 판정 원 바닥, 몬스터와 같은 규칙). 마법사 오브·일렁임은 몸 공격 그림과 같은 캔버스라 같은 기준점.
+    `Assets/Data/Characters/Anim/Flipbook_*`·`AnimSet_{Mage,Gunner,Blade}` 제자리 갱신, `CharacterArtSet.animSets`, 씬 배치·`MageChargeVfx` 칸까지 한 번에. 프레임·fps는 팀원 클립 그대로, 점프/하강 8장은 상승 3~5·하강 6~8.
+    96×48 재캔버스는 안 했다 — 묶음별 기준점으로 같은 효과(원본 PNG 그대로).
+  - `MageChargeVfx`: 오브·일렁임(빨강·보라)을 경로 문자열 로드 대신 직렬화 `SpriteFlipbook` 칸, 일렁임은 오브 앞(정렬 +2). `CharacterArtSet.animators` → `animSets`.
+  - 삭제: `Assets/Data/Characters/Animations/`·`Animators/`(클립 8·컨트롤러 4), `Editor/BuildCharacterAnimations.cs`, 루트 `Claude outputs/` 사본.
+  - 같은 브랜치에 `feature/attack-move-lock`(공격 중 이동 잠금, 로그 131) 병합 — 공격 신호를 붙이기 전에.
+  - 테스트: `CharacterFlipbookTests` 6개(루프 이어 돌기·공격 재시작 안 함·피격이 끊음·레이저 유지·루프 자세 고르기·**불/블랙홀 법사 발사 → 공격 자세**), 그림 테스트 3개(`GameBootTests`×2·`LobbySceneTests`)는
+    "그 캐릭터 자세 묶음을 입었나"로, `MageChargeVfxTests`는 직렬화 칸으로. 씬 구성 검증에 플립북·오브 칸 검사. **전체 564 중 562 통과** — 남은 실패 2:
+    `CreationOwnershipTests`의 `UI/GameplaySfx.cs`(루프용 AudioSource를 코드로 붙임, 예전부터 — 씬 배치로 옮기면 해결)·`DotScaleTests.Characters`(마법사 0.5, 팀장 결정 대기). 씬 구성 검증 통과.
+    캡처 `CaptureUiPreview.RunCharacterPoses`(세 캐릭터 × 자세 × 좌우)로 머리·발 정렬 확인.
+
+- **2026-11-16 (131, 원래 브랜치 번호 107)** — **[사용자 세션] 공격 중 이동 잠금 — `feature/attack-move-lock`, 2026-11-17 `feature/anim-flipbook`에 병합**(사용자 "공격할 때 가만히 있는 모션인 거는 정지해서 공격하는 걸로", Codex와 설계·구현 검토 2회). 팀원 캐릭터 애니메이션(`labo3`)의 공격 그림이 제자리 자세라 달리며 쏘면 미끄러져 보이는 문제의 첫 단계. **땅**: 마법사 차지(누르는 동안) + 발사 자세(원본 `attackDur` 0.2÷공속), 메카닉 레이저(누르는 동안, 차징만 보여도) 동안 좌우 이동·점프 불가, 뒤돌기는 됨, 떼면 바로 이동. **공중**: 마법사 원본대로, 레이저는 새 좌우 입력만 무시·지금 가로 속도·중력 유지(다른 게임 사례 비교 후 사용자 결정). 메카닉 일반 사격·섬영 그대로, 워리어 미적용. `CharacterMover2D.AttackLock`(키트가 매 프레임, 땅 판정은 그 자리에서 다시 잼, 막힌 점프 입력은 버림, `ResetMotion`이 풀어 줌). 의도적 편차는 `docs/original-parity.md` 9절. 테스트 `AttackMoveLockTests` 9개(실제 바닥 위 미끄럼·점프 포함). PlayMode 546/548 — 실패 2건은 main에서 이미(위 (106)). 1차 실행에서 `BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서 통과(섬영은 잠금을 안 씀 — 타이밍 불안정으로 보임). **에디터에서 직접 플레이해 손맛은 아직 안 봤다**. 다음: 애니메이션 연결(코드 프레임 넘기기, Codex 결정 — 그림 캔버스 공통 규격 재배치가 먼저, 팀원과 담당 정하기).
+
+- **2026-11-17 (130)** — **[사용자 세션] 몬스터가 바닥에서 떠 보이던 것 — 발 기준점으로 해결(엘리트 포함)**(사용자 "몬스터들 바닥에서 뜨는 거 해결 안 되나?").
+  원인 둘: 그림 아래 투명 줄(쥐 3px·멧돼지 5px·오크통 2px·슬라임 10px), 엘리트는 판정만 ×1.35(그림 그대로 — main에 원래 있던 현상). GPT 상의로 **P안**:
+  `Editor/BuildEnemySkins`가 땅에 서는 종류의 그림 기준점을 "발(움직임 프레임 중 가장 낮은 불투명 줄) + 판정 반지름" 높이에 둔다 — 루트(= 판정 중심)는 그대로라
+  `EnemyMove`의 지면·발판 Y 로직은 안 바뀌고 그림만 내려온다. 엘리트용 기준점(반지름 ×1.35)은 같은 텍스처의 둘째 그림(`_Elite`, 텍스처를 Multiple로)이고
+  `RegionSkin.eliteMove`/`eliteHit` → `EnemySkinAnimator.Play(skin, elite)`. 까마귀(비행)·미배정 그림은 가운데 기준점. 오크통은 이제 도트 4에서도 묻히지 않고 정확히 닿는다.
+  테스트 `EnemySkinTests.GroundedMonsters_FeetSitOnHitboxBottom_EliteToo`(쥐·멧돼지·오크통 × 일반/엘리트 — 발 = 판정 바닥). 전체 549 중 544 통과(실패 5는 애니메이터 쪽·마법사 도트, 무관).
+  캡처 `CaptureUiPreview.RunEnemySkins`가 이제 물리가 쉬는 높이에 세우고 엘리트도 찍는다. **고블린·박쥐 옛 그림(지금 안 쓰임)과 다른 몹 종류(궁수·슬라임)는 그대로.**
+
+- **2026-11-17 (129)** — **[사용자 세션] 몬스터 그림 적용 — 박쥐 자리 까마귀·고블린 자리 쥐·멧돼지·오우거 자리 오크통, 1지역부터**
+  (팀원 요청 "2스테이지에 몬스터 적용" + 드라이브 `몬스터 모음.zip` 8종(32×32, 움직임 4 + 피격 1) → 사용자 "4종 배정" → "1스테이지도 바꿔라").
+  - `Core/EnemyData.regionSkins`(`RegionSkin`: fromRegion·움직임 `SpriteFlipbook`·피격·왼쪽 그림 여부·도트 배율) + `SkinFor(region)`. 지금은 전부 1지역부터라 옛 `sprite`는 안 쓰인다
+    (지역마다 다른 그림이 필요해지면 fromRegion이 큰 칸을 추가). `Systems/EnemySetup`이 스킨 첫 장을 꽂고 그 도트 높이로 크기를 잰다.
+  - `Enemies/EnemySkinAnimator`(몹 공용 프리팹 `Enemy_Base`에 배치 — 종류별 프리팹이 물려받음): 게임 시간으로 4장 되풀이(시작점 흩음), 직접 타격마다 0.15초 피격 그림, 걷는 방향으로 좌우 반전.
+  - `Editor/BuildEnemySkins`(메뉴 `ChronoSavior/몬스터 지역 그림 연결`): 가져오기 설정·움직임 에셋 제자리 갱신·배정표대로 연결·프리팹 부품. **배정표가 원본.**
+    민들레·상자·새싹·슬라임은 그림·움직임 에셋만(배정 미정). 슬라임·오크통·쥐는 피격 파일이 따로 없어 5번째 장을 피격으로.
+  - **오크통만 도트 4**(GPT 상의): 관례(그림 높이 = 판정 지름, 오우거 0.87)에 도트 2(0.5)면 0.19 떠 보여서 가장 가까운 정수 배율(1.0, 0.065 묻힘). `docs/pixel-standard.md`에 예외로.
+    ~~남은 것: 발을 판정 바닥에 맞추기 + 엘리트 뜸~~ → (130)에서 발 기준점으로 해결.
+  - 공용 타입 `Core/SpriteFlipbook`·`CharacterPose`·`CharacterAnimSet`(+`SpriteFlipbookTests`)도 이 커밋으로 main에 — 애니메이션 플립북 전환이 이어서 쓴다.
+  - 테스트: `EnemySkinTests` 3개, `DotScaleTests.EnemiesWithRealArt`가 스킨 프레임(PPU 128·같은 크기·도트 배율)을 본다, `MageChargeVfxTests.Bolt_ShowsBranchArt` 기대값(0차도 그림·완충 큰 그림) 갱신.
+    전체 548 중 543 통과 — 실패 5는 애니메이터 쪽(소유권 1·그림 3)과 마법사 도트 0.5(팀장 결정 대기), 이 작업과 무관. 캡처(`CaptureUiPreview.RunEnemySkins`)로 1·2지역 확인.
+
+- **2026-11-17 (128)** — **[사용자 세션] 블랙홀(중력) 법사 차지 손 구체·일렁임을 보라로**(사용자 "블랙홀 법사가 손에서 불이 차징되는 게
+  문제 — 빨간색을 다른 색으로" → 후보 3개(보라·속이 어두운 블랙홀·색상 회전) 미리보기 중 **A "중력탄 보라"** 선택).
+  `Art/Characters/Mage/Character_Mage_Attack_OrbEffectGravity_01~11`·`…_KiEffectGravity_01~06` 17장 추가 — 원본 빨강 그림의 7색을
+  중력탄(`mage/gravity_orb_small`, dark_matter 보라) 팔레트로 1:1 바꾼 사본(가져오기 설정은 원본 .meta 그대로, GUID만 새로).
+  `MageChargeVfx`가 `mageBranch == Gravity`면 이 그림을, 폭발·0차는 빨강 원본을 쓴다(`FrameName`). 런타임 틴트는 빨강이 탁한 자주가 돼서
+  그림을 따로 뒀다. 불러오는 방식(`Resources.Load` 경로)은 기존 코드 그대로 — 직렬화로 바꾸는 건 `docs/animation-flipbook-proposal.md` 트랙 B.
+  테스트 `MageChargeVfxTests.OrbAndKi_GravityBranchUsesVioletFrames` 추가. 사용자가 에디터에서 직접 보고 확인.
 
 - **2026-11-17 (127)** — **[사용자 세션] 캐릭터 애니메이션 방식 제안서 — Animator → 코드 플립북 통일(문서만, 코드 변경 없음).**
   > **병합 메모(2026-11-18, 번호 충돌 해결)**: 이 항목은 `main` 쪽 원래 번호가 **(122)**였으나, 같은 커밋(공통 조상)에서

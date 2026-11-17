@@ -96,6 +96,37 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
     /// </summary>
     public float AccelMultiplier = 1f;
 
+    /// <summary>공격 중 이동 잠금 종류(<see cref="AttackLock"/>).</summary>
+    public enum AttackMoveLock
+    {
+        /// <summary>잠금 없음(원본 — 마법사·메카닉도 공격 중 이동 자유, `attackRapid`).</summary>
+        None,
+        /// <summary>땅에선 좌우 이동·점프 불가, 공중에선 원본대로 자유(마법사 차지·발사 자세).</summary>
+        RootOnGround,
+        /// <summary>땅에선 좌우 이동·점프 불가, 공중에선 새 좌우 입력만 무시하고 지금 가로 속도·중력 유지(메카닉 레이저).</summary>
+        RootOnGroundNoSteerInAir,
+    }
+
+    /// <summary>
+    /// 공격 중 이동 잠금 — 무기 키트가 <see cref="SpeedMultiplier"/>처럼 **매 프레임** 넣는다(2026-11-16 사용자 결정, 의도적 편차:
+    /// 공격 그림이 제자리에 선 자세라 달리며 쏘면 미끄러져 보인다). 방향 전환(뒤돌기)은 잠금 중에도 된다 — 입력이 <see cref="Facing"/>을 계속 바꾼다.
+    /// 버튼을 떼면 키트가 None으로 돌려 곧바로 움직인다. 캐릭터 전환·런 리셋(<see cref="ResetMotion"/>)에서 None.
+    /// </summary>
+    public AttackMoveLock AttackLock = AttackMoveLock.None;
+
+    /// <summary>잠금 중 점프가 막히는가 — 땅(코요테 구간 포함)이면 막는다. 막힌 점프 입력은 버린다(버튼을 뗀 뒤 저절로 뛰지 않게).</summary>
+    public static bool JumpBlockedByAttack(AttackMoveLock lk, bool groundedOrCoyote) => lk != AttackMoveLock.None && groundedOrCoyote;
+
+    /// <summary>
+    /// 입력으로 낸 가로 속도에 잠금을 적용한다 — 땅이면 0, 공중 레이저면 지금 가로 속도 그대로(넉백·관성 포함, 저장값을 다시 넣지 않는다), 그 외 입력 그대로.
+    /// </summary>
+    public static float ApplyAttackLock(AttackMoveLock lk, bool grounded, float inputVx, float currentVx)
+    {
+        if (lk == AttackMoveLock.None) return inputVx;
+        if (grounded) return 0f;
+        return lk == AttackMoveLock.RootOnGroundNoSteerInAir ? currentVx : inputVx;
+    }
+
     Rigidbody2D rb;
     Collider2D col;
     bool grounded;
@@ -134,6 +165,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         else jumpBufferTimer -= Time.deltaTime;
 
         coyoteTimer = grounded ? coyoteTime : coyoteTimer - Time.deltaTime;
+        if (JumpBlockedByAttack(AttackLock, grounded || coyoteTimer > 0f)) jumpBufferTimer = 0f; // 공격 중 점프 금지(땅)
 
         if (jumpBufferTimer > 0f && (grounded || coyoteTimer > 0f))
         {
@@ -160,6 +192,10 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
             // 원본 statMs()(project_test.html:1286) — 골드 강화(ms)가 반영된 배수. 기본 속도(`Core/PlayerMoveConfig.BaseSpeed`, 로비 아바타와 같은 값)는
             // 안 바꾸고 매 프레임 곱해서 적용(다른 배수들과 같은 자리에서, 누적 곱 버그 없이).
             : h * PlayerMoveConfig.BaseSpeed * SpeedMultiplier * PlayerStatCalculator.ComputeMoveSpeedMultiplier(ProfileService.Current);
+        // 공격 중 이동 잠금 — 땅 판정은 지금 다시 잰다(직전 물리 틱 값이면 착지 직후 한 틱 미끄러진다, Codex 2026-11-16).
+        // 수직 속도(중력·발판 내려가기·넉백 튕김)는 건드리지 않는다.
+        if (AttackLock != AttackMoveLock.None)
+            vx = ApplyAttackLock(AttackLock, CheckGrounded(), vx, rb.linearVelocity.x);
 
         float minX = FieldBounds.MinX + edgeMargin;
         float maxX = FieldBounds.MaxX - edgeMargin;
@@ -283,6 +319,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         SpeedMultiplier = 1f;
         MoveScale = 1f;
         AccelMultiplier = 1f;
+        AttackLock = AttackMoveLock.None;
         if (rb != null) rb.linearVelocity = new Vector2(0f, rb.linearVelocity.y);
     }
 

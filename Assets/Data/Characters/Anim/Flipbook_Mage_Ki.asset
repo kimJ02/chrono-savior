@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Mage_Ki
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: 67c15e99cd7d47a988380484808240f7, type: 3}
+  - {fileID: 21300000, guid: de4985e3f8714ee8959d5fb78057ac84, type: 3}
+  - {fileID: 21300000, guid: 5894872489bf442b88eadf2acb36d183, type: 3}
+  - {fileID: 21300000, guid: 57db518453af4739bd4d9d1f1ecba7b9, type: 3}
+  - {fileID: 21300000, guid: 501de8d36f5d4cae9dc530050c6c4b01, type: 3}
+  - {fileID: 21300000, guid: 67b4d1cbb1614859a62663c956ed2d2d, type: 3}
+  fps: 10
+  loop: 1

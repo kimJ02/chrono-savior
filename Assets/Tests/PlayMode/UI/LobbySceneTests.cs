@@ -73,7 +73,10 @@ public class LobbySceneTests
     {
         var avatar = InLobby<LobbyAvatar>().Single();
         Assert.AreEqual(ProfileService.Current.character, avatar.Shown);
-        Assert.AreSame(avatar.Art.SpriteOf(ProfileService.Current.character), avatar.GetComponent<SpriteRenderer>().sprite);
+        var set = avatar.Art.AnimSetOf(ProfileService.Current.character);
+        Assert.IsNotNull(set, "그 캐릭터는 애니메이션이 있다");
+        Assert.AreSame(set, avatar.GetComponent<ChronoSavior.Characters.CharacterFlipbook>().Set, "로비 아바타의 플립북이 그 캐릭터 묶음을 돈다(2026-11-17)");
+        CollectionAssert.Contains(set.idle.frames, avatar.GetComponent<SpriteRenderer>().sprite, "가만히 있으면 서기 그림");
     }
 
     [UnityTest]

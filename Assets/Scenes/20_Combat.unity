@@ -195,6 +195,7 @@ MonoBehaviour:
   - {fileID: 1061869209}
   - {fileID: 249017186}
   portal: {fileID: 789030853}
+  includeBackground: 1
 --- !u!4 &52205809
 Transform:
   m_ObjectHideFlags: 0
@@ -3642,6 +3643,7 @@ GameObject:
   - component: {fileID: 1457870354}
   - component: {fileID: 1457870356}
   - component: {fileID: 1457870355}
+  - component: {fileID: 1457870357}
   m_Layer: 6
   m_Name: Player
   m_TagString: Player
@@ -3788,6 +3790,7 @@ MonoBehaviour:
   SpeedMultiplier: 1
   MoveScale: 1
   AccelMultiplier: 1
+  AttackLock: 0
 --- !u!50 &1457870349
 Rigidbody2D:
   serializedVersion: 5
@@ -3944,6 +3947,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   flashMaterial: {fileID: 2100000, guid: 755e32950447ea841a0318c8d55d10e6, type: 2}
+  orbArt: {fileID: 11400000, guid: 490a1132e3a156646882d28c0f5da8e8, type: 2}
+  kiArt: {fileID: 11400000, guid: 8b8fb5bcdf60a224eb638c4428408b58, type: 2}
+  orbArtGravity: {fileID: 11400000, guid: c9b01cadd72716c41866d4099e7f4457, type: 2}
+  kiArtGravity: {fileID: 11400000, guid: 14ecca2455af4f842aee40240bf9a4b6, type: 2}
 --- !u!114 &1457870355
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3972,6 +3979,19 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   fillMaterial: {fileID: 2100000, guid: a93efdee302a5344e90f6c3c91d9e783, type: 2}
+--- !u!114 &1457870357
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1457870341}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2678964b6d14fbb4283cf56e30255596, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  useUnscaledTime: 0
 --- !u!21 &1480207373
 Material:
   serializedVersion: 8

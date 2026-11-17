@@ -19,6 +19,37 @@ namespace ChronoSavior.Core
     /// 에셋 위치는 `Assets/Data/Enemies/`(CLAUDE.md 규칙). 에셋은 손으로 만들지 말고
     /// `Assets/Editor/BuildEnemyData.cs`가 원본 수치대로 생성한다 — 원본과 어긋나면 그 파일을 고칠 것.
     /// </summary>
+    /// <summary>
+    /// 몹 한 종류의 지역별 그림(2026-11-17, 사용자 "2스테이지 몬스터 적용" — 팀원 그림 32×32: 움직임 4장 + 피격 1장).
+    /// 행동·수치는 그대로고 그림만 바뀐다(예: 고블린 자리 = 쥐). 사용자가 처음엔 2지역만 → "1스테이지도 바꿔라"로 지금은 1지역부터.
+    /// 지역별로 다른 그림이 필요해지면 fromRegion이 더 큰 칸을 추가한다.
+    /// </summary>
+    [System.Serializable]
+    public class RegionSkin
+    {
+        [Tooltip("이 지역부터 쓴다(1 = 1지역).")]
+        public int fromRegion = 2;
+        [Tooltip("움직임 — 되풀이(SpriteFlipbook).")]
+        public SpriteFlipbook move;
+        [Tooltip("맞았을 때 잠깐 보이는 그림(없으면 움직임 그대로 + 흰 깜빡임만).")]
+        public Sprite hit;
+        [Tooltip("엘리트용 — 같은 그림이되 기준점만 엘리트 판정(×1.35) 바닥에 발이 오게 잡은 것(그림은 안 커지고 판정만 커져서). 비면 위 move/hit.")]
+        public SpriteFlipbook eliteMove;
+        public Sprite eliteHit;
+        [Tooltip("그림이 왼쪽을 보고 그려졌나 — 그러면 오른쪽으로 갈 때 뒤집는다.")]
+        public bool facesLeft = true;
+        [Tooltip("도트 배율 — 보통 Core.DotScale(2). 덩치 큰 종류(오우거 자리 오크통)만 4: 그림 높이 = 판정 지름 관례(BuildEnemyData)에 가장 가까운 정수 배율.")]
+        [Min(1)] public int dotScale = DotScale.Value;
+
+        /// <summary>엘리트면 엘리트용 묶음(없으면 일반).</summary>
+        public SpriteFlipbook MoveFor(bool elite) => elite && eliteMove != null && eliteMove.Count > 0 ? eliteMove : move;
+        public Sprite HitFor(bool elite) => elite && eliteHit != null ? eliteHit : hit;
+
+        /// <summary>화면 높이(유닛) = 그림 픽셀 × 도트 배율 ÷ 격자 PPU(128).</summary>
+        public float VisualHeight => move != null && move.Count > 0 && move.frames[0] != null
+            ? move.frames[0].rect.height * dotScale / DotScale.GridPixelsPerUnit : 0f;
+    }
+
     [CreateAssetMenu(menuName = "ChronoSavior/Enemy Data", fileName = "EnemyData")]
     public class EnemyData : ScriptableObject
     {
@@ -65,6 +96,22 @@ namespace ChronoSavior.Core
         /// `docs/prototype-sprites.md`)은 파일이 그대로 남아 있고 `BuildEnemyData`가 대입만 안 한다.
         /// </summary>
         public Sprite sprite;
+
+        [Header("지역 그림 (2026-11-17~ — 이 지역부터는 위 sprite 대신 움직이는 그림)")]
+        [Tooltip("지역별 움직이는 그림. 지금 지역 이하에서 fromRegion이 가장 큰 칸을 쓴다(없으면 위 sprite·도형 그대로). " +
+                 "에디터 메뉴 ChronoSavior/몬스터 지역 그림 연결이 채운다(Editor/BuildEnemySkins의 목록이 원본).")]
+        public RegionSkin[] regionSkins = new RegionSkin[0];
+
+        /// <summary>그 지역에서 쓸 그림 — fromRegion ≤ region 중 가장 큰 칸(없으면 null = 예전 그대로).</summary>
+        public RegionSkin SkinFor(int region)
+        {
+            RegionSkin best = null;
+            if (regionSkins == null) return null;
+            foreach (var s in regionSkins)
+                if (s != null && s.move != null && s.move.Count > 0 && s.fromRegion <= region && (best == null || s.fromRegion > best.fromRegion))
+                    best = s;
+            return best;
+        }
 
         [Header("임시 도형 (정식 아트 전까지)")]
         [Tooltip("이 종류를 어떤 도형으로 그릴지. 배정 기준은 Core.PrimitiveShape 주석 참고 — " +

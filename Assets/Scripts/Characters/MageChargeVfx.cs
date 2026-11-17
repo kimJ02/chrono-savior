@@ -53,33 +53,28 @@ namespace ChronoSavior.Characters
         float flash;
         float kiTimer;
 
-        /// <summary>
-        /// 손 오브 11장·오브 일렁임 6장(캐시, 캐릭터 공용 — Resources 밖에선 못 읽으니 그림이 아예 없으면 전부 null).
-        /// **중력(블랙홀) 갈래는 보라 그림**(`…_OrbEffectGravity_NN`·`…_KiEffectGravity_NN`, 2026-11-17 사용자 "블랙홀 법사가 손에서 불이
-        /// 차징되는 게 문제" → 후보 A "중력탄 색" 선택). 원본 빨강 그림의 6색을 중력탄(`mage/gravity_orb_small`, dark_matter 보라)
-        /// 팔레트로 1:1 바꾼 사본이다 — 런타임 틴트(곱하기)로는 빨강이 탁한 자주가 돼서 그림을 따로 둔다. 폭발·0차는 빨강 그대로.
-        /// </summary>
-        static Sprite[] orbFrames, orbFramesGravity, kiFrames, kiFramesGravity;
+        [Header("손 오브·일렁임 그림(2026-11-17 — 경로 문자열 대신 에셋, Editor/BuildCharacterFlipbooks가 연결)")]
+        [Tooltip("손 오브 11장(차지율 11등분) — 폭발·0차.")]
+        [SerializeField] SpriteFlipbook orbArt;
+        [Tooltip("오브 일렁임 6장(시간 루프) — 폭발·0차.")]
+        [SerializeField] SpriteFlipbook kiArt;
+        [Tooltip("중력(블랙홀) 갈래 보라 오브 — 2026-11-17 사용자 후보 A(원본 빨강의 색을 중력탄 보라 팔레트로 1:1 바꾼 사본). 런타임 틴트는 빨강이 탁한 자주가 돼서 그림을 따로 둔다.")]
+        [SerializeField] SpriteFlipbook orbArtGravity;
+        [SerializeField] SpriteFlipbook kiArtGravity;
 
-        /// <summary>그 갈래가 쓰는 그림 이름 — 중력만 `Gravity`가 붙는다(테스트도 이걸로 확인).</summary>
-        public static string FrameName(string kind, MageBranch branch, int index1) =>
-            $"Art/Characters/Mage/Character_Mage_Attack_{kind}{(branch == MageBranch.Gravity ? "Gravity" : "")}_{index1:00}";
+        /// <summary>씬 검증·테스트가 읽고 넣는다.</summary>
+        public SpriteFlipbook OrbArt { get => orbArt; set => orbArt = value; }
+        public SpriteFlipbook KiArt { get => kiArt; set => kiArt = value; }
+        public SpriteFlipbook OrbArtGravity { get => orbArtGravity; set => orbArtGravity = value; }
+        public SpriteFlipbook KiArtGravity { get => kiArtGravity; set => kiArtGravity = value; }
 
-        static Sprite[] Frames(ref Sprite[] cache, string kind, MageBranch branch, int count)
-        {
-            if (cache == null)
-            {
-                cache = new Sprite[count];
-                for (int i = 0; i < count; i++) cache[i] = Resources.Load<Sprite>(FrameName(kind, branch, i + 1));
-            }
-            return cache;
-        }
+        static Sprite[] FramesOf(SpriteFlipbook b) => b != null ? b.frames : System.Array.Empty<Sprite>();
 
-        static Sprite[] OrbFrames(MageBranch branch) => branch == MageBranch.Gravity
-            ? Frames(ref orbFramesGravity, "OrbEffect", branch, 11) : Frames(ref orbFrames, "OrbEffect", MageBranch.None, 11);
+        /// <summary>그 갈래의 오브 그림(중력만 보라).</summary>
+        public Sprite[] OrbFrames(MageBranch branch) => FramesOf(branch == MageBranch.Gravity && orbArtGravity != null ? orbArtGravity : orbArt);
 
-        static Sprite[] KiFrames(MageBranch branch) => branch == MageBranch.Gravity
-            ? Frames(ref kiFramesGravity, "KiEffect", branch, 6) : Frames(ref kiFrames, "KiEffect", MageBranch.None, 6);
+        /// <summary>그 갈래의 일렁임 그림(중력만 보라).</summary>
+        public Sprite[] KiFrames(MageBranch branch) => FramesOf(branch == MageBranch.Gravity && kiArtGravity != null ? kiArtGravity : kiArt);
 
         /// <summary>차지율 k에서 몇 단계인지 — 0 = 아직, 1 = 완충.</summary>
         public static int StageAt(float k)
@@ -137,10 +132,11 @@ namespace ChronoSavior.Characters
                 orbSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1; // 몸 바로 앞 — 완충 번쩍임·베기 효과와 같은 자리
             }
             var frames = OrbFrames(ProfileService.Current.mageBranch);
+            if (frames.Length == 0) { orbSr.enabled = false; return -1; }
             int idx = Mathf.Clamp(Mathf.RoundToInt(ratio * (frames.Length - 1)), 0, frames.Length - 1);
             var sprite = frames[idx];
             orbSr.enabled = sprite != null;
-            if (sprite == null) return -1; // 그림이 없으면(이론상 늘 있어야 하지만) 숨긴다 — Resources는 VFX 팩과 달리 git에 들어있다
+            if (sprite == null) return -1; // 그림이 비었으면 숨긴다
             orbSr.sprite = sprite;
             if (body != null) { orbSr.flipX = body.flipX; orbSr.flipY = body.flipY; }
             return idx;
@@ -162,10 +158,11 @@ namespace ChronoSavior.Characters
                 go.transform.SetParent(transform, false); // 오브와 같은 캔버스·자리
                 kiSr = go.GetComponent<SpriteRenderer>();
                 if (body != null) kiSr.sortingLayerID = body.sortingLayerID;
-                kiSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 1;
+                kiSr.sortingOrder = (body != null ? body.sortingOrder : 0) + 2; // 일렁임은 오브 앞(2026-11-17 — 같은 +1이라 앞뒤가 정해지지 않았다)
             }
             kiTimer += dt;
             var frames = KiFrames(ProfileService.Current.mageBranch);
+            if (frames.Length == 0) { kiSr.enabled = false; return; }
             int idx = Mathf.FloorToInt(kiTimer * KiEffectFps) % frames.Length;
             var sprite = frames[idx];
             kiSr.enabled = sprite != null;

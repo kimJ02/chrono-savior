@@ -1,5 +1,6 @@
 using UnityEngine;
 using ChronoSavior.Core;
+using ChronoSavior.Characters;
 
 namespace ChronoSavior.UI
 {
@@ -24,38 +25,25 @@ namespace ChronoSavior.UI
         CharacterArtSet shownArt;
 
         /// <summary>
-        /// 로비 애니메이션(2026-11-16) — 전투의 `PlayerRig`와 같은 에셋(`CharacterArtSet.AnimatorOf`)을 쓰되, 로비엔
-        /// 전투가 없으니 Idle/Move/JumpFall만 쓴다(Attack/Hit 트리거는 안 걸음). 로비는 물리가 아니라 `LobbyWorld`가
-        /// `transform.position`을 직접 옮기므로, Moving은 프레임 사이 위치 변화량으로 판정한다(전투처럼 Rigidbody2D
-        /// 속도를 읽을 수 없다). Grounded는 기본 true — **2026-11-18, 꾸밈용 점프가 생기면서** `LobbyWorld`가
-        /// 점프 중에만 <see cref="SetGrounded"/>로 꺼 준다(발판이 없어 실제로 바닥이 바뀌는 건 아니다).
+        /// 로비 애니메이션(2026-11-17 플립북 전환 — 2026-11-16 Animator 대신). 전투의 Player와 같은 자세 그림 묶음(`CharacterArtSet.AnimSetOf`),
+        /// 씬의 아바타에 배치된 `CharacterFlipbook`(실제 시간 — 시간이 멈춘 로비에서도 걷는다). 로비엔 전투가 없어 서기·걷기·상승·하강만.
+        /// 로비는 물리가 아니라 `LobbyWorld`가 위치를 직접 옮기므로 걷기·상승/하강은 프레임 사이 위치 변화량으로, 공중 여부는
+        /// `LobbyWorld`가 꾸밈용 점프 동안 <see cref="SetGrounded"/>로 알려 준다(2026-11-18 팀원).
         /// </summary>
-        Animator anim;
+        CharacterFlipbook flipbook;
         Vector3 lastPos;
-
-        static readonly int AnimMoving = Animator.StringToHash("Moving");
-        static readonly int AnimGrounded = Animator.StringToHash("Grounded");
+        bool grounded = true;
 
         /// <summary>지금 입고 있는 캐릭터 — 아직 안 입었으면 null.</summary>
         public CharacterId? Shown => shown;
 
-        /// <summary>`LobbyWorld`가 점프 시작/종료 때 부른다 — Animator가 있고 켜져 있을 때만 반영(정지그림 캐릭터는 그냥 무시).</summary>
-        public void SetGrounded(bool grounded)
-        {
-            if (anim != null && anim.enabled) anim.SetBool(AnimGrounded, grounded);
-        }
+        /// <summary>`LobbyWorld`가 점프 시작/종료 때 부른다.</summary>
+        public void SetGrounded(bool isGrounded) => grounded = isGrounded;
 
         void Awake()
         {
             sr = GetComponent<SpriteRenderer>();
-            anim = GetComponent<Animator>();
-            if (anim == null) anim = gameObject.AddComponent<Animator>();
-            // ⚠️ 로비는 시간이 멈춘 채(timeScale 0) 캐릭터만 실제 시간으로 걷는다(LobbyWorld가 이미
-            // Time.unscaledDeltaTime을 쓰는 것과 같은 이유) — Animator 기본값(Normal)은 **timeScale을 그대로
-            // 따라가서 timeScale 0에선 애니메이션 재생 자체가 멈춘다**(2026-11-16 사용자 발견: "전투에서는
-            // 잘 나오는데 왜 로비에선 안 나오지" — 전투는 timeScale 1이라 안 드러났다). UnscaledTime으로
-            // 바꿔서 로비에서도 Idle/Move가 실제 시간 기준으로 돈다.
-            anim.updateMode = AnimatorUpdateMode.UnscaledTime;
+            flipbook = GetComponent<CharacterFlipbook>();
         }
 
         void OnEnable()
@@ -77,8 +65,10 @@ namespace ChronoSavior.UI
             if (shown == id && shownArt == art) return;
             shown = id;
             shownArt = art;
-            ApplyAnimator(id);
-            var sprite = art != null ? art.SpriteOf(id) : null;
+            var animSet = art != null ? art.AnimSetOf(id) : null;
+            if (flipbook != null) flipbook.SetAnimSet(animSet);
+            // 크기 기준은 전투의 Player와 같게 — 애니메이션이 있으면 서기 첫 장, 없으면 정지 그림.
+            var sprite = animSet != null && animSet.idle != null && animSet.idle.Count > 0 ? animSet.idle.frames[0] : art != null ? art.SpriteOf(id) : null;
             if (sprite == null) return; // 그림이 없으면 지금 그림 그대로(전투의 Player와 같은 규칙)
             sr.sprite = sprite;
             sr.color = art.TintOf(id);
@@ -87,27 +77,9 @@ namespace ChronoSavior.UI
         }
 
         /// <summary>
-        /// 캐릭터가 바뀔 때만 호출 — `CharacterArtSet.AnimatorOf`가 null이면(아직 애니메이션 없는 캐릭터) Animator를
-        /// 꺼서 <see cref="Refresh"/>가 넣은 정지그림이 그대로 유지되게 한다(전투 `PlayerRig.ApplyAnimator`와 같은 규칙).
-        /// </summary>
-        void ApplyAnimator(CharacterId id)
-        {
-            if (anim == null) return;
-            var controller = art != null ? art.AnimatorOf(id) : null;
-            if (controller == null)
-            {
-                anim.enabled = false;
-                return;
-            }
-            anim.runtimeAnimatorController = controller;
-            anim.enabled = true;
-            anim.SetBool(AnimGrounded, true); // 로비엔 점프가 없다 — 항상 땅 위
-        }
-
-        /// <summary>
         /// 매 프레임 — 위치 변화량으로 Moving을 판정한다(로비는 물리가 아니라 `LobbyWorld`가 직접 옮긴다).
         /// 같은 변화량으로 좌우 반전도 같이 한다(2026-11-16 — 전투의 `PlayerRig.UpdateFacing`과 같은 이유,
-        /// 반입된 그림 기본값이 왼쪽을 보고 있어서 오른쪽으로 걸을 때만 뒤집는다). Animator 유무와 무관하게
+        /// 반입된 그림 기본값이 왼쪽을 보고 있어서 오른쪽으로 걸을 때만 뒤집는다). 애니메이션 유무와 무관하게
         /// 적용(정지그림 캐릭터도 좌우는 맞아야 한다).
         /// </summary>
         void UpdateMoving()
@@ -116,7 +88,10 @@ namespace ChronoSavior.UI
             if (dx > 0.0001f) sr.flipX = true;
             else if (dx < -0.0001f) sr.flipX = false;
 
-            if (anim != null && anim.enabled) anim.SetBool(AnimMoving, Mathf.Abs(dx) > 0.0001f);
+            float dy = transform.position.y - lastPos.y;
+            if (flipbook != null)
+                flipbook.SetLoopPose(!grounded ? (dy > 0f ? CharacterPose.Rise : CharacterPose.Fall)
+                                   : Mathf.Abs(dx) > 0.0001f ? CharacterPose.Move : CharacterPose.Idle);
             lastPos = transform.position;
         }
     }

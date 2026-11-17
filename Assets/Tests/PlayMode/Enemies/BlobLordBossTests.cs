@@ -275,5 +275,29 @@ public class BlobLordBossTests
         Vector2 aim = BlobLordBoss.CorrectAim(10.5f, 1, new Vector2(9.5f, FieldBounds.GroundY));
         Assert.AreEqual(10.5f - BlobLordBoss.MinThrowDistance, aim.x, 1e-3f);
     }
+
+    /// <summary>몸 그림은 프리팹 칸의 에셋(2026-11-17 — 예전엔 경로 문자열 로드). 동작별 장 수는 팀원 그림 그대로.</summary>
+    [Test]
+    public void BodyArt_IsWiredOnThePrefab()
+    {
+        var boss = LoadPrefab().GetComponent<BlobLordBoss>();
+        foreach (var (name, book, count) in new[] { ("튀어오르기", boss.BounceArt, 6), ("투척", boss.ThrowArt, 4), ("이동", boss.MoveArt, 4), ("피격", boss.HitArt, 1), ("사망", boss.DeathArt, 8) })
+        {
+            Assert.IsNotNull(book, name + " 칸이 비었다 — 메뉴 ChronoSavior/몬스터 지역 그림 연결");
+            Assert.AreEqual(count, book.Count, name + " 장 수");
+            foreach (var f in book.frames) Assert.IsNotNull(f, name + " 빈 프레임");
+        }
+    }
+
+    /// <summary>사망 연출(1초) 동안 콜라이더를 끈다 — 레이저·유도 같은 대상 고르기가 시체를 겨누지 않게(2026-11-17).</summary>
+    [Test]
+    public void Death_TurnsCollidersOff_WhileDeathArtPlays()
+    {
+        var boss = NewBoss(10f, null);
+        Assert.IsTrue(System.Array.TrueForAll(boss.GetComponents<Collider2D>(), c => c.enabled), "살아 있을 땐 켜져 있다");
+        boss.PlayDeathAndDestroy();
+        Assert.IsTrue(System.Array.TrueForAll(boss.GetComponents<Collider2D>(), c => !c.enabled), "죽는 순간 끈다");
+        Assert.IsNotNull(boss, "사망 그림이 도는 동안은 아직 남아 있다");
+    }
 }
 }

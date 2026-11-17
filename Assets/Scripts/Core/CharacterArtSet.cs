@@ -27,10 +27,9 @@ namespace ChronoSavior.Core
                  "지금 임시 그림은 판정 높이와 같은 0.5(그림 높이 = 판정 지름). 0(비어 있음)이면 판정 높이를 쓴다.")]
         public float[] heights = new float[Count];
 
-        [Tooltip("캐릭터별 Animator 컨트롤러(Editor/BuildCharacterAnimations.cs가 만든 override controller). " +
-                 "비어 있으면(null) 그 캐릭터는 Animator를 쓰지 않고 지금처럼 정지그림(SpriteOf)만 쓴다 — 아직 애니메이션이 없는 " +
-                 "캐릭터(드루이드 등)의 안전한 기본값. 파라미터 계약(2026-11-16): Moving(bool)·Grounded(bool)·Attack(trigger)·Hit(trigger).")]
-        public RuntimeAnimatorController[] animators = new RuntimeAnimatorController[Count];
+        [Tooltip("캐릭터별 자세 그림 묶음(2026-11-17 애니메이션 플립북 전환 — Animator 대신, Editor/BuildCharacterFlipbooks가 만든다). " +
+                 "비어 있으면(null) 그 캐릭터는 정지 그림(SpriteOf)만 쓴다 — 아직 애니메이션이 없는 캐릭터(드루이드 등)의 기본값.")]
+        public CharacterAnimSet[] animSets = new CharacterAnimSet[Count];
 
         /// <summary>그 캐릭터 그림 — 없으면 null.</summary>
         public Sprite SpriteOf(CharacterId id)
@@ -53,11 +52,11 @@ namespace ChronoSavior.Core
             return tints != null && i >= 0 && i < tints.Length && tints[i].a > 0f ? tints[i] : Color.white;
         }
 
-        /// <summary>그 캐릭터의 Animator 컨트롤러 — 없으면 null(호출부는 null이면 Animator를 꺼서 정지그림 폴백으로 간다).</summary>
-        public RuntimeAnimatorController AnimatorOf(CharacterId id)
+        /// <summary>그 캐릭터의 자세 그림 묶음 — 없으면 null(정지 그림만).</summary>
+        public CharacterAnimSet AnimSetOf(CharacterId id)
         {
             int i = (int)id;
-            return animators != null && i >= 0 && i < animators.Length ? animators[i] : null;
+            return animSets != null && i >= 0 && i < animSets.Length ? animSets[i] : null;
         }
     }
 }
