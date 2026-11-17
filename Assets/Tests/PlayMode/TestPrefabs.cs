@@ -1,4 +1,5 @@
 using UnityEngine;
+using ChronoSavior.Core;
 using ChronoSavior.Characters;
 using ChronoSavior.Enemies;
 
@@ -95,7 +96,16 @@ namespace ChronoSavior.Tests.PlayMode
 #endif
         }
 
-        public static MageChargeVfx Equipped(this MageChargeVfx flash) { flash.FlashMaterial = SpriteFlash; return flash; }
+        public static MageChargeVfx Equipped(this MageChargeVfx flash)
+        {
+            flash.FlashMaterial = SpriteFlash;
+            // 손 오브·일렁임(2026-11-17 — 게임에선 씬의 Player 칸에 연결돼 있다, `Editor/BuildCharacterFlipbooks`)
+            flash.OrbArt = LoadAsset<SpriteFlipbook>("Assets/Data/Characters/Anim/Flipbook_Mage_Orb.asset");
+            flash.KiArt = LoadAsset<SpriteFlipbook>("Assets/Data/Characters/Anim/Flipbook_Mage_Ki.asset");
+            flash.OrbArtGravity = LoadAsset<SpriteFlipbook>("Assets/Data/Characters/Anim/Flipbook_Mage_OrbGravity.asset");
+            flash.KiArtGravity = LoadAsset<SpriteFlipbook>("Assets/Data/Characters/Anim/Flipbook_Mage_KiGravity.asset");
+            return flash;
+        }
         public static PlayerAfterimages Equipped(this PlayerAfterimages ai) { ai.GhostMaterial = SpriteFlash; return ai; }
         public static BladeSlashVfx Equipped(this BladeSlashVfx vfx) { vfx.Frames = BladeSlashFrames; return vfx; }
         public static EnemyHealth Equipped(this EnemyHealth health) { health.FlashMaterial = SpriteFlash; return health; }

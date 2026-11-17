@@ -9,7 +9,7 @@
 | 무엇 | 바꾸는 곳 | 같이 볼 값 |
 |---|---|---|
 | 스테이지 땅·발판·배경·보스 포탈 그림 | `Assets/Data/Stages/StageArt_Forest`(`StageArtSet`) — 지역이 늘면 에셋을 하나 더 | 배경 배율·보여 줄 범위·풀밭 높이, 포탈 배율(같은 에셋) |
-| 캐릭터 그림(마법사·메카닉·섬영) | `Assets/Data/Characters/CharacterArtSet` | 캐릭터별 색(`tints`)·화면 높이(`heights`, 판정과 따로). 네 번째 칸(드루이드)은 기획 제외라 비워 둬도 된다(선택 화면에 안 나온다). 지금 캐릭터 그림은 피벗이 가운데가 아니다(`pixel-standard.md` 5절) |
+| 캐릭터 그림(마법사·메카닉·섬영) | `Assets/Data/Characters/CharacterArtSet`(정지 그림 `sprites`는 애니메이션 없는 캐릭터용) · **움직이는 몸 그림**(2026-11-17): 프레임 `Assets/Resources/Art/Characters/{Shared,Mage,Gunner,Blade}/` → 메뉴 `ChronoSavior/캐릭터 애니메이션 연결`(`Editor/BuildCharacterFlipbooks`의 표가 프레임 순서·fps·기준점의 원본, `Assets/Data/Characters/Anim/`·`animSets`·씬 배치까지) | 캐릭터별 색(`tints`)·화면 높이(`heights`, 판정과 따로). 네 번째 칸(드루이드)은 기획 제외라 비워 둬도 된다(선택 화면에 안 나온다). 지금 캐릭터 그림은 피벗이 가운데가 아니다(`pixel-standard.md` 5절) |
 | 잡몹 그림 | `Assets/Data/Enemies/<종류>`(`EnemyData.sprite`) — 지금 대부분 임시 도형. ⚠ 해골 궁수의 화살은 **궁수 그림·종류색을 그대로 물려받는다**(`EnemySetup.ConfigureTypeBehaviour`) — 궁수 그림을 바꾸면 화살도 바뀐다(따로 그리려면 그때 화살 프리팹 칸을 만든다). 에디터 도구 `BuildEnemyData`는 수치만 다시 쓰고 그림 칸(`sprite`·`visualHeight`)은 새로 만들 때만 채운다(바꾼 그림을 덮어쓰지 않는다) | 그림 화면 높이(`visualHeight`, 판정 `colliderRadius`와 따로) |
 | 잡몹 움직이는 그림(2026-11-17~ — 박쥐 자리 까마귀·고블린 자리 쥐·멧돼지·오우거 자리 오크통, 1지역부터) | 그림 `Assets/Sprites/Enemies/<이름>/Enemy_<이름>_Move_01~04`·`_Hit_01`(32×32). **바꾸는 법: 같은 이름으로 파일을 덮어쓰고 메뉴 `ChronoSavior/몬스터 지역 그림 연결`** — 가져오기 설정·움직임 에셋(`Assets/Data/Enemies/Skins/Flipbook_<이름>_Move`, 제자리 갱신)·`EnemyData.regionSkins` 연결·`Enemy_Base`의 `EnemySkinAnimator`까지 한 번에. 어느 지역·어느 종류에 어떤 그림인지는 `Editor/BuildEnemySkins`의 배정표가 원본(에셋을 손으로 고치지 말 것). 민들레·상자·새싹·슬라임은 에셋만 있고 배정 전 | 도트 배율 칸 `RegionSkin.dotScale`(보통 2, 오크통만 4 — 그림 높이 = 판정 지름 관례). 프레임 크기는 묶음 안에서 같아야 한다(`DotScaleTests`). 기준점은 메뉴가 발 높이로 계산한다(손으로 고치지 말 것 — 그림 아래 투명 줄이 바뀌어도 메뉴만 다시) |
 | 보스·성소 그림 | `Assets/Data/Enemies/MonsterCatalog`(`boss`·`shrine`) | 그림 화면 크기(`bossSize`·`shrineSize`, 판정과 따로) |
@@ -19,7 +19,7 @@
 | 타격음 | `00_Persistent` › `Audio`의 `HitSound.clip` | 소리 크기는 설정 창 효과음 값 |
 | 살수(섬영) 베기 효과 | 키 `assassin/slash_1~3`(Slash Vol 2 무속성 3종, 휘두를 때마다 번갈아 — `Editor/VfxPackImporter` 목록) | ⚠ 배율 `BladeSlashVfx.Scale` = 2·재생 시간 `Life`·앞쪽 거리 `ForwardOffset`은 코드 상수. 2026-11-07부터 씬 연결이 아니라 키(라이선스 그림이라 git 밖) |
 | 피격·차지·잔상 깜빡임 머티리얼 | `Assets/Materials/SpriteFlash`(몹 프리팹 `Enemy_Base`, Player의 `MageChargeVfx`·`PlayerAfterimages`) | 셰이더 `Assets/Resources/Shaders/SpriteFlash` |
-| 마법사 차지 손 오브·오브 일렁임 | `Assets/Resources/Art/Characters/Mage/Character_Mage_Attack_OrbEffect_01~11.png`(오브, 차지율 11등분)·`…_KiEffect_01~06.png`(오브 9번째부터 일렁임, 시간 루프) — 몸 그림과 같은 캔버스라 그림만 바꾸면 됨(코드 수정 불필요) | `Characters/MageChargeVfx.UpdateOrb`/`UpdateKi`. 2026-11-16: 이 둘은 **외주 VFX 팩이 아니라 캐릭터 아트**라 git에 들어있다(아래 라이선스 이펙트 표와 다른 카테고리) — 예전에 있던 외주 팩 기반 "차지 오라"는 사용자 요청으로 뺐다 |
+| 마법사 차지 손 오브·오브 일렁임 | `Assets/Resources/Art/Characters/Mage/Character_Mage_Attack_OrbEffect_01~11.png`(오브, 차지율 11등분)·`…_KiEffect_01~06.png`(오브 9번째부터 일렁임, 시간 루프), 블랙홀 갈래는 보라 사본 `…Gravity_NN` — 그림을 바꾸고 메뉴 `ChronoSavior/캐릭터 애니메이션 연결`(Player의 `MageChargeVfx` 칸에 묶음으로 연결된다, 2026-11-17) | `Characters/MageChargeVfx.UpdateOrb`/`UpdateKi`. 2026-11-16: 이 둘은 **외주 VFX 팩이 아니라 캐릭터 아트**라 git에 들어있다(아래 라이선스 이펙트 표와 다른 카테고리) — 예전에 있던 외주 팩 기반 "차지 오라"는 사용자 요청으로 뺐다 |
 
 ## 라이선스 이펙트(구매·무료 팩) — git 밖, 키로 (2026-11-07)
 

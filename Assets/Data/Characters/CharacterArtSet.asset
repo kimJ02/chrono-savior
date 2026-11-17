@@ -27,8 +27,8 @@ MonoBehaviour:
   - 0.5
   - 0.5
   - 0.5
-  animators:
-  - {fileID: 22100000, guid: b0b009b0c6260c6488ccf084dd4fa4e7, type: 2}
-  - {fileID: 22100000, guid: 7559f22d87442ab448f104a62065c636, type: 2}
-  - {fileID: 22100000, guid: 5564435732dbd2843b392aa697356df8, type: 2}
+  animSets:
+  - {fileID: 11400000, guid: 7436e37c77e4fec42a45d312ebf4850a, type: 2}
+  - {fileID: 11400000, guid: 1ff7a99c3b38b4f4694cd2b92248c2d0, type: 2}
+  - {fileID: 11400000, guid: 29b794dfbb669af4db1df4170b07be1c, type: 2}
   - {fileID: 0}

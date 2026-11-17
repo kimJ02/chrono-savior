@@ -43,24 +43,24 @@ namespace ChronoSavior.Characters
         SpriteRenderer sr;
 
         /// <summary>
-        /// 캐릭터 애니메이션(2026-11-16) — `CharacterArtSet.AnimatorOf`가 null이면(아직 애니메이션 없는 캐릭터) 꺼둔 채로
-        /// 둬서 <see cref="ApplySprite"/>가 그려 넣는 정지그림이 그대로 보이게 한다. 씬에 미리 붙어 있지 않아도
-        /// 여기서 직접 붙인다 — 프리팹을 따로 안 건드려도 되게.
+        /// 몸 그림 재생(2026-11-17 애니메이션 플립북 전환 — Animator 대신). 씬의 Player에 배치돼 있다. 어떤 루프 자세인지는 여기서 매 프레임 정하고
+        /// (<see cref="UpdatePose"/>), 공격·피격은 그 일이 일어난 곳(`MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격)이
+        /// 직접 <see cref="Flipbook"/>에 알린다 — 예전처럼 효과음 이벤트에 기대면 소리를 바꾸는 순간 모션이 사라지고,
+        /// 실제로 불·블랙홀 법사는 다른 효과음을 써서 공격 모션이 아예 안 나왔다.
         /// </summary>
-        Animator anim;
+        CharacterFlipbook flipbook;
 
-        static readonly int AnimMoving = Animator.StringToHash("Moving");
-        static readonly int AnimGrounded = Animator.StringToHash("Grounded");
-        static readonly int AnimAttack = Animator.StringToHash("Attack");
-        static readonly int AnimHit = Animator.StringToHash("Hit");
-        static readonly int AnimCharging = Animator.StringToHash("Charging");
+        /// <summary>몸 그림 재생기 — 공격·피격 신호를 보내는 쪽이 읽는다(없으면 null — 테스트용 맨 Player).</summary>
+        public CharacterFlipbook Flipbook => flipbook;
+
+        /// <summary>이 속도(유닛/초)보다 빠르면 걷는 자세 — 멈출 때 남는 미세한 속도에 걷기가 깜빡이지 않게.</summary>
+        public const float MoveThreshold = 0.05f;
 
         void Awake()
         {
             mover = GetComponent<CharacterMover2D>();
             sr = GetComponent<SpriteRenderer>();
-            anim = GetComponent<Animator>();
-            if (anim == null) anim = gameObject.AddComponent<Animator>();
+            flipbook = GetComponent<CharacterFlipbook>();
             // 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)는 씬의 Player에 붙어 있다(2026-11-05 — 예전엔 씬을 다시
             // 굽지 않으려고 여기서 붙였다). 씬 검사(`Editor/SceneSetupValidator`)가 빠졌는지 본다.
             kits.Clear();
@@ -71,48 +71,6 @@ namespace ChronoSavior.Characters
             Current = HasKit(wanted) ? wanted : CharacterId.Mage;
             ApplySelection(Current, notifyPrevious: false);
         }
-
-        /// <summary>
-        /// 공격/피격 트리거 — 사운드와 같은 지점(`SfxEvents`)을 그대로 재사용한다(2026-11-16). 공격 스크립트를
-        /// 전혀 안 건드려도 되는 이유: 이 이벤트들은 이미 사운드 재생을 위해 올라가고 있었다.
-        /// 이 컴포넌트는 플레이어마다 하나뿐이고 안 쓰는 캐릭터의 키트는 꺼져 있으므로, 지금 켜진 캐릭터의
-        /// 이벤트만 실제로 올라온다 — 캐릭터별로 걸러낼 필요가 없다.
-        /// </summary>
-        void OnEnable()
-        {
-            SfxEvents.MageBasicAttack += FireAttack;
-            SfxEvents.MechanicBasicAttack += FireAttack;
-            SfxEvents.AssassinBasicAttack += FireAttackIndexed;
-            SfxEvents.PlayerDamaged += FireHit;
-        }
-
-        void OnDisable()
-        {
-            SfxEvents.MageBasicAttack -= FireAttack;
-            SfxEvents.MechanicBasicAttack -= FireAttack;
-            SfxEvents.AssassinBasicAttack -= FireAttackIndexed;
-            SfxEvents.PlayerDamaged -= FireHit;
-        }
-
-        void FireAttack()
-        {
-            if (anim == null || !anim.enabled) return;
-            // 공격이 애니메이션 클립보다 빠르게 반복되면(연사 등) 매번 다시 트리거를 넣는 게 Animator를
-            // Attack 상태로 처음부터 다시 들여보내서 "첫 프레임만 반복 재생"되는 것처럼 보인다(2026-11-16
-            // 사용자 발견 — 꾹 눌러 공격을 반복했을 때). 이미 Attack 상태로 재생 중이면 새 트리거는 무시하고
-            // 지금 재생 중인 모션을 끝까지 보여준다 — 실제 공격 판정 자체는 전투 스크립트가 그대로 처리하니
-            // (이 메서드는 그림만 담당) 게임플레이에는 영향 없다.
-            if (anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")) return;
-            anim.SetTrigger(AnimAttack);
-        }
-
-        void FireAttackIndexed(int index) => FireAttack();
-
-        void FireHit()
-        {
-            if (anim != null && anim.enabled) anim.SetTrigger(AnimHit);
-        }
-
 
         /// <summary>
         /// 지금 켜져 있는 키트(<see cref="Current"/>의 것). HUD가 여기서 스킬 슬롯 상태(<see cref="ISkillSlotSource"/>)를
@@ -154,25 +112,26 @@ namespace ChronoSavior.Characters
                 else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
             }
 
-            UpdateAnimatorParams();
+            UpdatePose();
             UpdateFacing();
         }
 
         /// <summary>
-        /// 매 프레임 이동 상태를 Animator에 반영(2026-11-16) — 캐릭터 전환 여부와 무관하게 항상 돈다.
-        /// Animator가 꺼져 있으면(이 캐릭터는 애니메이션 없음) 아무것도 안 한다.
+        /// 매 프레임 루프 자세를 정한다(2026-11-17) — 차지 &gt; 공중(오를 땐 상승, 내릴 땐 하강) &gt; 걷기 &gt; 서기. 공격·피격은 신호를 보낸 쪽이 따로 얹는다.
+        /// 차지는 지금 마법사만(`MageAttack.IsCharging`) — 다른 캐릭터에 차지 같은 자세가 생기면 `ICharacterKit`에 공용 프로퍼티로 올릴 것.
         /// </summary>
-        void UpdateAnimatorParams()
+        void UpdatePose()
         {
-            if (anim == null || !anim.enabled || mover == null) return;
-            anim.SetBool(AnimMoving, Mathf.Abs(mover.Velocity.x) > 0.05f);
-            anim.SetBool(AnimGrounded, mover.Grounded);
-            // 마법사 차지(Z를 누르고 있는 동안, MageAttack.IsCharging) 전용 — 다른 캐릭터는 이 값이 항상
-            // false라 Charge 상태에 아예 안 들어간다(2026-11-16 사용자 발견: "차지중 모션도 있을텐데 적용이
-            // 안되어있다" — `Charge` 상태 자체가 Animator에 없었다). `CurrentKit`을 `MageAttack`으로 캐스팅
-            // 하는 건 같은 `Characters` 층 안이라(= 같은 도메인, cross-domain 아님) 문제없음 — Gunner/Blade
-            // 전용 "차지 같은" 동작이 생기면 그때 `ICharacterKit`에 공용 프로퍼티로 올리는 걸 고려할 것.
-            anim.SetBool(AnimCharging, CurrentKit is MageAttack mage && mage.IsCharging);
+            if (flipbook == null || mover == null) return;
+            flipbook.SetLoopPose(LoopPose(CurrentKit is MageAttack mage && mage.IsCharging, mover.Grounded, mover.Velocity));
+        }
+
+        /// <summary>루프 자세 고르기(테스트용으로 따로).</summary>
+        public static CharacterPose LoopPose(bool charging, bool grounded, Vector2 velocity)
+        {
+            if (charging) return CharacterPose.Charge;
+            if (!grounded) return velocity.y > 0f ? CharacterPose.Rise : CharacterPose.Fall;
+            return Mathf.Abs(velocity.x) > MoveThreshold ? CharacterPose.Move : CharacterPose.Idle;
         }
 
         /// <summary>
@@ -182,7 +141,7 @@ namespace ChronoSavior.Characters
         /// 바뀌며 드러난 것. 반입된 원본 프레임은 기본값이 왼쪽을 보는 그림이라(실측), 오른쪽(Facing
         /// &gt; 0)일 때만 `SpriteRenderer.flipX`로 뒤집는다 — `transform.localScale`은 건드리지 않아
         /// (콜라이더 반지름 계산이 그 값을 쓴다, <see cref="ApplySprite"/>) 판정 크기에 영향이 없다.
-        /// Animator가 꺼져 있어도(정지그림 캐릭터) 그대로 적용된다.
+        /// 애니메이션이 없는 캐릭터(정지 그림)도 그대로 적용된다.
         /// </summary>
         void UpdateFacing()
         {
@@ -200,7 +159,9 @@ namespace ChronoSavior.Characters
         void ApplySprite(CharacterId id)
         {
             if (sr == null || art == null) return;
-            var sprite = art.SpriteOf(id);
+            // 크기 기준: 애니메이션이 있으면 그 서기 첫 장(2026-11-17 — 실제로 그려지는 그림, 전부 높이 48px), 없으면 정지 그림.
+            var animSet = art.AnimSetOf(id);
+            var sprite = animSet != null && animSet.idle != null && animSet.idle.Count > 0 ? animSet.idle.frames[0] : art.SpriteOf(id);
             if (sprite == null) return;
 
             sr.sprite = sprite;
@@ -219,22 +180,11 @@ namespace ChronoSavior.Characters
             if (col != null) col.radius = EntitySizeConfig.PlayerRadius / scale;
         }
 
-        /// <summary>
-        /// 선택된 캐릭터의 Animator 컨트롤러를 갈아끼운다(2026-11-16). `CharacterArtSet.AnimatorOf`가 null이면
-        /// (아직 애니메이션이 없는 캐릭터 — 드루이드 등) Animator를 꺼서 <see cref="ApplySprite"/>가 넣은 정지그림이
-        /// 그대로 유지되게 한다 — SpriteRenderer를 Animator가 매 프레임 덮어쓰지 않도록.
-        /// </summary>
-        void ApplyAnimator(CharacterId id)
+        /// <summary>선택된 캐릭터의 자세 그림 묶음으로 갈아끼운다(없으면 — 드루이드 등 — 정지 그림 그대로).</summary>
+        void ApplyAnimSet(CharacterId id)
         {
-            if (anim == null) return;
-            var controller = art != null ? art.AnimatorOf(id) : null;
-            if (controller == null)
-            {
-                anim.enabled = false;
-                return;
-            }
-            anim.runtimeAnimatorController = controller;
-            anim.enabled = true;
+            if (flipbook == null) return;
+            flipbook.SetAnimSet(art != null ? art.AnimSetOf(id) : null);
         }
 
         void ApplySelection(CharacterId id, bool notifyPrevious)
@@ -254,7 +204,7 @@ namespace ChronoSavior.Characters
             Current = id;
             ProfileService.Current.SetSelectedCharacter(id);
             ApplySprite(id);
-            ApplyAnimator(id);
+            ApplyAnimSet(id);
 
             foreach (var kit in kits)
             {

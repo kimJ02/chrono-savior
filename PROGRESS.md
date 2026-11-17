@@ -64,13 +64,10 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
-> **🚧 2026-11-17~ 애니메이션 플립북 전환 진행 중 (사용자 세션, 브랜치 `feature/anim-flipbook`) — 아래 파일은 끝날 때까지 손대지 말 것.**
-> 계획·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md). 사용자 결정으로 트랙 A·B를 **둘 다 사용자 세션이** 한다
-> (팀원은 그동안 애니메이션 쪽 작업 쉼). 다 끝나면 main에 한 번에 합친다.
-> **손대지 말 것**: `Characters/PlayerRig.cs`·`MageAttack.cs`·`GunnerAttack.cs`·`BladeCombat.cs`·`BladeSlashVfx.cs`·`PlayerHealth.cs`·`MageChargeVfx.cs`·
-> `CharacterMover2D.cs`, `UI/Lobby/LobbyAvatar.cs`, `Core/CharacterArtSet.cs`,
-> `Assets/Data/Characters/`, `Assets/Resources/Art/Characters/`, `Editor/BuildCharacterAnimations.cs`, 씬 `20_Combat`·`10_Lobby`.
-> 보스(`BlobLordBoss`·`Enemy_BlobLord`)는 팀원이 작업 중이라 이 목록에서 뺐다(2026-11-17).
+> **✅ 2026-11-17 캐릭터 애니메이션은 코드 플립북이다(Animator 없음)** — 몸 그림은 `Characters/CharacterFlipbook`(씬의 Player·로비 아바타에 배치)이 넘기고,
+> 자세는 게임 코드가 정한다(루프: `PlayerRig`·`LobbyAvatar`, 공격·피격: `MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격).
+> 그림·순서·fps·기준점은 메뉴 **`ChronoSavior/캐릭터 애니메이션 연결`**(`Editor/BuildCharacterFlipbooks`의 표가 원본 — 에셋을 손으로 고치지 말 것). 경위·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md).
+> 보스(`BlobLordBoss`)는 팀원 담당 — 제안서 트랙 B의 보스 세 가지(경로 문자열 그림 → `SpriteFlipbook`, 그림 갱신을 물리 밖으로, 사망 연출 중 콜라이더)는 보스 작업 때 같이.
 > 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
@@ -279,6 +276,22 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-17 (132)** — **[사용자 세션] 캐릭터 애니메이션 Animator → 코드 플립북 전환 완료**(`docs/animation-flipbook-proposal.md` 트랙 A + 마법사 차지 그림, GPT와 계획·결정).
+  - `Characters/CharacterFlipbook`(씬 `20_Combat` Player·`10_Lobby` 아바타에 배치, 로비는 실제 시간): 우선순위 피격 > 공격(한 번, 재생 중 재공격은 재시작 안 함) > 유지(레이저 — 누르는 동안 공격 마지막 프레임) > 루프(차지 > 상승/하강 > 이동 > 서기).
+    `PlayerRig.LoopPose`가 매 프레임 루프 자세를 정하고, 공격·피격은 일어난 곳에서 직접: `MageAttack` 발사(**갈래 무관 — 예전엔 효과음 이벤트 중 기본 공격 것만 들어서 불·블랙홀 법사는 공격 모션이 안 나왔다**), `GunnerAttack` 사격·레이저 유지/해제,
+    `BladeSlashVfx` 베기(번갈이 숫자 원본), `PlayerHealth` 피격. `SfxEvents`는 다시 소리 전용.
+  - `Editor/BuildCharacterFlipbooks`(메뉴 `ChronoSavior/캐릭터 애니메이션 연결`, 표가 원본): 프레임 가져오기 설정 + **묶음마다 기준점** — 가로는 머리 가운데(공격 그림 70px 캔버스는 몸이 오른쪽이라
+    가운데 기준이면 공격할 때 몸이 10px 옆으로 튀었다), 세로는 "발 + 판정 반지름"(발이 판정 원 바닥, 몬스터와 같은 규칙). 마법사 오브·일렁임은 몸 공격 그림과 같은 캔버스라 같은 기준점.
+    `Assets/Data/Characters/Anim/Flipbook_*`·`AnimSet_{Mage,Gunner,Blade}` 제자리 갱신, `CharacterArtSet.animSets`, 씬 배치·`MageChargeVfx` 칸까지 한 번에. 프레임·fps는 팀원 클립 그대로, 점프/하강 8장은 상승 3~5·하강 6~8.
+    96×48 재캔버스는 안 했다 — 묶음별 기준점으로 같은 효과(원본 PNG 그대로).
+  - `MageChargeVfx`: 오브·일렁임(빨강·보라)을 경로 문자열 로드 대신 직렬화 `SpriteFlipbook` 칸, 일렁임은 오브 앞(정렬 +2). `CharacterArtSet.animators` → `animSets`.
+  - 삭제: `Assets/Data/Characters/Animations/`·`Animators/`(클립 8·컨트롤러 4), `Editor/BuildCharacterAnimations.cs`, 루트 `Claude outputs/` 사본.
+  - 같은 브랜치에 `feature/attack-move-lock`(공격 중 이동 잠금, 로그 131) 병합 — 공격 신호를 붙이기 전에.
+  - 테스트: `CharacterFlipbookTests` 6개(루프 이어 돌기·공격 재시작 안 함·피격이 끊음·레이저 유지·루프 자세 고르기·**불/블랙홀 법사 발사 → 공격 자세**), 그림 테스트 3개(`GameBootTests`×2·`LobbySceneTests`)는
+    "그 캐릭터 자세 묶음을 입었나"로, `MageChargeVfxTests`는 직렬화 칸으로. 씬 구성 검증에 플립북·오브 칸 검사. **전체 564 중 562 통과** — 남은 실패 2:
+    `CreationOwnershipTests`의 `UI/GameplaySfx.cs`(루프용 AudioSource를 코드로 붙임, 예전부터 — 씬 배치로 옮기면 해결)·`DotScaleTests.Characters`(마법사 0.5, 팀장 결정 대기). 씬 구성 검증 통과.
+    캡처 `CaptureUiPreview.RunCharacterPoses`(세 캐릭터 × 자세 × 좌우)로 머리·발 정렬 확인.
 
 - **2026-11-16 (131, 원래 브랜치 번호 107)** — **[사용자 세션] 공격 중 이동 잠금 — `feature/attack-move-lock`, 2026-11-17 `feature/anim-flipbook`에 병합**(사용자 "공격할 때 가만히 있는 모션인 거는 정지해서 공격하는 걸로", Codex와 설계·구현 검토 2회). 팀원 캐릭터 애니메이션(`labo3`)의 공격 그림이 제자리 자세라 달리며 쏘면 미끄러져 보이는 문제의 첫 단계. **땅**: 마법사 차지(누르는 동안) + 발사 자세(원본 `attackDur` 0.2÷공속), 메카닉 레이저(누르는 동안, 차징만 보여도) 동안 좌우 이동·점프 불가, 뒤돌기는 됨, 떼면 바로 이동. **공중**: 마법사 원본대로, 레이저는 새 좌우 입력만 무시·지금 가로 속도·중력 유지(다른 게임 사례 비교 후 사용자 결정). 메카닉 일반 사격·섬영 그대로, 워리어 미적용. `CharacterMover2D.AttackLock`(키트가 매 프레임, 땅 판정은 그 자리에서 다시 잼, 막힌 점프 입력은 버림, `ResetMotion`이 풀어 줌). 의도적 편차는 `docs/original-parity.md` 9절. 테스트 `AttackMoveLockTests` 9개(실제 바닥 위 미끄럼·점프 포함). PlayMode 546/548 — 실패 2건은 main에서 이미(위 (106)). 1차 실행에서 `BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서 통과(섬영은 잠금을 안 씀 — 타이밍 불안정으로 보임). **에디터에서 직접 플레이해 손맛은 아직 안 봤다**. 다음: 애니메이션 연결(코드 프레임 넘기기, Codex 결정 — 그림 캔버스 공통 규격 재배치가 먼저, 팀원과 담당 정하기).
 

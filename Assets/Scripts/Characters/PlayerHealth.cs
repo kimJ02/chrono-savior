@@ -48,9 +48,12 @@ namespace ChronoSavior.Characters
 
         Rigidbody2D rb;
 
+        CharacterFlipbook flipbook; // 몸 그림 — 피격 자세(2026-11-17 플립북 전환)
+
         void Awake()
         {
             CurrentHp = maxHp;
+            flipbook = GetComponent<CharacterFlipbook>();
             rb = GetComponent<Rigidbody2D>();
             sprite = GetComponent<SpriteRenderer>();
             // 원본은 레벨업 때만 최대체력을 다시 계산하고 풀피로 채운다(project_test.html:1850)
@@ -229,6 +232,7 @@ namespace ChronoSavior.Characters
             // 불굴의 껍질 — 피격 후 무적시간 연장(원본 `invulnTime + itemPow('iframe')` :1907).
             SetHitInvuln(invulnTime + profile.items.Pow("iframe"));
             HitFeel.PlayerHurt(); // 원본 `state.redFlash = 0.35; shake(7, 0.22)`(:1912~:1913)
+            if (flipbook != null) flipbook.PlayOnce(CharacterPose.Hit);
             SfxEvents.RaisePlayerDamaged(); // 2026-11-10 사운드 — player_attacked (사망 때도 이 피격 처리를 먼저 지나므로 같이 난다)
 
             // 원본 `p.vx = sign(p.x - srcX) * 260; p.vy = min(p.vy, -220); p.onGround = false;`(:1908~1910)

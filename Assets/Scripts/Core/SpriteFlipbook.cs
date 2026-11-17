@@ -37,6 +37,15 @@ namespace ChronoSavior.Core
             return i < 0 ? null : frames[i];
         }
 
+        /// <summary>되풀이 여부와 상관없이 한 번 돌고 마지막 프레임에서 멈춘 그림(누르는 동안 자세를 붙잡을 때).</summary>
+        public Sprite FrameAtHeld(float t)
+        {
+            int n = Count;
+            if (n == 0) return null;
+            int i = fps <= 0f ? 0 : Mathf.Min(Mathf.FloorToInt(Mathf.Max(0f, t) * fps), n - 1);
+            return frames[i];
+        }
+
         /// <summary>한 번만 도는 묶음이 다 돌았나(되풀이는 늘 false).</summary>
         public bool IsFinished(float t) => !loop && Count > 0 && t >= Duration;
     }

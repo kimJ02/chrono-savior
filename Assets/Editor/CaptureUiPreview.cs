@@ -187,6 +187,68 @@ namespace ChronoSavior.Editor
             RunState.Reset();
         }
 
+        /// <summary>
+        /// 캐릭터 자세 캡처(2026-11-17 플립북 전환) — 세 캐릭터 × 자세(서기·이동·상승·하강·피격·공격, 마법사는 차지)를 각 묶음 가운데 프레임으로 실제 전투 화면 배율에 세운다.
+        /// 위 줄은 왼쪽을 보고, 아래 줄은 뒤집어(오른쪽) — 발이 땅에 닿는지, 공격 그림에서 몸이 옆으로 튀지 않는지(빨간 세로 점 = 루트 x) 본다.
+        /// 배치: `-executeMethod ChronoSavior.Editor.CaptureUiPreview.RunCharacterPoses -captureOut &lt;폴더&gt;`.
+        /// </summary>
+        public static void RunCharacterPoses()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            player.SetActive(false);
+            var pc = PixelCanvas.Create(cam);
+            HideAll(pc);
+            var art = AssetDatabase.LoadAssetAtPath<CharacterArtSet>("Assets/Data/Characters/CharacterArtSet.asset");
+            var marker = Sprite.Create(Texture2D.whiteTexture, new Rect(0, 0, 1, 1), new Vector2(0.5f, 0f), 128f);
+            var made = new System.Collections.Generic.List<GameObject>();
+            var poses = new[] { CharacterPose.Idle, CharacterPose.Move, CharacterPose.Rise, CharacterPose.Fall, CharacterPose.Hit, CharacterPose.Attack, CharacterPose.Charge };
+            foreach (var who in new[] { CharacterId.Mage, CharacterId.Gunner, CharacterId.Blade })
+            {
+                var set = art.AnimSetOf(who);
+                float scale = EntitySizeConfig.ScaleToHeight(set.idle.frames[0], art.HeightOf(who));
+                for (int flip = 0; flip < 2; flip++)
+                {
+                    for (int i = 0; i < poses.Length; i++)
+                    {
+                        if (poses[i] == CharacterPose.Charge && set.charge == null) continue;
+                        var book = set.Get(poses[i]);
+                        float x = 3.9f + i * 0.62f;
+                        float feetY = FieldBounds.GroundY + (flip == 0 ? 2.05f : 1.0f);
+                        var go = new GameObject($"Pose_{who}_{poses[i]}");
+                        go.transform.position = new Vector3(x, feetY + EntitySizeConfig.PlayerRadius, 0f);
+                        go.transform.localScale = new Vector3(scale, scale, 1f);
+                        var sr = go.AddComponent<SpriteRenderer>();
+                        sr.sprite = book.frames[book.frames.Length / 2];
+                        sr.flipX = flip == 1;
+                        made.Add(go);
+                        var m = new GameObject("RootX").AddComponent<SpriteRenderer>();
+                        m.sprite = marker; m.color = Color.red; m.sortingOrder = 10;
+                        m.transform.position = new Vector3(x, feetY + EntitySizeConfig.PlayerRadius * 2f + 0.06f, 0f);
+                        m.transform.localScale = new Vector3(2f, 6f, 1f);
+                        made.Add(m.gameObject);
+                        var floor = new GameObject("Floor").AddComponent<SpriteRenderer>();
+                        floor.sprite = marker; floor.color = new Color(1f, 1f, 1f, 0.5f); floor.sortingOrder = 10;
+                        floor.transform.position = new Vector3(x, feetY - 1f / 128f, 0f);
+                        floor.transform.localScale = new Vector3(72f, 1f, 1f);
+                        made.Add(floor.gameObject);
+                    }
+                }
+                Render(pc, cam, outDir, "poses_" + who.ToString().ToLowerInvariant(), 1920, 1080, 3f);
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+                made.Clear();
+            }
+            player.SetActive(true);
+        }
+
         public static void RunMageVfx()
         {
             string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");

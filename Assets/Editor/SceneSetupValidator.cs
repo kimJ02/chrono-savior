@@ -145,10 +145,16 @@ namespace ChronoSavior.Editor
             CheckMonsterCatalog(spawner, persistent, problems);
             // 같은 씬 안은 직렬화 참조(`HANDOFF.md` "연결 규칙" 1, 2026-11-05 2b) — 비어 있으면 그 기능이 조용히 꺼진다.
             var playerTf = player != null ? player.transform : null;
-            if (player != null && player.GetComponent<MageChargeVfx>() == null) problems.Add("Player에 MageChargeVfx(마법사 차지 오라·완충 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
+            if (player != null && player.GetComponent<MageChargeVfx>() == null) problems.Add("Player에 MageChargeVfx(마법사 차지 손 오브·일렁임·완충 깜빡임)가 없다 — 예전엔 MageAttack이 붙였지만 이제 씬에 놓는다");
             // 효과 에셋은 연결 칸에서 받는다(2026-11-06 3.5-e — 예전엔 Resources 경로로 읽었다)
             if (player != null && player.TryGetComponent(out MageChargeVfx chargeFlash) && chargeFlash.FlashMaterial == null) problems.Add("Player MageChargeVfx의 머티리얼이 비어 있다");
             if (player != null && player.TryGetComponent(out PlayerAfterimages afterimages) && afterimages.GhostMaterial == null) problems.Add("Player PlayerAfterimages의 머티리얼이 비어 있다");
+            // 2026-11-17 애니메이션 플립북 전환 — 몸 그림 재생기는 씬에 놓는다(예전 Animator는 코드로 붙였다). 메뉴 ChronoSavior/캐릭터 애니메이션 연결이 놓고 채운다.
+            var playerFlip = player != null ? player.GetComponent<CharacterFlipbook>() : null;
+            if (player != null && playerFlip == null) problems.Add("Player에 CharacterFlipbook(몸 그림 재생)이 없다 — 메뉴 ChronoSavior/캐릭터 애니메이션 연결");
+            else if (playerFlip != null && playerFlip.useUnscaledTime) problems.Add("Player CharacterFlipbook은 게임 시간이어야 한다(히트스톱·일시정지 때 같이 멈춤)");
+            if (player != null && player.TryGetComponent(out MageChargeVfx chargeArt) && (chargeArt.OrbArt == null || chargeArt.KiArt == null || chargeArt.OrbArtGravity == null || chargeArt.KiArtGravity == null))
+                problems.Add("Player MageChargeVfx의 손 오브·일렁임 그림 칸이 비어 있다 — 메뉴 ChronoSavior/캐릭터 애니메이션 연결");
             // 살수 베기 프레임은 라이선스 그림이라 씬에 연결하지 않는다(키로 불러온다, 2026-11-07) — 가져오기 설정은 VfxTests가 본다.
             // 그림만 하는 메카닉 장판·살수 스킬 그림(2026-11-08) — 선·메시는 머티리얼이 필요해 연결 칸으로 받는다
             if (player != null && (!player.TryGetComponent(out GunnerFieldVfx fieldVfx) || fieldVfx.FillMaterial == null)) problems.Add("Player에 GunnerFieldVfx(설치기 링크·내부 장판 그림)가 없거나 머티리얼이 비어 있다");
@@ -406,6 +412,8 @@ namespace ChronoSavior.Editor
             var world = One<LobbyWorld>(lobby, problems);
             var avatar = One<LobbyAvatar>(lobby, problems);
             if (avatar != null && avatar.Art == null) problems.Add("10_Lobby LobbyAvatar의 캐릭터 그림(CharacterArtSet)이 비어 있다");
+            if (avatar != null && (!avatar.TryGetComponent(out CharacterFlipbook avatarFlip) || !avatarFlip.useUnscaledTime))
+                problems.Add("10_Lobby LobbyAvatar에 실제 시간 CharacterFlipbook이 없다(시간이 멈춘 로비에서도 걸어야 한다) — 메뉴 ChronoSavior/캐릭터 애니메이션 연결");
             if (world != null && (avatar == null || world.Player != avatar.transform)) problems.Add("10_Lobby LobbyWorld.Player가 이 씬의 LobbyAvatar가 아니다");
             if (world != null && (world.CameraAnchor == null || world.CameraAnchor.parent != world.transform)) problems.Add("10_Lobby LobbyWorld.CameraAnchor가 이 오브젝트의 자식 기준점이 아니다");
             var ground = lobby.GetRootGameObjects().FirstOrDefault(g => g.name == "Ground");

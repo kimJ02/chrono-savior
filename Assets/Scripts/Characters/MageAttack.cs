@@ -128,8 +128,11 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     float attackCdMax;
     float ultCdMax;
 
+    CharacterFlipbook flipbook; // 몸 그림 — 발사 순간 공격 자세(2026-11-17 플립북 전환)
+
     void Awake()
     {
+        flipbook = GetComponent<CharacterFlipbook>();
         mover = GetComponent<CharacterMover2D>();
         bodyCol = GetComponent<CircleCollider2D>();
         health = GetComponent<PlayerHealth>();
@@ -240,6 +243,8 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         if (branch == MageBranch.Explosion) SfxEvents.RaiseMageFireAttack();
         else if (branch == MageBranch.Gravity) SfxEvents.RaiseMageGravityAttack();
         else SfxEvents.RaiseMageBasicAttack();
+        // 공격 자세는 갈래와 상관없이 발사마다(예전엔 효과음 이벤트 중 기본 공격 것만 들어서 불·블랙홀 법사는 모션이 안 나왔다 — 2026-11-17)
+        if (flipbook != null) flipbook.PlayOnce(CharacterPose.Attack);
         if (gravityOrb && aimY < 0f && aimX == 0f)
             MageSkillEffects.DetonateGravityOrb(feet + new Vector2(0f, 0.34f), tier, chargeK, facing);
 

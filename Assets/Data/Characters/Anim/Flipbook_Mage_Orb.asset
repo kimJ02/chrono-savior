@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Mage_Orb
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: e5fb73c871c64e87ae62a9da6a0bc7e5, type: 3}
+  - {fileID: 21300000, guid: 61b88e76e51f415ab6cf8f6c6a19e25b, type: 3}
+  - {fileID: 21300000, guid: 8521732d6d4c429bb7983cf75ed73a66, type: 3}
+  - {fileID: 21300000, guid: e22a8032fcd54855822e6359a2abad4e, type: 3}
+  - {fileID: 21300000, guid: e6c22e7ad9bd4806b60f056c46f36eb8, type: 3}
+  - {fileID: 21300000, guid: 90d05b65c36244d782a3d217ddffe2ac, type: 3}
+  - {fileID: 21300000, guid: bde8cc3372044202b30c7c78bd8c3d10, type: 3}
+  - {fileID: 21300000, guid: 5d6ad6ec2a8e40fcb51f6664cf6628c4, type: 3}
+  - {fileID: 21300000, guid: 2938c77a582a47b59110a8722a5c7af1, type: 3}
+  - {fileID: 21300000, guid: 75de6c5866334eb88cf30dc90ebad9a8, type: 3}
+  - {fileID: 21300000, guid: 0f98eb98fccc4fbbab7f2e7d0d3355d4, type: 3}
+  fps: 10
+  loop: 0
