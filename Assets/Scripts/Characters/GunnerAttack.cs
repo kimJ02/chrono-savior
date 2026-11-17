@@ -175,6 +175,7 @@ namespace ChronoSavior.Characters
         public void OnDeselected()
         {
             beam?.Stop();
+            if (mover != null) mover.AttackLock = CharacterMover2D.AttackMoveLock.None;
             if (fieldVfx != null) fieldVfx.Hide();
         }
 
@@ -243,6 +244,9 @@ namespace ChronoSavior.Characters
                 // 레이저 빌드는 누르고 있는 동안 광선이 켜져서 총알이 안 나간다.
                 bool held = GameInput.AttackHeld;
                 bool beamOn = UpdateBeam(dt, held); // 총알 억제용 — 누르고만 있어도 true(차징 포함), 이 값으론 소리를 안 켠다
+                // 레이저(누르는 동안, 적이 없어 차징만 보여도) — 땅에선 제자리·점프 불가, 공중에선 새 좌우 입력만 무시(사용자 결정 2026-11-16, 의도적 편차).
+                // 일반 사격은 원본대로 이동 자유. 방향 전환은 입력이 계속 바꾼다(원본처럼 입력이 광선 조준보다 나중에 Facing을 정한다).
+                if (mover != null) mover.AttackLock = beamOn ? CharacterMover2D.AttackMoveLock.RootOnGroundNoSteerInAir : CharacterMover2D.AttackMoveLock.None;
                 // 2026-11-10 정정 — 적이 없어 "차징" 그림만 보일 땐 소리도 쉰다(beam.IsFiring = 실제로 빔이 나가는 상태,
                 // 시각(GunnerLaserBeam.UpdateVisual)과 같은 기준). 바뀐 순간에만 올려서 매 프레임 재생 재시작을 막는다.
                 bool laserSounding = beam.IsFiring;
@@ -255,6 +259,7 @@ namespace ChronoSavior.Characters
                     cdTimer = attackCdMax = cooldown;
                 }
             }
+            else if (mover != null) mover.AttackLock = CharacterMover2D.AttackMoveLock.None;
 
             UpdateField(dt);
         }
