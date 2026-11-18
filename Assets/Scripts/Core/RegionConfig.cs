@@ -31,7 +31,7 @@ namespace ChronoSavior.Core
         /// 지역 보스 이름 — 전투 화면 보스 체력바 위에 뜬다(2026-11-10). 1지역은 팀원 기획 보스 **덩어리 지배자**.
         /// 나머지는 아직 기획된 보스가 없어(원본 공통 보스, 원본 이름은 지역 이름이 바뀌어 안 맞음) 비워 두고 <see cref="BossNameOf"/>가 "보스"로 대신한다.
         /// </summary>
-        static readonly string[] BossNames = { "덩어리 지배자", null, null, null, null, null, null, null, null };
+        static readonly string[] BossNames = { "덩어리 지배자", "부서진 여신상", null, null, null, null, null, null, null };
 
         public static string BossNameOf(int region) =>
             region >= 1 && region <= Count && !string.IsNullOrEmpty(BossNames[region - 1]) ? BossNames[region - 1] : "보스";

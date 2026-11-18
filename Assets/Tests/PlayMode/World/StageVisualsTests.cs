@@ -175,7 +175,7 @@ public class StageVisualsTests
         Assert.AreEqual(0f, gl, Px, "땅 타일 왼쪽 끝");
         Assert.AreEqual(26f, gr, Px, "땅 타일이 필드 폭을 다 안 덮는다");
         Assert.AreEqual(FieldBounds.GroundY, gt, Px, "땅 타일 윗면이 지면이 아니다");
-        Assert.AreEqual(52, rows.GetChild(0).childCount, "땅 한 줄 = 0.5유닛 타일 52장");
+        Assert.AreEqual(104, rows.GetChild(0).childCount, "땅 한 줄 = 0.25유닛 타일 104장");
 
         foreach (var set in new[] { normal, boss })
         {
@@ -231,9 +231,9 @@ public class StageVisualsTests
     public void FigmaArt_IsImportedPixelExact()
     {
         var set = TestPrefabs.StageArt; // 게임 씬의 StageVisuals가 쓰는 그림 묶음
-        AssertSprite(set.groundTop, "ground_top", 64f, new Vector2(0.5f, 0.5f));
-        AssertSprite(set.groundDirt, "ground_dirt", 64f, new Vector2(0.5f, 0.5f));
-        AssertSprite(set.platformTile, "platform_tile", 64f, new Vector2(0.25f, 0.25f)); // 2026-11-09 도트 통일 — 땅 타일과 같은 PPU 64(도트 2)
+        AssertSprite(set.groundTop, "ground_top", 128f, new Vector2(0.25f, 0.25f));
+        AssertSprite(set.groundDirt, "ground_dirt", 128f, new Vector2(0.25f, 0.25f));
+        AssertSprite(set.platformTile, "platform_tile", 128f, new Vector2(0.125f, 0.125f)); // 2026-11-18 사용자 — 타일은 도트 1(PPU 128). 배경·포탈만 도트 2
         AssertSprite(set.background, "bg_forest", 128f, new Vector2(5f, 2.8125f));
         AssertSprite(set.portal, "portal", 128f, new Vector2(0.25f, 0.5f));
     }

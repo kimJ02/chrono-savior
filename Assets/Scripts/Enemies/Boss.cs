@@ -20,11 +20,14 @@ namespace ChronoSavior.Enemies
     /// **소유권 예외(2026-09-30, 팀원 추가)**: `IGrabExempt` 구현은 섬영 칼날폭풍 4층 "강제 연행"이
     /// 보스를 붙잡지 못하게 막으려고 팀원이 추가했다(원본 `e.boss` 제외, project_test.html:2694).
     /// 사용자 확인 받음 — `Core/IGrabExempt.cs` 주석과 PROGRESS.md 참고, 팀장 확인 필요.
+    ///
+    /// **2026-11-18, 사용자 요청**: 끌어당김(중력장 등)·스턴 같은 이동 제한 디버프에도 면역이다
+    /// (<see cref="ICrowdControlImmune"/>, `Core/ICrowdControlImmune.cs` 참고 — 보스 공통 규칙).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyMove))]
     [RequireComponent(typeof(EnemyHealth))]
-    public class Boss : MonoBehaviour, IEnemyMotion, IEnemyContactDamageModifier, IGrabExempt
+    public class Boss : MonoBehaviour, IEnemyMotion, IEnemyContactDamageModifier, IGrabExempt, ICrowdControlImmune
     {
         enum State { Idle, Walk, SlamTele, SlamRecover, SpitTele, SpitRecover, ChargeTele, Charge }
 
@@ -91,6 +94,8 @@ namespace ChronoSavior.Enemies
 
         /// <summary>원본은 돌진 중 ×1.4, 내려찍기 근접 판정 ×1.3. 평상시 접촉은 배수 없음(`:4285`).</summary>
         public float ContactDamageMultiplier => state == State.Charge ? ChargeContactDamageMult : 1f;
+
+        // <see cref="ICrowdControlImmune"/> — 끌어당김·스턴 등 이동 제한 디버프 면역(2026-11-18 사용자 요청, 보스 공통).
 
         public float GetHorizontalSpeed(float dt, Transform target, float baseSpeed)
         {

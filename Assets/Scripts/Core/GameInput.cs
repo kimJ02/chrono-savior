@@ -34,9 +34,20 @@ namespace ChronoSavior.Core
         static readonly bool[] combatLatched = new bool[3];
         static int latchedVersion = -1;
 
+        /// <summary>
+        /// 보스에게 붙잡혀 있는 동안인지(2지역 보스 "부서진 여신상" 잡기 패턴, 사용자 2026-11-18 요청서
+        /// 2절 "잡기에 성공하면 플레이어의 일반 이동을 잠시 제한한다"). `Characters/CharacterMover2D`
+        /// (<see cref="IGrabbable"/> 구현체)가 붙잡힘 시작·종료마다 직접 켜고 끈다.
+        ///
+        /// 이동(←→)은 `CharacterMover2D`가 붙잡힌 동안 자기 `FixedUpdate`를 통째로 건너뛰어 따로 막으므로
+        /// (보스가 매 프레임 위치를 직접 넣는다), 여기서는 전투 키(점프·공격·스킬)만 추가로 잠근다 —
+        /// 끌려가는 동안 점프로 벗어나거나 공격이 나가면 "이동·공격 입력을 제한한다"는 요구와 어긋난다.
+        /// </summary>
+        public static bool PlayerGrabbed { get; set; }
+
         static bool CombatKey(int index, bool down)
         {
-            if (!GameState.IsRunning) return false;
+            if (!GameState.IsRunning || PlayerGrabbed) return false;
             // 히트스톱(사냥 중 timeScale 0) 동안 **누른 순간**은 버린다 — 원본은 멈춘 동안 갱신을 건너뛰고 프레임 끝에
             // 눌림(`Input.pressed`)을 비운다(:7168·:1019). 누르고 있는 것(held)은 그대로 — 막으면 차지 중인 키가 뗀 것처럼 보인다(2026-11-07).
             if (down && Time.timeScale <= 0f) return false;

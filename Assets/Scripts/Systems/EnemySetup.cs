@@ -131,8 +131,10 @@ public static class EnemySetup
     /// </summary>
     public static void SetupBoss(GameObject go, int region, MonsterCatalog catalog)
     {
-        // 지역 전용 보스(1지역 덩어리 지배자, 2026-11-10)는 체력·레벨만 공통 곡선을 쓰고, 그림·크기·공격은 자기 것이다.
+        // 지역 전용 보스(1지역 덩어리 지배자 2026-11-10, 2지역 부서진 여신상 2026-11-18)는 체력·레벨만
+        // 공통 곡선을 쓰고, 그림·크기·공격은 자기 것이다.
         var blob = go.GetComponent<BlobLordBoss>();
+        var goddess = go.GetComponent<BrokenGoddessBoss>();
         var health = go.GetComponent<EnemyHealth>();
         if (health != null)
         {
@@ -154,6 +156,15 @@ public static class EnemySetup
         {
             // 프리팹 그림(기본 도형 덩어리) 그대로, 색 안 칠함. 피해는 플레이어 최대 체력 %라 attackPower를 안 쓴다.
             FitToWorldSize(go, null, BlobLordBoss.VisualSize, BlobLordBoss.HitRadius);
+            return;
+        }
+
+        if (goddess != null)
+        {
+            // 부서진 여신상도 피해는 플레이어 최대 체력 %(잡기·휘두르기 둘 다) — attackPower를 안 쓴다.
+            // 그림은 실제 아트 크기(2026-11-18, BrokenGoddessBoss.cs 참고) — 에셋 연결은 에디터 메뉴
+            // (`ChronoSavior/보스 그림 연결/부서진 여신상`)를 돌려야 반영된다.
+            FitToWorldSize(go, null, BrokenGoddessBoss.VisualSize, BrokenGoddessBoss.HitRadius);
             return;
         }
 

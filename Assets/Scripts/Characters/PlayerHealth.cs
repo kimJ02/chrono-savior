@@ -207,12 +207,23 @@ namespace ChronoSavior.Characters
             CurrentHp = Mathf.Min(maxHp, CurrentHp + amount);
         }
 
-        public void TakeDamage(float amount, GameObject source)
+        public void TakeDamage(float amount, GameObject source) => ApplyDamage(amount, source, ignoreInvuln: false);
+
+        /// <summary>
+        /// 무적시간을 무시하고 피해를 강제로 적용한다 — 2지역 보스 "부서진 여신상" 잡기 전용
+        /// (<see cref="IDamageable.TakeDamageIgnoringInvuln"/> 기본 설명 참고, 2026-11-18 사용자가
+        /// 실제 플레이로 발견). 무적 검사 한 줄만 건너뛸 뿐, 나머지(아이템 배수·넉백·히트필·부활 등)는
+        /// 평범한 <see cref="TakeDamage"/>와 완전히 같다 — 그래서 <see cref="ApplyDamage"/>를 공유한다.
+        /// </summary>
+        public void TakeDamageIgnoringInvuln(float amount, GameObject source) => ApplyDamage(amount, source, ignoreInvuln: true);
+
+        void ApplyDamage(float amount, GameObject source, bool ignoreInvuln)
         {
             // 원본 `if (p.invuln > 0 ...) return;`(project_test.html:1881).
             // 적 쪽에서도 겹침 판정 전에 무적을 확인하지만(:4144), Enemies 도메인은 Characters를 참조할 수
             // 없으므로(asmdef 같은 층) 우리 구조에선 이 검사 하나가 그 역할을 전부 맡는다 — 결과는 동일하다.
-            if (IsDead || InvulnRemaining > 0f) return;
+            // ignoreInvuln이면(2026-11-18, 잡기 전용) 이 검사 하나만 건너뛴다 — 아래는 전부 그대로.
+            if (IsDead || (!ignoreInvuln && InvulnRemaining > 0f)) return;
 
             var profile = ProfileService.Current;
 

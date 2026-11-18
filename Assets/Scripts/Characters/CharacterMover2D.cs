@@ -28,7 +28,7 @@ namespace ChronoSavior.Characters
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [RequireComponent(typeof(Collider2D))]
-public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
+public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabbable
 {
     public float jumpSpeed = 9.6f;
     public float groundCheckRadius = 0.12f;
@@ -142,6 +142,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
     float coyoteTimer;
     float jumpBufferTimer;
     float inertialVx; // 관성 모드가 프레임을 넘겨 들고 가는 수평 속도(원본 p.vx)
+    bool grabbed; // IGrabbable — 2지역 보스 "부서진 여신상" 잡기 패턴에 붙잡힌 동안
 
     void Awake()
     {
@@ -154,6 +155,10 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
 
     void Update()
     {
+        // 붙잡힌 동안은 점프 버퍼·코요테를 포함해 통째로 멈춘다 — 보스가 MoveGrabbedTo로 위치를 직접 넣는다
+        // (2지역 보스 "부서진 여신상" 잡기 패턴, IGrabbable 아래 참고).
+        if (grabbed) return;
+
         UpdateDropThrough(Time.deltaTime);
 
         if (GameInput.JumpDown) jumpBufferTimer = jumpBufferTime;
@@ -173,6 +178,10 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
 
     void FixedUpdate()
     {
+        // 붙잡힌 동안은 수평 이동·경계 clamp·접지 갱신도 멈춘다 — 중력도 꺼 둔 상태라(BeginGrab)
+        // 보스가 MoveGrabbedTo로 넣는 위치가 다음 프레임까지 그대로 유지된다.
+        if (grabbed) return;
+
         float h = 0f;
         if (GameInput.Left) h -= 1f;
         if (GameInput.Right) h += 1f;
@@ -284,6 +293,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
     /// </summary>
     public void ResetForRun()
     {
+        if (grabbed) EndGrab(); // 방어적 정리 — 보스 사망/비활성화 경로가 먼저 돌았어야 하지만, 혹시 남아 있으면 새 런에 안 넘어가게
         CancelDropThrough();
         ResetMotion();
         Facing = 1;
@@ -380,6 +390,49 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable
     {
         Vector2 feet = (Vector2)transform.position + Vector2.down * col.bounds.extents.y;
         return Physics2D.OverlapCircle(feet, groundCheckRadius, groundMask);
+    }
+
+    // ───────────────────────── IGrabbable (2지역 보스 "부서진 여신상" 잡기 패턴) ─────────────────────────
+    // 보스가 끌어당기는 동안 일반 이동·중력을 꺼서 두 이동 방식이 충돌하지 않게 한다(사용자 2026-11-18
+    // 요청서 6절 "Rigidbody2D가 있다면 기존 이동 방식과 충돌하지 않도록 처리"). 위치는 보스가
+    // MoveGrabbedTo로 직접 넣고, Update/FixedUpdate는 맨 위에서 grabbed면 통째로 건너뛴다.
+
+    public bool IsGrabbed => grabbed;
+
+    public void BeginGrab(GameObject grabber)
+    {
+        if (grabbed) return;
+        grabbed = true;
+        CancelDropThrough(); // 끌려가는 동안 발판 통과 상태가 남아 있지 않게
+        rb.gravityScale = 0f;
+        rb.linearVelocity = Vector2.zero;
+        inertialVx = 0f;
+        GameInput.PlayerGrabbed = true; // 점프·공격·스킬 입력도 같이 잠긴다(GameInput.CombatKey)
+    }
+
+    public void MoveGrabbedTo(Vector2 position)
+    {
+        if (!grabbed) return;
+        // rb.position만 바꾸면 transform은 다음 물리 스텝에야 따라온다(Teleport 주석과 같은 함정) —
+        // 보스가 매 프레임 호출하므로 둘 다 바로 맞춰 둔다.
+        transform.position = position;
+        rb.position = position;
+    }
+
+    public void EndGrab()
+    {
+        if (!grabbed) return;
+        grabbed = false;
+        rb.gravityScale = 1f;
+        GameInput.PlayerGrabbed = false;
+    }
+
+    void OnDisable()
+    {
+        // 플레이어 오브젝트가 꺼지거나 파괴될 때 — 붙잡은 쪽(보스)의 정리가 먼저 돌았어야 하지만,
+        // 여기서도 방어적으로 풀어 둔다(사용자 2026-11-18 요청서 "플레이어가 잡힌 도중 사망하면
+        // 이동 제한 및 잡기 상태를 정리한다").
+        if (grabbed) EndGrab();
     }
 }
 }

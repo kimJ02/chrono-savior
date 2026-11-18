@@ -46,7 +46,9 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 **바로 다음(2026-11-18) — 아래 로그 (123)~(126) 다섯 가지를 에디터에서 직접 눈으로 확인할 것** — 이 세션은 디바이스
 브리지로 파일만 썼을 뿐 Unity 에디터를 못 열어서 다섯 다 실제로 돌려본 적이 없다:
-1. `ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 **이번엔 재생성 후에도 살아있는지**.
+1. ~~`ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 재생성 후에도 살아있는지~~ →
+   **더는 할 일 아님**(2026-11-18 병합으로 확인) — 그 메뉴·Animator 자체가 로그 (132)에서 삭제되고
+   코드 플립북(`ChronoSavior/캐릭터 애니메이션 연결`)으로 통째로 바뀌었다.
 2. 1스테이지 전투 배경(새 합성 그림)이 실제 플레이 화면에서 **상하 범위·좌우 팬 느낌이 어색하지 않은지**
    — `backgroundGrassYPx`(340)·`backgroundTopPx`(0)는 계산으로 추정한 값이라 에디터로 확인 전엔 확정이 아니다.
 3. **카메라 상하 프레이밍 보간 수정**((124)) — PlayMode 전체(특히 `StageVisualsTests.cs`)가 통과하는지,
@@ -57,10 +59,33 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    직접 고쳤다). 로드가 되면 발판 옆에 점프해서 붙어보고 실제로 떨어지는지 확인.
 5. **로비 점프 추가**((126)) — 로비에서 C를 누르면 캐릭터가 떴다가 내려오는지, JumpFall 애니메이션이
    자연스러운지, 건물 진입(F/↑)이 점프 중에도 그대로 되는지.
-6. **(127, 병합으로 새로 들어온 항목) `main`에 새로 깨진 테스트 4개 확인** — `CreationOwnershipTests`(PlayerRig·
-   LobbyAvatar)·`GameBootTests`×2·`LobbySceneTests`×1이 애니메이터 방식 전환(팀원 2026-11-16 커밋) 때문에
-   정지 그림이 아니라 Animator 프레임을 보고 있어 깨짐. 코드 플립북 통일 제안(바로 아래 ⚠️ 블록)이 합의되기
-   전까진 손대지 말 것 — 지금은 "깨져 있다"는 사실만 기록.
+6. ~~(127) `main`에 새로 깨진 테스트 4개 확인~~ → **2026-11-18 병합으로 해결 확인** — 그 뒤 애니메이션이
+   Animator → 코드 플립북으로 통째로 바뀌면서(로그 (132)) 깨졌던 `CreationOwnershipTests`·`GameBootTests`·
+   `LobbySceneTests`가 다시 "그 캐릭터 자세 묶음을 입었나"로 바뀌어 통과한다고 로그 (133)·(134)에 적혀
+   있다(전체 566/566). 이 세션은 에디터로 직접 돌려본 적은 없으니 다음에 에디터 열면 그 숫자만 한 번 더 확인.
+7. **(135, 신규) 2지역 보스 "부서진 여신상" — 코드·프리팹·카탈로그 등록 전부 끝났고 에디터 확인만 남았다** —
+   아래 로그 (135)와 "2026-11-18 추가 3" 전체 참고. ① **2026-11-18 사용자가 실제로 돌려서 6개 실패를 찾아줬고
+   (CreationOwnershipTests 1 + BrokenGoddessBossTests 5, 둘 다 원인 파악·수정 완료) 사용자가 재실행해 "오류없이
+   잘되네"로 확인함** — 전체 재실행 숫자(몇/몇)는 다음에 에디터 연 사람이 한 번 더 적어둘 것.
+   ② ~~프리팹 `Enemy_BrokenGoddess` 생성~~ → **2026-11-18 완료** — `Enemy_BlobLord.prefab`(1지역 보스)의
+   PrefabInstance YAML 구조를 그대로 본떠 `Enemy_Base.prefab` 변형으로 손으로 작성(`m_Name`·`isBoss=1` 오버라이드 +
+   `BrokenGoddessBoss` MonoBehaviour 추가, `warningPrefab`은 공용 `GroundWarning` 프리팹 그대로 재사용). **이 세션은
+   에디터를 열어본 적이 없으니, 다음에 에디터를 연 사람이 인스펙터에서 정상인지 반드시 확인할 것**(스크립트 연결
+   여부, 필드 값, Enemy 레이어/태그가 `Enemy_Base` 그대로 상속됐는지). ③ ~~`MonsterCatalog.regionBosses`에 2지역
+   항목 등록~~ → **2026-11-18 완료** — `Assets/Data/Enemies/MonsterCatalog.asset`에 `region: 2` 항목을 1지역 항목과
+   같은 형식(`{fileID: <새 프리팹의 stripped 루트 GameObject fileID>, guid: <새 prefab.meta의 guid>, type: 3}`)으로
+   직접 추가. ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어 붙잡힘·보스 중간 파괴 시
+   영구 미해제 버그 여부) — **아직 미완료, 이 세션은 플레이 자체를 할 수 없음.** ⑤ **(2026-11-18 "여신상
+   완성" — 그림/애니메이션·보스 체력바·타격감, 로그 "추가 7") 메뉴 `ChronoSavior/보스 그림 연결/부서진
+   여신상`을 돌려서 그림을 실제로 연결할 것** → **사용자가 돌리고 Play도 재시작했는데 여전히 세모로
+   보이는 별도 버그가 있었다 — 2026-11-18 "추가 8"에서 진단·수정 완료.** 원인은 메뉴가 아니라
+   `MonsterCatalog.asset`의 `region: 2` 항목이 가리키는 `prefab.fileID`가 (추가 3·4에서 손으로 쓴
+   값이 실제 프리팹의 stripped 루트 id와 어긋나 있어서) 깨진 참조였던 것 — 수정해서 커밋 완료.
+   ⑥ **다음에 에디터를 연 사람이 가장 먼저 확인할 것**: `ChronoSavior/보스전 테스트/2지역 보스전
+   바로 입장`으로 들어가 이제 진짜 그림이 보이는지(세모가 아닌지), 자세마다 그림이 바뀌는지·체력바에
+   "부서진 여신상" 이름이 뜨는지·잡기·휘두르기 흔들림이 느껴지는지 확인.
+
+8. **(137, 신규) 캐릭터 그림 0.375 + 땅·발판 타일 도트 1** — 플레이로 타일·캐릭터 크기 확인, 실패 예상 테스트 정리. 상세는 로그 (137).
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
@@ -277,10 +302,325 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
-- **2026-11-18 (135)** — **[사용자 세션] 각성창을 Figma 새 판(16:2)으로 — 전체 576/576 통과**. 위 패널이 스탯창에서 **고른 스킬 상세**(64 금테 칸 + 큰 아이콘 + 설명 상자 + SP 상자 + [배우기])로,
-  스킬 칸은 5열×2줄(6번째 빈 칸 삭제), 왼쪽은 Figma 전신 그림(`Awaken/portrait_full` 32×48 6배). 칸을 고르면(마우스·키보드) 금테 커서가 따라가고 상세가 바뀐다(말풍선 `PxTooltip`은 이 화면에서 뺌).
-  새 도트 아이콘 30×30(`Skills/mage_*`·1:1·점 필터)·유물 자물쇠(`Relic/lock`)도 같이. **Figma에 없는 것은 우리가 정함**: 배운 칸 = 흰 테두리 + 금 점, 막힌 칸 = 어두운 테두리·아이콘, [스탯] 탭 = 같은 패널 재활용(설명 상자에 스탯, SP 상자에 골드, 칸 자리에 원정 강화).
-  `FigmaArtImporter` v7(Skills를 일러스트 취급에서 뺌 — 안 그러면 쌍선형으로 흐려진다). 줄 순서는 게임이 위=중력(Figma는 위=폭발) 그대로 둠.
+- **2026-11-18 (137)** — **[나] 캐릭터 그림 축소 + 땅·발판 타일 도트 1 — 사용자 직접 요청**("캐릭터 배율좀 줄이고싶은데" → "배경이랑 포탈만 2로 하고 나머지는 다 1로", 범위는 "땅·발판 타일만 1"로 확정).
+  - **캐릭터**: `Assets/Data/Characters/CharacterArtSet.asset` `heights` 마법사·메카닉·섬영 0.75 → 0.375(그림 32×48px·PPU128 원본 크기 = 도트 1). 판정(`EntitySizeConfig.PlayerHeight` 0.5)은 그대로, 드루이드(1.0)는 기획 제외라 안 건드림. 발 기준점은 사용자가 `캐릭터 애니메이션 연결` 메뉴로 이미 맞췄다.
+  - **타일**: `Resources/Art/Figma/Stage1/ground_top·ground_dirt·platform_tile.png.meta` `spritePixelsToUnits` 64 → 128(도트 2 → 1). 땅 타일 0.5→0.25유닛, 발판 타일 0.25→0.125유닛. `World/StageVisuals.GroundRows` 3 → 6(땅 깊이 1.5유닛 유지 — 안 늘리면 카메라 아래쪽에 빈 틈이 보인다). 배경·포탈은 그대로 도트 2(`StageArt_Forest.backgroundScale`·`portalScale` = 2).
+  - **메타만 고쳐선 안 바뀌었다 — 진짜 원인은 `Editor/FigmaArtImporter.cs`**: 이 가져오기 후처리가 `ground_*`·`platform_*` 파일은 가져올 때마다 PPU를 64로 덮어썼다(.meta를 128로 써도 되돌아감). 128로 통일(UI만 100)하고 `GetVersion` 6→7로 올려 이미 들어온 그림도 다시 가져오게 했다. 사용자가 "타일 크기가 변한 게 없다"고 알려줘서 발견.
+  - **테스트 수정**: `DotScaleTests.Stage_BackgroundPortalAndTiles_AreAtDotScale`(타일 PPU 128), `StageVisualsTests`(땅 한 줄 104장, `FigmaArt_IsImportedPixelExact` PPU 128·크기 0.25/0.125).
+  - ⚠️ 다음에 에디터 연 사람이 할 것: ① `DotScaleTests.Characters_AreDrawnAtDotScale`·`CharacterSprite_FeetSitOnTheGround`는 캐릭터가 도트 1이라 **실패할 수 있다**(캐릭터만 도트 1 예외로 둘지 팀 확인 — `pixel-standard.md` 0절 "화면의 도트 크기는 하나(2)"와 어긋남). ② 타일이 절반 크기가 됐으니 플레이해서 발판 두께·땅 윗면 선이 어색하지 않은지 확인. ③ 이 세션은 에디터 접근이 없어 컴파일·테스트 실행 전부 못 했다.
+  - **실수 기록**: (a) 이번 턴 앞부분에 낡은 캐시 파일만 보고 "높이가 아직 0.5고 플립북 전환도 안 됐다"고 잘못 보고했다가 기기에서 새로 받아 정정함 — **같은 파일을 쓰기 전엔 항상 `device_stage_files`로 새로 받을 것.** (b) 이 `PROGRESS.md`가 커밋한 직후 두 번이나 이전 내용으로 되돌아가 있었다(코드·에셋 변경은 남음 — 원인 미상, 에디터/IDE 버퍼 저장 가능성). 이 세션은 git commit을 못 하니 **사용자가 `git add -A && git commit`으로 지금 상태를 고정해 달라.**
+
+- **2026-11-18 (136)** — **[나] 보스는 이동 제한 디버프(끌어당김·스턴 등)에 면역 — 사용자 직접 요청**
+  ("보스들은 중력법사의 중력장같은 끌어오기나 스턴등의 이동이 제한되는 효과는 안받게 하고싶은데").
+  - **새 파일 — `Core/ICrowdControlImmune.cs`**: 멤버 없는 마커 인터페이스, `Core/IGrabExempt.cs`와
+    정확히 같은 자리·같은 이유(`Combat`(1층)이 `Enemies`(2층)의 구체 보스 타입을 몰라도 "이동 제한
+    면역인가"만 물을 수 있게). **일부러 "중력장 면제"가 아니라 "이동 제한 전체" 면역으로 넓게 이름
+    지었다** — 지금 실제로 막는 효과는 끌어당김 하나뿐이지만, 나중에 스턴/속박류가 생기면 그 효과도
+    같은 인터페이스를 봐야 한다는 뜻을 이름에 남겨 두기 위해서다.
+  - **수정 — `Enemies/Boss.cs`·`Enemies/BlobLordBoss.cs`·`Enemies/BrokenGoddessBoss.cs`**: 셋 다
+    인터페이스 목록에 `ICrowdControlImmune` 추가(지금 있는 보스 전부 — 멤버 없는 마커라 추가 구현
+    코드는 필요 없다).
+  - **수정 — `Combat/GravityWellZone.cs`**: `Update()`의 끌어당김 적용부
+    (`pullable.ApplyGravityWellPull(...)`) 앞에 `col.GetComponent<ICrowdControlImmune>() == null`
+    검사를 추가 — **피해성 효과(틱 피해·중력 노출/취약)는 그대로 둔다**: 이동을 제한하는 게 아니라
+    피해를 주는 효과라 사용자가 말한 범위("이동이 제한되는 효과") 밖이라고 판단했다. 기존 주석
+    ("끌어당김·틱 피해와 달리... 보스 예외 없음")도 이제 끌어당김에 실제로 보스 예외가 생겨서 틀린
+    말이 됐길래 같이 고쳤다.
+  - **스턴 자체는 아직 게임에 없다** — 전체 검색으로 확인(2026-11-18). `ICrowdControlImmune`의 주석에
+    "나중에 스턴/속박류가 생기면 반드시 이 인터페이스로 보스를 걸러야 한다"고 남겨 뒀다 — 지금 당장
+    고칠 코드는 없다(원본 또한 이런 보스 면역 규칙이 명시돼 있던 건 아니라서 "확인 필요"로 `HANDOFF.md`에
+    남김 — 팀장이 원본과 다르게 간 걸 알아야 한다는 `CLAUDE.md` 작업 규칙 첫 항목).
+  - **새 테스트 — `Tests/PlayMode/Combat/GravityWellZoneTests.Pull_SkipsCrowdControlImmuneTargets_ButStillPullsNormalEnemies`**:
+    중력점 하나를 세우고 일반 몹(`EnemyMove`만)과 면역 더미(`EnemyMove` + 테스트 전용 `ICrowdControlImmune`
+    구현)를 같은 거리에 두고 몇 프레임 돌려서, **일반 몹은 끌려오고 면역 대상은 안 끌려오는지 둘 다**
+    확인한다(필터가 전부를 막아 버리는 실수를 같이 잡기 위해 둘 다 검증). 테스트 대상의 `moveSpeed`를
+    0으로 둬서 기본 배회 AI의 자체 이동과 끌어당김에 의한 이동이 섞이지 않게 분리했다. `EnemyMove`
+    요구사항(`SetSpawnProtection`은 `Awake` 이후에 불러야 기본 2초 보호를 덮어쓸 수 있다는 점)은
+    "추가 1"에서 찾은 `NewBoss` 헬퍼 함정과 같은 이유로 비활성 오브젝트에 전부 붙인 뒤 켜는 순서를 썼다.
+  - 이 세션은 에디터 접근이 없어 **컴파일·새 테스트 실행·전체 재실행을 전혀 확인 못 했다** — 다음에
+    에디터 연 사람이 확인할 것. 끌어당김 말고 넉백(피격 밀림)도 "이동 제한"으로 볼지는 사용자가
+    언급하지 않아서 손대지 않았다 — 필요하면 알려달라고 할 것(`HANDOFF.md` "확인 필요" 참고).
+
+> **병합 메모(2026-11-18, 번호 충돌 해결)**: 아래 (135)는 `labo3` 로컬에서는 (128)로 쓰여 있었으나, 그사이 `main`이
+> (128)~(134)를 다른 내용(플립북 전환·몹 그림·공격 중 이동 잠금 등)으로 이미 채워 넣어서 **(135)로 재번호**했다 —
+> 내용·날짜·작성자 표시는 그대로이며 번호만 바꿨다. 아래 "다음 할 일" 목록의 항목 7도 같이 (135)로 맞췄다.
+
+- **2026-11-18 (135)** — **[나] 2지역 보스 "부서진 여신상" 신규 구현 — 잡기·휘두르기 2패턴**(사용자가 올린
+  명세서 `부서진_여신상_스킬_구현_명세서.docx` + 별도 요청서 `message.txt`를 근거로, **요청서의 확정 단일값이
+  명세서의 범위값보다 우선 적용된다**고 사용자가 직접 밝힘).
+  - **범위**: 이번엔 **잡기·휘두르기 둘 뿐**이다. 애니메이션·보스 체력바 UI·사운드·카메라 흔들림·추가
+    패턴(명세서에 더 있었더라도)은 사용자가 명시적으로 범위 밖이라고 선언해서 손대지 않았다. 애니메이션이
+    빠진 자리는 지금 다른 보스와 같은 기본 도형 그림(임시) 그대로다.
+  - **설계는 1지역 보스 `BlobLordBoss`의 틀을 그대로 따른다**(`CLAUDE.md`가 정한 "커스텀 보스" 패턴) —
+    `IEnemyMotion` 구현, `Pattern`/`State` 두 enum, 패턴마다 Telegraph(경고)→Attack(판정)→Recovery(회복)
+    상태머신, `VisualSize`/`HitRadius` static 필드, `Systems/EnemySetup.SetupBoss`에 타입 분기 추가.
+  - **새 파일 — `Enemies/BrokenGoddessBoss.cs`(신규, ~470줄)**: 메인 보스 스크립트.
+    - **잡기(Grab)**: 사각 경고(`DotShapes.Rect`, 새로 만든 모양) → 돌진 → 성공 시 플레이어를
+      `Core.IGrabbable`로 붙잡아 보스 쪽으로 당겼다가(이즈아웃 보간) 잠깐 들고 있다 최대체력 20% 피해를
+      1회만 주고 놓아준다. 범위를 벗어나면 그대로 실패(피해 없음).
+    - **휘두르기(Sweep)**: 부채꼴 경고(`DotShapes.Wedge`, 새로 만든 모양) → 판정(최대체력 15% 피해, 1회) —
+      판정은 거리뿐 아니라 **방향 고정 시점의 각도**(`Mathf.DeltaAngle`)까지 봐서, 경고가 뜬 뒤 대상이
+      뒤로 돌아가면 맞지 않는다.
+    - 패턴 선택은 `BlobLordBoss`처럼 각자 쿨다운 + "연속 같은 패턴 금지" 규칙, 둘 다 가능하면 50/50.
+    - 공격 판정은 프로젝트 관례대로 `Physics2D.OverlapBox` 대신 **수동 AABB/각도 계산**
+      (`InGrabBox`/`InSweepArea`, 둘 다 `public static`)으로 — 명세서가 OverlapBox를 "써도 된다"고만
+      했고 강제하지 않아서, 기존 `Boss.DoSlam`/`BlobLordBoss.InImpactArea`와 같은 방식으로 맞췄다.
+    - 몸통 접촉 피해는 `IEnemyContactDamageModifier.ContactDamageMultiplier => 0`(없음) — **확인 필요**:
+      명세서·요청서 둘 다 몸통 접촉 피해를 요구하지 않아서 0으로 뒀는데, 팀장이 다르게 원하면 이 한
+      줄만 고치면 된다.
+    - `IGrabExempt`도 구현(보스 자신은 다른 보스의 "붙잡기 면제" 대상과 같은 식으로 처리해 둠 — 섬영
+      칼날폭풍의 "끌고 다니기"에 잡기 보스가 끌려가지 않게 하는 기존 관례와 동일).
+  - **새 파일 — `Core/IGrabbable.cs`**: `BeginGrab`/`MoveGrabbedTo`/`EndGrab`/`IsGrabbed` — 플레이어가
+    어떤 보스에게도 똑같이 "붙잡히는" 인터페이스. `Core`에 둔 이유: `Enemies`(보스)가 `Characters`를
+    직접 참조하면 계층 위반(둘 다 2층)이라, 낮은 층 인터페이스로 방향을 뒤집는 기존 패턴
+    (`ISpawnProtectable`과 같은 자리) 그대로 따름.
+  - **수정 — `Characters/CharacterMover2D.cs`**: `IGrabbable` 구현 추가. 잡혀 있는 동안 `Update`/
+    `FixedUpdate`를 전부 건너뛰고(이동·점프 입력 무시), 중력을 0으로 꺼서 보스가 옮기는 위치에 그대로
+    따라간다. `GameInput.PlayerGrabbed = true/false`를 같이 토글. `OnDisable`/`ResetForRun`에서도 잡힌
+    상태를 반드시 풀어서(`EndGrab`) 런 재시작·캐릭터 전환 때 중력 0이 영구히 남는 버그를 막음.
+  - **수정 — `Core/GameInput.cs`**: `public static bool PlayerGrabbed` 추가, `CombatKey`(공격/스킬 공용
+    입력 문)가 `PlayerGrabbed`일 때도 꺼지게 — 잡혀 있는 동안 플레이어가 공격/스킬을 못 쓰게 막는다
+    (명세서 취지상 당연한 처리로 판단, 별도 확인 문구는 없었음).
+  - **수정 — `Enemies/GroundWarning.cs`**: 기존 `Show(point, radius)`(원형 경고)에 더해 **사각/부채꼴 같은
+    임의 스프라이트**를 쓰는 `ShowCustom(point, sprite, scale)`을 추가 — 원형 전용이던 기존 경고 오브젝트를
+    그대로 재사용하기 위함(새 경고 클래스를 안 만들고 1지역 보스와 같은 자원 재사용).
+  - **수정 — `Combat/DotShapes.cs`**: `Rect(w,h)`·`Wedge(radius, halfAngle)` 두 모양 추가(기존
+    `Ring`/`Ellipse`/`Arc` 캐시 패턴 그대로).
+  - **수정 — `Systems/EnemySetup.cs`**: `SetupBoss`에 `BrokenGoddessBoss` 분기 추가(`BlobLordBoss` 분기
+    바로 옆, 같은 `FitToWorldSize` 호출 패턴).
+  - **수정 — `Tests/PlayMode/OriginalFidelityTests.cs`**: 이번에 새로 만든 cross-file 공개 API
+    (`PlayerGrabbed`·`BeginGrab`/`MoveGrabbedTo`/`EndGrab`·`ShowCustom`·`DotShapes.Rect`/`Wedge`) 7개를
+    `mustBeWired` 목록에 등록 — CLAUDE.md가 경고하는 "정의만 하고 호출부를 안 만드는" 부류 사고를 막기 위해.
+  - **새 파일 — `Tests/PlayMode/Enemies/BrokenGoddessBossTests.cs`**(신규): `CLAUDE.md`의
+    "Rigidbody2D/Collider2D가 얽힌 로직은 PlayMode 테스트 필수" 규칙에 따라, 프리팹이 아직 없어도
+    `AddComponent`로 보스를 직접 구성해 테스트 7개(순수 판정 함수 2개 + 플레이 흐름 5개: 잡기 성공,
+    잡기 실패(사거리 벗어남), 휘두르기 빗나감(방향 고정 후 대상이 뒤로 이동), 패턴 연속 선택 금지,
+    보스 비활성화 시 즉시 풀려나는지)를 새로 작성.
+  - **이 세션은 Unity 에디터에 접근할 수 없어서(디바이스 브리지로 파일만 씀) 아래는 전혀 실행해 본 적이
+    없다 — 사용자가 에디터에서 직접 확인 필요**:
+    1. 새 PlayMode 테스트 7개가 실제로 통과하는지(컴파일만 눈으로 확인했을 뿐 배치 실행을 못 했음).
+       → **2026-11-18 사용자가 실제로 돌려 확인, 아래 "2026-11-18 추가"·"추가 2" 참고.**
+    2. ~~프리팹 `Enemy_BrokenGoddess` 생성~~ → **2026-11-18 완료, 아래 "추가 3" 참고.**
+    3. ~~`MonsterCatalog`의 `regionBosses`에 2지역 항목 등록~~ → **2026-11-18 완료, 아래 "추가 3" 참고.**
+    4. 실제 플레이로 잡기/휘두르기 둘 다 눈으로 확인(경고 모양이 사각/부채꼴로 제대로 보이는지, 잡힌
+       플레이어가 입력이 막힌 채 끌려오는지, 보스를 중간에 죽이거나 씬을 바꿔도 플레이어가 영구히
+       안 풀리는 버그가 없는지). **아직 미완료 — 이 세션은 플레이 자체를 할 수 없음.**
+  - **확인 필요(명세서의 "선택 적용" 두 가지, 이번엔 구현 안 함)**: (1) 회피 무적 중엔 잡기가 실패하게
+    하는 선택 규칙 — `Characters`의 무적 판정을 더 들여다봐야 해서 범위를 넘는다고 판단해 보류.
+    (2) 돌 조각이 흩날리는 비주얼 — 애니메이션/VFX라 이번 작업 범위(message.txt가 명시적으로 제외)
+    밖이라 손대지 않음. 둘 다 사용자가 필요하다고 하면 다음 스프린트에서.
+  - **2026-11-18 추가(사용자가 실제로 에디터에서 돌려 보고 잡은 것)**: `CreationOwnershipTests.OnlyListedOwners_CreateObjectsOrAttachComponents`
+    실패 — `Enemies/BrokenGoddessBoss.cs`가 경고 2개를 `Instantiate`하는데 생성 담당 목록에 안 적어 둠. `BlobLordBoss.cs`와 같은
+    칸으로 등록(이유 동일 — 경고 프리팹 재사용, 판정은 보스가). 그리고 `BrokenGoddessBossTests` 5개(순수 판정 2개 제외 전부)가
+    전부 타임아웃으로 실패 — **원인은 테스트 쪽 `NewBoss` 헬퍼**: `new GameObject(name, typeof(EnemyMove), ..., typeof(BrokenGoddessBoss))`처럼
+    활성 오브젝트에 한 번에 여러 타입을 붙이면 **타입마다 붙는 즉시 `Awake()`가 돈다** — 목록에서 `EnemyMove`가
+    `BrokenGoddessBoss`보다 앞이라 `EnemyMove.Awake()`의 `GetComponent<IEnemyMotion>()`이 그 시점엔 아직 없는
+    `BrokenGoddessBoss`를 찾다가 null로 캐시해서, 보스의 `GetHorizontalSpeed`가 한 번도 안 불리고 상태머신이 Idle에
+    영원히 머물렀다(그래서 거기 의존하는 테스트 5개가 몽땅 타임아웃). **프리팹으로 세우는 실제 게임 경로는 문제없다**
+    (인스턴스화 때 컴포넌트가 전부 먼저 붙고 나서 Awake가 돈다 — 운영 코드가 아니라 테스트 헬퍼만의 함정). 고치는 법:
+    오브젝트를 비활성 상태로 만들어 두고 전부 `AddComponent`로 붙인 뒤 맨 마지막에 `SetActive(true)`(그때는 전부 이미
+    붙어 있어 어느 쪽 `Awake`가 먼저 돌든 상관없다). `BrokenGoddessBossTests.cs`의 `NewBoss`를 이 방식으로 고침.
+  - **2026-11-18 추가 2(사용자가 고친 뒤 다시 돌려서 또 잡은 것)**: 위 두 가지를 고치고 다시 돌리니
+    `Grab_SuccessPullsAndDamagesOncePercentOfMaxHp`가 "한 번만 맞아야 한다 Expected: 1 But was: 2"로 깨짐 —
+    **보스 코드 버그가 아니라 테스트 자체의 설계 결함**이었다. 테스트가 "처음 고른 패턴이 휘두르기면 건너뛰고
+    잡기가 나올 때까지 한 번 더 기다린다"는 분기를 넣어 뒀는데, **그 먼저 나온 휘두르기도 사거리 안이라 실제로
+    맞는다** — 그래서 더미의 `hits`가 그 휘두르기 몫 1 + 뒤이은 잡기 몫 1 = 2가 돼서 "한 번만"이 깨졌다
+    (요청서가 틀려서가 아니라, 랜덤으로 휘두르기가 먼저 골리는 실행에서만 50%쯤 걸리는 테스트 설계 결함 —
+    `Choose()`가 매번 `Random.value`로 고르니). `Grab_FailsWhenTargetLeavesRangeBeforeThrust_NoDamageNoPull`도
+    같은 구멍이 있어서 같이 고쳤다(`Sweep_MissesWhenTargetMovesBehindAfterDirectionLocked`는 `NewTarget`을
+    써서 애초에 `IGrabbable`이 없는 대상이라 잡기가 걸려도 안 맞으므로 이 문제가 없다 — 안 고침). 고치는 법:
+    "이번 잡기 시도" 직전에 `damageable.hits`/`.taken`을 기준점으로 찍어 두고, 그 뒤로 **늘어난 양**만 비교하게
+    바꿔서, 우연히 먼저 골린 휘두르기 몫은 범위 밖으로 뺐다. **함께 보고된 `SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange`
+    (섬영 `BladeCombatTests`) 실패는 이 작업과 무관해 보인다** — 이 세션은 `BladeCombat.cs`·그 테스트 파일을 전혀
+    안 건드렸고, 로그 (131)에 이미 "`BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서
+    통과(타이밍 불안정으로 보임)"로 같은 부류의 기존 불안정 테스트가 적혀 있다 — 한 번 더 돌려서 재현되는지
+    볼 것(계속 깨지면 그건 별도로 봐야 할 기존 이슈).
+  - **2026-11-18 추가 3(사용자가 "어 오류없이 잘되네"로 테스트 확인한 뒤, 남은 프리팹·카탈로그 등록도 요청)**:
+    프리팹 `Enemy_BrokenGoddess.prefab`과 카탈로그 등록을 **에디터 없이 YAML을 손으로 작성해** 끝냈다 —
+    `Enemy_BlobLord.prefab`(1지역 보스, `Enemy_Base.prefab`의 PrefabInstance 변형)을 그대로 읽어 구조를
+    본떴다: `PrefabInstance.m_Modifications`로 `m_Name`→"Enemy_BrokenGoddess"·`isBoss`→1 오버라이드(둘 다
+    `Enemy_Base.prefab`의 실제 fileID/guid를 `target`으로), `m_AddedComponents`로 `BrokenGoddessBoss`
+    MonoBehaviour 하나 추가(스크립트 guid는 `BrokenGoddessBoss.cs.meta`에서 그대로 읽음), 그 필드
+    `warningPrefab`은 BlobLord와 **같은 공용 `GroundWarning.prefab` 참조**(별도 경고 프리팹을 새로 만들
+    필요 없음, `GroundWarning.ShowCustom`을 재사용하는 설계라 하나로 충분). BlobLord와 달리 추가 자식
+    GameObject(들고 있는 돌·투척 경로선 등)가 없어서 `m_AddedGameObjects: []`로 그만큼 더 단순하다.
+    새 fileID·새 guid는 무작위 생성(19자리 십진수 fileID, 32자리 16진 guid). `MonsterCatalog.asset`의
+    `regionBosses`에는 1지역 항목과 **정확히 같은 참조 규칙**으로 `region: 2` 항목을 추가했다 —
+    `prefab.guid`는 1지역처럼 "변형이 상속한 베이스의 guid"가 아니라 **그 변형 프리팹 자신의 `.meta` guid**,
+    `prefab.fileID`는 그 변형이 새로 갖는 "stripped 루트 GameObject"의 fileID다(1지역 항목의 guid
+    `b369f7be9380789499622d23edcd8d0b`가 실제로 `Enemy_BlobLord.prefab.meta`의 guid와 일치하는 걸 직접
+    대조해서 확인한 규칙). **이 세션은 에디터를 한 번도 열어본 적이 없어 손으로 쓴 YAML이 실제로 Unity가
+    읽을 때 깨지지 않는지 전혀 검증 못 했다** — 다음에 에디터를 연 사람이 가장 먼저 할 일은 (a) 콘솔에
+    import 에러가 없는지, (b) 프리팹을 선택해 인스펙터에 `BrokenGoddessBoss` 컴포넌트와 `warningPrefab`
+    필드가 정상으로 보이는지, (c) `MonsterCatalog` 에셋의 `regionBosses` 리스트 2번째 항목이 인스펙터에서
+    이 프리팹을 정상으로 가리키는지 확인하는 것. 위 "다음 할 일" 7번 ④(실제 플레이 확인)는 여전히 남아있다.
+  - **2026-11-18 추가 4(사용자가 에디터에서 열자마자 콘솔 오류로 잡은 것)**: `Worker2: Failed to convert
+    9589630643815358719 to a signed 64 bit int in file 'Assets/Data/Enemies/MonsterCatalog.asset'` —
+    바로 위 "추가 3"에서 무작위로 만든 stripped GameObject fileID(`9589630643815358719`, ≈9.59×10¹⁸)가
+    **Unity의 fileID가 signed 64비트 정수(최댓값 `9223372036854775807`, ≈9.22×10¹⁸)로 파싱된다는 걸
+    놓쳐서** 그 한도를 넘어버린 것 — 무작위 생성 때 자릿수(19자리)만 맞추고 실제 범위는 확인하지 않은
+    실수. `MonsterCatalog.asset`의 region 2 `prefab.fileID`와 `Enemy_BrokenGoddess.prefab`의 stripped
+    GameObject id(`--- !u!1 &9589630643815358719 stripped`)·`m_GameObject` 참조 두 곳 모두 같은 값을 써서
+    같이 깨져 있었다. 범위 안의 새 값(`6017654334565820054`, int64 최댓값 미만)으로 두 파일 다 맞춰
+    고쳤다. **다음부터 비슷한 fileID를 무작위 생성할 땐 `random.randint(10**18, 9223372036854775807)`처럼
+    상한을 int64 최댓값으로 명시할 것** — 19자리 숫자라고 다 안전한 게 아니다.
+  - **2026-11-18 추가 5(사용자가 실제 플레이로 발견 — "잡기에 데미지가 없나?")**: 잡기는 성공해서
+    끌려오고 풀려나기까지 멀쩡해 보였지만, 끝날 때 줘야 할 피해(최대체력 20%)가 가끔 안 들어갔다 —
+    **코드 버그가 아니라 설계상 빠진 부분**이었다. `PlayerHealth.TakeDamage`는 원본 그대로
+    `if (p.invuln > 0) return;`(맞은 뒤 0.9초 무적, 연타 방지용)를 지키는데, 잡기는 끌어당기기(0.5초)
+    +붙잡아둠(0.2초) = **0.7초**가 걸려서 그 0.9초 무적 창과 겹칠 수 있는 타이밍이다 — 근처 다른
+    몹에게 막 맞아서 무적이 돌고 있는 채로 잡히면, `FinishGrab()`이 주는 피해가 그 무적에 조용히
+    씹혔다(잡기 자체의 성공/실패와는 무관 — 붙잡기는 됐는데 피해만 안 들어가는 상태). 명세서·요청서
+    둘 다 이 상호작용을 언급하지 않아서 처음엔 안 다뤘던 부분.
+    - **고친 법**: `Core/IDamageable.cs`에 기본 구현이 있는 새 메서드 `TakeDamageIgnoringInvuln(amount, source)`
+      추가(기존 `TakeTickDamage`와 같은 "기본은 `TakeDamage`로 위임, 필요한 구현체만 오버라이드" 패턴) —
+      무적 개념이 없는 구현체(`EnemyHealth` 등)는 아무것도 안 바꿔도 된다. `Characters/PlayerHealth.cs`는
+      기존 `TakeDamage`를 `ApplyDamage(amount, source, ignoreInvuln)` 공용 메서드로 쪼개고, 새 메서드가
+      `ignoreInvuln: true`로 그 검사 한 줄만 건너뛰게 오버라이드(넉백·히트필·부활 등 나머지는 전부 동일).
+      `Enemies/BrokenGoddessBoss.FinishGrab()`만 `TakeDamage` 대신 `TakeDamageIgnoringInvuln`을 부르도록
+      바꿨다 — **휘두르기(Sweep)는 그대로 일반 `TakeDamage`**(판정 순간 즉시 1회라 이 문제가 없다,
+      바꿀 이유 없음). `Tests/PlayMode/OriginalFidelityTests.cs`의 `mustBeWired`에도 등록(cross-file API).
+    - **새 테스트 — `Grab_DamageIgnoresPlayerInvulnerability`**: `Dummy` 대신 실제 `PlayerHealth`를 붙여서
+      잡기 시작 전에 `GrantInvuln(999f)`로 긴 무적을 미리 걸어 두고도 끝날 때 체력이 깎이는지 확인.
+      원래 걸려 있던 무적 자체를 지우는 게 아니라 "이번 피해에서만 그 검사를 건너뛴다"는 것도 같이
+      확인(`InvulnRemaining`이 여전히 0보다 큰지).
+    - 이 세션은 에디터 접근이 없어 컴파일·테스트 실행을 직접 확인 못 했다 — **다음에 에디터 연 사람이
+      새 테스트 포함 전체 재실행으로 확인할 것.**
+  - **2026-11-18 추가 6(사용자 요청 — 기기 바꿔가며 git으로 동기화하는 중이라 매번 처음부터 플레이해서
+    확인하기 번거롭다, 바로 위 수정을 직접 플레이로 확인하기 위함)**: 새 에디터 메뉴
+    `Assets/Editor/BossFieldTestMenu.cs`(`ChronoSavior/보스전 테스트/…`) 추가 — 지역 토벌 100마리를
+    매번 다시 하지 않고 Play 중 메뉴 클릭 한 번으로 **그 지역 보스전에 바로 입장**한다(1·2지역, 보스
+    전용 스크립트가 있는 지역만). `Systems/EnemySpawner.cs`에 이미 "평소엔 안 타지만 `StartRun(region,
+    RunMode.Boss)`로 바로 보스전을 여는 경로(테스트 등)를 쓸 수 있다"고 적혀 있던 경로를 그대로
+    쓴 것 — `GameFlow.StartRun(region, RunMode.Boss, …, spendDay: false)`를 직접 부른다.
+    - **세이브를 안 건드린다**: 토벌 수·보스 해금 여부는 `StageSelectScreen`(로비 UI) 쪽에만 있는
+      검사라 `StartRun`/`CombatDirector.BeginField` 자체엔 아예 없다 — 그래서 진행 상태를 전혀 어지르지
+      않고 곧바로 들어갔다 나올 수 있다. `spendDay: false`로 멸망까지 남은 날도 안 깎인다(에디터
+      디버그 진입과 같은 값, `GameFlow.cs:101`).
+    - `MechanicTestMenu.cs`와 똑같은 근거로 CLAUDE.md의 "원본에 없던 디버그 키 금지"에 해당하지
+      않는다 — 그건 **게임 안 입력**(R 부활 등) 얘기고, 빌드에 안 들어가는 에디터 메뉴는 별개다.
+    - 사용법: Play를 누른 뒤(타이틀·로비·결과 화면 등 아무 데서나) 메뉴에서 "2지역 보스전 바로 입장
+      (부서진 여신상)"을 누르면 즉시 2지역 보스방으로 들어간다. 이걸로 위 "추가 5" 수정(잡기 무적
+      버그)이 실제로 고쳐졌는지 눈으로 바로 확인할 수 있다.
+    - 이 세션은 에디터 접근이 없어 메뉴가 실제로 Unity에서 뜨는지·눌렀을 때 정말 들어가는지 확인 못
+      했다 — **다음에 에디터 연 사람이 먼저 한 번 눌러서 확인할 것.**
+  - **2026-11-18 추가 7(사용자 "잘되네 이제 여신상 완성을 하고싶은데" — AskUserQuestion으로 범위 확정:
+    그림/애니메이션 교체·보스 체력바 UI 연결·타격감(사운드+카메라 흔들림). 선택 안 한 2가지(회피
+    무적 중 잡기 실패 처리, 돌 조각 디버그 VFX)는 이번에도 안 함)**: 사용자가 실제 스프라이트(대기 4·
+    이동 4·잡기 7·휘두르기 5·피격 1·사망 8장, 전부 높이 64px — 대기/이동/피격/사망은 80px 폭, 잡기/
+    휘두르기는 100px 폭)를 올려서 바로 `Enemies/BrokenGoddessBoss.cs`에 반영했다. 요청서 1절의
+    "애니메이션 구현하지 마"는 **그때 정식 아트가 없던 시점의 범위 제한**이었다고 판단하고(그림이
+    없는데 애니메이션을 만들 수 없었을 뿐, 지금 사용자가 "완성해달라" 요청과 함께 그림까지 올린
+    것으로 그 제한은 해소됐다고 해석) 머리 주석에 그 경위를 그대로 남겼다 — 다르게 보일 경우를 위해
+    여기 명시한다.
+    - **그림/애니메이션**: 1지역 `BlobLordBoss`와 똑같은 패턴(Animator 미사용, 상태머신이 직접
+      `SpriteRenderer.sprite`를 고른다) — `idleArt`/`moveArt`/`grabArt`/`sweepArt`/`hitArt`/`deathArt`
+      6개 `SpriteFlipbook` 칸 + get/set 프로퍼티 추가. 대기·이동은 시간 기반 되풀이(`FrameAt`), 잡기·
+      휘두르기는 BlobLord의 튀어오르기·투척처럼 **상태 진행도로 몇 번째 장인지 직접 계산**(fps 안 씀) —
+      잡기 7장을 준비1·경고1·팔뻗기1·끌어당기기3·붙잡아둠1로, 휘두르기 5장을 준비1·경고2·판정2로
+      나눴다(끌어당기기가 가장 길고 역동적인 구간이라 세 장을 줌 — 정확한 장면 배분은 "확인 필요",
+      `HANDOFF.md`). 피격은 `CombatEvents.EnemyDamaged` 구독(BlobLord의 `HandleDamaged`와 동일)으로
+      0.15초 최우선 표시. 사망은 `IDeathAnimated.PlayDeathAndDestroy()`를 새로 구현(BlobLord와 동일한
+      코루틴 패턴) — 콜라이더를 끄고 붙잡은 대상을 풀어준 뒤 8장을 재생하고 Destroy.
+    - **`VisualSize` 보정**: 그림 들어오기 전 임시 크기(1.30×1.50, 공통 보스 수치)는 세로는 그대로 두고
+      가로만 실제 그림 비율(80:64 = 1.25)에 맞춰 1.875로 고쳤다(세로를 유지해 기존 공통 보스 체감 크기를
+      거의 그대로 두면서 가로만 늘여 그림이 안 눌리게) — `HitRadius`도 같은 비율로 0.65→0.75.
+    - **에셋 임포트는 에디터 메뉴에 맡겼다**: PNG 29장은 디바이스 브리지로 `Assets/Resources/Art/Enemies/
+      BrokenGoddess/`에 이미 옮겨 놨지만(파일명 `Enemy_BrokenGoddess_<동작>_NN.png`), 이 세션은 Unity
+      에디터가 없어 Sprite 임포트 설정(PPU·Point 필터)·`SpriteFlipbook` 에셋 생성·프리팹 필드 연결을
+      직접 할 수 없다 — 새 파일 **`Assets/Editor/BuildBrokenGoddessArt.cs`**(메뉴 `ChronoSavior/보스
+      그림 연결/부서진 여신상`, `Editor/BuildEnemySkins.BuildBossArt`와 같은 패턴)가 그걸 전부 한다.
+      **다음에 에디터를 연 사람이 반드시 이 메뉴를 한 번 돌려야** 그림이 실제로 보인다 — 돌리기 전엔
+      프리팹이 기본 도형 그림 그대로다.
+    - **보스 체력바 UI**: 따로 만들 게 없었다 — `CombatHud`의 보스 체력바는 `EnemyHealth.isBoss`(이미
+      이 프리팹에 1로 설정돼 있었다, 2026-11-17에 확인됨) 하나로 이미 범용으로 동작한다. 다만 이름
+      표시(`RegionConfig.BossNameOf`)가 2지역엔 비어 있어 그냥 "보스"로만 뜨고 있던 것을 확인하고
+      `RegionConfig.BossNames[1] = "부서진 여신상"`으로 채웠다(1지역 "덩어리 지배자"와 같은 방식).
+    - **타격감**: 피해가 들어가는 매 순간은 이미 `PlayerHealth.ApplyDamage`가 `HitFeel.PlayerHurt()`
+      (붉어짐 0.35+흔들림 7/0.22)와 사운드(`SfxEvents.RaisePlayerDamaged`)를 공통으로 걸고 있어서(잡기·
+      휘두르기 둘 다 그 경로를 그대로 탄다) 보스별로 새로 만들 게 없었다 — `BlobLordBoss`도 같은 이유로
+      `SfxEvents` 호출이 하나도 없다(전부 공통 경로). 대신 BlobLord의 착지 흔들림(12/0.3)·투척 흔들림
+      (5/0.15)처럼, **그 순간을 더 강조하는 여분의 흔들림**만 추가했다 — 잡기 성공(스냇치) 순간
+      `HitFeel.Shake(8f, 0.2f)`, 휘두르기 명중 순간 `HitFeel.Shake(6f, 0.18f)`(둘 다 PlayerHurt 기본값
+      위로 덮어쓴다 — `HitFeel.Shake`는 기존·신규 중 큰 쪽을 택한다). **이 두 수치는 임의로 고른 값이다
+      — "확인 필요"**(`HANDOFF.md`).
+    - **테스트**: `Tests/PlayMode/Enemies/BrokenGoddessBossTests.cs`에 `BodyArt_IsWiredOnThePrefab`(BlobLord와
+      같은 패턴 — **메뉴를 돌리기 전까진 실패하는 게 정상**, 프리팹 칸이 비어 있어서)·
+      `Death_TurnsCollidersOff_WhileDeathArtPlays`·`Death_ReleasesGrabbedTargetImmediately`(둘 다 그림
+      유무와 무관하게 지금 바로 통과해야 하는 로직) 3개 추가.
+    - 이 세션은 에디터 접근이 없어 **컴파일·`BuildBrokenGoddessArt` 메뉴 실행·전체 테스트 재실행을 전부
+      확인 못 했다** — 다음에 에디터 연 사람이: (a) 컴파일 에러 없는지, (b) 메뉴 `ChronoSavior/보스 그림
+      연결/부서진 여신상` 실행, (c) 전체 PlayMode 재실행(`BodyArt_IsWiredOnThePrefab` 포함 전부 통과하는지),
+      (d) `ChronoSavior/보스전 테스트/2지역 보스전 바로 입장`으로 직접 들어가서 그림이 자세마다 바뀌는지·
+      보스 체력바에 "부서진 여신상" 이름이 뜨는지·잡기·휘두르기 흔들림이 느껴지는지 눈으로 확인할 것.
+  - **2026-11-18 추가 8(사용자가 메뉴를 실제로 돌리고 Play도 재시작했는데 "보스 세모로 보이는데" —
+    메뉴 실행 자체와 무관한 별도 버그를 발견·수정)**: `AskUserQuestion`으로 "메뉴를 실제로 돌렸는지"·
+    "Play 재시작했는지"·"콘솔에 뜬 메시지"를 하나씩 확인해서 **메뉴 미실행·Play 세션이 오래됐을
+    가능성을 먼저 배제**했다(사용자: "연결한건데", "네 Play를 멈추고 다시 시작함", "'그림 연결 끝'
+    성공 메시지만 뜸" — 경고·에러 전혀 없음). 그래서 디바이스 브리지로 프리팹·플립북 에셋·카탈로그를
+    직접 읽어 대조했다:
+    - `Enemy_BrokenGoddess.prefab`을 읽어 보니 `BrokenGoddessBoss` 컴포넌트의 `idleArt`/`moveArt`/
+      `grabArt`/`sweepArt`/`hitArt`/`deathArt` 6개와 `m_Sprite` 오버라이드 전부 **멀쩡히 연결돼 있었다**
+      (guid가 실제 `Flipbook_BrokenGoddess_*.asset`·그 첫 프레임 스프라이트와 정확히 일치, `Enemy_BlobLord.prefab`과
+      똑같은 `type: 2` 참조 패턴) — **메뉴는 제대로 일했다. 그림 연결 자체는 문제가 아니었다.**
+    - 진짜 원인은 "추가 3"에서 **에디터 없이 손으로 쓴 `MonsterCatalog.asset`의 `regionBosses[region: 2].prefab`
+      참조**였다 — `guid`는 맞는데(`Enemy_BrokenGoddess.prefab.meta`와 일치) **`fileID`가 틀렸다**
+      (`9589630643815358719`, "추가 4"에서 int64 오버플로를 고치며 새로 지어낸 값인데, 그 값을 실제
+      프리팹 파일의 stripped 루트 GameObject id(`8822927722436127948`)로 맞춰 쓰는 걸 빠뜨렸다). 1지역
+      항목(`region: 1`)은 `Enemy_BlobLord.prefab`의 실제 stripped 루트 id(`7103290951828203443`)와
+      정확히 일치해서 문제없었는데, 2지역 항목만 이 대조를 안 거친 상태로 남아 있었던 것 — **존재하지
+      않는 fileID를 가리키는 참조라 Unity가 조용히 null로 처리**하고, 그 null을 쓰는 스폰 경로가 바로
+      일반 보스 placeholder(`MonsterCatalog.bossPrefab`, 세모 도형)로 떨어진 것으로 보인다(에러·경고가
+      안 뜨는 이유 — null 오브젝트 참조 자체는 예외가 아니라 조용한 폴백이라서). `BuildBrokenGoddessArt`
+      메뉴는 프리팹 파일을 경로로 직접 여닫기 때문에 이 카탈로그 참조와 무관해 "메뉴는 성공, 그런데
+      스폰은 다른 프리팹"이라는 모순이 생겼던 것.
+    - **고친 법**: `MonsterCatalog.asset`의 `region: 2` 항목 `prefab.fileID`를 `9589630643815358719` →
+      `8822927722436127948`(실제 프리팹의 stripped 루트)로 한 줄만 수정. `guid`는 원래부터 맞았으므로
+      안 건드림.
+    - 이 세션은 여전히 에디터 접근이 없어 **수정 후 실제로 2지역 보스가 제대로 뜨는지 직접 확인 못
+      했다** — 다음에 사용자가 Play에서 `ChronoSavior/보스전 테스트/2지역 보스전 바로 입장`으로 들어가
+      부서진 여신상 그림이 실제로 보이는지부터 확인할 것. 또한 **이번처럼 손으로 쓴 YAML에서 외부
+      참조(다른 에셋이 가리키는 fileID)를 추가할 때는, 그 fileID가 참조 대상 파일 안에 실제로 존재하는
+      그 값인지 대조하는 걸 앞으로 빠뜨리지 말 것** — guid만 맞고 fileID가 틀려도 Unity는 에러를 내지
+      않고 조용히 null로 넘어가므로, 눈으로 보지 않으면 영원히 모를 수 있는 종류의 실수다.
+  - **2026-11-18 추가 10(좌우 반전 수정을 커밋한 직후, 사용자가 컴파일 에러 스크린샷 — `BrokenGoddessBoss`에
+    `IdleArt`/`MoveArt`/`GrabArt`/`SweepArt`/`HitArt`/`DeathArt`·`PlayDeathAndDestroy`가 없다는 CS1061
+    7건)**: "Assets → Refresh"로도 안 없어진다고 해서 디바이스에서 `BrokenGoddessBoss.cs`를 다시 끌어와
+    보니 — **"추가 7"(그림/애니메이션)과 "추가 9"(좌우 반전 수정) 두 커밋이 전부 사라지고 그 이전
+    ("추가 6", 잡기 무적 버그 수정 직후) 상태로 돌아가 있었다.** 파일 크기(35728→25054바이트)·클래스
+    인터페이스 목록(`IDeathAnimated` 빠짐)·`VisualSize`(임시값 1.30×1.50로 복귀)로 명백히 확인.
+    `BrokenGoddessBossTests.cs`·`RegionConfig.cs`·`MonsterCatalog.asset`·프리팹은 전부 그대로였다 —
+    **이 파일 하나만** 되돌아갔다(원인은 특정 못 함 — 유력한 설명: **이 세션의 모든 디바이스 브리지
+    글쓰기는 git 커밋이 아니라 디스크에 바이트를 직접 쓰는 것뿐이라서**, 이 세션은 `device_bash`
+    (기기 셸)가 없어 git add/commit을 한 번도 못 했다 — 그 상태에서 이 파일에 대해 git이 작업 트리를
+    되돌리는 어떤 조작이든(`git checkout -- <파일>`, IDE의 "되돌리기", `git stash`, 브랜치 전환 등)
+    일어났다면 커밋 안 된 수정은 조용히 사라지고 git에 실제로 들어 있던 예전 버전만 남는다 — 바로 그
+    증상). **복구**: "추가 7"·"추가 9"의 변경을 처음부터 다시 적용했다 — 이번엔 단순 재현이 아니라
+    `BlobLordBoss.cs`(완전한 실제 동작 코드, 지금 이 세션이 전체를 다시 읽을 수 있었다)를 그대로 본떠
+    `UpdateBodySprite`/`GrabSprite`/`SweepSprite`/`At`/`PlayDeathAndDestroy`/`DeathSequence`/
+    `OnEnable`·`OnDisable`(`CombatEvents.EnemyDamaged` 구독)/`LateUpdate`/`HandleDamaged`를 다시 짜고,
+    좌우 반전 수정(`flipX = dir >= 0`)과 `HitFeel.Shake` 액센트 흔들림(잡기 8/0.2, 휘두르기 6/0.18)도
+    같이 복원해 커밋했다. **다음에 에디터 연 사람이 꼭 확인할 것**: (a) 컴파일 에러가 진짜로 없는지
+    (이번 복구는 BlobLord 패턴을 그대로 본떴지만 전체를 처음부터 다시 쓴 것이라 오탈자 위험이 전보다
+    큼), (b) `BodyArt_IsWiredOnThePrefab`·`Death_TurnsCollidersOff_WhileDeathArtPlays`·
+    `Death_ReleasesGrabbedTargetImmediately` 포함 전체 재실행. **더 중요한 것 — 재발 방지**: 이
+    세션은 git 커밋을 할 수 없으니(`device_bash` 없음), **이 작업을 받는 사람이 지금 바로
+    `git add -A && git commit`을 해야 한다** — 안 그러면 다음에 비슷한 git 조작(브랜치 전환·pull·
+    IDE 되돌리기 등) 한 번에 오늘 복구한 것까지 통째로 다시 날아간다. `git status`로 지금 작업 트리에
+    뭐가 커밋 안 돼 있는지부터 확인할 것(이 세션이 이번 대화에서 디스크에 쓴 파일 전부 — `BrokenGoddessBoss.cs`·
+    `MonsterCatalog.asset`·`PROGRESS.md`·`HANDOFF.md` 등).
+  - **2026-11-18 추가 9(위 수정 뒤 사용자가 "여신상 좌우가 반전된건같은데")**: 그림은 제대로 뜨는데
+    방향이 거꾸로 — `IdleApproach`·`LockFacing`의 `body.flipX` 세 군데가 전부 `BlobLordBoss`의
+    "그림은 오른쪽을 본다"(`flipX = dir < 0`) 관례를 그대로 복사해 썼는데, 실제 그림을 직접 열어
+    확인하지 않고 복사한 게 원인이었다. `Enemy_BrokenGoddess_Grab_03.png`·`Enemy_BrokenGoddess_Sweep_03.png`
+    (팔을 뻗고 휘두르는 중간 프레임, 방향이 가장 뚜렷하게 보임)를 디바이스 브리지로 직접 열어 보니
+    **그림은 왼쪽을 본다** — BlobLord와 정반대 기준이었다. 세 `flipX` 대입의 부등호를 전부 뒤집었다
+    (`dir < 0` → `dir >= 0` 등, `Enemies/BrokenGoddessBoss.cs`의 `IdleApproach` 두 곳 + `LockFacing`).
+    **교훈**: 다른 보스 코드를 틀로 베낄 때 "그림이 어느 쪽을 보는가" 같은, 코드만 봐서는 안 드러나고
+    그림을 직접 봐야 아는 전제는 그대로 복사하지 말고 매번 새로 확인할 것. 이 세션은 에디터가 없어
+    **실제 플레이로 방향이 맞게 도는지 확인 못 함** — 다음에 에디터 연 사람이 `ChronoSavior/보스전
+    테스트/2지역 보스전 바로 입장`에서 플레이어를 좌우로 오가며 보스가 그때그때 제대로 된 방향을
+    보는지(접근·잡기·휘두르기 전부) 확인할 것.
 
 - **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
   선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
@@ -850,7 +1190,6 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 - **2026-11-15 (105)** — **[나] 캐릭터 애니메이션 프레임 72장 — Sprite import 설정 완료(발판작업, Animator는 아직)**(사용자 "애니메이션 삽입을 위한 발판작업을 해야한다는거면 지금 하고싶다"). 로그 (104)로 반입한 원본 PNG 72장을 전부 PIL 알파 bbox로 확인한 결과 **공용 이동/피격(Shared) + 마법사·메카닉·섬영 공격은 캔버스 높이가 전부 48px로 같고, 발이 거의 전부 캔버스 바닥(y=48)까지 닿아 있다**(걷기/점프 중 발 든 몇 프레임만 몇 px 뜸 — 정상, 캔버스 규격 안 바뀜). `docs/pixel-standard.md` 5절의 기존 캐릭터 예외 피벗 `(0.5, 35/64=0.546875)`를 그대로 적용(비율이라 캔버스 높이가 달라도 "가운데보다 살짝 위" 효과가 똑같이 남), PPU 128·Point 필터·무압축(`BuildPrototypeSprites.cs` pixelArt 분기와 동일 기준) — 72개 `.png.meta`를 전부 손으로 써서 커밋(GUID 72개 전부 유니크 확인). **Unity 에디터로 직접 열어서 확인은 못 했다 — 다음에 에디터 켜면 import 설정이 의도대로 보이는지, 콘솔에 import 에러가 없는지부터 확인 필요.** 결정 경위는 `docs/pixel-standard.md` 4a절. **아직 안 한 것**: Animator Controller·AnimationClip 생성, `CharacterArtSet`/`PlayerRig`/`LobbyAvatar` 연결(지금도 정지 그림 한 장 구조 그대로) — 다음 단계로 이어서 할지는 사용자 확인 후 진행.
 
 - **2026-11-15 (104)** — **[나] 캐릭터 애니메이션 원본 프레임 72장 반입(파일만, 미연결) — 매핑·스프린트 범위 둘 다 팀 확인 필요**(사용자가 압축파일로 제공, "게임 캐릭터관련 파일이 들어가있는데 적용가능할까" → 일단 파일만 정리해서 넣기로 합의). `Assets/Resources/Art/Characters/`에 `Shared/`(스탠딩 6·이동 9·점프/하강 8·피격 3 — 캐릭터 공용으로 보임)·`Mage/`(마법사 모션 7 + 기 이펙트 6 + 구체 이펙트 11)·`Gunner/`(엔지니어 공격 5)·`Blade/`(암살자 공격 6)·`Warrior_Unmapped/`(워리어 공격 11) 폴더로 원본 PNG 프레임만 정리해서 커밋 — **Animator·애니메이션 클립 연결은 전혀 안 했다.** 지금 `CharacterArtSet`은 캐릭터당 정지 그림 한 장뿐이라(이번 세션 초반 띄움버그 조사로 재확인) 실제로 쓰려면 Animator Controller·클립을 캐릭터마다 새로 만드는 작업이 필요하고, `HANDOFF.md`가 "다음 스프린트 미정"이라 지금 범위 밖이라 보류. import 설정(Texture Type/PPU/피벗)도 안 건드려서 Unity가 처음 열 때 기본값으로 잡힐 수 있음 — 실제 연결 전에 다시 설정해야 함. **막힌 것(아래 "확인 필요"에도 추가): "워리어" 그림이 코드의 `CharacterId{Mage,Gunner,Blade,Druid}` 어디에도 안 맞는다** — 엔지니어=메카닉(Gunner), 암살자=섬영(Blade)은 이름만 다르고 그대로 대응되지만, 워리어는 드루이드 자리로 볼지/새 캐릭터로 볼지/다른 클래스 리네임인지 불명. 사용자도 지금은 매핑을 보류하기로 해서 `Warrior_Unmapped/`로 분리만 해둠.
-- **2026-11-16 (108)** — **[나] UI 새 판(팀원 UI zip + Figma) — 일시정지·공용 팝업·설정·결과창, `feature/ui-figma-update`, main 미병합**(사용자 "UI부터 적용해, Codex랑 상의해서"). 팀원 zip 34장 + Figma(`9EpUO2k4…`, 페이지 32:119·53:32·414:2·77:3)에서 배치를 읽어 적용, 설정 줄 아이콘 4장은 zip에 없어 Figma에서 받음(사용자 허락). **일시정지**: 그림만(띠·▶·톱니·나가기 새 판). **공용 팝업**: 창 틀 512×304(`Common/window_tall`)·오른쪽 위 X(40×40)·버튼 셋 — 묻기는 왼쪽 취소·오른쪽 확인, 알림은 가운데 큰 확인 하나, X·ESC는 묻기면 취소·알림이면 확인(콜백 한 번), 호출 방식(`Confirm`/`Alert`)은 그대로. **설정**: Figma 줄(설정바·아이콘·◀값▶·음량 막대+숫자칸)·적용 버튼 — 항목은 예전 넷(화면 모드·해상도·배경음·효과음; Figma의 마스터 볼륨은 게임에 없어 뺐다), 음량은 0~10 저장·0~100 표시, 막대는 눌러 끌기(`UI/Pixel/PxSlider`), 값은 즉시 적용·적용 = 닫기, 조작키 안내는 자리가 없어 아래에 작게. **결과창**: 띠·칸 셋·이름표·나눔선·통계 상자·진행 막대·버튼 — 지금 기록을 그대로 옮김(시간은 띠 오른쪽, 붕괴 원인은 띠 아래, 통계 = 최대 콤보·토벌·멸망까지, 막대 = 시간 동조율 하나; Figma 예시의 준/받은 피해·막대 3줄은 데이터·뜻이 없어 안 씀 — 디자이너 확인 필요), 쓰러졌을 때도 같은 틀. Codex 상의 2회(범위·매핑 / 캡처+diff 검토). 테스트 `UiFigmaUpdateTests` 7개, PlayMode 543/545(실패 2건은 main에서 이미). **디자이너에게 물을 것**: 결과창 진행 막대 3줄의 뜻·색 변형 배경 7종의 쓰임·마스터 볼륨이 필요한지.
 
 - **2026-11-11 (103)** — **[나] 캐릭터 띄움 버그 피벗으로 확정·수정 + 효과음 3종 보강(마법사·메카닉·살수) + UI 클릭/ESC 소리 신설 + 로비 땅 타일 `labo2` 동기화 + 중복 파일 컴파일 에러 수정**(사용자 "로비에서 캐릭터 땅에서 떠있는데" / "없는 사운드 뭐냐" / "ui 클릭음 하나로 통일할까" / "esc 사운드는 esc 눌렀을때 나오는 소리임" / "라보2 타일이랑 똑같이" / "play가 안되는데"). 띄움 버그: 처음엔 `StageVisuals`/`Ground`가 Combat 전용인데 `10_Lobby.unity`에 남아있다고 의심해 꺼봤다가("타일 자체가 사라졌는데" 피드백으로 바로 되돌림 — 그 오브젝트들은 `BuildGround()`로 땅을 실제로 그리는 정상 동작이었다). 재조사 끝에 실제 렌더되는 스프라이트를 `CharacterArtSet.asset`의 guid로 역추적(마법사/건너/블레이드 슬롯 guid `3e1d94c7...`)해 `char_blade.png`가 아니라 `chara_temp_01.png`임을 확인(파일명만 보고 짐작했던 이전 분석은 틀렸다). 이 스프라이트의 import 설정이 `alignment: 9`(Custom)/`spritePivot.y: 0.33333334`로 틀어져 있었음(이미지 자체는 투명 패딩 없이 꼭 맞게 잘려 있어 중앙 0.5가 맞다) → `alignment: 0`/`spritePivot: {0.5, 0.5}`로 수정. `EntitySizeConfig`/`PlayerRig`/`LobbyAvatar`가 전부 "스프라이트 피벗 = 시각적 중앙" 가정으로 접지 높이를 계산해서 이 한 줄 수정으로 로비·전투 양쪽 다 해결(스크린샷 픽셀 색 직접 샘플링으로 뜬 높이를 재서 피벗값으로 낸 예측치와 대조 확인, 오차 0.001유닛 이내). 사용자 확인 "오케이 고쳐졌다". 효과음: `GameplaySfx.cs`의 모든 `Play()` 호출을 `Resources/Audio/Sfx` 실제 파일과 대조해 음원 없는 3개(`mage_basic_attack`/`mechanic_basic_attack`/`assassin_spin`) 확인 → AI 생성 프롬프트를 리스닝 피드백으로 여러 차례 수정(살수 칼날베기: 총소리처럼 들리던 문제 → "rapid/flurry" 제거, 바람소리만 나던 문제 → 금속/커팅 키워드 보강, "katana"→"sword"로 어휘 교체, 연속 베기 키워드 추가)해 3개 다 생성·적용. UI 사운드: `SfxEvents`에 `UiClick`/`UiEsc` 이벤트 신설(버튼마다 다른 소리 대신 공용 클릭음 하나로 통일, ESC는 전용 소리로 분리). `PxButton.Click()`에서 `RaiseUiClick()`, `PxScreen.HandleKeys()`의 모달 ESC 처리와 `GameFlow.Update()`의 일시정지 토글 ESC 처리(ESC를 읽는 자리가 이 둘뿐)에서 각각 `RaiseUiEsc()` 호출, `GameplaySfx`에 `OnUiClick`/`OnUiEsc` 핸들러 추가(`ui_click`/`esc_sound` 재생) — `ui_click.mp3`/`esc_sound.mp3` 적용. 로비 땅 타일(`ground_top.png`/`ground_dirt.png`)을 `labo2` 브랜치 버전으로 교체(처음에 top/dirt를 반대로 넣어서 "타일 반대야" 피드백으로 한 번 더 바꿔 끼움). 마지막에 Play가 안 되던 컴파일 에러(CS0101/CS0111 다수)는 위 `SfxEvents`/`GameplaySfx` 수정과 무관하게 git 동기화 중 생긴 것으로 보이는 고아 복제 파일 `SfxEvents-1.cs`/`GameplaySfx-1.cs`(+`.meta`) 때문이었음 — 이번 세션은 디바이스 브리지만 쓰고 삭제 권한이 없어 파일 경로를 짚어주고 사용자가 직접 삭제, `Core`/`UI/Pixel`/`Systems`/`Resources/Audio/Sfx` 폴더는 추가 중복 없음 확인. 이번 세션은 에디터 직접 실행 권한이 없어 PlayMode 수치는 못 돌렸고, 전부 사용자의 Play 확인("오케이 고쳐졌다"/"괜찮아 진것같긴한데"/"오류는 고쳐졌는데 타일 반대야" → 수정 후 추가 이상 없음)으로 검증.
 
