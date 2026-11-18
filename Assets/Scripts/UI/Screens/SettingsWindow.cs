@@ -7,9 +7,9 @@ namespace ChronoSavior.UI
     /// <summary>
     /// 설정 창 — 2026-11-16 Figma "설정창"(414:2) 새 판(팀원 zip + Figma 줄 아이콘): 창 틀 512×304 · 제목판 "설정" · X 닫기(40×40) ·
     /// 줄(설정바 480×32: 아이콘 24 + 이름 + ◀ 값 ▶ 또는 음량 막대 + 숫자칸) · 나눔선 · "적용" 버튼(144×32).
-    /// 항목은 예전 넷 그대로 — 화면 모드 · 해상도 · 배경음 · 효과음(Figma의 마스터 볼륨은 게임에 없어 뺐다, Codex 2026-11-16).
+    /// 항목은 Figma 다섯 줄 — 화면 모드 · 해상도 · 마스터 볼륨(2026-11-16 새 기능, 효과음·배경음에 곱한다) · 배경음 · 효과음.
     /// 값은 바꾸는 즉시 적용(예전과 같다) — "적용"은 창을 닫는다. 음량은 0~10 그대로 저장하고 0~100으로 보인다(×10), 막대는 눌러 끌 수 있다.
-    /// 조작키 안내는 새 디자인에 자리가 없어 음량 줄 아래에 작게 남겼다. 닫기는 X·적용·ESC. 키보드: ↑/↓ 줄 고르기, ←/→ 값 바꾸기.
+    /// 예전 조작키 안내는 새 디자인에 자리가 없어 일시정지 화면 아래로 옮겼다. 닫기는 X·적용·ESC. 키보드: ↑/↓ 줄 고르기, ←/→ 값 바꾸기.
     /// </summary>
     public class SettingsWindow : PxScreen
     {
@@ -41,7 +41,7 @@ namespace ChronoSavior.UI
         static readonly Rect ApplyBox = new Rect(250f, 283f, 144f, 32f); // 417:42 "적용버튼 1"
         static readonly Rect Divider = new Rect(83f, 149f, 475f, 3f);    // 416:31 "Rectangle 16"
         const float RowX = 81f;                                          // 설정바 왼쪽
-        static readonly float[] RowY = { 72f, 110f, 159f, 197f };        // 화면 모드(420:93) · 해상도(420:89) · 배경음(마스터 419:58 자리) · 효과음(bgm 419:57 자리)
+        static readonly float[] RowY = { 72f, 110f, 159f, 197f, 235f };  // 화면 모드(420:93) · 해상도(420:89) · 마스터(419:58) · bgm(419:57) · 효과음(420:72)
         // 줄 안(설정바 왼쪽 위 기준)
         const float IconX = 6f, IconY = 4f, LabelX = 36f, LabelW = 96f;
         const float LeftArrowX = 209f, RightArrowX = 442f, ArrowY = 4f, ArrowSize = 24f, GlyphInset = 4f, GlyphSize = 16f;
@@ -51,13 +51,14 @@ namespace ChronoSavior.UI
         static readonly Color Selected = Px.Hex(0xffe066);
         static readonly Color Line = Px.Hex(0xc7cfdd);
 
-        enum Row { Screen, Resolution, Bgm, Sfx }
-        static readonly string[] RowNames = { "화면 모드", "해상도", "배경음", "효과음" };
-        static readonly string[] RowIcons = { "Settings/icon_screen", "Settings/icon_resolution", "Settings/icon_bgm", "Settings/icon_sfx" };
-        readonly Text[] labels = new Text[4];
-        readonly Text[] values = new Text[4];
-        readonly Image[] fills = new Image[2];
-        readonly RectTransform[] knobs = new RectTransform[2];
+        enum Row { Screen, Resolution, Master, Bgm, Sfx }
+        const int Rows = 5, Volumes = 3;
+        static readonly string[] RowNames = { "화면 모드", "해상도", "마스터 볼륨", "배경음", "효과음" };
+        static readonly string[] RowIcons = { "Settings/icon_screen", "Settings/icon_resolution", "Settings/icon_master", "Settings/icon_bgm", "Settings/icon_sfx" };
+        readonly Text[] labels = new Text[Rows];
+        readonly Text[] values = new Text[Rows];
+        readonly Image[] fills = new Image[Volumes];
+        readonly RectTransform[] knobs = new RectTransform[Volumes];
         int row;
 
         protected override void Awake()
@@ -83,7 +84,7 @@ namespace ChronoSavior.UI
             Px.IconButton(Content, "Close", PxArt.Get("Common/close_frame"), PxArt.Get("Icons/close_x"),
                           CloseBox.x, CloseBox.y, CloseBox.width, CloseBox.height, 0f, 0f, CloseBox.width, CloseBox.height, Close);
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < Rows; i++)
             {
                 int r = i;
                 float y = RowY[i];
@@ -117,11 +118,6 @@ namespace ChronoSavior.UI
             }
             Px.Fill(Content, "Divider", Line, Divider.x, Divider.y, Divider.width, Divider.height);
 
-            // 조작키 안내 — 새 Figma엔 자리가 없다(Figma 효과음 볼륨 줄 자리)
-            Px.Text(Content, "Keys",
-                    "←→ 이동 · C 점프 · ↓ 아래로 내려가기 · Z 공격 · X 스킬\nF 포탈 들어가기 · ESC 일시정지 · Enter/Z 메뉴 고르기",
-                    RowX, 237f, 480f, 28f, 10, Color.white);
-
             Px.TextButton(Content, "Apply", PxArt.Get("Settings/apply"), ApplyBox.x, ApplyBox.y, ApplyBox.width, ApplyBox.height,
                           "적용", 16, Color.white, Close);
         }
@@ -137,14 +133,21 @@ namespace ChronoSavior.UI
             glyph.anchoredPosition += new Vector2(GlyphSize, 0f); // 왼쪽 위 기준이라 뒤집으면 왼쪽으로 넘어간다
         }
 
-        protected override void OnShown() => row = 0;
+        // 지난번에 그린 값 — 그대로면 다시 그리지 않는다(Refresh는 보이는 동안 매 프레임)
+        bool shownFullscreen;
+        Vector2Int shownRes;
+        int shownMaster = -1, shownBgm = -1, shownSfx = -1, shownRow = -1;
+
+        protected override void OnShown() { row = 0; shownRow = -1; }
+
+        protected override void OnHidden() => GameSettings.Save();
 
         protected override void OnEscape() => Close();
 
         protected override void OnKeys()
         {
-            if (GameInput.MenuUpDown) row = (row + 3) % 4;
-            if (GameInput.MenuDownDown) row = (row + 1) % 4;
+            if (GameInput.MenuUpDown) row = (row + Rows - 1) % Rows;
+            if (GameInput.MenuDownDown) row = (row + 1) % Rows;
             if (GameInput.MenuLeftDown) Change(-1);
             if (GameInput.MenuRightDown) Change(+1);
         }
@@ -162,6 +165,9 @@ namespace ChronoSavior.UI
                     if (i < 0) i = 0;
                     GameSettings.Resolution = list[(i + d + list.Count) % list.Count];
                     break;
+                case Row.Master:
+                    GameSettings.MasterVolume += d;
+                    break;
                 case Row.Bgm:
                     GameSettings.BgmVolume += d;
                     break;
@@ -173,7 +179,8 @@ namespace ChronoSavior.UI
 
         void SetVolume(Row r, int value)
         {
-            if (r == Row.Bgm) GameSettings.BgmVolume = value;
+            if (r == Row.Master) GameSettings.MasterVolume = value;
+            else if (r == Row.Bgm) GameSettings.BgmVolume = value;
             else if (r == Row.Sfx) GameSettings.SfxVolume = value;
         }
 
@@ -182,20 +189,28 @@ namespace ChronoSavior.UI
 
         protected override void Refresh()
         {
+            bool fs = GameSettings.Fullscreen;
             var res = GameSettings.Resolution;
-            values[0].text = GameSettings.Fullscreen ? "전체 화면" : "창 모드";
+            int m = GameSettings.MasterVolume, b = GameSettings.BgmVolume, s = GameSettings.SfxVolume;
+            if (fs == shownFullscreen && res == shownRes && m == shownMaster && b == shownBgm && s == shownSfx && row == shownRow) return;
+            shownFullscreen = fs; shownRes = res; shownMaster = m; shownBgm = b; shownSfx = s; shownRow = row;
+
+            values[0].text = fs ? "전체 화면" : "창 모드";
             values[1].text = $"{res.x} X {res.y}";
-            int[] vol = { GameSettings.BgmVolume, GameSettings.SfxVolume };
-            for (int v = 0; v < 2; v++)
-            {
-                float ratio = vol[v] / (float)GameSettings.VolumeMax;
-                values[2 + v].text = VolumeShown(vol[v]).ToString();
-                fills[v].fillAmount = ratio;
-                // 손잡이 가운데가 채움 끝에 오게, 막대 밖으로는 안 나가게
-                float x = RowX + BarX + Mathf.Clamp(Mathf.Round(ratio * BarW - KnobW / 2f), 0f, BarW - KnobW);
-                knobs[v].anchoredPosition = new Vector2(x, knobs[v].anchoredPosition.y);
-            }
-            for (int i = 0; i < 4; i++) labels[i].color = i == row ? Selected : Color.white;
+            ShowVolume(0, m);
+            ShowVolume(1, b);
+            ShowVolume(2, s);
+            for (int i = 0; i < Rows; i++) labels[i].color = i == row ? Selected : Color.white;
+        }
+
+        void ShowVolume(int v, int volume)
+        {
+            float ratio = volume / (float)GameSettings.VolumeMax;
+            values[2 + v].text = VolumeShown(volume).ToString();
+            fills[v].fillAmount = ratio;
+            // 손잡이 가운데가 채움 끝에 오게, 막대 밖으로는 안 나가게
+            float x = RowX + BarX + Mathf.Clamp(Mathf.Round(ratio * BarW - KnobW / 2f), 0f, BarW - KnobW);
+            knobs[v].anchoredPosition = new Vector2(x, knobs[v].anchoredPosition.y);
         }
 
         /// <summary>테스트용 — 음량 막대 손잡이 왼쪽 x(판 좌표)와 숫자.</summary>

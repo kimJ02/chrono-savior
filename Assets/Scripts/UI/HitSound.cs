@@ -51,7 +51,7 @@ namespace ChronoSavior.UI
         {
             float now = Time.unscaledTime; // 히트스톱 중엔 timeScale이 0이다
             if (clip == null || now - lastTime < MinGap) return;
-            float vol = BaseVolume * GameSettings.SfxVolume / GameSettings.VolumeMax;
+            float vol = BaseVolume * GameSettings.SfxScale;
             if (vol <= 0f) return;
             lastTime = now;
             // 음높이 흔들기는 따로 둔 난수로 — 전투가 쓰는 `UnityEngine.Random`을 소리가 나는지·음량 설정에 따라 한 칸씩 당기지 않게(2026-11-07)

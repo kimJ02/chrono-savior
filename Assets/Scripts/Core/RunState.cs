@@ -73,6 +73,17 @@ namespace ChronoSavior.Core
         /// <summary>콤보가 올랐다(`CombatModifiers.AddCombo`) — 이번 원정 최고를 갱신한다.</summary>
         public static void NoteCombo(int combo) { if (combo > MaxCombo) MaxCombo = combo; }
 
+        /// <summary>이번 사냥에서 적에게 준 피해 합 — 실제로 깎인 체력만(넘친 몫 제외, 화상 틱 포함). 결과창 "준 피해량"(2026-11-16 Figma).</summary>
+        public static long DamageDealt => (long)System.Math.Floor(damageDealt + 0.5); // 원본식 반올림(JsMath.Round와 같다)
+        /// <summary>이번 사냥에서 받은 피해 합 — 실제로 깎인 체력만(가드·무적이면 0). 결과창 "받은 피해".</summary>
+        public static long DamageTaken => (long)System.Math.Floor(damageTaken + 0.5);
+        // 타격마다 반올림하면 소수 체력(흡혈 등)에서 오차가 쌓인다 — 그대로 모으고 읽을 때 한 번(Gemini 검토 2026-11-16)
+        static double damageDealt, damageTaken;
+        /// <summary>적이 실제로 잃은 체력을 더한다(호출부: `EnemyHealth`, 사냥 중·성소 제외). 사냥이 끝난 뒤(같은 프레임의 화상 틱 등)는 안 센다.</summary>
+        public static void NoteDamageDealt(float hpLost) { if (!Over && hpLost > 0f && !float.IsInfinity(hpLost)) damageDealt += hpLost; }
+        /// <summary>플레이어가 실제로 잃은 체력을 더한다(호출부: `PlayerHealth`, 사냥 중).</summary>
+        public static void NoteDamageTaken(float hpLost) { if (!Over && hpLost > 0f && !float.IsInfinity(hpLost)) damageTaken += hpLost; }
+
         /// <summary>런이 끝났는지. 원본 `run.over` — true면 갱신도 추가 피해도 멈춘다(:1881, :7169).</summary>
         public static bool Over { get; private set; }
 
@@ -89,6 +100,8 @@ namespace ChronoSavior.Core
             GoldEarned = 0;
             ExpEarned = 0;
             MaxCombo = 0;
+            damageDealt = 0d;
+            damageTaken = 0d;
             Over = false;
         }
 
@@ -149,23 +162,26 @@ namespace ChronoSavior.Core
             internal readonly float timeLeft, elapsed;
             internal readonly GameObject deathSource;
             internal readonly long exp;
+            internal readonly double dealt, taken;
             internal readonly bool over;
 
             internal Snapshot(int region, RunMode mode, float timeLeft, float elapsed, GameObject deathSource,
-                              int kills, int fury, int gold, long exp, int maxCombo, bool over)
+                              int kills, int fury, int gold, long exp, int maxCombo, bool over, double dealt, double taken)
             {
                 this.region = region; this.mode = mode; this.timeLeft = timeLeft; this.elapsed = elapsed; this.deathSource = deathSource;
                 this.kills = kills; this.fury = fury; this.gold = gold; this.exp = exp; this.maxCombo = maxCombo; this.over = over;
+                this.dealt = dealt; this.taken = taken;
             }
         }
 
         public static Snapshot Capture() =>
-            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, MaxCombo, Over);
+            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, MaxCombo, Over, damageDealt, damageTaken);
 
         public static void Restore(Snapshot s)
         {
             Region = s.region; Mode = s.mode; TimeLeft = s.timeLeft; Elapsed = s.elapsed; DeathSource = s.deathSource;
             Kills = s.kills; Fury = s.fury; GoldEarned = s.gold; ExpEarned = s.exp; MaxCombo = s.maxCombo; Over = s.over;
+            damageDealt = s.dealt; damageTaken = s.taken;
         }
     }
 }

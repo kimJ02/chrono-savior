@@ -10,8 +10,9 @@ namespace ChronoSavior.UI
     /// 사냥이 끝난 뒤 — 2026-11-16 Figma "결과창"(77:3) 새 판(팀원 zip): 창 틀 512×304 · 위 띠(제목 "원정기록" + "stage N") ·
     /// 칸 셋(128×56 — 전리품·경험치·처치 수) · "원정 통계" 이름표 + 나눔선 · 통계 상자(192×64, 세 줄) · 오른쪽 진행 막대 · 버튼 둘(96×32).
     /// Codex(2026-11-16): 새 배치에 **지금 기록을 그대로 옮긴다** — 기록·잔존 시간은 띠 오른쪽, 사망 원인은 띠 아래 한 줄,
-    /// 통계 세 줄 = 최대 콤보·토벌·멸망까지(Figma 예시의 준/받은 피해는 아직 안 잰다), 막대 = 시간 동조율(레벨 경험치, Figma 진행 막대 3줄 중 하나만 —
-    /// 나머지 둘은 뜻이 정해지지 않아 안 쓴다). 쓰러졌을 때(시간선 붕괴)도 같은 틀 — 제목이 붉고 칸 순서·버튼 글자만 다르다.
+    /// 통계 세 줄 = Figma대로 준 피해량·최대 콤보·받은 피해(2026-11-16 집계 신설 — `RunState.DamageDealt/Taken`),
+    /// "원정 진행도" 막대 세 줄 = 토벌 진행(n/목표) · 시간 동조율(레벨 경험치) · 멸망까지(남은 날/7일) — Figma엔 뜻이 안 적혀 있어 Codex와 정함.
+    /// 쓰러졌을 때(시간선 붕괴)도 같은 틀 — 제목이 붉고 칸 순서·버튼 글자만 다르다.
     /// "다시 입장"·"재동기화" = 같은 스테이지에 다시 들어간다(멸망 하루 — 스테이지 선택과 같은 규칙). "마을로"·"성문으로" = 로비.
     /// </summary>
     public class RunResultScreen : PxScreen
@@ -33,19 +34,20 @@ namespace ChronoSavior.UI
         static readonly Rect StatsBox = new Rect(108f, 226f, 192f, 64f);  // 447:30
         static readonly float[] StatRowY = { 3f, 22f, 41f };              // 통계 상자 안 세 칸 위(그림의 가로줄 21·40 사이)
         const float StatRowH = 18f;
-        static readonly Rect SyncPlate = new Rect(335f, 207f, 64f, 20f);  // 590:43 이름표("원정 진행도" 자리)
-        static readonly Rect SyncBar = new Rect(340f, 232f, 180f, 16f);   // 590:46·47 진행 막대(Figma 막대 세 줄 중 첫 자리 부근)
-        static readonly Rect SyncValue = new Rect(340f, 251f, 180f, 14f);
+        static readonly Rect ProgressPlate = new Rect(335f, 203f, 64f, 20f); // 590:43 이름표 "원정 진행도"
+        const float BarX = 340f, BarW = 180f, BarH = 16f;
+        static readonly float[] BarY = { 223f, 241f, 259f };                // 590:47 · 590:46 · 448:37 막대 세 줄(이름표·버튼과 안 겹치게 조금 내림)
         static readonly Rect RetryBox = new Rect(341f, 278f, 96f, 32f);   // 590:50 "버튼 1"
         static readonly Rect OkBox = new Rect(447f, 278f, 96f, 32f);      // 448:47
         static readonly Color Dead = Px.Hex(0xff6a5a);
 
-        Text title, sub, time, cause, syncText, retryLabel, okLabel;
+        Text title, sub, time, cause, retryLabel, okLabel;
         readonly Text[] boxLabels = new Text[3];
         readonly Text[] boxValues = new Text[3];
         readonly Text[] statLabels = new Text[3];
         readonly Text[] statValues = new Text[3];
-        Image syncFill;
+        readonly Image[] barFills = new Image[3];
+        readonly Text[] barTexts = new Text[3];
 
         protected override void Build()
         {
@@ -74,14 +76,26 @@ namespace ChronoSavior.UI
                 statValues[i] = Px.Text(Content, "StatValue" + i, "", StatsBox.x + 92f, y, 92f, StatRowH, 10, Color.white, TextAnchor.MiddleRight);
             }
 
-            Px.Image(Content, "SyncPlate", PxArt.Get("Result/name_plate"), SyncPlate.x, SyncPlate.y, SyncPlate.width, SyncPlate.height);
-            Px.Text(Content, "SyncLabel", "시간 동조율", SyncPlate.x, SyncPlate.y, SyncPlate.width, SyncPlate.height, 10, Color.white);
-            Px.Image(Content, "SyncBack", PxArt.Get("Result/bar_back"), SyncBar.x, SyncBar.y, SyncBar.width, SyncBar.height);
-            syncFill = Px.Image(Content, "SyncFill", PxArt.Get("Result/bar_fill"), SyncBar.x - 1f, SyncBar.y, 182f, SyncBar.height); // 채움 그림은 182칸
-            syncFill.type = Image.Type.Filled;
-            syncFill.fillMethod = Image.FillMethod.Horizontal;
-            Px.Image(Content, "SyncFrame", PxArt.Get("Result/bar_frame"), SyncBar.x, SyncBar.y, SyncBar.width, SyncBar.height);
-            syncText = Px.Text(Content, "SyncText", "", SyncValue.x, SyncValue.y, SyncValue.width, SyncValue.height, 10, Color.white);
+            // 막대 셋 — 바탕 → 채움(1 진한 하늘·2 밝은 하늘·3 회색, Figma 색) → 틀 → 글자
+            var fill = PxArt.Get("Result/bar_fill");
+            Sprite[] fills =
+            {
+                fill,
+                PxArt.Derive(fill, "light", c => new Color32((byte)(c.r + (255 - c.r) / 2), (byte)(c.g + (255 - c.g) / 2), (byte)(c.b + (255 - c.b) / 2), c.a)),
+                PxArt.Derive(fill, "gray", c => new Color32(150, 156, 170, c.a)),
+            };
+            for (int i = 0; i < 3; i++)
+            {
+                float y = BarY[i];
+                Px.Image(Content, "BarBack" + i, PxArt.Get("Result/bar_back"), BarX, y, BarW, BarH);
+                barFills[i] = Px.Image(Content, "BarFill" + i, fills[i], BarX - 1f, y, 182f, BarH); // 채움 그림은 182칸
+                barFills[i].type = Image.Type.Filled;
+                barFills[i].fillMethod = Image.FillMethod.Horizontal;
+                Px.Image(Content, "BarFrame" + i, PxArt.Get("Result/bar_frame"), BarX, y, BarW, BarH);
+                barTexts[i] = Px.Text(Content, "BarText" + i, "", BarX, y, BarW, BarH, 10, Color.white).WithOutline(Px.Ink);
+            }
+            Px.Image(Content, "ProgressPlate", PxArt.Get("Result/name_plate"), ProgressPlate.x, ProgressPlate.y, ProgressPlate.width, ProgressPlate.height);
+            Px.Text(Content, "ProgressLabel", "원정 진행도", ProgressPlate.x, ProgressPlate.y, ProgressPlate.width, ProgressPlate.height, 10, Color.white);
 
             var retry = AddNav(Px.TextButton(Content, "Retry", PxArt.Get("Result/button"), RetryBox.x, RetryBox.y, RetryBox.width,
                                              RetryBox.height, "다시 입장", 12, Color.white, Retry));
@@ -94,8 +108,17 @@ namespace ChronoSavior.UI
         /// <summary>캡처·테스트용 — 실제 끝난 이유 대신.</summary>
         public RunEndReason? PreviewReason;
 
+        // 결과는 한 번 정해지면 안 바뀐다 — 열릴 때(또는 미리보기 이유가 바뀔 때)만 채운다(Refresh는 보이는 동안 매 프레임, Gemini 검토 2026-11-16)
+        bool dirty = true;
+        RunEndReason? shownPreview;
+
+        protected override void OnShown() => dirty = true;
+
         protected override void Refresh()
         {
+            if (!dirty && PreviewReason == shownPreview) return;
+            dirty = false;
+            shownPreview = PreviewReason;
             var reason = PreviewReason ?? (Flow != null ? Flow.LastEndReason : RunEndReason.Timeout);
             bool dead = reason == RunEndReason.Dead;
             var p = ProfileService.Current;
@@ -114,14 +137,21 @@ namespace ChronoSavior.UI
             cause.enabled = dead;
             if (dead) cause.text = $"붕괴 원인: {CauseOf(RunState.DeathSource)}의 공격에 시간선이 무너졌다 — 재화는 그대로 남는다";
 
-            string[] statNames = { "최대 콤보", "토벌", "멸망까지" };
-            string[] statVals = { $"{RunState.MaxCombo:N0}", $"{p.RegionKills(s)}/{RunState.RegionKillTarget}", $"{p.doomDays}일" };
+            string[] statNames = { "준 피해량", "최대 콤보", "받은 피해" };
+            string[] statVals = { $"{RunState.DamageDealt:N0}", $"{RunState.MaxCombo:N0}", $"{RunState.DamageTaken:N0}" };
             for (int i = 0; i < 3; i++) { statLabels[i].text = statNames[i]; statValues[i].text = statVals[i]; }
 
+            int target = Mathf.Max(1, RunState.RegionKillTarget);
+            int regionKills = Mathf.Min(p.RegionKills(s), target);
             long need = PlayerProfile.RequiredExp(p.level);
-            float ratio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;
-            syncFill.fillAmount = ratio;
-            syncText.text = $"Lv.{p.level} · {Mathf.FloorToInt(ratio * 100f)}%";
+            float expRatio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;
+            int days = Mathf.Clamp(p.doomDays, 0, PlayerProfile.DoomDaysStart);
+            barFills[0].fillAmount = regionKills / (float)target;
+            barFills[1].fillAmount = expRatio;
+            barFills[2].fillAmount = days / (float)PlayerProfile.DoomDaysStart;
+            barTexts[0].text = $"토벌 {regionKills}/{target}";
+            barTexts[1].text = $"시간 동조율 Lv.{p.level} · {Mathf.FloorToInt(expRatio * 100f)}%";
+            barTexts[2].text = $"멸망까지 {days}일";
 
             retryLabel.text = dead ? "재동기화" : "다시 입장";
             okLabel.text = dead ? "성문으로" : "마을로";

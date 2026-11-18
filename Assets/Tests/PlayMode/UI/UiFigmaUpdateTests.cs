@@ -48,7 +48,7 @@ public class UiFigmaUpdateTests
         "Common/window_tall", "Common/close_frame", "Icons/close_x", "Common/button_wide", "Common/button", "Common/title_plate",
         "Settings/window", "Settings/row", "Settings/arrow_frame", "Settings/arrow", "Settings/value_box", "Settings/number_box",
         "Settings/volume_back", "Settings/volume_fill", "Settings/volume_knob", "Settings/apply",
-        "Settings/icon_screen", "Settings/icon_resolution", "Settings/icon_bgm", "Settings/icon_sfx",
+        "Settings/icon_screen", "Settings/icon_resolution", "Settings/icon_master", "Settings/icon_bgm", "Settings/icon_sfx",
         "Result/banner", "Result/divider", "Result/reward_box", "Result/name_plate", "Result/stats_box",
         "Result/bar_back", "Result/bar_frame", "Result/bar_fill", "Result/button",
     };
@@ -128,17 +128,61 @@ public class UiFigmaUpdateTests
             yield return null;
             yield return null;
             Assert.IsTrue(settings.IsShown);
-            Assert.AreEqual("0", settings.ValueTextForTest(2));
-            float x0 = settings.KnobXForTest(0);
+            Assert.AreEqual("0", settings.ValueTextForTest(3), "배경음은 넷째 줄(화면 모드·해상도·마스터 다음)");
+            float x0 = settings.KnobXForTest(1);
             GameSettings.BgmVolume = 10;
             yield return null;
-            Assert.AreEqual("100", settings.ValueTextForTest(2));
-            Assert.Greater(settings.KnobXForTest(0), x0 + 150f, "음량이 오르면 손잡이가 오른쪽 끝으로");
+            Assert.AreEqual("100", settings.ValueTextForTest(3));
+            Assert.Greater(settings.KnobXForTest(1), x0 + 150f, "음량이 오르면 손잡이가 오른쪽 끝으로");
             Assert.IsNotNull(Find(settings, "Apply"), "적용 버튼");
             Find(settings, "Apply").Click();
             Assert.IsFalse(SettingsWindow.IsOpen, "적용 = 닫기(값은 바꾸는 즉시 적용된다)");
         }
         finally { GameSettings.BgmVolume = bgm; SettingsWindow.Close(); }
+    }
+
+    /// <summary>마스터 볼륨(2026-11-16 새 기능) — 0~10, 효과음 등 모든 소리에 곱하는 배율.</summary>
+    [Test]
+    public void MasterVolume_ClampsAndScales()
+    {
+        int keep = GameSettings.MasterVolume;
+        try
+        {
+            GameSettings.MasterVolume = 15;
+            Assert.AreEqual(GameSettings.VolumeMax, GameSettings.MasterVolume);
+            Assert.AreEqual(1f, GameSettings.MasterScale, 1e-6f);
+            GameSettings.MasterVolume = 5;
+            Assert.AreEqual(0.5f, GameSettings.MasterScale, 1e-6f);
+            GameSettings.MasterVolume = -3;
+            Assert.AreEqual(0f, GameSettings.MasterScale, 1e-6f, "0이면 소리가 안 난다");
+        }
+        finally { GameSettings.MasterVolume = keep; }
+    }
+
+    /// <summary>결과창 "준 피해량·받은 피해" 집계 — 깎인 체력만 더하고, 사냥을 새로 시작하면 0.</summary>
+    [Test]
+    public void RunDamage_Accumulates_AndResetsOnBegin()
+    {
+        RunState.Begin(1, RunMode.Normal);
+        RunState.NoteDamageDealt(12.4f);
+        RunState.NoteDamageDealt(0f);
+        RunState.NoteDamageDealt(-5f);
+        RunState.NoteDamageTaken(7f);
+        Assert.AreEqual(12, RunState.DamageDealt);
+        Assert.AreEqual(7, RunState.DamageTaken);
+        var snap = RunState.Capture();
+        RunState.Begin(1, RunMode.Normal);
+        Assert.AreEqual(0, RunState.DamageDealt, "새 사냥은 0부터");
+        RunState.Restore(snap);
+        Assert.AreEqual(12, RunState.DamageDealt, "스냅샷이 피해 집계도 들고 간다");
+
+        RunState.Begin(1, RunMode.Normal);
+        for (int i = 0; i < 5; i++) RunState.NoteDamageDealt(0.3f); // 소수 체력 — 타격마다 반올림하면 0이 된다
+        Assert.AreEqual(2, RunState.DamageDealt, "소수까지 모아 두고 읽을 때 한 번 반올림(1.5 → 2)");
+        RunState.MarkOver();
+        RunState.NoteDamageDealt(100f);
+        Assert.AreEqual(2, RunState.DamageDealt, "사냥이 끝난 뒤(같은 프레임의 화상 틱 등)는 안 센다");
+        RunState.Reset();
     }
 
     [UnityTest]
@@ -153,6 +197,11 @@ public class UiFigmaUpdateTests
         Assert.IsNotNull(Find(result, "Retry"));
         Assert.IsNotNull(Find(result, "Ok"));
         Assert.IsFalse(Label(result, "Cause").enabled, "끝까지 버티면 붕괴 원인 줄이 없다");
+        Assert.AreEqual("준 피해량", Label(result, "StatLabel0").text, "Figma 통계 세 줄");
+        Assert.AreEqual("받은 피해", Label(result, "StatLabel2").text);
+        StringAssert.StartsWith("토벌", Label(result, "BarText0").text, "진행 막대 1 = 토벌");
+        StringAssert.StartsWith("시간 동조율", Label(result, "BarText1").text, "진행 막대 2 = 레벨 경험치");
+        StringAssert.StartsWith("멸망까지", Label(result, "BarText2").text, "진행 막대 3 = 멸망까지");
         Assert.AreEqual("다시 입장", Find(result, "Retry").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text);
         Assert.AreEqual("마을로", Find(result, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text);
         result.HideForCapture();

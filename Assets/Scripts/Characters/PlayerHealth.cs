@@ -225,6 +225,7 @@ namespace ChronoSavior.Characters
             // `drMult()`가 '불괴의 갑주'다. 난수를 **여기서** 굴리는 게 원본 구조다(클래스 주석 참고).
             float dr = PlayerStatCalculator.ComputeDamageTakenMultiplier(profile);
             int applied = Mathf.Max(1, Mathf.RoundToInt(amount * dr * UnityEngine.Random.Range(0.9f, 1.1f)));
+            if (GameState.IsRunning) RunState.NoteDamageTaken(Mathf.Min(applied, Mathf.Max(0f, CurrentHp))); // 결과창 "받은 피해"
             CurrentHp -= applied;
             // 불굴의 껍질 — 피격 후 무적시간 연장(원본 `invulnTime + itemPow('iframe')` :1907).
             SetHitInvuln(invulnTime + profile.items.Pow("iframe"));

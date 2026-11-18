@@ -31,6 +31,11 @@ namespace ChronoSavior.UI
             AddNav(Icon(0, "Icons/play", Resume));
             AddNav(Icon(1, "Icons/gear", () => SettingsWindow.Open()));
             AddNav(Icon(2, "Icons/exit", ToLobby));
+
+            // 조작키 안내 — 예전엔 설정 창에 있었는데 2026-11-16 Figma 새 설정창엔 자리가 없어 여기(띠 아래 빈 곳)로 옮겼다. Figma엔 없는 글자.
+            Px.Text(Content, "Keys",
+                    "←→ 이동 · C 점프 · ↓ 아래로 내려가기 · Z 공격 · X 스킬\nF 포탈 들어가기 · ESC 일시정지 · Enter/Z 메뉴 고르기",
+                    0f, 262f, 640f, 32f, 10, Color.white).lineSpacing = 1.3f;
         }
 
         PxButton Icon(int i, string icon, System.Action onClick) =>

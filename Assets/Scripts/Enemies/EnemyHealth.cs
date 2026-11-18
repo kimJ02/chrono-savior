@@ -34,6 +34,10 @@ namespace ChronoSavior.Enemies
                  "`Boss` 컴포넌트는 Instantiate **뒤에** 붙기 때문에 Awake의 GetComponent로는 못 찾는다 — " +
                  "이 프로젝트 단골 함정이라 스포너가 직접 켜 준다.")]
         public bool isBoss;
+        // 성소는 같은 체력 부품을 쓰는 구조물 — 처치 수처럼 "준 피해량"에서도 뺀다. 첫 피격 때 한 번 본다
+        // (성소를 코드로 붙이면 RequireComponent로 이 부품이 먼저 생겨 Awake 때는 아직 Shrine이 없다)
+        bool? shrineCache;
+        bool isShrine => shrineCache ??= GetComponent<Shrine>() != null;
         [Tooltip("피격 플래시 감쇠 속도. 원본 `e.flash -= dt*6`(project_test.html:4020) — 1에서 0까지 약 0.167초.")]
         public float flashDecay = 6f;
         [Tooltip("플래시 최대 강도. 원본은 흰색을 alpha `flash*0.75`로 덧그린다(project_test.html:4799).")]
@@ -277,6 +281,8 @@ namespace ChronoSavior.Enemies
                 CombatEvents.RequestHitstop(hitstop); // 공격마다 다른 길이(원본 `opts.hitstop`, 없음 = `noHitstop`)
             }
 
+            // 결과창 "준 피해량" — 사냥 중, 적에게(성소 구조물 제외), 넘친 몫은 빼고
+            if (GameState.IsRunning && !isShrine) RunState.NoteDamageDealt(Mathf.Min(amount, Mathf.Max(0f, CurrentHp)));
             CurrentHp -= amount;
             flash = 1f; // 원본 `e.flash = 1`(project_test.html:1666)
             flashColor = burnTick ? BurnFlashColor : Color.white; // 화상 틱은 주황(2026-11-09 — 불타는 피해가 보이게)

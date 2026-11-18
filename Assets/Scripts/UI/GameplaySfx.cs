@@ -35,6 +35,7 @@ namespace ChronoSavior.UI
         AudioSource source;     // 원샷 전용
         AudioSource loopSource; // 루프 전용(레이저 유지음 · 집중 긴장음) — 코드로 직접 추가, 씬 연결 불필요
         Coroutine loopStopRoutine;
+        float loopScale; // 지금 울리는 루프의 자기 배율 — 설정 음량이 바뀌면 다시 곱한다
 
         void Awake()
         {
@@ -66,10 +67,17 @@ namespace ChronoSavior.UI
             SfxEvents.UiClick += OnUiClick;
             SfxEvents.UiEsc += OnUiEsc;
             CombatEvents.PlayerDied += OnPlayerDied;
+            GameSettings.VolumeChanged += OnVolumeChanged;
+        }
+
+        void OnVolumeChanged()
+        {
+            if (loopSource != null && loopSource.isPlaying) loopSource.volume = ScaledVolume(loopScale);
         }
 
         void OnDisable()
         {
+            GameSettings.VolumeChanged -= OnVolumeChanged;
             SfxEvents.Jumped -= OnJumped;
             SfxEvents.PlayerDamaged -= OnPlayerDamaged;
             SfxEvents.BossRoomEntered -= OnBossRoomEntered;
@@ -171,7 +179,7 @@ namespace ChronoSavior.UI
 
         float ScaledVolume(float volumeScale)
         {
-            float vol = BaseVolume * volumeScale * GameSettings.SfxVolume / GameSettings.VolumeMax;
+            float vol = BaseVolume * volumeScale * GameSettings.SfxScale;
             return Mathf.Max(0f, vol);
         }
 
@@ -205,6 +213,7 @@ namespace ChronoSavior.UI
             loopSource.clip = clip;
             loopSource.loop = true;
             loopSource.volume = vol;
+            loopScale = volumeScale;
             loopSource.Play();
 
             if (durationSeconds.HasValue)
