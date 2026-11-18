@@ -18,11 +18,12 @@ namespace ChronoSavior.Editor
         /// <summary>Figma UI 그림(640×360 화면 부품) — 2026-10-24.</summary>
         public const string UiFolder = Folder + "UI/";
 
-        /// <summary>도트가 아닌 큰 그림(타이틀 배경·로고 1672×941, 스킬 아이콘 314px) — 화면 크기에 맞춰 부드럽게 줄여 그린다.</summary>
+        /// <summary>도트가 아닌 큰 그림(타이틀 배경·로고 1672×941) — 화면 크기에 맞춰 부드럽게 줄여 그린다.
+        /// 스킬 아이콘(`Skills/`)은 2026-11-18 Figma 새 30×30 도트 아이콘으로 바뀌어 여기서 뺐다(예전 314px 채색 그림이라 넣었던 것) — 이제 다른 UI처럼 점 필터.</summary>
         public static bool IsIllustration(string path) =>
-            path.StartsWith(UiFolder + "Title/") || path.StartsWith(UiFolder + "Skills/");
+            path.StartsWith(UiFolder + "Title/");
 
-        public override uint GetVersion() => 6;
+        public override uint GetVersion() => 7; // 7: Skills/ 도트 아이콘(2026-11-18)
 
         void OnPreprocessTexture()
         {

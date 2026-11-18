@@ -65,6 +65,51 @@ public class UiFigmaUpdateTests
         Assert.AreEqual(new Vector2(512f, 304f), PxArt.Get("Common/window_tall").rect.size, "새 창 틀 512×304");
     }
 
+    /// <summary>
+    /// 2026-11-18 Figma 새 도트 아이콘 — 마법사 스킬 10개(30×30 흰 도트)·유물 자물쇠(32×32). 안 깨지게: 점 필터·밉맵 없음·원본 크기 그대로,
+    /// 각성창은 30×30 칸에 1:1(32 칸 가운데 1도트 안쪽), 유물창은 아직 없는 유물 칸에 자물쇠(예전 "?" 글자 대신).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator NewDotIcons_DrawnOneToOne()
+    {
+        foreach (var branch in new[] { "explosion", "gravity" })
+            for (int t = 1; t <= 5; t++)
+            {
+                var s = PxArt.Get($"Skills/mage_{branch}_{t}");
+                Assert.IsNotNull(s, $"mage_{branch}_{t}");
+                Assert.AreEqual(new Vector2(30f, 30f), s.rect.size, $"mage_{branch}_{t}: 원본 30×30");
+                Assert.AreEqual(FilterMode.Point, s.texture.filterMode, $"mage_{branch}_{t}: 점 필터");
+                Assert.AreEqual(1, s.texture.mipmapCount, $"mage_{branch}_{t}: 밉맵 없음");
+            }
+        var lockIcon = PxArt.Get("Relic/lock");
+        Assert.IsNotNull(lockIcon);
+        Assert.AreEqual(new Vector2(32f, 32f), lockIcon.rect.size);
+        Assert.AreEqual(FilterMode.Point, lockIcon.texture.filterMode);
+
+        ProfileService.Current.character = CharacterId.Mage;
+        var awaken = pc.GetComponent<AwakenScreen>();
+        awaken.ShowForCapture();
+        yield return null;
+        int checkedIcons = 0;
+        foreach (var img in awaken.Root.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+            if (img.name == "Icon" && img.sprite != null && img.sprite.name.StartsWith("mage_"))
+            {
+                Assert.AreEqual(new Vector2(30f, 30f), img.rectTransform.sizeDelta, img.sprite.name + " — 30×30 칸(1:1)");
+                checkedIcons++;
+            }
+        Assert.AreEqual(10, checkedIcons, "마법사 각성창에 아이콘 10개");
+        awaken.HideForCapture();
+
+        var relic = pc.GetComponent<RelicScreen>();
+        relic.ShowForCapture();
+        yield return null;
+        int locksShown = 0;
+        foreach (var img in relic.Root.GetComponentsInChildren<UnityEngine.UI.Image>(false))
+            if (img.name == "Lock" && img.enabled) { Assert.AreSame(lockIcon, img.sprite); Assert.AreEqual(new Vector2(32f, 32f), img.rectTransform.sizeDelta); locksShown++; }
+        Assert.Greater(locksShown, 0, "새 프로필 — 아직 없는 유물 칸에 자물쇠");
+        relic.HideForCapture();
+    }
+
     PxButton Find(PxScreen s, string name)
     {
         foreach (var b in s.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == name) return b;

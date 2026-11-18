@@ -13,7 +13,7 @@ namespace ChronoSavior.UI
     /// Figma 640판은 오른쪽 판에 글자가 없어서 **옛 1920판 내용**(보유 시간의 파편·확률·1회/10회 개방)으로 채웠다.
     /// 등급 이름은 Figma대로 노말·레어·에픽·레전드. 확률은 **원본 값**(55·30·12·3%)이다 — Figma 옛 판의 70·27·2·1%와 다르다(사용자 확인 전).
     /// 유물은 원본대로 35종이라 25칸 두 쪽으로 넘겨 본다. 원본 아이콘은 이모지라 도트 글꼴에 없다 — 칸엔 등급 색 ◆와 개수,
-    /// 이름·효과는 칸을 고르면(마우스 올림·방향키) 뜨는 설명 상자에. 아직 없는 유물은 "?"(Figma 옛 판 "미확인 유물").
+    /// 이름·효과는 칸을 고르면(마우스 올림·방향키) 뜨는 설명 상자에. 아직 없는 유물은 자물쇠(2026-11-18 Figma 새 아이콘 — 예전엔 "?", Figma 옛 판 "미확인 유물").
     /// </summary>
     public class RelicScreen : PxScreen
     {
@@ -47,7 +47,7 @@ namespace ChronoSavior.UI
 
         readonly Image[] gems = new Image[PerPage];
         readonly Image[] gemEdges = new Image[PerPage];
-        readonly Text[] marks = new Text[PerPage];
+        readonly Image[] locks = new Image[PerPage]; // 아직 없는 유물 — Figma 유물 소환창 자물쇠(590:59, 2026-11-18). 예전엔 "?" 글자
         readonly Text[] counts = new Text[PerPage];
         Text shardText, costText, resultText, pageText;
         PxButton pull1, pull10;
@@ -91,7 +91,7 @@ namespace ChronoSavior.UI
                 gemEdges[i] = Px.Image(inner, "GemEdge", whiteGem, 7f, 6f, 18f, 18f);
                 gemEdges[i].color = Px.Ink;
                 gems[i] = Px.Image(inner, "Gem", whiteGem, 8f, 7f, 16f, 16f);
-                marks[i] = Px.Text(inner, "Mark", "?", 0f, 0f, SlotSize, SlotSize, 13, Px.Hex(0x4a5064));
+                locks[i] = Px.Image(inner, "Lock", PxArt.Get("Relic/lock"), 0f, 0f, SlotSize, SlotSize); // 32×32 그대로(1:1)
                 counts[i] = Px.Text(inner, "Count", "", 0f, 21f, SlotSize - 3f, 10f, 8, Color.white, TextAnchor.MiddleRight)
                               .WithOutline(Px.Ink);
                 AddNav(b);
@@ -144,7 +144,7 @@ namespace ChronoSavior.UI
                 if (def == null) continue;
                 gems[i].enabled = gemEdges[i].enabled = n > 0;
                 gems[i].color = ItemDatabase.GradeColor(def.grade);
-                marks[i].enabled = n <= 0;
+                locks[i].enabled = n <= 0;
                 counts[i].enabled = n > 0;
                 if (n > 0) counts[i].text = n >= ItemDatabase.CapOf(def.id) ? "MAX" : n.ToString();
             }

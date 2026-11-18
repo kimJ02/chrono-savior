@@ -233,7 +233,6 @@ public class PixelUiTests
         Assert.IsTrue(awaken.IsShown);
         StringAssert.StartsWith("node_open", awaken.NodeFrameName(0, 0), "아직 갈래를 안 골랐으면 두 줄 다 은테");
         StringAssert.StartsWith("node_open", awaken.NodeFrameName(1, 0));
-        StringAssert.StartsWith("node_locked", awaken.NodeFrameName(0, 5), "6번째 칸은 아직 없는 층");
 
         awaken.ClickNodeForTest(0, 0); // 1줄(중력) 1층 — 갈래가 정해지므로 한 번 더 묻는다
         Assert.AreEqual(0, p.mageTier, "묻기 전엔 안 배운다");
@@ -245,7 +244,7 @@ public class PixelUiTests
         Assert.AreEqual(1, p.mageTier);
         yield return null;
         yield return null;
-        StringAssert.StartsWith("node_learned", awaken.NodeFrameName(0, 0), "배운 층은 금테");
+        StringAssert.StartsWith("node_learned", awaken.NodeFrameName(0, 0), "배운 층은 흰 테두리");
         StringAssert.StartsWith("node_locked", awaken.NodeFrameName(1, 0), "다른 갈래는 회색");
 
         awaken.ClickNodeForTest(0, 1); // 2층(SP 2) — 이미 갈래가 정해져 바로 배운다

@@ -6,13 +6,13 @@ using ChronoSavior.Systems;
 namespace ChronoSavior.UI
 {
     /// <summary>
-    /// 각성창 — Figma "각성창"(16:2)의 640×360판: 왼쪽 큰 캐릭터 그림, 오른쪽 위 스탯 창, 아래 [각성]·[스탯] 탭과 강화창.
-    /// 로비의 "훈련소" 건물에서 연다.
-    ///   - **[각성] = 전문화 스킬트리**(예전 로비 "전문화" 탭): 두 갈래 × 6칸. 금테 = 배운 층, 은테 = 배울 수 있는 갈래,
-    ///     회색 = 다른 갈래를 골라서 막힌 줄(Figma 예시가 정확히 이 모양 — 1줄 두 칸 금테, 2줄 회색). 6번째 칸은 아직 없는 층(사용자 10/23).
+    /// 각성창 — Figma "각성창"(16:2) 2026-11-18판(640×360): 왼쪽 전신 그림, 오른쪽 위 **고른 스킬 상세 패널**(큰 아이콘·설명·SP·배우기 버튼),
+    /// 아래 [각성]·[스탯] 탭과 5열×2줄 스킬 칸. 로비의 "훈련소" 건물에서 연다.
+    ///   - **[각성] = 전문화 스킬트리**: 두 갈래 × 5층. 칸을 고르면(마우스 올림·키보드) 위 패널에 그 스킬이 뜨고, 금테 커서가 따라간다.
+    ///     Figma에 칸 상태 그림은 "미획득" 한 종류뿐 — 배운 칸(흰 테두리+금 점)·막힌 칸(어두운 테두리·아이콘)은 우리가 정했다.
     ///     동작은 원본대로(층 비용 1~5 SP, 갈래는 처음 찍을 때 고정 — 그래서 첫 층만 공용 팝업으로 한 번 더 묻는다).
-    ///   - **[스탯] = 원정 강화**(예전 로비 "강화" 탭, Figma "원정 강화창"은 뼈대만): 골드 영구 강화 5종을 강화창 안에.
-    /// 스킬 아이콘은 Figma에 마법사 것만 있다(1줄 보라 = 중력, 2줄 불 = 폭발). 메카닉·섬영은 아이콘 대신 층 숫자(사용자 확인 전).
+    ///   - **[스탯]**: Figma에 없는 면 — 같은 패널을 써서 스탯 5줄(설명 상자)·골드(SP 상자)·원정 강화 5종(스킬 칸 자리)을 보여 준다.
+    /// 스킬 아이콘은 Figma에 마법사 것만 있다. 메카닉·섬영은 아이콘 대신 층 숫자(사용자 확인 전).
     /// </summary>
     public class AwakenScreen : PxScreen
     {
@@ -28,30 +28,35 @@ namespace ChronoSavior.UI
         protected override NavLayout Layout => NavLayout.Grid;
         protected override int NavColumns => statTab ? 1 : Cols;
 
-        // Figma 좌표(640판 원점 = 배경 324:2의 -960·-534)
+        // Figma 좌표(640판 원점 = 배경 324:2의 -959·-534)
         static readonly Color Bg = Px.Hex(0x414141);
-        static readonly Rect PortraitMask = new Rect(0f, 3f, 296f, 357f);  // 348:10 (-94·3 389×357)의 판 안쪽
-        static readonly Vector2 PortraitPos = new Vector2(-92f, -1f);      // 64px 그림을 6배(384)로(Figma 6.08배), 마스크 기준
-        static readonly Rect StatWindow = new Rect(215f, 27f, 384f, 160f); // 348:5
-        static readonly float[] StatY = { 50f, 74f, 98f, 122f, 146f };     // 24:12307~25:12312 15px, 24px 간격
-        const float StatX = 237f, StatW = 220f, StatH = 19f;
-        static readonly Rect TabAwaken = new Rect(215f, 197f, 64f, 64f);   // 348:2 + 348:6 "각성" 20px
-        static readonly Rect TabStat = new Rect(215f, 277f, 64f, 64f);     // 348:4 + 348:7 "스탯"
-        static readonly Rect SkillWindow = new Rect(295f, 197f, 304f, 144f); // 348:9
-        static readonly float[] NodeX = { 320f, 365f, 410f, 455f, 500f, 545f }; // 348:13~348:24 (31.76 → 32)
-        static readonly float[] NodeY = { 226f, 281f };
-        const int Cols = 6, Tiers = 5;
-        const float NodeSize = 32f, IconInset = 6f, IconSize = 21f;         // 354:25~354:34 21×21
+        static readonly Rect Portrait = new Rect(6f, 43f, 192f, 288f);     // 501:2 전신 32×48을 6배
+        static readonly Rect TopPanel = new Rect(214f, 27f, 384f, 160f);   // 348:5
+        static readonly Rect BigFrame = new Rect(228f, 43f, 64f, 64f);     // 532:13 (금테 64칸)
+        static readonly Rect BigIcon = new Rect(230f, 45f, 60f, 60f);      // 629:14 (30px 아이콘 2배)
+        static readonly Rect DescBox = new Rect(308f, 43f, 168f, 128f);    // 532:21
+        static readonly Rect SpBox = new Rect(492f, 56f, 96f, 32f);        // 532:18
+        static readonly Rect LearnBtn = new Rect(492f, 126f, 96f, 32f);    // 532:15
+        static readonly Rect TabAwaken = new Rect(214f, 197f, 64f, 64f);   // 348:2 + 348:6 "각성" 20px
+        static readonly Rect TabStat = new Rect(214f, 277f, 64f, 64f);     // 348:4 + 348:7 "스탯"
+        static readonly Rect SkillWindow = new Rect(294f, 197f, 304f, 144f); // 348:9
+        static readonly float[] NodeX = { 306f, 368f, 430f, 492f, 554f };  // 미획득 칸 x(62 간격)
+        static readonly float[] NodeY = { 246f, 293f };
+        const int Cols = 5, Tiers = 5;
+        const float NodeSize = 32f, IconInset = 1f, IconSize = 30f;         // 2026-11-18 Figma 도트 아이콘 30×30 — 1:1로 그려야 안 깨진다(32칸 가운데)
         static readonly Rect CloseBox = new Rect(608f, 8f, 24f, 24f);       // Figma에 없음
-        // 층 설명 상자는 왼쪽 캐릭터 그림 위에 — 칸 옆에 띄우면 이웃 칸을 가린다
-        const float TipX = 8f, TipY = 214f;
-        // [스탯] 탭(원정 강화) — 강화창 안에 다섯 줄
-        const float UpX = 310f, UpTop = 206f, UpStep = 26f, UpBtnX = 528f, UpBtnW = 60f, UpBtnH = 20f;
+        // [스탯] 탭(원정 강화) — 스킬 칸 자리(머리띠 아래)에 다섯 줄
+        const float UpX = 306f, UpTop = 238f, UpStep = 20f, UpBtnX = 528f, UpBtnW = 60f, UpBtnH = 18f;
         static readonly Color Dim = new Color(0.55f, 0.55f, 0.6f, 1f);
         static readonly Color Gold = Px.Hex(0xfac70e);
 
         readonly Text[] stats = new Text[5];
-        Text spText, goldText;
+        Text spText, descText, stateText, learnLabel;
+        RectTransform skillDetail, statDetail;
+        Image bigIcon;
+        PxButton learnButton;
+        readonly Image[,] badges = new Image[2, Cols];
+        readonly Image[,] cursors = new Image[2, Cols];
         readonly PxButton[,] nodes = new PxButton[2, Cols];
         readonly Image[,] icons = new Image[2, Cols];
         readonly Text[,] numbers = new Text[2, Cols];
@@ -59,7 +64,6 @@ namespace ChronoSavior.UI
         readonly Text[] upLabels = new Text[5];
         RectTransform treeRoot, statRoot;
         PxButton tabAwaken, tabStat;
-        PxTooltip tip;
         bool statTab;
 
         static readonly UpgradeStat[] UpgradeOrder = { UpgradeStat.Hp, UpgradeStat.Atk, UpgradeStat.Ms, UpgradeStat.AtkSpeed, UpgradeStat.Crit };
@@ -131,15 +135,28 @@ namespace ChronoSavior.UI
             if (instance == null) instance = this;
             Px.FullFill(Back, "Background", Bg);
 
-            var mask = Px.Node(Content, "PortraitMask", PortraitMask.x, PortraitMask.y, PortraitMask.width, PortraitMask.height);
-            mask.gameObject.AddComponent<RectMask2D>();
-            Px.Image(mask, "Portrait", PxArt.Get("Hud/portrait"), PortraitPos.x, PortraitPos.y, 384f, 384f);
+            Px.Image(Content, "Portrait", PxArt.Get("Awaken/portrait_full"), Portrait.x, Portrait.y, Portrait.width, Portrait.height);
+            Px.Image(Content, "TopPanel", PxArt.Get("Awaken/stat_window"), TopPanel.x, TopPanel.y, TopPanel.width, TopPanel.height);
+            Px.Image(Content, "DescBox", PxArt.Get("Awaken/desc_window"), DescBox.x, DescBox.y, DescBox.width, DescBox.height);
+            Px.Image(Content, "SpBox", PxArt.Get("Awaken/sp_box"), SpBox.x, SpBox.y, SpBox.width, SpBox.height);
+            spText = Px.Text(Content, "Sp", "", SpBox.x + 5f, SpBox.y, SpBox.width - 10f, SpBox.height, 13, Gold, TextAnchor.MiddleLeft);
 
-            Px.Image(Content, "StatWindow", PxArt.Get("Awaken/stat_window"), StatWindow.x, StatWindow.y, StatWindow.width, StatWindow.height);
+            // 스킬 상세(각성 탭) — 큰 아이콘 + 설명 + 배우기
+            skillDetail = Px.Stretch(Content, "SkillDetail");
+            Px.Image(skillDetail, "BigFrame", PxArt.Get("Awaken/big_frame"), BigFrame.x, BigFrame.y, BigFrame.width, BigFrame.height);
+            bigIcon = Px.Image(skillDetail, "BigIcon", null, BigIcon.x, BigIcon.y, BigIcon.width, BigIcon.height);
+            descText = Px.Text(skillDetail, "Desc", "", DescBox.x + 8f, DescBox.y + 6f, DescBox.width - 16f, 84f, 10, Color.white, TextAnchor.UpperLeft);
+            descText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            stateText = Px.Text(skillDetail, "State", "", DescBox.x + 8f, DescBox.y + DescBox.height - 30f, DescBox.width - 16f, 24f, 10, Gold, TextAnchor.LowerLeft);
+            stateText.horizontalOverflow = HorizontalWrapMode.Wrap;
+            learnButton = Px.TextButton(skillDetail, "Learn", PxArt.Get("Awaken/learn_button"), LearnBtn.x, LearnBtn.y, LearnBtn.width, LearnBtn.height,
+                                        "배우기", 13, Color.white, LearnSelected);
+            learnLabel = learnButton.Inner.GetComponentInChildren<Text>();
+
+            // 스탯(스탯 탭) — 설명 상자 자리에 다섯 줄
+            statDetail = Px.Stretch(Content, "StatDetail");
             for (int i = 0; i < 5; i++)
-                stats[i] = Px.Text(Content, "Stat" + i, "", StatX, StatY[i], StatW, StatH, 15, Color.white, TextAnchor.MiddleLeft);
-            spText = Px.Text(Content, "Sp", "", 460f, StatY[0], 126f, StatH, 13, Gold, TextAnchor.MiddleRight);
-            goldText = Px.Text(Content, "Gold", "", 460f, StatY[1], 126f, StatH, 13, Gold, TextAnchor.MiddleRight);
+                stats[i] = Px.Text(statDetail, "Stat" + i, "", DescBox.x + 10f, DescBox.y + 6f + i * 23f, DescBox.width - 20f, 20f, 13, Color.white, TextAnchor.MiddleLeft);
 
             tabAwaken = Px.TextButton(Content, "TabAwaken", PxArt.Get("Common/icon_frame"), TabAwaken.x, TabAwaken.y,
                                       TabAwaken.width, TabAwaken.height, "각성", 20, Color.white, () => SetTab(false));
@@ -158,6 +175,9 @@ namespace ChronoSavior.UI
                     icons[r, c] = Px.Image(inner, "Icon", null, IconInset, IconInset, IconSize, IconSize);
                     numbers[r, c] = Px.Text(inner, "Tier", (c + 1).ToString(), 0f, 0f, NodeSize, NodeSize, 13, Color.white)
                                       .WithOutline(Px.Ink);
+                    badges[r, c] = Px.Image(inner, "Learned", null, NodeSize - 6f, 2f, 4f, 4f);
+                    badges[r, c].color = Gold;
+                    cursors[r, c] = Px.Image(inner, "Cursor", PxArt.Get("Awaken/node_cursor"), 0f, 0f, NodeSize, NodeSize);
                     nodes[r, c] = b;
                 }
 
@@ -177,11 +197,10 @@ namespace ChronoSavior.UI
 #if UNITY_EDITOR
             // 에디터 전용 "SP +1"(사용자 2026-09-29 — 스킬을 한 층씩 찍어 보며 테스트). 예전 로비 전문화 탭에 있던 것을 옮겼다.
             // SP는 레벨에서 나오므로 레벨을 1 올린다. 빌드한 게임엔 없다 — 그래서 프로필 직접 대입의 예외로 둔다(`docs/state-ownership.md`).
-            var sp = Px.TextButton(Content, "TestSp", PxArt.Sliced("Common/button", 4), 470f, 160f, 116f, 18f, "SP +1 (테스트)", 8,
+            var sp = Px.TextButton(Content, "TestSp", PxArt.Sliced("Common/button", 4), 492f, 164f, 96f, 18f, "SP +1 (테스트)", 8,
                                    Color.white, () => { ProfileService.Current.level++; SaveService.Save(); });
             sp.Art.type = Image.Type.Sliced;
 #endif
-            tip = new PxTooltip(Content);
         }
 
         /// <summary>테스트용 — 그 칸 틀 그림 이름(node_learned·node_open·node_locked).</summary>
@@ -204,7 +223,9 @@ namespace ChronoSavior.UI
             AddNav(tabAwaken);
             AddNav(tabStat);
             SelectNav(0);
-            tip?.Hide();
+            skillDetail.gameObject.SetActive(!stat);
+            statDetail.gameObject.SetActive(stat);
+            RefreshDetail();
         }
 
         protected override void Refresh()
@@ -218,8 +239,7 @@ namespace ChronoSavior.UI
             stats[2].text = $"공격력: {PlayerStatCalculator.ComputeAtk(p):0}";
             stats[3].text = $"이동속도: {PlayerStatCalculator.ComputeMoveSpeedMultiplier(p) * 100f:0}%";
             stats[4].text = $"공격속도: {PlayerStatCalculator.ComputeAttackSpeedMultiplier(p) * 100f:0}%";
-            spText.text = $"SP {p.SpAvailable} / {p.SpTotal}";
-            goldText.text = $"{p.gold:N0} G";
+            spText.text = statTab ? $"{p.gold:N0} G" : $"SP {p.SpAvailable} / {p.SpTotal}";
 
             if (!statTab) RefreshTree(p);
             else RefreshUpgrades(p);
@@ -245,8 +265,10 @@ namespace ChronoSavior.UI
                     icons[r, c].color = locked ? Dim : Color.white;
                     numbers[r, c].enabled = exists && icon == null;
                     numbers[r, c].color = locked ? Dim : Color.white;
+                    badges[r, c].enabled = learned;
+                    cursors[r, c].enabled = r * Cols + c == NavIndex;
                 }
-            RefreshTip();
+            RefreshDetail();
         }
 
         void RefreshUpgrades(PlayerProfile p)
@@ -271,24 +293,49 @@ namespace ChronoSavior.UI
             _ => s.ToString(),
         };
 
-        protected override void OnNavChanged(int index) => RefreshTip();
+        protected override void OnNavChanged(int index) { if (!statTab) RefreshTree(ProfileService.Current); }
 
-        void RefreshTip()
+        /// <summary>지금 고른 칸(없으면 null) — 상세 패널과 [배우기]가 같이 본다.</summary>
+        bool Selected(out int r, out int c)
         {
-            if (tip == null) return;
-            if (statTab || NavIndex < 0 || NavIndex >= 2 * Cols) { tip.Hide(); return; }
-            int r = NavIndex / Cols, c = NavIndex % Cols, t = c + 1;
+            r = c = 0;
+            if (statTab || NavIndex < 0 || NavIndex >= 2 * Cols) return false;
+            r = NavIndex / Cols; c = NavIndex % Cols;
+            return true;
+        }
+
+        void RefreshDetail()
+        {
+            if (descText == null) return;
+            bool has = Selected(out int r, out int c);
+            bigIcon.enabled = false;
+            learnButton.gameObject.SetActive(!statTab);
+            learnButton.Interactable = false;
+            if (!has) { descText.text = ""; stateText.text = ""; return; }
+            int t = c + 1;
             var p = ProfileService.Current;
             var spec = SpecOf(p);
-            if (spec == null) { tip.ShowAt("이 캐릭터는 아직 전문화가 없다.", TipX, TipY); return; }
-            if (t > Tiers) { tip.ShowAt($"{spec.Names[r]} {t}층\n아직 없는 층이다.", TipX, TipY); return; }
+            if (spec == null) { descText.text = "이 캐릭터는 아직 전문화가 없다."; stateText.text = ""; return; }
+            string path = spec.IconPrefix[r] != null ? spec.IconPrefix[r] + t : null;
+            var icon = path != null ? PxArt.Get(path) : null;
+            bigIcon.sprite = icon;
+            bigIcon.enabled = icon != null;
+            bigIcon.color = Color.white; // 그림 없이 만들 때 깔린 경고색(분홍)을 걷는다
+            descText.text = $"{spec.Names[r]} {t}층 · SP {t}\n{spec.Texts[r][c]}";
 
             string state;
+            bool can = false;
             if (spec.Branch >= 0 && spec.Branch != r) state = "다른 갈래를 골라서 막혔다";
             else if (spec.Branch == r && spec.Tier >= t) state = "배움";
-            else if (spec.Tier == t - 1) state = p.SpAvailable >= t ? $"누르면 배운다 (SP {t})" : $"SP가 모자라다 (SP {t} 필요)";
+            else if (spec.Tier == t - 1) { can = p.SpAvailable >= t; state = can ? $"누르면 배운다 (SP {t})" : $"SP가 모자라다 (SP {t} 필요)"; }
             else state = $"{t - 1}층을 먼저 배워야 한다";
-            tip.ShowAt($"{spec.Names[r]} {t}층 · SP {t}\n{spec.Texts[r][c]}\n<color=#fac70e>{state}</color>", TipX, TipY);
+            stateText.text = state;
+            learnButton.Interactable = can;
+        }
+
+        void LearnSelected()
+        {
+            if (Selected(out int r, out int c)) ClickNode(r, c);
         }
 
         void ClickNode(int r, int c)
