@@ -74,7 +74,7 @@ public class DotScaleTests
         Assert.AreEqual(DotScale.Value * art.background.pixelsPerUnit / DotScale.GridPixelsPerUnit, art.backgroundScale, 1e-4f, "배경");
         Assert.AreEqual(DotScale.Value * art.portal.pixelsPerUnit / DotScale.GridPixelsPerUnit, art.portalScale, 1e-4f, "포탈");
         foreach (var tile in new[] { art.groundTop, art.groundDirt, art.platformTile })
-            Assert.AreEqual(DotScale.GridPixelsPerUnit / DotScale.Value, tile.pixelsPerUnit, 1e-4f, tile.name + ": 타일은 PPU 64(그대로 깔면 도트 2)");
+            Assert.AreEqual(DotScale.GridPixelsPerUnit, tile.pixelsPerUnit, 1e-4f, tile.name + ": 타일은 PPU 128(그대로 깔면 도트 1 — 2026-11-18 사용자, 배경·포탈만 도트 2)");
     }
 
     /// <summary>캐릭터 그림 발이 판정 원 바닥(발)에 맞는다 — 기준점이 아래에서 (판정 반지름 ÷ 그림 높이).</summary>

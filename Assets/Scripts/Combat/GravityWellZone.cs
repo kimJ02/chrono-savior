@@ -146,7 +146,10 @@ namespace ChronoSavior.Combat
                 float d = Mathf.Max(toWell.magnitude, 0.01f);
 
                 var pullable = col.GetComponent<IGravityAffectable>();
-                if (pullable != null)
+                // 보스는 끌려오지 않는다(2026-11-18 사용자 "보스는 중력장 같은 끌어오기·스턴 등 이동 제한
+                // 효과를 안 받게" — Core/ICrowdControlImmune.cs). 틱 피해·노출(아래)은 이동이 아니라
+                // 피해성 효과라 보스도 그대로 받는다 — 끌어당김(위치 이동)만 걸러낸다.
+                if (pullable != null && col.GetComponent<ICrowdControlImmune>() == null)
                 {
                     float nearEase = Mathf.Clamp(1f - d / pullR, 0.12f, 1f);
                     float force = Pull * (0.45f + nearEase) * (1f + Stack * 0.18f);
@@ -155,7 +158,8 @@ namespace ChronoSavior.Combat
                 }
 
                 // 원본 `e.gravityExpose += dt * (1 + stack*0.16)` → 1.25 넘으면 취약 3초(`:3817`~`:3819`).
-                // 끌어당김·틱 피해와 달리 **범위 안에 있기만 하면** 누적된다(보스 예외 없음).
+                // **범위 안에 있기만 하면** 누적된다 — 피해성 효과라 끌어당김과 달리 보스도 예외 없이 받는다
+                // (위 ICrowdControlImmune은 "이동 제한"에만 걸리고 취약·틱 피해는 그대로 두는 이유).
                 var vulnerable = col.GetComponent<IVulnerable>();
                 vulnerable?.AddGravityExposure(dt * (1f + Stack * MageSpecConfig.GravityExposureRatePerStack));
 

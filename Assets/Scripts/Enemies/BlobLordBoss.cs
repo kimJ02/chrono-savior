@@ -43,7 +43,7 @@ namespace ChronoSavior.Enemies
     [RequireComponent(typeof(EnemyMove))]
     [RequireComponent(typeof(EnemyHealth))]
     public class BlobLordBoss : MonoBehaviour, IEnemyMotion, IEnemyVerticalMotion, IEnemyContactDamageModifier,
-                                IDamageProtection, IGrabExempt, IDeathAnimated
+                                IDamageProtection, IGrabExempt, IDeathAnimated, ICrowdControlImmune
     {
         // ── 몸 ──
         /// <summary>그림 크기(가로·세로, 유닛) — 중대형(명세 1절). 그림 128×104px를 도트 배율 2로.</summary>
@@ -179,6 +179,8 @@ namespace ChronoSavior.Enemies
         public bool IsDamageProtected => IsAirborne;
         /// <summary>몸통 접촉 피해 없음 — 피해는 예고된 공격으로만(Codex 상의, `EnemyMove.TryAttack`이 0이면 건너뜀).</summary>
         public float ContactDamageMultiplier => 0f;
+
+        // <see cref="ICrowdControlImmune"/> — 끌어당김·스턴 등 이동 제한 디버프 면역(2026-11-18 사용자 요청, 보스 공통).
 
         /// <summary>테스트·착지 효과가 듣는다: 내려찍기가 떨어진 자리, 맞았는지.</summary>
         public event System.Action<Vector2, bool> Impacted;

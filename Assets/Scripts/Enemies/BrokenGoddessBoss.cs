@@ -27,7 +27,9 @@ namespace ChronoSavior.Enemies
     /// (요청서 "공격 시작 전 플레이어 위치 기준으로 방향 결정, 공격 중 과도한 방향 전환 지양" / 명세서
     /// 공통 규칙). 몸통 접촉 피해는 없다(<see cref="ContactDamageMultiplier"/> = 0) — 1지역 덩어리
     /// 지배자와 같은 이유로, 피해는 예고된 두 패턴으로만 들어간다(두 문서 모두 몸통 접촉을 언급하지
-    /// 않는다 — "확인 필요": 팀장이 몸통 접촉 피해를 원하면 이 값을 조정할 것).
+    /// 않는다 — "확인 필요": 팀장이 몸통 접촉 피해를 원하면 이 값을 조정할 것). 끌어당김·스턴 등
+    /// 이동 제한 디버프는 안 받는다(<see cref="ICrowdControlImmune"/>, 2026-11-18 사용자 요청 —
+    /// 다른 보스와 공통).
     ///
     /// 판정은 `Physics2D.OverlapBox` 대신 **수동 거리/각도 계산**으로 한다(<see cref="InGrabBox"/>·
     /// <see cref="InSweepArea"/>) — 요청서도 "OverlapBox 방식으로 구현할 수 있다"(허용, 강제 아님)라고
@@ -43,13 +45,14 @@ namespace ChronoSavior.Enemies
     /// 대기 4장·이동 4장·피격 1장·사망 8장은 80×64 캔버스, 잡기 7장·휘두르기 5장은 100×64 캔버스(둘 다 높이
     /// 64 공통 — <see cref="VisualSize"/> 하나로 일관되게 늘어난다). <see cref="UpdateBodySprite"/> 참고.
     /// **에셋 가져오기·플립북 생성·프리팹 연결은 에디터 메뉴가 한다**(`Editor/BuildBrokenGoddessArt`,
-    /// `ChronoSavior/보스 그림 연결/부서진 여신상` — 이 세션은 Unity 에디터가 없어 직접 임포트할 수 없다).
-    /// 메뉴를 돌리기 전까진 프리팹이 기본 도형 그림 그대로다 — "확인 필요": 메뉴 실행 + 인게임 확인(`HANDOFF.md`).
+    /// `ChronoSavior/보스 그림 연결/부서진 여신상`). 그림은 **왼쪽**을 본다(BlobLord의 "오른쪽" 관례와
+    /// 반대 — 2026-11-18 사용자가 좌우 반전을 지적해 직접 그림을 열어 확인하고 <see cref="IdleApproach"/>·
+    /// <see cref="LockFacing"/>의 flipX 조건을 뒤집었다).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(EnemyMove))]
     [RequireComponent(typeof(EnemyHealth))]
-    public class BrokenGoddessBoss : MonoBehaviour, IEnemyMotion, IEnemyContactDamageModifier, IGrabExempt, IDeathAnimated
+    public class BrokenGoddessBoss : MonoBehaviour, IEnemyMotion, IEnemyContactDamageModifier, IGrabExempt, IDeathAnimated, ICrowdControlImmune
     {
         // ── 몸 — 실제 그림 80×64 캔버스 비율(대기·이동·피격·사망) 그대로, 세로는 공통 보스 기준
         // (EntitySizeConfig.BossHeight) 유지(2026-11-18, 그림 들어오기 전 임시 크기였던 1.30×1.50에서 가로만 보정 —
@@ -131,17 +134,6 @@ namespace ChronoSavior.Enemies
         SpriteRenderer body;
         GroundWarning grabWarning, sweepWarning;
 
-        // 몸 기본 그림(프리팹의 m_Sprite 오버라이드를 그대로 캐시) — BlobLordBoss와 같은 이유로, 대기·이동·
-        // 상태별 그림이 전부 없는 경우(에셋 연결 전)의 안전한 대비값이다.
-        Sprite defaultSprite;
-        // 피격 그림(직접 타격마다 짧게) — BlobLordBoss와 같은 지속시간.
-        public const float HitFlashDuration = 0.15f;
-        float hitTimer;
-        // 대기/이동 되풀이 재생 시각(상태가 바뀌면 처음부터 다시 돌게 리셋).
-        float idleCycleT, moveCycleT;
-        // 대기 중 실제로 접근해 걷고 있는지(IdleApproach가 매 프레임 갱신) — 이동 그림 분기에 쓴다.
-        bool isMoving;
-
         State state = State.Idle;
         float stateT, stateDur = FirstDelay;
         Pattern last = Pattern.None;
@@ -155,6 +147,15 @@ namespace ChronoSavior.Enemies
         // 붙잡은 대상 — 보스가 죽거나 꺼질 때 반드시 풀어 줘야 하므로 들고 있는다.
         GameObject grabbedTarget;
         float grabStartX, grabHeldY, grabAnchorX;
+
+        /// <summary>대기 중 걷고 있는지 — 그림이 대기 4장/이동 4장 중 뭘 돌릴지 고른다(<see cref="UpdateBodySprite"/>,
+        /// <see cref="IdleApproach"/>가 매긴다).</summary>
+        bool isMoving;
+
+        // 그림(2026-11-18) — 피격은 직접 타격마다 짧게 덮어쓴다(BlobLordBoss.HandleDamaged와 같은 이유).
+        public const float HitFlashDuration = 0.15f;
+        float hitTimer;
+        float moveCycleT, idleCycleT;
 
         public State CurrentState => state;
         public Pattern LastPattern => last;
@@ -175,7 +176,6 @@ namespace ChronoSavior.Enemies
             mover = GetComponent<EnemyMove>();
             health = GetComponent<EnemyHealth>();
             body = GetComponent<SpriteRenderer>();
-            defaultSprite = body != null ? body.sprite : null;
 
             if (warningPrefab != null)
             {
@@ -195,6 +195,8 @@ namespace ChronoSavior.Enemies
             ReleaseGrabbedTarget();
         }
 
+        void OnEnable() => CombatEvents.EnemyDamaged += HandleDamaged;
+
         void OnDisable()
         {
             CombatEvents.EnemyDamaged -= HandleDamaged;
@@ -203,16 +205,19 @@ namespace ChronoSavior.Enemies
             ReleaseGrabbedTarget();
         }
 
-        void OnEnable() => CombatEvents.EnemyDamaged += HandleDamaged;
-
-        /// <summary>
-        /// 직접 타격마다(지속 피해 제외) 피격 그림을 잠깐 띄운다 — BlobLordBoss.HandleDamaged와 같은 이유·같은 필터링
-        /// (`CombatEvents.EnemyDamaged`는 적 전체가 같이 올리는 전역 이벤트라 이 보스 걸 걸러야 한다).
-        /// </summary>
+        /// <summary>직접 타격마다(지속 피해 제외) 피격 그림을 잠깐 띄운다 — `CombatEvents.EnemyDamaged`는
+        /// 적 전체가 같이 올리는 전역 이벤트라 이 보스 걸 걸러야 한다(BlobLordBoss.HandleDamaged와 동일).</summary>
         void HandleDamaged(GameObject go)
         {
             if (go != gameObject) return;
             hitTimer = HitFlashDuration;
+        }
+
+        // 그림은 그리기 직전에(BlobLordBoss와 같은 방식). 죽은 뒤엔 사망 연출(DeathSequence)이 그린다.
+        void LateUpdate()
+        {
+            if (health != null && health.IsDead) return;
+            UpdateBodySprite(Time.deltaTime);
         }
 
         void ReleaseGrabbedTarget()
@@ -221,115 +226,6 @@ namespace ChronoSavior.Enemies
             var g = grabbedTarget.GetComponent<IGrabbable>();
             g?.EndGrab();
             grabbedTarget = null;
-        }
-
-        // 그림은 그리기 직전에(BlobLordBoss와 같은 이유) — 죽은 뒤엔 사망 연출(DeathSequence)이 그린다.
-        void LateUpdate()
-        {
-            if (health != null && health.IsDead) return;
-            UpdateBodySprite(Time.deltaTime);
-        }
-
-        /// <summary>
-        /// 몸 그림 — 피격이 최우선(맞은 순간은 어떤 상태든 짧게 덮어쓴다), 그다음 상태머신(잡기·휘두르기는
-        /// 상태 진행도로 몇 번째 장인지 고른다 — <see cref="GrabSprite"/>·<see cref="SweepSprite"/>, BlobLordBoss의
-        /// 튀어오르기·투척과 같은 방식), 그 밖(대기/후딜레이)은 접근 중인지로 대기·이동을 가른다. 기본 그림(대기 01)은
-        /// 에셋이 아직 안 꽂혔을 때의 안전한 대비값이다.
-        /// </summary>
-        void UpdateBodySprite(float dt)
-        {
-            if (body == null) return;
-            if (hitTimer > 0f)
-            {
-                hitTimer = Mathf.Max(0f, hitTimer - dt);
-                var hit = At(hitArt, 0);
-                if (hit != null) { body.sprite = hit; return; }
-            }
-
-            Sprite s = null;
-            switch (state)
-            {
-                case State.GrabPrep: case State.GrabWarn: case State.GrabThrust: case State.GrabPull: case State.GrabHold:
-                    s = GrabSprite();
-                    break;
-                case State.SweepPrep: case State.SweepWarn: case State.SweepActive:
-                    s = SweepSprite();
-                    break;
-                case State.GrabRecover: case State.SweepRecover:
-                    s = At(idleArt, 0); // 후딜레이 — 다음 대기 되풀이가 시작되기 전까지 대기 그림의 첫 자세로
-                    break;
-                case State.Idle:
-                    if (isMoving)
-                    {
-                        idleCycleT = 0f;
-                        moveCycleT += dt;
-                        s = moveArt != null ? moveArt.FrameAt(moveCycleT) : null;
-                    }
-                    else
-                    {
-                        moveCycleT = 0f;
-                        idleCycleT += dt;
-                        s = idleArt != null ? idleArt.FrameAt(idleCycleT) : null;
-                    }
-                    break;
-            }
-            body.sprite = s != null ? s : defaultSprite;
-        }
-
-        static Sprite At(SpriteFlipbook b, int idx) => b != null && idx >= 0 && idx < b.Count ? b.frames[idx] : null;
-
-        /// <summary>잡기 7장 — 준비 1(0)·경고 1(1)·팔 뻗기 1(2)·끌어당기기 3(3~5, 가장 역동적인 구간이라 세 장)·붙잡아둠 1(6).</summary>
-        Sprite GrabSprite()
-        {
-            switch (state)
-            {
-                case State.GrabPrep: return At(grabArt, 0);
-                case State.GrabWarn: return At(grabArt, 1);
-                case State.GrabThrust: return At(grabArt, 2);
-                case State.GrabPull: return At(grabArt, 3 + Mathf.Clamp(Mathf.FloorToInt(stateT / GrabPullTime * 3f), 0, 2));
-                case State.GrabHold: return At(grabArt, 6);
-                default: return null;
-            }
-        }
-
-        /// <summary>휘두르기 5장 — 준비 1(0)·경고 2(1~2, 휘두를 팔을 들어 올리는 구간)·판정 2(3~4, 휘두름+따라치기).</summary>
-        Sprite SweepSprite()
-        {
-            switch (state)
-            {
-                case State.SweepPrep: return At(sweepArt, 0);
-                case State.SweepWarn: return At(sweepArt, 1 + Mathf.Clamp(Mathf.FloorToInt(stateT / SweepWarnTime * 2f), 0, 1));
-                case State.SweepActive: return At(sweepArt, 3 + Mathf.Clamp(Mathf.FloorToInt(stateT / SweepActiveTime * 2f), 0, 1));
-                default: return null;
-            }
-        }
-
-        /// <summary>
-        /// <see cref="IDeathAnimated"/> — BlobLordBoss.PlayDeathAndDestroy와 같은 방식. <see cref="EnemyHealth.Die"/>가
-        /// 즉시 Destroy하는 대신 이걸 부른다. 사망 그림 8장을 재생한 뒤 스스로 Destroy — 그동안 경고 표시를 치우고
-        /// 붙잡고 있던 대상을 풀어주고(이미 OnDisable이 하지만 Destroy 전에 명시적으로 한 번 더 — 죽는 순간 바로
-        /// 반영돼야 함) 콜라이더를 꺼서(시체를 겨누거나 맞히지 않게) 상태머신이 끼어들지 않게 한다
-        /// (<see cref="GetHorizontalSpeed"/>가 맨 위에서 health.IsDead를 보고 멈춘다).
-        /// </summary>
-        public void PlayDeathAndDestroy()
-        {
-            if (grabWarning != null) grabWarning.gameObject.SetActive(false);
-            if (sweepWarning != null) sweepWarning.gameObject.SetActive(false);
-            ReleaseGrabbedTarget();
-            foreach (var c in GetComponents<Collider2D>()) c.enabled = false;
-            StartCoroutine(DeathSequence());
-        }
-
-        System.Collections.IEnumerator DeathSequence()
-        {
-            int n = deathArt != null ? deathArt.Count : 0;
-            float step = deathArt != null && deathArt.fps > 0f ? 1f / deathArt.fps : 0.125f;
-            for (int i = 0; i < n; i++)
-            {
-                if (body != null && deathArt.frames[i] != null) body.sprite = deathArt.frames[i];
-                yield return new WaitForSeconds(step); // 게임 시간 — 히트스톱·일시정지 땐 같이 멈춘다
-            }
-            Destroy(gameObject);
         }
 
         // ───────────────────────── 매 물리 프레임 ─────────────────────────
@@ -537,11 +433,8 @@ namespace ChronoSavior.Enemies
                                        FieldBounds.MinX + 0.1f, FieldBounds.MaxX - 0.1f); // 맵 밖으로 안 나가게 보정
 
             grabbable.BeginGrab(gameObject);
+            HitFeel.Shake(8f, 0.2f); // 잡기 성공(스냇치) 순간 — PlayerHurt 기본 흔들림(7/0.22) 위로 덮어씀(임의 값, 확인 필요)
             Grabbed?.Invoke(target.gameObject);
-            // 타격감(2026-11-18, 사용자 "여신상 완성" 범위) — 붙잡는 순간의 무게감. 실제 피해는 FinishGrab에서
-            // PlayerHealth.ApplyDamage가 이미 HitFeel.PlayerHurt()(붉어짐+흔들림 7/0.22)를 걸므로, 여기는 그보다
-            // 큰 쪽으로 덮어써 "잡혔다"는 순간을 더 강조한다(BlobLordBoss.Impact의 착지 흔들림과 같은 역할).
-            HitFeel.Shake(8f, 0.2f);
             Enter(State.GrabPull, GrabPullTime);
         }
 
@@ -617,7 +510,7 @@ namespace ChronoSavior.Enemies
             if (hit)
             {
                 d.TakeDamage(TargetMaxHp(target) * SweepDamagePct, gameObject);
-                HitFeel.Shake(6f, 0.18f); // 타격감 — 그랩 스냇치(8/0.2)보다 조금 작게, PlayerHurt 기본 흔들림(7/0.22) 위로 덮어쓴다
+                HitFeel.Shake(6f, 0.18f); // 휘두르기 명중 순간(임의 값, 확인 필요)
             }
             SweptHit?.Invoke(transform.position, hit);
         }
@@ -632,6 +525,104 @@ namespace ChronoSavior.Enemies
             float angleToTarget = Mathf.Atan2(d.y, d.x) * Mathf.Rad2Deg;
             float facingAngle = facing >= 0 ? 0f : 180f;
             return Mathf.Abs(Mathf.DeltaAngle(facingAngle, angleToTarget)) <= halfAngleDeg;
+        }
+
+        // ───────────────────────── 그림/애니메이션(2026-11-18) ─────────────────────────
+
+        /// <summary>
+        /// 몸 그림 — 피격이 최우선(맞은 순간은 어떤 상태든 짧게 덮어쓴다, BlobLordBoss와 같은 이유). 잡기·
+        /// 휘두르기는 상태 진행도로 몇 번째 장인지 직접 계산(<see cref="GrabSprite"/>·<see cref="SweepSprite"/>,
+        /// fps 안 씀). 후딜레이(<c>GrabRecover</c>/<c>SweepRecover</c>)는 대기 그림의 첫 자세로 돌아가 다음
+        /// 대기 되풀이가 자연스럽게 이어지게 한다. 대기·이동은 시간 기반 되풀이(<see cref="isMoving"/>은
+        /// <see cref="IdleApproach"/>가 매긴다).
+        /// </summary>
+        void UpdateBodySprite(float dt)
+        {
+            if (body == null) return;
+            if (hitTimer > 0f)
+            {
+                hitTimer = Mathf.Max(0f, hitTimer - dt);
+                var hit = At(hitArt, 0);
+                if (hit != null) { body.sprite = hit; return; }
+            }
+            Sprite s;
+            if (state == State.GrabRecover || state == State.SweepRecover)
+            {
+                s = At(idleArt, 0); // 후딜레이 — 다음 대기 되풀이가 시작되기 전까지 대기 그림의 첫 자세로
+            }
+            else if (state == State.Idle)
+            {
+                if (isMoving)
+                {
+                    moveCycleT += dt;
+                    s = moveArt != null ? moveArt.FrameAt(moveCycleT) : null;
+                }
+                else
+                {
+                    idleCycleT += dt;
+                    s = idleArt != null ? idleArt.FrameAt(idleCycleT) : null;
+                }
+            }
+            else
+            {
+                s = GrabSprite() ?? SweepSprite();
+            }
+            if (s != null) body.sprite = s;
+        }
+
+        /// <summary>잡기 7장 — 준비 1(0) · 경고 1(1) · 팔 뻗기 1(2) · 끌어당기기 3(3~5) · 붙잡아둠 1(6).</summary>
+        Sprite GrabSprite()
+        {
+            switch (state)
+            {
+                case State.GrabPrep: return At(grabArt, 0);
+                case State.GrabWarn: return At(grabArt, 1);
+                case State.GrabThrust: return At(grabArt, 2);
+                case State.GrabPull: return At(grabArt, 3 + Mathf.Clamp(Mathf.FloorToInt(stateT / GrabPullTime * 3f), 0, 2));
+                case State.GrabHold: return At(grabArt, 6);
+                default: return null;
+            }
+        }
+
+        /// <summary>휘두르기 5장 — 준비 1(0) · 경고 2(1~2) · 판정 2(3~4).</summary>
+        Sprite SweepSprite()
+        {
+            switch (state)
+            {
+                case State.SweepPrep: return At(sweepArt, 0);
+                case State.SweepWarn: return At(sweepArt, 1 + Mathf.Clamp(Mathf.FloorToInt(stateT / SweepWarnTime * 2f), 0, 1));
+                case State.SweepActive: return At(sweepArt, 3 + Mathf.Clamp(Mathf.FloorToInt(stateT / SweepActiveTime * 2f), 0, 1));
+                default: return null;
+            }
+        }
+
+        static Sprite At(SpriteFlipbook b, int idx) => b != null && idx >= 0 && idx < b.Count ? b.frames[idx] : null;
+
+        /// <summary>
+        /// <see cref="IDeathAnimated"/> — BlobLordBoss.PlayDeathAndDestroy와 같은 방식. <see cref="EnemyHealth.Die"/>가
+        /// 즉시 Destroy하는 대신 이걸 부른다. 사망 그림 8장을 재생한 뒤 스스로 Destroy한다. 죽는 순간 경고 표시를
+        /// 치우고 콜라이더를 꺼서(레이저·유도 대상 고르기가 시체를 겨누지 않게) **붙잡고 있던 대상은 즉시
+        /// 풀어준다**(죽는 순간까지 잡혀 있으면 영구히 안 풀리는 버그를 막기 위해 — OnDisable을 기다리지 않는다).
+        /// </summary>
+        public void PlayDeathAndDestroy()
+        {
+            if (grabWarning != null) grabWarning.gameObject.SetActive(false);
+            if (sweepWarning != null) sweepWarning.gameObject.SetActive(false);
+            ReleaseGrabbedTarget();
+            foreach (var c in GetComponents<Collider2D>()) c.enabled = false;
+            StartCoroutine(DeathSequence());
+        }
+
+        System.Collections.IEnumerator DeathSequence()
+        {
+            int n = deathArt != null ? deathArt.Count : 0;
+            float step = deathArt != null && deathArt.fps > 0f ? 1f / deathArt.fps : 0.125f;
+            for (int i = 0; i < n; i++)
+            {
+                if (body != null && deathArt.frames[i] != null) body.sprite = deathArt.frames[i];
+                yield return new WaitForSeconds(step);
+            }
+            Destroy(gameObject);
         }
 
         // ───────────────────────── 공통 ─────────────────────────

@@ -85,6 +85,11 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    바로 입장`으로 들어가 이제 진짜 그림이 보이는지(세모가 아닌지), 자세마다 그림이 바뀌는지·체력바에
    "부서진 여신상" 이름이 뜨는지·잡기·휘두르기 흔들림이 느껴지는지 확인.
 
+8. **(137, 신규) 캐릭터 그림 축소(0.75→0.375) — `ChronoSavior/캐릭터 애니메이션 연결` 메뉴를 반드시 먼저
+   돌릴 것** — 안 돌리면 발이 판정 원 바닥보다 떠 보이는 비주얼 버그가 난다(이유는 로그 (137) 참고).
+   돌린 뒤 `DotScaleTests.Characters_AreDrawnAtDotScale`·`CharacterSprite_FeetSitOnTheGround`가 여전히
+   실패할 텐데, 의도된 결과인지(캐릭터만 도트 배율 1로 예외) 팀 확인 필요.
+
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
 > **✅ 2026-11-17 캐릭터 애니메이션은 코드 플립북이다(Animator 없음)** — 몸 그림은 `Characters/CharacterFlipbook`(씬의 Player·로비 아바타에 배치)이 넘기고,
@@ -299,6 +304,64 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-18 (137)** — **[나] 캐릭터 그림 높이 축소 0.75 → 0.375 — 사용자 직접 요청**("캐릭터 배율좀 줄이고싶은데").
+  - **수정 — `Assets/Data/Characters/CharacterArtSet.asset`**: `heights`의 마법사·메카닉·섬영(0~2번 칸,
+    `chara_temp_01` 공유 32×48px·PPU128 스프라이트) 0.75 → 0.375. 0.375유닛 = 48÷128로 그림 원본 픽셀
+    크기 그대로라 도트 배율이 정수 **1**이 된다(이전 0.75는 `Core.DotScale.Value`와 맞춘 배율 **2**). 사용자가
+    고른 선택지는 "그림만 줄이기"(판정은 그대로) — `Core/EntitySizeConfig.PlayerHeight`(0.5)는 손대지 않았다.
+    드루이드(3번 칸, 1.0, `char_druid.png`)는 기획 제외 캐릭터라 건드리지 않음.
+  - ⚠️ **이 값 하나만 바꾸면 두 가지가 깨진다** — 다음에 에디터 연 사람이 꼭 처리할 것:
+    1. `Tests/PlayMode/World/DotScaleTests.Characters_AreDrawnAtDotScale`가 실패한다(이제 도트 배율이
+       `Core.DotScale.Value`(2)와 달라서 — 의도된 결과이니 이 테스트 쪽을 캐릭터만 예외로 둘지, 아니면
+       그대로 실패를 받아들일지는 팀 결정 필요).
+    2. `Tests/PlayMode/World/DotScaleTests.CharacterSprite_FeetSitOnTheGround`도 같이 깨진다 —
+       스프라이트의 `pivot.y`는 **고정값**이고 `pivotFromBottom = pivot.y/rect.height × HeightOf(id)`라
+       `HeightOf`가 반으로 줄면 이 값도 반으로 줄어 판정 반지름(0.25)과 어긋난다. **즉 `heights`만 고치고
+       pivot을 안 맞추면 캐릭터 발이 판정 원 바닥보다 위(공중에 뜬 것처럼) 보이는 실제 비주얼 버그가
+       난다.** 로그 (134)가 0.5→0.75로 바꿨을 때도 "발 기준점은 `BuildCharacterFlipbooks`가 다시 계산"
+       했다고 적혀 있다 — 즉 **`heights`를 바꾼 뒤엔 항상 메뉴 `ChronoSavior/캐릭터 애니메이션 연결`
+       (`Editor/BuildCharacterFlipbooks.cs`)을 한 번 더 돌려서 pivot을 새 높이에 맞게 재계산해야 한다.**
+       이 세션은 에디터 접근이 없어 그 메뉴를 돌릴 수 없으므로, **다음에 에디터를 연 사람이 반드시
+       이 메뉴를 먼저 돌리고 나서 플레이로 확인할 것** — 안 돌리면 발이 뜬 채로 보일 것이다.
+  - **이 커밋 직전 실수 기록**: 이번 턴 초반에 이 세션이 훨씨 전에 받아둔(새로 안 받은) 캐시 파일만 보고
+    "그림 높이가 아직 0.5고 애니메이션도 코드 플립북으로 전환 안 됐다"고 사용자에게 **잘못 보고**했다 —
+    기기에서 파일을 다시 받아보니 실제로는 (132)~(134)가 전부 반영돼 있었다(`CharacterFlipbook.cs` 존재,
+    `CharacterArtSet.animSets` 필드 존재, 높이 0.75). 바로 정정함. **디바이스 브리지로 받아둔 파일은
+    그 순간의 스냅샷일 뿐이라 — 같은 파일을 다시 쓰기 전엔 항상 새로 `device_stage_files`로 받아서
+    확인해야 한다**(이 세션이 git commit을 못 해서 생기는 위험과는 다른 종류의 함정이니 구분할 것).
+  - 컴파일·플레이 확인 전부 **이 세션은 에디터 접근이 없어 못 했다.**
+
+- **2026-11-18 (136)** — **[나] 보스는 이동 제한 디버프(끌어당김·스턴 등)에 면역 — 사용자 직접 요청**
+  ("보스들은 중력법사의 중력장같은 끌어오기나 스턴등의 이동이 제한되는 효과는 안받게 하고싶은데").
+  - **새 파일 — `Core/ICrowdControlImmune.cs`**: 멤버 없는 마커 인터페이스, `Core/IGrabExempt.cs`와
+    정확히 같은 자리·같은 이유(`Combat`(1층)이 `Enemies`(2층)의 구체 보스 타입을 몰라도 "이동 제한
+    면역인가"만 물을 수 있게). **일부러 "중력장 면제"가 아니라 "이동 제한 전체" 면역으로 넓게 이름
+    지었다** — 지금 실제로 막는 효과는 끌어당김 하나뿐이지만, 나중에 스턴/속박류가 생기면 그 효과도
+    같은 인터페이스를 봐야 한다는 뜻을 이름에 남겨 두기 위해서다.
+  - **수정 — `Enemies/Boss.cs`·`Enemies/BlobLordBoss.cs`·`Enemies/BrokenGoddessBoss.cs`**: 셋 다
+    인터페이스 목록에 `ICrowdControlImmune` 추가(지금 있는 보스 전부 — 멤버 없는 마커라 추가 구현
+    코드는 필요 없다).
+  - **수정 — `Combat/GravityWellZone.cs`**: `Update()`의 끌어당김 적용부
+    (`pullable.ApplyGravityWellPull(...)`) 앞에 `col.GetComponent<ICrowdControlImmune>() == null`
+    검사를 추가 — **피해성 효과(틱 피해·중력 노출/취약)는 그대로 둔다**: 이동을 제한하는 게 아니라
+    피해를 주는 효과라 사용자가 말한 범위("이동이 제한되는 효과") 밖이라고 판단했다. 기존 주석
+    ("끌어당김·틱 피해와 달리... 보스 예외 없음")도 이제 끌어당김에 실제로 보스 예외가 생겨서 틀린
+    말이 됐길래 같이 고쳤다.
+  - **스턴 자체는 아직 게임에 없다** — 전체 검색으로 확인(2026-11-18). `ICrowdControlImmune`의 주석에
+    "나중에 스턴/속박류가 생기면 반드시 이 인터페이스로 보스를 걸러야 한다"고 남겨 뒀다 — 지금 당장
+    고칠 코드는 없다(원본 또한 이런 보스 면역 규칙이 명시돼 있던 건 아니라서 "확인 필요"로 `HANDOFF.md`에
+    남김 — 팀장이 원본과 다르게 간 걸 알아야 한다는 `CLAUDE.md` 작업 규칙 첫 항목).
+  - **새 테스트 — `Tests/PlayMode/Combat/GravityWellZoneTests.Pull_SkipsCrowdControlImmuneTargets_ButStillPullsNormalEnemies`**:
+    중력점 하나를 세우고 일반 몹(`EnemyMove`만)과 면역 더미(`EnemyMove` + 테스트 전용 `ICrowdControlImmune`
+    구현)를 같은 거리에 두고 몇 프레임 돌려서, **일반 몹은 끌려오고 면역 대상은 안 끌려오는지 둘 다**
+    확인한다(필터가 전부를 막아 버리는 실수를 같이 잡기 위해 둘 다 검증). 테스트 대상의 `moveSpeed`를
+    0으로 둬서 기본 배회 AI의 자체 이동과 끌어당김에 의한 이동이 섞이지 않게 분리했다. `EnemyMove`
+    요구사항(`SetSpawnProtection`은 `Awake` 이후에 불러야 기본 2초 보호를 덮어쓸 수 있다는 점)은
+    "추가 1"에서 찾은 `NewBoss` 헬퍼 함정과 같은 이유로 비활성 오브젝트에 전부 붙인 뒤 켜는 순서를 썼다.
+  - 이 세션은 에디터 접근이 없어 **컴파일·새 테스트 실행·전체 재실행을 전혀 확인 못 했다** — 다음에
+    에디터 연 사람이 확인할 것. 끌어당김 말고 넉백(피격 밀림)도 "이동 제한"으로 볼지는 사용자가
+    언급하지 않아서 손대지 않았다 — 필요하면 알려달라고 할 것(`HANDOFF.md` "확인 필요" 참고).
 
 > **병합 메모(2026-11-18, 번호 충돌 해결)**: 아래 (135)는 `labo3` 로컬에서는 (128)로 쓰여 있었으나, 그사이 `main`이
 > (128)~(134)를 다른 내용(플립북 전환·몹 그림·공격 중 이동 잠금 등)으로 이미 채워 넣어서 **(135)로 재번호**했다 —
@@ -542,6 +605,32 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
       참조(다른 에셋이 가리키는 fileID)를 추가할 때는, 그 fileID가 참조 대상 파일 안에 실제로 존재하는
       그 값인지 대조하는 걸 앞으로 빠뜨리지 말 것** — guid만 맞고 fileID가 틀려도 Unity는 에러를 내지
       않고 조용히 null로 넘어가므로, 눈으로 보지 않으면 영원히 모를 수 있는 종류의 실수다.
+  - **2026-11-18 추가 10(좌우 반전 수정을 커밋한 직후, 사용자가 컴파일 에러 스크린샷 — `BrokenGoddessBoss`에
+    `IdleArt`/`MoveArt`/`GrabArt`/`SweepArt`/`HitArt`/`DeathArt`·`PlayDeathAndDestroy`가 없다는 CS1061
+    7건)**: "Assets → Refresh"로도 안 없어진다고 해서 디바이스에서 `BrokenGoddessBoss.cs`를 다시 끌어와
+    보니 — **"추가 7"(그림/애니메이션)과 "추가 9"(좌우 반전 수정) 두 커밋이 전부 사라지고 그 이전
+    ("추가 6", 잡기 무적 버그 수정 직후) 상태로 돌아가 있었다.** 파일 크기(35728→25054바이트)·클래스
+    인터페이스 목록(`IDeathAnimated` 빠짐)·`VisualSize`(임시값 1.30×1.50로 복귀)로 명백히 확인.
+    `BrokenGoddessBossTests.cs`·`RegionConfig.cs`·`MonsterCatalog.asset`·프리팹은 전부 그대로였다 —
+    **이 파일 하나만** 되돌아갔다(원인은 특정 못 함 — 유력한 설명: **이 세션의 모든 디바이스 브리지
+    글쓰기는 git 커밋이 아니라 디스크에 바이트를 직접 쓰는 것뿐이라서**, 이 세션은 `device_bash`
+    (기기 셸)가 없어 git add/commit을 한 번도 못 했다 — 그 상태에서 이 파일에 대해 git이 작업 트리를
+    되돌리는 어떤 조작이든(`git checkout -- <파일>`, IDE의 "되돌리기", `git stash`, 브랜치 전환 등)
+    일어났다면 커밋 안 된 수정은 조용히 사라지고 git에 실제로 들어 있던 예전 버전만 남는다 — 바로 그
+    증상). **복구**: "추가 7"·"추가 9"의 변경을 처음부터 다시 적용했다 — 이번엔 단순 재현이 아니라
+    `BlobLordBoss.cs`(완전한 실제 동작 코드, 지금 이 세션이 전체를 다시 읽을 수 있었다)를 그대로 본떠
+    `UpdateBodySprite`/`GrabSprite`/`SweepSprite`/`At`/`PlayDeathAndDestroy`/`DeathSequence`/
+    `OnEnable`·`OnDisable`(`CombatEvents.EnemyDamaged` 구독)/`LateUpdate`/`HandleDamaged`를 다시 짜고,
+    좌우 반전 수정(`flipX = dir >= 0`)과 `HitFeel.Shake` 액센트 흔들림(잡기 8/0.2, 휘두르기 6/0.18)도
+    같이 복원해 커밋했다. **다음에 에디터 연 사람이 꼭 확인할 것**: (a) 컴파일 에러가 진짜로 없는지
+    (이번 복구는 BlobLord 패턴을 그대로 본떴지만 전체를 처음부터 다시 쓴 것이라 오탈자 위험이 전보다
+    큼), (b) `BodyArt_IsWiredOnThePrefab`·`Death_TurnsCollidersOff_WhileDeathArtPlays`·
+    `Death_ReleasesGrabbedTargetImmediately` 포함 전체 재실행. **더 중요한 것 — 재발 방지**: 이
+    세션은 git 커밋을 할 수 없으니(`device_bash` 없음), **이 작업을 받는 사람이 지금 바로
+    `git add -A && git commit`을 해야 한다** — 안 그러면 다음에 비슷한 git 조작(브랜치 전환·pull·
+    IDE 되돌리기 등) 한 번에 오늘 복구한 것까지 통째로 다시 날아간다. `git status`로 지금 작업 트리에
+    뭐가 커밋 안 돼 있는지부터 확인할 것(이 세션이 이번 대화에서 디스크에 쓴 파일 전부 — `BrokenGoddessBoss.cs`·
+    `MonsterCatalog.asset`·`PROGRESS.md`·`HANDOFF.md` 등).
   - **2026-11-18 추가 9(위 수정 뒤 사용자가 "여신상 좌우가 반전된건같은데")**: 그림은 제대로 뜨는데
     방향이 거꾸로 — `IdleApproach`·`LockFacing`의 `body.flipX` 세 군데가 전부 `BlobLordBoss`의
     "그림은 오른쪽을 본다"(`flipX = dir < 0`) 관례를 그대로 복사해 썼는데, 실제 그림을 직접 열어

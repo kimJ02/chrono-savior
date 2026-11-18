@@ -25,7 +25,8 @@ namespace ChronoSavior.World
     {
         public const int BackgroundOrder = -100;
         public const int GroundOrder = -5;
-        public const int GroundRows = 3;
+        /// <summary>땅 줄 수 — 타일이 0.25유닛(도트 1, PPU 128)이라 6줄 = 깊이 1.5유닛(예전 0.5유닛 타일 3줄과 같은 깊이, 2026-11-18).</summary>
+        public const int GroundRows = 6;
 
         [Tooltip("이 스테이지의 그림 묶음(Assets/Data/Stages/) — 땅·발판·배경·포탈 그림과 그 그림에 딸린 배율·범위.")]
         [SerializeField] StageArtSet art;
@@ -92,7 +93,7 @@ namespace ChronoSavior.World
             float width = col.size.x * Mathf.Abs(ground.transform.lossyScale.x);
             float centerX = ground.transform.TransformPoint(col.offset).x;
             float surface = Core.FieldBounds.GroundY;
-            float tile = top.bounds.size.y; // 0.5유닛(32px 원본, 픽셀/유닛 64)
+            float tile = top.bounds.size.y; // 0.25유닛(32px 원본, 픽셀/유닛 128 = 도트 1)
 
             var root = new GameObject("GroundTiles").transform;
             root.SetParent(transform, false);
