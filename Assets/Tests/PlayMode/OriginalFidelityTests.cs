@@ -424,6 +424,7 @@ public class OriginalFidelityTests
             ("ShowCustom",                 "GroundWarning.cs"),    // BrokenGoddessBoss(잡기 사각·휘두르기 부채꼴 경고)
             ("DotShapes.Rect",             "DotShapes.cs"),        // BrokenGoddessBoss.BeginGrabWarn(이름이 흔해 클래스까지 적는다)
             ("DotShapes.Wedge",            "DotShapes.cs"),        // BrokenGoddessBoss.BeginSweepWarn
+            ("TakeDamageIgnoringInvuln",   "IDamageable.cs"),      // BrokenGoddessBoss.FinishGrab이 호출, PlayerHealth.cs가 오버라이드(2026-11-18 무적 무시 버그 수정)
         };
 
         var scriptFiles = Directory.GetFiles(

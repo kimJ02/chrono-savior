@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_BrokenGoddess_Death
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: d74a7e0f182b2ea4787b355e29b897bc, type: 3}
+  - {fileID: 21300000, guid: f523453b7fe6aa34190e2510b42f13fb, type: 3}
+  - {fileID: 21300000, guid: 533ff7c6f0119b74c8d04ec0caca6cbd, type: 3}
+  - {fileID: 21300000, guid: 5b9e41d35c6c13a4a9464dbb28c2f887, type: 3}
+  - {fileID: 21300000, guid: f5878ecc84336ca4ba70e122988db61e, type: 3}
+  - {fileID: 21300000, guid: d5ce94fadc7eee843b8cea1032e13260, type: 3}
+  - {fileID: 21300000, guid: f71f4493679aac2459b57c598eef5b29, type: 3}
+  - {fileID: 21300000, guid: b6dd5946bb27e914e8b698fc5e009597, type: 3}
+  fps: 8
+  loop: 0

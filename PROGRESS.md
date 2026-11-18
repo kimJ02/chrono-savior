@@ -75,7 +75,15 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
    항목 등록~~ → **2026-11-18 완료** — `Assets/Data/Enemies/MonsterCatalog.asset`에 `region: 2` 항목을 1지역 항목과
    같은 형식(`{fileID: <새 프리팹의 stripped 루트 GameObject fileID>, guid: <새 prefab.meta의 guid>, type: 3}`)으로
    직접 추가. ④ 실제 플레이로 잡기·휘두르기 둘 다 눈으로 확인(경고 모양·플레이어 붙잡힘·보스 중간 파괴 시
-   영구 미해제 버그 여부) — **아직 미완료, 이 세션은 플레이 자체를 할 수 없음.**
+   영구 미해제 버그 여부) — **아직 미완료, 이 세션은 플레이 자체를 할 수 없음.** ⑤ **(2026-11-18 "여신상
+   완성" — 그림/애니메이션·보스 체력바·타격감, 로그 "추가 7") 메뉴 `ChronoSavior/보스 그림 연결/부서진
+   여신상`을 돌려서 그림을 실제로 연결할 것** → **사용자가 돌리고 Play도 재시작했는데 여전히 세모로
+   보이는 별도 버그가 있었다 — 2026-11-18 "추가 8"에서 진단·수정 완료.** 원인은 메뉴가 아니라
+   `MonsterCatalog.asset`의 `region: 2` 항목이 가리키는 `prefab.fileID`가 (추가 3·4에서 손으로 쓴
+   값이 실제 프리팹의 stripped 루트 id와 어긋나 있어서) 깨진 참조였던 것 — 수정해서 커밋 완료.
+   ⑥ **다음에 에디터를 연 사람이 가장 먼저 확인할 것**: `ChronoSavior/보스전 테스트/2지역 보스전
+   바로 입장`으로 들어가 이제 진짜 그림이 보이는지(세모가 아닌지), 자세마다 그림이 바뀌는지·체력바에
+   "부서진 여신상" 이름이 뜨는지·잡기·휘두르기 흔들림이 느껴지는지 확인.
 
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
 
@@ -415,6 +423,137 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
     같이 깨져 있었다. 범위 안의 새 값(`6017654334565820054`, int64 최댓값 미만)으로 두 파일 다 맞춰
     고쳤다. **다음부터 비슷한 fileID를 무작위 생성할 땐 `random.randint(10**18, 9223372036854775807)`처럼
     상한을 int64 최댓값으로 명시할 것** — 19자리 숫자라고 다 안전한 게 아니다.
+  - **2026-11-18 추가 5(사용자가 실제 플레이로 발견 — "잡기에 데미지가 없나?")**: 잡기는 성공해서
+    끌려오고 풀려나기까지 멀쩡해 보였지만, 끝날 때 줘야 할 피해(최대체력 20%)가 가끔 안 들어갔다 —
+    **코드 버그가 아니라 설계상 빠진 부분**이었다. `PlayerHealth.TakeDamage`는 원본 그대로
+    `if (p.invuln > 0) return;`(맞은 뒤 0.9초 무적, 연타 방지용)를 지키는데, 잡기는 끌어당기기(0.5초)
+    +붙잡아둠(0.2초) = **0.7초**가 걸려서 그 0.9초 무적 창과 겹칠 수 있는 타이밍이다 — 근처 다른
+    몹에게 막 맞아서 무적이 돌고 있는 채로 잡히면, `FinishGrab()`이 주는 피해가 그 무적에 조용히
+    씹혔다(잡기 자체의 성공/실패와는 무관 — 붙잡기는 됐는데 피해만 안 들어가는 상태). 명세서·요청서
+    둘 다 이 상호작용을 언급하지 않아서 처음엔 안 다뤘던 부분.
+    - **고친 법**: `Core/IDamageable.cs`에 기본 구현이 있는 새 메서드 `TakeDamageIgnoringInvuln(amount, source)`
+      추가(기존 `TakeTickDamage`와 같은 "기본은 `TakeDamage`로 위임, 필요한 구현체만 오버라이드" 패턴) —
+      무적 개념이 없는 구현체(`EnemyHealth` 등)는 아무것도 안 바꿔도 된다. `Characters/PlayerHealth.cs`는
+      기존 `TakeDamage`를 `ApplyDamage(amount, source, ignoreInvuln)` 공용 메서드로 쪼개고, 새 메서드가
+      `ignoreInvuln: true`로 그 검사 한 줄만 건너뛰게 오버라이드(넉백·히트필·부활 등 나머지는 전부 동일).
+      `Enemies/BrokenGoddessBoss.FinishGrab()`만 `TakeDamage` 대신 `TakeDamageIgnoringInvuln`을 부르도록
+      바꿨다 — **휘두르기(Sweep)는 그대로 일반 `TakeDamage`**(판정 순간 즉시 1회라 이 문제가 없다,
+      바꿀 이유 없음). `Tests/PlayMode/OriginalFidelityTests.cs`의 `mustBeWired`에도 등록(cross-file API).
+    - **새 테스트 — `Grab_DamageIgnoresPlayerInvulnerability`**: `Dummy` 대신 실제 `PlayerHealth`를 붙여서
+      잡기 시작 전에 `GrantInvuln(999f)`로 긴 무적을 미리 걸어 두고도 끝날 때 체력이 깎이는지 확인.
+      원래 걸려 있던 무적 자체를 지우는 게 아니라 "이번 피해에서만 그 검사를 건너뛴다"는 것도 같이
+      확인(`InvulnRemaining`이 여전히 0보다 큰지).
+    - 이 세션은 에디터 접근이 없어 컴파일·테스트 실행을 직접 확인 못 했다 — **다음에 에디터 연 사람이
+      새 테스트 포함 전체 재실행으로 확인할 것.**
+  - **2026-11-18 추가 6(사용자 요청 — 기기 바꿔가며 git으로 동기화하는 중이라 매번 처음부터 플레이해서
+    확인하기 번거롭다, 바로 위 수정을 직접 플레이로 확인하기 위함)**: 새 에디터 메뉴
+    `Assets/Editor/BossFieldTestMenu.cs`(`ChronoSavior/보스전 테스트/…`) 추가 — 지역 토벌 100마리를
+    매번 다시 하지 않고 Play 중 메뉴 클릭 한 번으로 **그 지역 보스전에 바로 입장**한다(1·2지역, 보스
+    전용 스크립트가 있는 지역만). `Systems/EnemySpawner.cs`에 이미 "평소엔 안 타지만 `StartRun(region,
+    RunMode.Boss)`로 바로 보스전을 여는 경로(테스트 등)를 쓸 수 있다"고 적혀 있던 경로를 그대로
+    쓴 것 — `GameFlow.StartRun(region, RunMode.Boss, …, spendDay: false)`를 직접 부른다.
+    - **세이브를 안 건드린다**: 토벌 수·보스 해금 여부는 `StageSelectScreen`(로비 UI) 쪽에만 있는
+      검사라 `StartRun`/`CombatDirector.BeginField` 자체엔 아예 없다 — 그래서 진행 상태를 전혀 어지르지
+      않고 곧바로 들어갔다 나올 수 있다. `spendDay: false`로 멸망까지 남은 날도 안 깎인다(에디터
+      디버그 진입과 같은 값, `GameFlow.cs:101`).
+    - `MechanicTestMenu.cs`와 똑같은 근거로 CLAUDE.md의 "원본에 없던 디버그 키 금지"에 해당하지
+      않는다 — 그건 **게임 안 입력**(R 부활 등) 얘기고, 빌드에 안 들어가는 에디터 메뉴는 별개다.
+    - 사용법: Play를 누른 뒤(타이틀·로비·결과 화면 등 아무 데서나) 메뉴에서 "2지역 보스전 바로 입장
+      (부서진 여신상)"을 누르면 즉시 2지역 보스방으로 들어간다. 이걸로 위 "추가 5" 수정(잡기 무적
+      버그)이 실제로 고쳐졌는지 눈으로 바로 확인할 수 있다.
+    - 이 세션은 에디터 접근이 없어 메뉴가 실제로 Unity에서 뜨는지·눌렀을 때 정말 들어가는지 확인 못
+      했다 — **다음에 에디터 연 사람이 먼저 한 번 눌러서 확인할 것.**
+  - **2026-11-18 추가 7(사용자 "잘되네 이제 여신상 완성을 하고싶은데" — AskUserQuestion으로 범위 확정:
+    그림/애니메이션 교체·보스 체력바 UI 연결·타격감(사운드+카메라 흔들림). 선택 안 한 2가지(회피
+    무적 중 잡기 실패 처리, 돌 조각 디버그 VFX)는 이번에도 안 함)**: 사용자가 실제 스프라이트(대기 4·
+    이동 4·잡기 7·휘두르기 5·피격 1·사망 8장, 전부 높이 64px — 대기/이동/피격/사망은 80px 폭, 잡기/
+    휘두르기는 100px 폭)를 올려서 바로 `Enemies/BrokenGoddessBoss.cs`에 반영했다. 요청서 1절의
+    "애니메이션 구현하지 마"는 **그때 정식 아트가 없던 시점의 범위 제한**이었다고 판단하고(그림이
+    없는데 애니메이션을 만들 수 없었을 뿐, 지금 사용자가 "완성해달라" 요청과 함께 그림까지 올린
+    것으로 그 제한은 해소됐다고 해석) 머리 주석에 그 경위를 그대로 남겼다 — 다르게 보일 경우를 위해
+    여기 명시한다.
+    - **그림/애니메이션**: 1지역 `BlobLordBoss`와 똑같은 패턴(Animator 미사용, 상태머신이 직접
+      `SpriteRenderer.sprite`를 고른다) — `idleArt`/`moveArt`/`grabArt`/`sweepArt`/`hitArt`/`deathArt`
+      6개 `SpriteFlipbook` 칸 + get/set 프로퍼티 추가. 대기·이동은 시간 기반 되풀이(`FrameAt`), 잡기·
+      휘두르기는 BlobLord의 튀어오르기·투척처럼 **상태 진행도로 몇 번째 장인지 직접 계산**(fps 안 씀) —
+      잡기 7장을 준비1·경고1·팔뻗기1·끌어당기기3·붙잡아둠1로, 휘두르기 5장을 준비1·경고2·판정2로
+      나눴다(끌어당기기가 가장 길고 역동적인 구간이라 세 장을 줌 — 정확한 장면 배분은 "확인 필요",
+      `HANDOFF.md`). 피격은 `CombatEvents.EnemyDamaged` 구독(BlobLord의 `HandleDamaged`와 동일)으로
+      0.15초 최우선 표시. 사망은 `IDeathAnimated.PlayDeathAndDestroy()`를 새로 구현(BlobLord와 동일한
+      코루틴 패턴) — 콜라이더를 끄고 붙잡은 대상을 풀어준 뒤 8장을 재생하고 Destroy.
+    - **`VisualSize` 보정**: 그림 들어오기 전 임시 크기(1.30×1.50, 공통 보스 수치)는 세로는 그대로 두고
+      가로만 실제 그림 비율(80:64 = 1.25)에 맞춰 1.875로 고쳤다(세로를 유지해 기존 공통 보스 체감 크기를
+      거의 그대로 두면서 가로만 늘여 그림이 안 눌리게) — `HitRadius`도 같은 비율로 0.65→0.75.
+    - **에셋 임포트는 에디터 메뉴에 맡겼다**: PNG 29장은 디바이스 브리지로 `Assets/Resources/Art/Enemies/
+      BrokenGoddess/`에 이미 옮겨 놨지만(파일명 `Enemy_BrokenGoddess_<동작>_NN.png`), 이 세션은 Unity
+      에디터가 없어 Sprite 임포트 설정(PPU·Point 필터)·`SpriteFlipbook` 에셋 생성·프리팹 필드 연결을
+      직접 할 수 없다 — 새 파일 **`Assets/Editor/BuildBrokenGoddessArt.cs`**(메뉴 `ChronoSavior/보스
+      그림 연결/부서진 여신상`, `Editor/BuildEnemySkins.BuildBossArt`와 같은 패턴)가 그걸 전부 한다.
+      **다음에 에디터를 연 사람이 반드시 이 메뉴를 한 번 돌려야** 그림이 실제로 보인다 — 돌리기 전엔
+      프리팹이 기본 도형 그림 그대로다.
+    - **보스 체력바 UI**: 따로 만들 게 없었다 — `CombatHud`의 보스 체력바는 `EnemyHealth.isBoss`(이미
+      이 프리팹에 1로 설정돼 있었다, 2026-11-17에 확인됨) 하나로 이미 범용으로 동작한다. 다만 이름
+      표시(`RegionConfig.BossNameOf`)가 2지역엔 비어 있어 그냥 "보스"로만 뜨고 있던 것을 확인하고
+      `RegionConfig.BossNames[1] = "부서진 여신상"`으로 채웠다(1지역 "덩어리 지배자"와 같은 방식).
+    - **타격감**: 피해가 들어가는 매 순간은 이미 `PlayerHealth.ApplyDamage`가 `HitFeel.PlayerHurt()`
+      (붉어짐 0.35+흔들림 7/0.22)와 사운드(`SfxEvents.RaisePlayerDamaged`)를 공통으로 걸고 있어서(잡기·
+      휘두르기 둘 다 그 경로를 그대로 탄다) 보스별로 새로 만들 게 없었다 — `BlobLordBoss`도 같은 이유로
+      `SfxEvents` 호출이 하나도 없다(전부 공통 경로). 대신 BlobLord의 착지 흔들림(12/0.3)·투척 흔들림
+      (5/0.15)처럼, **그 순간을 더 강조하는 여분의 흔들림**만 추가했다 — 잡기 성공(스냇치) 순간
+      `HitFeel.Shake(8f, 0.2f)`, 휘두르기 명중 순간 `HitFeel.Shake(6f, 0.18f)`(둘 다 PlayerHurt 기본값
+      위로 덮어쓴다 — `HitFeel.Shake`는 기존·신규 중 큰 쪽을 택한다). **이 두 수치는 임의로 고른 값이다
+      — "확인 필요"**(`HANDOFF.md`).
+    - **테스트**: `Tests/PlayMode/Enemies/BrokenGoddessBossTests.cs`에 `BodyArt_IsWiredOnThePrefab`(BlobLord와
+      같은 패턴 — **메뉴를 돌리기 전까진 실패하는 게 정상**, 프리팹 칸이 비어 있어서)·
+      `Death_TurnsCollidersOff_WhileDeathArtPlays`·`Death_ReleasesGrabbedTargetImmediately`(둘 다 그림
+      유무와 무관하게 지금 바로 통과해야 하는 로직) 3개 추가.
+    - 이 세션은 에디터 접근이 없어 **컴파일·`BuildBrokenGoddessArt` 메뉴 실행·전체 테스트 재실행을 전부
+      확인 못 했다** — 다음에 에디터 연 사람이: (a) 컴파일 에러 없는지, (b) 메뉴 `ChronoSavior/보스 그림
+      연결/부서진 여신상` 실행, (c) 전체 PlayMode 재실행(`BodyArt_IsWiredOnThePrefab` 포함 전부 통과하는지),
+      (d) `ChronoSavior/보스전 테스트/2지역 보스전 바로 입장`으로 직접 들어가서 그림이 자세마다 바뀌는지·
+      보스 체력바에 "부서진 여신상" 이름이 뜨는지·잡기·휘두르기 흔들림이 느껴지는지 눈으로 확인할 것.
+  - **2026-11-18 추가 8(사용자가 메뉴를 실제로 돌리고 Play도 재시작했는데 "보스 세모로 보이는데" —
+    메뉴 실행 자체와 무관한 별도 버그를 발견·수정)**: `AskUserQuestion`으로 "메뉴를 실제로 돌렸는지"·
+    "Play 재시작했는지"·"콘솔에 뜬 메시지"를 하나씩 확인해서 **메뉴 미실행·Play 세션이 오래됐을
+    가능성을 먼저 배제**했다(사용자: "연결한건데", "네 Play를 멈추고 다시 시작함", "'그림 연결 끝'
+    성공 메시지만 뜸" — 경고·에러 전혀 없음). 그래서 디바이스 브리지로 프리팹·플립북 에셋·카탈로그를
+    직접 읽어 대조했다:
+    - `Enemy_BrokenGoddess.prefab`을 읽어 보니 `BrokenGoddessBoss` 컴포넌트의 `idleArt`/`moveArt`/
+      `grabArt`/`sweepArt`/`hitArt`/`deathArt` 6개와 `m_Sprite` 오버라이드 전부 **멀쩡히 연결돼 있었다**
+      (guid가 실제 `Flipbook_BrokenGoddess_*.asset`·그 첫 프레임 스프라이트와 정확히 일치, `Enemy_BlobLord.prefab`과
+      똑같은 `type: 2` 참조 패턴) — **메뉴는 제대로 일했다. 그림 연결 자체는 문제가 아니었다.**
+    - 진짜 원인은 "추가 3"에서 **에디터 없이 손으로 쓴 `MonsterCatalog.asset`의 `regionBosses[region: 2].prefab`
+      참조**였다 — `guid`는 맞는데(`Enemy_BrokenGoddess.prefab.meta`와 일치) **`fileID`가 틀렸다**
+      (`9589630643815358719`, "추가 4"에서 int64 오버플로를 고치며 새로 지어낸 값인데, 그 값을 실제
+      프리팹 파일의 stripped 루트 GameObject id(`8822927722436127948`)로 맞춰 쓰는 걸 빠뜨렸다). 1지역
+      항목(`region: 1`)은 `Enemy_BlobLord.prefab`의 실제 stripped 루트 id(`7103290951828203443`)와
+      정확히 일치해서 문제없었는데, 2지역 항목만 이 대조를 안 거친 상태로 남아 있었던 것 — **존재하지
+      않는 fileID를 가리키는 참조라 Unity가 조용히 null로 처리**하고, 그 null을 쓰는 스폰 경로가 바로
+      일반 보스 placeholder(`MonsterCatalog.bossPrefab`, 세모 도형)로 떨어진 것으로 보인다(에러·경고가
+      안 뜨는 이유 — null 오브젝트 참조 자체는 예외가 아니라 조용한 폴백이라서). `BuildBrokenGoddessArt`
+      메뉴는 프리팹 파일을 경로로 직접 여닫기 때문에 이 카탈로그 참조와 무관해 "메뉴는 성공, 그런데
+      스폰은 다른 프리팹"이라는 모순이 생겼던 것.
+    - **고친 법**: `MonsterCatalog.asset`의 `region: 2` 항목 `prefab.fileID`를 `9589630643815358719` →
+      `8822927722436127948`(실제 프리팹의 stripped 루트)로 한 줄만 수정. `guid`는 원래부터 맞았으므로
+      안 건드림.
+    - 이 세션은 여전히 에디터 접근이 없어 **수정 후 실제로 2지역 보스가 제대로 뜨는지 직접 확인 못
+      했다** — 다음에 사용자가 Play에서 `ChronoSavior/보스전 테스트/2지역 보스전 바로 입장`으로 들어가
+      부서진 여신상 그림이 실제로 보이는지부터 확인할 것. 또한 **이번처럼 손으로 쓴 YAML에서 외부
+      참조(다른 에셋이 가리키는 fileID)를 추가할 때는, 그 fileID가 참조 대상 파일 안에 실제로 존재하는
+      그 값인지 대조하는 걸 앞으로 빠뜨리지 말 것** — guid만 맞고 fileID가 틀려도 Unity는 에러를 내지
+      않고 조용히 null로 넘어가므로, 눈으로 보지 않으면 영원히 모를 수 있는 종류의 실수다.
+  - **2026-11-18 추가 9(위 수정 뒤 사용자가 "여신상 좌우가 반전된건같은데")**: 그림은 제대로 뜨는데
+    방향이 거꾸로 — `IdleApproach`·`LockFacing`의 `body.flipX` 세 군데가 전부 `BlobLordBoss`의
+    "그림은 오른쪽을 본다"(`flipX = dir < 0`) 관례를 그대로 복사해 썼는데, 실제 그림을 직접 열어
+    확인하지 않고 복사한 게 원인이었다. `Enemy_BrokenGoddess_Grab_03.png`·`Enemy_BrokenGoddess_Sweep_03.png`
+    (팔을 뻗고 휘두르는 중간 프레임, 방향이 가장 뚜렷하게 보임)를 디바이스 브리지로 직접 열어 보니
+    **그림은 왼쪽을 본다** — BlobLord와 정반대 기준이었다. 세 `flipX` 대입의 부등호를 전부 뒤집었다
+    (`dir < 0` → `dir >= 0` 등, `Enemies/BrokenGoddessBoss.cs`의 `IdleApproach` 두 곳 + `LockFacing`).
+    **교훈**: 다른 보스 코드를 틀로 베낄 때 "그림이 어느 쪽을 보는가" 같은, 코드만 봐서는 안 드러나고
+    그림을 직접 봐야 아는 전제는 그대로 복사하지 말고 매번 새로 확인할 것. 이 세션은 에디터가 없어
+    **실제 플레이로 방향이 맞게 도는지 확인 못 함** — 다음에 에디터 연 사람이 `ChronoSavior/보스전
+    테스트/2지역 보스전 바로 입장`에서 플레이어를 좌우로 오가며 보스가 그때그때 제대로 된 방향을
+    보는지(접근·잡기·휘두르기 전부) 확인할 것.
 
 - **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
   선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),

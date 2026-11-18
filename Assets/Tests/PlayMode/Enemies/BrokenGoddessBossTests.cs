@@ -13,14 +13,23 @@ namespace ChronoSavior.Tests.PlayMode
 /// 2지역 보스 부서진 여신상(`Enemies/BrokenGoddessBoss`, 사용자 2026-11-18 요청서) — CLAUDE.md "테스트"
 /// 규칙대로 Rigidbody2D/Collider2D가 얽힌 로직(잡기·휘두르기 판정)을 PlayMode에서 검증한다.
 ///
-/// **1지역 `BlobLordBossTests`와 달리 프리팹을 쓰지 않는다** — `Enemy_BrokenGoddess` 프리팹은 아직
-/// Unity 에디터에서 수동으로 만들어야 하는 상태(PROGRESS.md "확인 필요" 참고)라, 여기서는 핵심 보스
-/// 로직을 프리팹 없이도 검증할 수 있게 `AddComponent`로 직접 세운다. 프리팹이 만들어진 뒤엔
-/// `BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss`처럼 카탈로그 연결 테스트를
-/// 추가할 것.
+/// **핵심 패턴 로직(위 대부분의 테스트)은 1지역 `BlobLordBossTests`와 달리 프리팹을 쓰지 않는다** — 판정·
+/// 상태머신은 `AddComponent`로 직접 세운 보스로도 충분히 검증되고, 프리팹 의존을 줄이면 그만큼 빨리 돈다.
+/// `Enemy_BrokenGoddess` 프리팹 자체는 이미 있다(`isBoss` 표시·`warningPrefab` 연결 — 2026-11-17/18 커밋) —
+/// 다만 **몸 그림 연결은 에디터 메뉴(`ChronoSavior/보스 그림 연결/부서진 여신상`)를 돌려야** 반영된다
+/// (<see cref="BodyArt_IsWiredOnThePrefab"/>는 그 메뉴를 돌리기 전까진 실패하는 게 정상 — PROGRESS.md 참고).
 /// </summary>
 public class BrokenGoddessBossTests
 {
+    const string PrefabPath = "Assets/Prefabs/Enemies/Enemy_BrokenGoddess.prefab";
+
+    static GameObject LoadPrefab()
+    {
+        var p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+        Assert.IsNotNull(p, "부서진 여신상 프리팹이 없다: " + PrefabPath);
+        return p;
+    }
+
     /// <summary>맞는 쪽 — 플레이어 대신(붙잡기가 필요 없는 테스트용, 휘두르기 등).</summary>
     class Dummy : MonoBehaviour, IDamageable, IHealthView
     {
@@ -221,6 +230,39 @@ public class BrokenGoddessBossTests
         Assert.IsFalse(player.IsGrabbed, "애초에 붙잡히지 않았다");
     }
 
+    /// <summary>
+    /// 2026-11-18, 사용자가 실제 플레이로 발견: 잡기는 성공(끌려옴·풀려남)했는데 체력이 안 깎이는 것처럼
+    /// 보였던 버그 — 끌어당기기(0.5초)+붙잡아둠(0.2초) 동안 다른 몹에게 맞아 생긴 플레이어 무적(기본
+    /// 0.9초)이 아직 안 끝났으면 `PlayerHealth.TakeDamage`가 조용히 무시했다. 이 테스트는 `Dummy` 대신
+    /// 실제 `PlayerHealth`를 붙여서, 잡기 시작 전에 긴 무적을 미리 걸어 둬도 끝날 때 체력이 깎이는지
+    /// (= `TakeDamageIgnoringInvuln` 경로를 타는지) 확인한다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Grab_DamageIgnoresPlayerInvulnerability()
+    {
+        var go = new GameObject("TestGrabbablePlayerWithRealHealth", typeof(Rigidbody2D), typeof(CircleCollider2D));
+        go.tag = "Player";
+        go.transform.position = new Vector3(8f, 0f, 0f);
+        go.GetComponent<Rigidbody2D>().bodyType = RigidbodyType2D.Kinematic; // NewGrabbablePlayer와 같은 이유 — 이 테스트엔 발판이 없다
+        go.GetComponent<CircleCollider2D>().radius = 0.25f;
+        var mover = go.AddComponent<CharacterMover2D>();
+        var health = go.AddComponent<PlayerHealth>();
+
+        var boss = NewBoss(9f, go.transform);
+
+        // 근처 다른 몹에게 막 맞은 것처럼 — 테스트 전체 길이보다 긴 무적을 미리 걸어 둔다.
+        health.GrantInvuln(999f);
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabThrust || boss.CurrentState == BrokenGoddessBoss.State.SweepActive, 6f);
+        if (boss.CurrentState != BrokenGoddessBoss.State.GrabThrust)
+            yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabThrust, 8f); // 먼저 휘두르기가 골랐으면(무적이라 안 맞음) 잡기를 한 번 더 기다린다
+
+        float hpBefore = health.CurrentHp;
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
+        Assert.Less(health.CurrentHp, hpBefore, "플레이어가 무적 중이어도 잡기는 피해를 줘야 한다");
+        Assert.Greater(health.InvulnRemaining, 0f, "원래 걸려 있던 무적 자체를 없애는 게 아니다 — 무적 '검사'만 이 피해에서 건너뛴다");
+    }
+
     // ───────────────────────── 휘두르기 ─────────────────────────
 
     /// <summary>요청서 3절 — 경고 범위(전방 160도) 밖이면(보스 뒤로 빠짐) 안 맞는다. 범위 안이면 1회 피해(최대 체력 15%).</summary>
@@ -294,6 +336,63 @@ public class BrokenGoddessBossTests
 
         Assert.IsFalse(player.IsGrabbed, "보스가 꺼지면 즉시 풀려나야 한다");
         Assert.IsFalse(GameInput.PlayerGrabbed);
+    }
+
+    // ───────────────────────── 그림/애니메이션(2026-11-18) ─────────────────────────
+
+    /// <summary>
+    /// 몸 그림은 프리팹 칸의 에셋(BlobLordBossTests.BodyArt_IsWiredOnThePrefab과 같은 패턴). 동작별 장 수는
+    /// 실제로 받은 스프라이트 그대로(`BrokenGoddessBoss.cs` 헤더 주석). **메뉴
+    /// `ChronoSavior/보스 그림 연결/부서진 여신상`을 아직 안 돌렸다면 이 테스트는 실패하는 게 정상이다**
+    /// (이 세션은 Unity 에디터가 없어 그 메뉴를 대신 돌릴 수 없었다 — PROGRESS.md "확인 필요" 참고).
+    /// </summary>
+    [Test]
+    public void BodyArt_IsWiredOnThePrefab()
+    {
+        var boss = LoadPrefab().GetComponent<BrokenGoddessBoss>();
+        foreach (var (name, book, count) in new[]
+                 { ("대기", boss.IdleArt, 4), ("이동", boss.MoveArt, 4), ("잡기", boss.GrabArt, 7),
+                   ("휘두르기", boss.SweepArt, 5), ("피격", boss.HitArt, 1), ("사망", boss.DeathArt, 8) })
+        {
+            Assert.IsNotNull(book, name + " 칸이 비었다 — 메뉴 ChronoSavior/보스 그림 연결/부서진 여신상");
+            Assert.AreEqual(count, book.Count, name + " 장 수");
+            foreach (var f in book.frames) Assert.IsNotNull(f, name + " 빈 프레임");
+        }
+    }
+
+    /// <summary>
+    /// 사망 연출 동안 콜라이더를 끈다(BlobLordBoss.Death_TurnsCollidersOff_WhileDeathArtPlays와 같은 이유 —
+    /// 레이저·유도 대상 고르기가 시체를 겨누지 않게). 그림 에셋 유무와 무관하게 지금 바로 통과해야 한다
+    /// (deathArt가 비어 있어도 PlayDeathAndDestroy의 콜라이더 끄기 자체는 그림과 상관없는 로직).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Death_TurnsCollidersOff_WhileDeathArtPlays()
+    {
+        var boss = NewBoss(10f, null);
+        Assert.IsTrue(System.Array.TrueForAll(boss.GetComponents<Collider2D>(), c => c.enabled), "살아 있을 땐 켜져 있다");
+        boss.PlayDeathAndDestroy();
+        Assert.IsTrue(System.Array.TrueForAll(boss.GetComponents<Collider2D>(), c => !c.enabled), "죽는 순간 끈다");
+        yield return null;
+    }
+
+    /// <summary>붙잡고 있는 도중 죽으면(사망 연출 시작) 즉시 풀려난다 — OnDisable이 아니라도(오브젝트는 아직 켜져 있다) 보장돼야 한다.</summary>
+    [UnityTest]
+    public IEnumerator Death_ReleasesGrabbedTargetImmediately()
+    {
+        var player = NewGrabbablePlayer(8f, out Dummy damageable);
+        var boss = NewBoss(9f, player.transform);
+
+        bool grabStarted = false;
+        yield return Until(() =>
+        {
+            if (player.IsGrabbed) grabStarted = true;
+            return grabStarted || boss.CurrentState == BrokenGoddessBoss.State.SweepActive;
+        }, 10f);
+        if (!grabStarted) yield return Until(() => player.IsGrabbed, 10f);
+
+        Assert.IsTrue(player.IsGrabbed);
+        boss.PlayDeathAndDestroy();
+        Assert.IsFalse(player.IsGrabbed, "사망 연출이 시작되면 즉시 풀려나야 한다");
     }
 }
 }

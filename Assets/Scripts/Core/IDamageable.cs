@@ -61,5 +61,20 @@ namespace ChronoSavior.Core
         /// 원본이 굳이 구분해 둔 이유가 그것이고, 일반 피해 경로로 보내면 그 상태가 재현된다.
         /// </summary>
         void TakeTickDamage(float amount) => TakeDamage(amount, null);
+
+        /// <summary>
+        /// **무적시간을 무시하고** 피해를 강제로 적용한다 — 2지역 보스 "부서진 여신상" 잡기처럼
+        /// 공격 자체가 여러 단계(경고→판정→끌어당기기→붙잡아둠)로 길게 이어지는 패턴에서 쓴다.
+        /// 끌어당기기+붙잡아두기만으로도 0.7초가 걸리는데, 플레이어의 기본 피격 무적시간은 0.9초라
+        /// (<c>PlayerHealth.invulnTime</c>) — 근처 다른 몹에게 막 맞은 채로 잡히면 이 공격이 주는
+        /// 피해가 그 무적에 조용히 묻혀버린다(2026-11-18, 사용자가 실제 플레이로 발견한 버그).
+        /// 잡는 행위 자체는 성공했는데 피해만 안 들어가는 게 더 혼란스러우므로, 이 패턴만큼은
+        /// 무적을 무시하고 반드시 피해가 들어가게 한다.
+        ///
+        /// 기본 구현은 평범한 <see cref="TakeDamage"/>로 위임한다 — 무적 개념이 없거나(적 쪽)
+        /// 무시할 필요가 없는 구현체는 아무것도 바꾸지 않아도 된다. **무적시간이 있는 구현체
+        /// (`PlayerHealth`)만 이 메서드를 오버라이드해 그 검사를 건너뛴다.**
+        /// </summary>
+        void TakeDamageIgnoringInvuln(float amount, GameObject source) => TakeDamage(amount, source);
     }
 }

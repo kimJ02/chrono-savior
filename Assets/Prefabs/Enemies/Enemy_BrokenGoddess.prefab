@@ -8,6 +8,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
+      propertyPath: m_Sprite
+      value: 
+      objectReference: {fileID: 21300000, guid: 05a9f645c2d70ee4cad1b1bd333e9517, type: 3}
+    - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4812569128568459250, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
       propertyPath: m_Name
       value: Enemy_BrokenGoddess
@@ -64,7 +80,7 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 3497207388904648155}
   m_SourcePrefab: {fileID: 100100000, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
---- !u!1 &9589630643815358719 stripped
+--- !u!1 &8822927722436127948 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 4812569128568459250, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
   m_PrefabInstance: {fileID: 4087289458088862526}
@@ -75,10 +91,16 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9589630643815358719}
+  m_GameObject: {fileID: 8822927722436127948}
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e4008b0aaac5142828827cc9fd9fac, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   warningPrefab: {fileID: 6684012374830832191, guid: 74656bf874c90744e89d173ce6495191, type: 3}
+  idleArt: {fileID: 11400000, guid: 6998566f3ae710d48bf5e6a32f356e2c, type: 2}
+  moveArt: {fileID: 11400000, guid: 5eb736c397b399243968fbcfa8719f42, type: 2}
+  grabArt: {fileID: 11400000, guid: 5dad498761baf2c45a451e53e59028aa, type: 2}
+  sweepArt: {fileID: 11400000, guid: 9caccbc8894d3d249865151888f8baa9, type: 2}
+  hitArt: {fileID: 11400000, guid: 7845732314a323e4c967d15a4c3c1e00, type: 2}
+  deathArt: {fileID: 11400000, guid: b9ca5c1e04873ca4c97d8ca8e7709fa0, type: 2}

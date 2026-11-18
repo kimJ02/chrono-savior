@@ -162,7 +162,8 @@ public static class EnemySetup
         if (goddess != null)
         {
             // 부서진 여신상도 피해는 플레이어 최대 체력 %(잡기·휘두르기 둘 다) — attackPower를 안 쓴다.
-            // 그림은 아직 공통 보스와 같은 임시 크기(정식 아트는 다음 작업, BrokenGoddessBoss.cs 참고).
+            // 그림은 실제 아트 크기(2026-11-18, BrokenGoddessBoss.cs 참고) — 에셋 연결은 에디터 메뉴
+            // (`ChronoSavior/보스 그림 연결/부서진 여신상`)를 돌려야 반영된다.
             FitToWorldSize(go, null, BrokenGoddessBoss.VisualSize, BrokenGoddessBoss.HitRadius);
             return;
         }
