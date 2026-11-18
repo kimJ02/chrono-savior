@@ -49,67 +49,106 @@ public class MageChargeVfxTests
         return mage;
     }
 
-    /// <summary>차지 오라(2026-11-07 VFX): 차지하는 동안만 보이고, 크기는 월드 배율 1로 고정, 색은 갈래마다. 그림이 없는 클론은 생략.</summary>
+    /// <summary>손 오브(2026-11-16): 차지하는 동안만 보이고, 차지율을 11장에 그대로 매핑한다(0%=1번째·100%=11번째). 그림이 없는 클론은 생략.</summary>
     [Test]
-    public void ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale()
+    public void Orb_ShowsOnlyWhileCharging_MapsChargeRatioToFrame()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
-        ProfileService.Current.mageBranch = MageBranch.Gravity;
         var mage = NewMage();
-        mage.transform.localScale = new Vector3(0.8f, 0.8f, 1f); // 씬의 Player처럼 1이 아닌 배율
         var vfx = mage.GetComponent<MageChargeVfx>();
+        var frames = vfx.OrbArt.frames;
+        Assert.AreEqual(11, frames.Length, "오브 11장");
         vfx.Refresh(0.016f);
-        Assert.IsFalse(vfx.AuraVisible, "차지 전엔 안 보인다");
+        Assert.IsFalse(vfx.OrbVisible, "차지 전엔 안 보인다");
 
         Charging.SetValue(mage, true);
-        ChargeT.SetValue(mage, 0.1f);
+        ChargeT.SetValue(mage, 0f);
         vfx.Refresh(0.016f);
-        Assert.IsTrue(vfx.AuraVisible, "차지하는 동안 보인다");
-        var aura = mage.transform.Find("ChargeAura");
-        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "크기 고정 — 공통 도트 배율");
-        ChargeT.SetValue(mage, 1f);
+        Assert.IsTrue(vfx.OrbVisible, "차지하는 동안 보인다");
+        var orb = mage.transform.Find("ChargeOrb").GetComponent<SpriteRenderer>();
+        Assert.AreSame(frames[0], orb.sprite, "0%는 1번 프레임");
+
+        ChargeT.SetValue(mage, 1f); // chargeMax 기본 1초라 ChargeRatio=1
         vfx.Refresh(0.016f);
-        Assert.AreEqual(DotScale.Value, aura.lossyScale.x, 1e-4f, "차지율과 상관없이 같은 크기");
-        CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet), aura.GetComponent<SpriteRenderer>().sprite, "중력 갈래는 보라 파생 그림");
-        Assert.AreEqual(Color.white, aura.GetComponent<SpriteRenderer>().color, "파생 그림이라 틴트 없음");
+        Assert.AreSame(frames[10], orb.sprite, "100%는 11번 프레임");
 
         Charging.SetValue(mage, false);
         vfx.Refresh(0.016f);
-        Assert.IsFalse(vfx.AuraVisible, "차지가 끝나면 사라진다");
+        Assert.IsFalse(vfx.OrbVisible, "차지가 끝나면 사라진다");
     }
 
+    /// <summary>오브 일렁임(2026-11-16, 사용자 "KiEffect는 발사순간이 아니라 차지 9장쯤부터 오브 근처에 일렁이듯"):
+    /// 오브가 9번째 프레임(0-based 인덱스 8)에 들어서야 비로소 같이 보인다.</summary>
     [Test]
-    public void ChargeAura_ColorPerBranch()
+    public void Ki_ShowsOnlyOnceOrbReachesFrame9()
     {
-        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.None), "빌드 없음은 그림 그대로");
-        Assert.AreEqual(MageChargeVfx.FireTint, MageChargeVfx.AuraTint(MageBranch.Explosion));
-        Assert.AreEqual(Color.white, MageChargeVfx.AuraTint(MageBranch.Gravity), "중력은 틴트 대신 보라 파생 그림");
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmallViolet, MageChargeVfx.AuraKey(MageBranch.Gravity));
-        Assert.AreEqual(ChronoSavior.Combat.VfxKeys.MageChargeSmall, MageChargeVfx.AuraKey(MageBranch.Explosion));
+        var mage = NewMage();
+        var vfx = mage.GetComponent<MageChargeVfx>();
+        Charging.SetValue(mage, true);
+
+        ChargeT.SetValue(mage, 0.7f); // 오브 인덱스 round(0.7*10)=7 — 아직 9번째(인덱스 8) 전
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.KiVisible, "오브가 9번째에 닿기 전엔 일렁임이 안 보인다");
+
+        ChargeT.SetValue(mage, 0.8f); // round(0.8*10)=8 — 9번째(인덱스 8)
+        vfx.Refresh(0.016f);
+        Assert.IsTrue(vfx.KiVisible, "9번째부터 같이 보인다");
+
+        ChargeT.SetValue(mage, 0.5f); // 다시 내려가면(이론상 안 그러지만) 꺼진다
+        vfx.Refresh(0.016f);
+        Assert.IsFalse(vfx.KiVisible);
     }
 
-    /// <summary>갈래별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄은 예전 원 그림. 그림이 없는 클론은 생략.</summary>
+    /// <summary>블랙홀(중력) 갈래는 보라 그림, 폭발·0차는 빨강 원본(2026-11-17 사용자 "블랙홀 법사 손에서 불이 차징되는 게 문제" → 후보 A).</summary>
+    [Test]
+    public void OrbAndKi_GravityBranchUsesVioletFrames()
+    {
+        var probe = NewMage().GetComponent<MageChargeVfx>();
+        Assert.AreEqual(11, probe.OrbArtGravity.Count, "보라 오브 11장");
+        Assert.AreEqual(6, probe.KiArtGravity.Count, "보라 일렁임 6장");
+        foreach (var f in probe.OrbArtGravity.frames) StringAssert.Contains("Gravity", f.name);
+
+        var mage = NewMage();
+        var vfx = mage.GetComponent<MageChargeVfx>();
+        Charging.SetValue(mage, true);
+        ChargeT.SetValue(mage, 1f);
+
+        foreach (var (branch, violet) in new[] { (MageBranch.Gravity, true), (MageBranch.Explosion, false), (MageBranch.None, false) })
+        {
+            ProfileService.Current.mageBranch = branch;
+            vfx.Refresh(0.016f);
+            var orb = mage.transform.Find("ChargeOrb").GetComponent<SpriteRenderer>();
+            var ki = mage.transform.Find("ChargeKi").GetComponent<SpriteRenderer>();
+            Assert.AreSame(vfx.OrbFrames(branch)[10], orb.sprite, $"{branch} 오브");
+            Assert.AreEqual(violet, orb.sprite.name.Contains("Gravity"), $"{branch} 오브 색");
+            Assert.Greater(ki.sortingOrder, orb.sortingOrder, "일렁임은 오브 앞");
+            Assert.AreEqual(violet, ki.sprite.name.Contains("Gravity"), $"{branch} 일렁임");
+        }
+    }
+
+    /// <summary>갈래·완충별 탄 그림 — 그림은 정수 배율로 갈아 끼우고, 판정 상자는 그대로다. 0차 탄도 2026-11-16부터 그림(파랑). 그림이 없는 클론은 생략.</summary>
     [Test]
     public void Bolt_ShowsBranchArt_HitboxUnchanged()
     {
-        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageFireProjectile), "이펙트 팩을 안 가져온 클론 — 미설치로 생략");
-        MageProjectile Bolt(bool explosive, bool gravity) => MageProjectile.Spawn(TestPrefabs.MageBolt, new Vector3(5f, 3f, 0f), Vector2.zero, 1f, 1, 5f, 1.9f,
-            Color.cyan, false, false, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
+        Assume.That(ChronoSavior.Combat.VfxFrames.Has(ChronoSavior.Combat.VfxKeys.MageBasicProjectileLarge), "이펙트 팩을 안 가져온(또는 2026-11-16 이전에 가져온) 클론 — 미설치로 생략");
+        MageProjectile Bolt(bool explosive, bool gravity, bool charged) => MageProjectile.Spawn(TestPrefabs.MageBolt, new Vector3(5f, 3f, 0f), Vector2.zero, 1f, 1, 5f, 1.9f,
+            Color.cyan, false, charged, explosive, 1f, gravity, 0f, 1, Vector2.zero, 1);
 
-        foreach (var (explosive, gravity, key) in new[] { (true, false, ChronoSavior.Combat.VfxKeys.MageFireProjectile), (false, true, ChronoSavior.Combat.VfxKeys.MageGravityOrbSmall) })
+        // 2026-11-16(팀원 로그 116·117): 갈래마다 완충이면 큰 그림, 아니면 작은 그림. 0차(갈래 없음)도 이제 그림이 있다(energy_blast B 파랑).
+        foreach (var (explosive, gravity, charged, key) in new[]
         {
-            var bolt = Bolt(explosive, gravity);
+            (true, false, false, ChronoSavior.Combat.VfxKeys.MageFireProjectile), (true, false, true, ChronoSavior.Combat.VfxKeys.MageFireProjectileLarge),
+            (false, true, false, ChronoSavior.Combat.VfxKeys.MageGravityOrbSmall), (false, true, true, ChronoSavior.Combat.VfxKeys.MageGravityOrbLarge),
+            (false, false, false, ChronoSavior.Combat.VfxKeys.MageBasicProjectile), (false, false, true, ChronoSavior.Combat.VfxKeys.MageBasicProjectileLarge),
+        })
+        {
+            var bolt = Bolt(explosive, gravity, charged);
             Assert.AreEqual(new Vector2(0.4f * 1.9f, 0.3f * 1.9f), bolt.GetComponent<BoxCollider2D>().size, "판정 상자는 그대로");
             var player = bolt.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>();
             Assert.IsNotNull(player, $"{key} 그림이 돈다");
             float s = player.transform.localScale.x;
             Assert.AreEqual(Mathf.Round(s), s, 1e-4f, "정수 배율");
-            CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(key), player.GetComponent<SpriteRenderer>().sprite, "그 갈래의 그림");
+            CollectionAssert.Contains(ChronoSavior.Combat.VfxFrames.Get(key), player.GetComponent<SpriteRenderer>().sprite, $"{key} — 그 갈래·완충 여부의 그림");
         }
-
-        var plain = Bolt(false, false);
-        Assert.IsNull(plain.GetComponentInChildren<ChronoSavior.Combat.VfxPlayer>(), "0차 탄은 예전 원 그림");
-        Assert.AreEqual(Color.cyan, plain.GetComponentInChildren<SpriteRenderer>().color);
     }
 
     [Test]

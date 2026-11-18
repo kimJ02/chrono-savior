@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Sprout_Move
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 208283741, guid: 678852e149d6dba429d4fdc0505a8ef5, type: 3}
+  - {fileID: 1023831837, guid: e3a52f33a17082e43a77c49b4b02257e, type: 3}
+  - {fileID: -216084708, guid: 18260dbf116999a4a97cc4f1d1c7874e, type: 3}
+  - {fileID: -1731081163, guid: d23493fee59f23b4abdaad8e1c83b1e1, type: 3}
+  fps: 8
+  loop: 1

@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_BlobLord_Death
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: 1140d02d6e5702ad98ffed5bc7755d41, type: 3}
+  - {fileID: 21300000, guid: 40afcaa0708053f9bac5b3fc97515a28, type: 3}
+  - {fileID: 21300000, guid: 5f7bfe5909d2d4e0a08d5a3218985f1d, type: 3}
+  - {fileID: 21300000, guid: ac5d803fb5aba9bcc831e892e18b6876, type: 3}
+  - {fileID: 21300000, guid: f41884bb8696f634ade586a378ab9383, type: 3}
+  - {fileID: 21300000, guid: 26f1991909e45b17e6740475dd6cb05b, type: 3}
+  - {fileID: 21300000, guid: abe63786e1ad086a4355b43a0c41c15b, type: 3}
+  - {fileID: 21300000, guid: 3c1c5ce6412b82169534c583f8467843, type: 3}
+  fps: 8
+  loop: 0

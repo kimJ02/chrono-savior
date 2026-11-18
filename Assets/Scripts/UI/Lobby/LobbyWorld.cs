@@ -10,7 +10,12 @@ namespace ChronoSavior.UI
     /// (사용자 2026-10-24 "ㅇㅇ 바꾸고"). 원본·예전 로비는 탭 화면이었다.
     ///   - 환생 → 시간 회귀 · 가챠 → 유물 개방 · 훈련소 → 각성창(전문화·원정 강화) · 던전 → 스테이지 선택.
     ///   - **로비는 지금처럼 시간이 멈춘 채(timeScale 0)** 캐릭터만 실제 시간으로 좌우로 걷는다 — 공격·몹·스포너가 전부 "로비에선 시간이
-    ///     멈춘다"는 전제로 돌아가서(로비에서 Z를 눌러도 아무것도 안 나가게), 물리 이동 대신 위치만 옮긴다. 점프는 없다.
+    ///     멈춘다"는 전제로 돌아가서(로비에서 Z를 눌러도 아무것도 안 나가게), 물리 이동 대신 위치만 옮긴다.
+    ///   - **점프는 순전히 꾸밈이다**(2026-11-18, 사용자 "로비에서 점프가 안 되는데 점프할 수 있게 해줄래") — 로비엔 발판이
+    ///     없고 바닥 한 줄뿐이라 점프로 갈 수 있는 곳이 따로 없다. 그래도 **C(점프 키)를 눌렀을 때 전투와 똑같이 반응은 해야
+    ///     한다**고 판단해, 물리(Rigidbody2D) 없이 <see cref="UpdateJump"/>가 직접 포물선(원본 점프 속도·전투 중력과 같은 값)으로
+    ///     `player.position.y`를 올렸다 내렸다 한다 — 물리 시뮬레이션이 아니라 좌우 걷기와 같은 방식(시간이 멈춘 채 실제 시간으로).
+    ///     땅에 내려오면 끝, 그 사이 Animator의 Grounded만 꺼서(<see cref="LobbyAvatar.SetGrounded"/>) JumpFall 클립이 돈다.
     ///   - **건물·배경 그림은 사용자가 올린 로비 그림 7장**(2026-11-06, <see cref="Buildings"/>·<see cref="BuildBackground"/>) — 건물 넷(환생=우주
     ///     성당, 가챠=수정 분수, 훈련소=과녁 사격장, 던전=해골 게이트) + 배경 3겹(하늘·먼 산·가까운 산). **전부 `SpriteRenderer`·128 PPU·배율 1**로
     ///     통일했다(2026-11-06 팀 지적 — 건물은 UI 캔버스(100 PPU)였고 배경은 Transform 배율 3이라 그림마다 규격이 따로였다). 배경 그림은 그래서
@@ -54,6 +59,12 @@ namespace ChronoSavior.UI
         public const float EnterRange = 0.75f;
         /// <summary>로비에서 걸을 수 있는 범위(가운데에서 좌우로) — 맨 끝 건물 조금 바깥까지. 이 안이면 카메라가 가운데에 서 있어도 다 보인다.</summary>
         public const float WalkHalfRange = 3.3f;
+
+        /// <summary>로비 점프 초기 속도 — 전투 <see cref="ChronoSavior.Characters.CharacterMover2D.jumpSpeed"/> 기본값과 같다(원본 960px/s÷100).
+        /// 로비는 물리를 안 쓰므로 숫자를 따로 들고 있다 — 전투 점프와 체감이 달라지면 둘 다 같이 바꿀 것.</summary>
+        public const float JumpSpeed = 9.6f;
+        /// <summary>서 있을 때 바닥 높이 — 점프가 돌아오는 기준. <see cref="EnterLobby"/>가 캐릭터를 처음 놓는 높이와 같다.</summary>
+        static float GroundStandY => FieldBounds.GroundY + EntitySizeConfig.PlayerRadius;
         /// <summary>건물 그림 크기(128×128px · 128 PPU · 배율 1 그대로 = 1×1유닛, 캐릭터(0.5)의 2배) — 2026-11-06 사용자가 올린 실제 그림.
         /// 자리표시(96×104)보다 커졌지만, 줄여서 그리면 픽셀 밀도가 캐릭터·배경과 어긋난다(중력법사 스킬이펙트와 같은 문제라 피했다).</summary>
         public const float BuildingSize = 1f;
@@ -86,6 +97,8 @@ namespace ChronoSavior.UI
         GameObject root;
         Transform background;
         bool placed;
+        bool jumping;
+        float jumpVy;
 
         void OnEnable() => EnterLobby();
 
@@ -123,9 +136,32 @@ namespace ChronoSavior.UI
                     player.position = pos;
                     if (player.TryGetComponent(out Rigidbody2D rb)) rb.position = pos; // 다음 물리 단계가 되돌리지 않게
                 }
+                // 전투의 GameInput.JumpDown이 아니라 LobbyJumpDown이다 — JumpDown은 "사냥 중에만" 게이트에 걸려
+                // 로비(GameScene.Lobby)에서는 항상 false다(2026-11-18, 아래 GameInput.LobbyJumpDown 주석 참고).
+                if (!jumping && GameInput.LobbyJumpDown) { jumping = true; jumpVy = JumpSpeed; }
             }
+            UpdateJump(windowOpen);
             NearIndex = Nearest(player.position.x);
             if (!windowOpen && NearIndex >= 0 && (GameInput.InteractDown || GameInput.MenuUpDown)) Buildings[NearIndex].Open();
+        }
+
+        /// <summary>
+        /// 꾸밈용 점프 포물선 — 물리 없이 직접 적분한다(원본 점프 속도(<see cref="JumpSpeed"/>) + 전투 중력(<see cref="Physics2D.gravity"/>,
+        /// 좌우 걷기와 같은 자리에서 쓰는 설정값이라 여기서도 그대로 읽는다 — 로비는 물리 시뮬레이션 자체가 안 돌아서 Rigidbody2D로는 안 됨).
+        /// 창이 열려 있으면 좌우 걷기처럼 그대로 멈춰 있는다(진행 중인 점프도 같이 멈춘다 — 다시 닫히면 그 높이에서 이어서 떨어진다).
+        /// </summary>
+        void UpdateJump(bool windowOpen)
+        {
+            if (player.TryGetComponent(out LobbyAvatar avatar)) avatar.SetGrounded(!jumping);
+            if (!jumping || windowOpen) return;
+
+            jumpVy += Physics2D.gravity.y * Time.unscaledDeltaTime;
+            var pos = player.position;
+            pos.y += jumpVy * Time.unscaledDeltaTime;
+            float groundY = GroundStandY;
+            if (pos.y <= groundY) { pos.y = groundY; jumping = false; jumpVy = 0f; }
+            player.position = pos;
+            if (player.TryGetComponent(out Rigidbody2D rb)) rb.position = pos;
         }
 
         /// <summary>그 자리에서 들어갈 수 있는 건물(없으면 -1).</summary>
@@ -153,13 +189,13 @@ namespace ChronoSavior.UI
             root.SetActive(true);
             if (cameraAnchor != null) // 씬엔 늘 있다(씬 검증이 본다) — 기준점 없이 도는 테스트용
             {
-                cameraAnchor.position = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, 0f); // 지금 무대(일반) 기준
+                cameraAnchor.position = new Vector3(CenterX, GroundStandY, 0f); // 지금 무대(일반) 기준
                 CameraFollow2D.Track(cameraAnchor, snap: true); // 시간이 멈춘 로비라 바로 붙는다
             }
             if (player != null && !placed)
             {
                 placed = true;
-                var pos = new Vector3(CenterX, FieldBounds.GroundY + EntitySizeConfig.PlayerRadius, player.position.z);
+                var pos = new Vector3(CenterX, GroundStandY, player.position.z);
                 player.position = pos;
                 if (player.TryGetComponent(out Rigidbody2D rb)) { rb.position = pos; rb.linearVelocity = Vector2.zero; }
             }
@@ -194,9 +230,10 @@ namespace ChronoSavior.UI
             background = new GameObject("Background").transform;
             background.SetParent(transform, false);
             float h = sky.bounds.size.y; // 배율 1이라 그림 실제 크기(유닛) 그대로 — 지금은 2배(1280×720=10×5.625유닛)
-            // 카메라 중심(바닥+CameraYOffset)에 맞춰 가운데로 둔다 — 카메라가 안 움직이니(EnterLobby) 이 한 점만 기준으로
-            // 잡으면 된다. 2배 캔버스가 화면(7.5×4.22유닛)보다 가로 1.25·세로 0.7유닛씩 더 크므로 가장자리까지 넉넉히 덮는다.
-            var pos = new Vector3(CenterX, FieldBounds.GroundY + StageArtConfig.CameraYOffset, 0f);
+            // 카메라 중심(바닥+CameraOffsetAt(0))에 맞춰 가운데로 둔다 — 카메라가 안 움직이니(EnterLobby) 이 한 점만 기준으로
+            // 잡으면 된다. 로비는 늘 땅(t=0, 2026-11-17 전엔 이 값이 CameraYOffset 하나뿐이었다). 2배 캔버스가 화면(7.5×4.22유닛)보다
+            // 가로 1.25·세로 0.7유닛씩 더 크므로 가장자리까지 넉넉히 덮는다.
+            var pos = new Vector3(CenterX, FieldBounds.GroundY + StageArtConfig.CameraOffsetAt(0f), 0f);
             BackgroundLayer("Sky", sky, SkyOrder, pos);
             BackgroundLayer("MountainsFar", far, MountainsFarOrder, pos);
             BackgroundLayer("MountainsNear", near, MountainsNearOrder, pos);

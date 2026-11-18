@@ -33,14 +33,23 @@ namespace ChronoSavior.UI
         readonly System.Random pitchRandom = new System.Random();
 
         AudioSource source;     // 원샷 전용
-        AudioSource loopSource; // 루프 전용(레이저 유지음 · 집중 긴장음) — 코드로 직접 추가, 씬 연결 불필요
+        [Tooltip("루프 전용 소리(레이저 유지음·집중 긴장음) — 00_Persistent › Audio › SfxLoop 자식에 놓인 것. 원샷 AudioSource와 따로여야 피치가 안 엉킨다.")]
+        [SerializeField] AudioSource loopSource; // 2026-11-17: 예전엔 Awake에서 코드로 붙였다 — 생성 책임 규칙(씬 배치)대로 씬에 놓는다
+
+        /// <summary>씬 검증이 읽고 넣는다.</summary>
+        public AudioSource LoopSource { get => loopSource; set => loopSource = value; }
         Coroutine loopStopRoutine;
         float loopScale; // 지금 울리는 루프의 자기 배율 — 설정 음량이 바뀌면 다시 곱한다
 
         void Awake()
         {
             source = GetComponent<AudioSource>();
-            loopSource = gameObject.AddComponent<AudioSource>();
+            if (loopSource == null || loopSource == source)
+            {
+                // 씬 연결이 빠졌다(씬 구성 검증이 알린다) — 원샷 소스로 대신(루프 중 원샷 피치가 섞일 수 있다)
+                Debug.LogError("[GameplaySfx] 루프용 AudioSource(SfxLoop)가 연결 안 됐다 — 메뉴 ChronoSavior/씬 구성 검증", this);
+                loopSource = source;
+            }
             loopSource.playOnAwake = false;
             loopSource.loop = false;
         }

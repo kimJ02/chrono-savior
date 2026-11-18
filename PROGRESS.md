@@ -44,7 +44,31 @@ SP +1 테스트 버튼·마법사 버그 5건·경험치 넘침 멈춤·대붕�
 
 ### 다음 할 일
 
+**바로 다음(2026-11-18) — 아래 로그 (123)~(126) 다섯 가지를 에디터에서 직접 눈으로 확인할 것** — 이 세션은 디바이스
+브리지로 파일만 썼을 뿐 Unity 에디터를 못 열어서 다섯 다 실제로 돌려본 적이 없다:
+1. `ChronoSavior/캐릭터 애니메이션 만들기` 메뉴를 돌려서 `Charge` 상태가 **이번엔 재생성 후에도 살아있는지**.
+2. 1스테이지 전투 배경(새 합성 그림)이 실제 플레이 화면에서 **상하 범위·좌우 팬 느낌이 어색하지 않은지**
+   — `backgroundGrassYPx`(340)·`backgroundTopPx`(0)는 계산으로 추정한 값이라 에디터로 확인 전엔 확정이 아니다.
+3. **카메라 상하 프레이밍 보간 수정**((124)) — PlayMode 전체(특히 `StageVisualsTests.cs`)가 통과하는지,
+   그리고 1층·맨 위 발판에서 실제로 플레이해보고 체감이 맞는지. 커밋 직후 `LobbyWorld.cs`의 참조 누락을
+   컴파일 에러로 잡은 적이 있어 — 컴파일 자체는 전수 검색으로 재확인했지만 실행/플레이 확인은 아직 없음.
+4. **발판 옆 공중 뜨는 버그 수정**((125), `PlatformEffector2D.surfaceArc` 180→120) — **에디터를 열어서
+   가장 먼저 `20_Combat.unity`가 깨짐 없이 로드되는지부터 확인할 것**(씬 파일을 에디터 없이 텍스트로
+   직접 고쳤다). 로드가 되면 발판 옆에 점프해서 붙어보고 실제로 떨어지는지 확인.
+5. **로비 점프 추가**((126)) — 로비에서 C를 누르면 캐릭터가 떴다가 내려오는지, JumpFall 애니메이션이
+   자연스러운지, 건물 진입(F/↑)이 점프 중에도 그대로 되는지.
+6. **(127, 병합으로 새로 들어온 항목) `main`에 새로 깨진 테스트 4개 확인** — `CreationOwnershipTests`(PlayerRig·
+   LobbyAvatar)·`GameBootTests`×2·`LobbySceneTests`×1이 애니메이터 방식 전환(팀원 2026-11-16 커밋) 때문에
+   정지 그림이 아니라 Animator 프레임을 보고 있어 깨짐. 코드 플립북 통일 제안(바로 아래 ⚠️ 블록)이 합의되기
+   전까진 손대지 말 것 — 지금은 "깨져 있다"는 사실만 기록.
+
 **스펙: [`HANDOFF.md`](HANDOFF.md) / 일정표·분업·계약: [`docs/worksplit.md`](docs/worksplit.md) / 원본 대조: [`docs/original-parity.md`](docs/original-parity.md)**
+
+> **✅ 2026-11-17 캐릭터 애니메이션은 코드 플립북이다(Animator 없음)** — 몸 그림은 `Characters/CharacterFlipbook`(씬의 Player·로비 아바타에 배치)이 넘기고,
+> 자세는 게임 코드가 정한다(루프: `PlayerRig`·`LobbyAvatar`, 공격·피격: `MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격).
+> 그림·순서·fps·기준점은 메뉴 **`ChronoSavior/캐릭터 애니메이션 연결`**(`Editor/BuildCharacterFlipbooks`의 표가 원본 — 에셋을 손으로 고치지 말 것). 경위·계약: [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md).
+> 보스 세 가지(그림 에셋 연결·그림 갱신을 `LateUpdate`로·사망 연출 중 콜라이더 끔)도 이 브랜치에서 했다(로그 133) — **팀원이 보스를 만지는 중이면 `BlobLordBoss.cs`·`Enemy_BlobLord.prefab`이 겹칠 수 있다**, 합치기 전에 확인.
+> 이펙트가 안 보이면 코드가 아니라 팩을 안 가져온 것 — 메뉴 `ChronoSavior/VFX 팩 가져오기`(2026-11-16 이전에 가져왔으면 한 번 더).
 
 **순서·날짜는 노션 일정표(2026-09-23)가 정본이다** — 옮겨 적은 표는 [`docs/worksplit.md`](docs/worksplit.md) 1절.
 예전 "단계 1/2/3"(9/9 회의)은 더 쓰지 않는다(2026-09-30 정리 — 일정표의 "2단계"와 이름이 겹쳐 헷갈렸다).
@@ -224,9 +248,603 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   그대로), 완전히 동시가 아니라 몇 프레임에 걸쳐 연달아 죽으면 죽을 때마다 갱신되며 체감 정지
   시간이 길어진다. **당장은 조정하지 않기로 함**(사용자 결정) — 나중에 필요하면 "짧은 시간 안의
   연쇄 처치는 한 번만 걸리게" 하는 식으로 손볼 여지는 있다(원본에 없는 변경이라 디자인 판단 필요).
+- **[나, 2026-11-15] "워리어" 캐릭터 애니메이션 그림 — 로스터 매핑 팀 확인 필요.** 사용자가 올린
+  캐릭터 애니메이션 프레임 72장(공격 4종 + 공용 이동/피격, 로그 (104) 참고) 중 "워리어 공격" 11장이
+  코드의 `CharacterId{Mage,Gunner,Blade,Druid}` 어디에도 안 맞는다. 엔지니어→Gunner(메카닉),
+  암살자→Blade(섬영)는 이름만 다를 뿐 그대로 대응되는데, 워리어는 드루이드(기획 제외) 자리를
+  대신하는 건지, 로스터에 없던 5번째 캐릭터인지, 다른 클래스의 리네임인지 불명. 지금은
+  `Assets/Resources/Art/Characters/Warrior_Unmapped/`로 분리만 해 두고 매핑·사용 여부는 보류
+  (사용자 확인). ~~추가로: Animator 기반 구조로 바꿔야 함~~ → **로그 (107)에서 끝남**(워리어 매핑
+  자체는 여전히 미정).
+- **[나, 2026-11-16] `pj4_energy_blast_A_large_red` 폴더명 추정 — 가져오기 확인 필요.** (116)에서 마법사
+  화염탄 완충(차지 50%↑) 그림으로 `VfxKeys.MageFireProjectileLarge`를 추가했는데, 팩 zip 내부를 직접
+  못 봐서 폴더명을 `pj4_dark_matter_small/large_violet`(기존 중력탄 쌍)과 같은 규칙으로 그냥 추정해
+  `VfxPackImporter.cs`에 적었다. 실제 이름이 다르면 메뉴 `ChronoSavior/VFX 팩 가져오기`가 조용히
+  안 넘어가고 오류로 알려준다(기존 정책) — 그 오류 메시지가 보여주는 실제 경로를 알려주면 바로
+  고친다. 중력 갈래 쪽(`MageGravityOrbLarge`)은 2026-11-07부터 이미 있던 키를 탄에 재사용만 한
+  거라 이 문제 없음.
+  - **2026-11-16 추가**: 같은 이유로 `MageBasicProjectile`/`Large`(`pj4_energy_blast_B_small/large_blue`,
+    0차 기본탄)도 추정이다 — 이번엔 사용자가 "에너지 블래스트 B 블루"라고 폴더 계열까지 직접
+    짚어 줘서 `_A_`보다는 확실하지만, `_large_blue` 쪽 폴더가 실제로 있는지는 여전히 가져오기를
+    돌려봐야 안다.
+- **[나, 2026-11-16] Animator 전이 우선순위·Unity 컴파일 — 둘 다 아직 에디터에서 눈으로 확인 못 함.**
+  로그 (107)에서 `PlayerRig`/`LobbyAvatar`/`CharacterArtSet`에 Animator 연결 코드를 넣었는데, 이번
+  세션은 디바이스 브리지로 파일만 넣었을 뿐 Unity 에디터를 직접 열 수 없어 **컴파일 에러 여부를
+  못 봤다** — 다음에 에디터 켜면 콘솔부터 확인 필요. 전이 우선순위(AnyState에서 Hit/Attack이
+  Grounded 전이보다 먼저인지, 공격 중 피격이 끼어드는 느낌 등)도 `CharacterBase.controller`를
+  에디터가 직접 만든 1차 기본값 그대로라 Play 모드에서 실제로 돌려보고 다듬어야 한다(로그 (106)에서
+  이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
 
+- **2026-11-17 (134)** — **[사용자 세션] 캐릭터 그림 높이 0.5 → 0.75(도트 2) — 사용자 결정, 전체 566/566 통과**(사용자 "왜 이리 깨져 보이노" → 0.5는 48px 그림이 도트 1.33배라
+  선이 들쭉날쭉 → 0.75 비교 캡처 → "0.75로 가자"). `CharacterArtSet.heights` 0.75(드루이드 칸은 64px 그림이라 1.0), 발 기준점은 `BuildCharacterFlipbooks`가 다시 계산(판정 반지름 0.25 = 16px),
+  정지 그림 `chara_temp_01`도 같은 규칙으로 기준점. **판정(지름 0.5)·이동은 그대로, 그림만 1.5배.** 캡처 `CaptureUiPreview.RunEnemySkins`(플레이어도 실제 애니메이션 첫 장·높이로)·`RunCharacterPoses`.
+  `DotScaleTests.Characters`가 드디어 통과 — 팀원 규칙(Transform 배율 1)과의 표준 결정 자체는 여전히 팀 확인(`HANDOFF.md`).
+
+- **2026-11-17 (133)** — **[사용자 세션] 플립북 전환 목표 마저 — 전체 566 중 565 통과(남은 1 = 마법사 도트 0.5, 팀장 결정 대기)**(사용자 "목표 달성해봐, main 올리지 말고").
+  - `UI/GameplaySfx`: 루프용 AudioSource를 코드로 붙이던 것(생성 책임 위반 — `CreationOwnershipTests` 실패의 마지막 원인) → 씬 `00_Persistent` › Audio › **SfxLoop** 자식에 배치하고 `[SerializeField] loopSource`로 연결
+    (일회용 에디터 스크립트로 놓고 지움). 씬 구성 검증에 루프 소스 검사. ⚠️ 저장 때 PixelPerfectCamera가 카메라 Viewport Rect를 (0,0.125,1,0.75)로 바꿔 놓아 손으로 (0,0,1,1)로 되돌렸다(CLAUDE.md 경고 그대로).
+  - **보스 '덩어리 지배자'**(제안서 트랙 B — 팀원이 보스를 만진다 해서 미뤘던 것, 사용자 지시로 이 브랜치에서): `BlobLordBoss` 그림을 경로 문자열 대신 프리팹 칸 `SpriteFlipbook`(튀어오르기 6·투척 4·이동 4·피격 1·사망 8,
+    `Assets/Data/Enemies/Skins/Flipbook_BlobLord_*`, 메뉴 `ChronoSavior/몬스터 지역 그림 연결`이 채움 — 가져오기 설정은 팀원 것 그대로), 그림 갱신을 물리 콜백(`GetHorizontalSpeed`)에서 `LateUpdate`로,
+    **사망 연출이 시작될 때 콜라이더를 끈다**(시체를 겨누지 않게). 이동·사망 fps는 에셋(10·8). 테스트 `BlobLordBossTests.BodyArt_IsWiredOnThePrefab`·`Death_TurnsCollidersOff_WhileDeathArtPlays`.
+  - 96×48 재캔버스 대신 묶음별 기준점으로 한 것 — GPT 재확인 "유지"(사본은 프레임 픽셀을 다시 옮기지 않는 한 이점 없음).
+  - 캡처 추가: `CaptureUiPreview.RunMageOrb`(빨강/보라 오브·일렁임이 손에, 좌우 반전 포함)·`RunBossArt`(보스 묶음이 프리팹에서 나온다).
+  - **남은 것(결정 필요)**: 캐릭터가 깨져 보이는 건 높이 0.5유닛 = 도트 1.33배(정수 아님)라서 — 0.75(도트 2, 1.5배 커짐)로 갈지 팀장·사용자 결정(`DotScaleTests.Characters` 실패가 이것).
+
+- **2026-11-17 (132)** — **[사용자 세션] 캐릭터 애니메이션 Animator → 코드 플립북 전환 완료**(`docs/animation-flipbook-proposal.md` 트랙 A + 마법사 차지 그림, GPT와 계획·결정).
+  - `Characters/CharacterFlipbook`(씬 `20_Combat` Player·`10_Lobby` 아바타에 배치, 로비는 실제 시간): 우선순위 피격 > 공격(한 번, 재생 중 재공격은 재시작 안 함) > 유지(레이저 — 누르는 동안 공격 마지막 프레임) > 루프(차지 > 상승/하강 > 이동 > 서기).
+    `PlayerRig.LoopPose`가 매 프레임 루프 자세를 정하고, 공격·피격은 일어난 곳에서 직접: `MageAttack` 발사(**갈래 무관 — 예전엔 효과음 이벤트 중 기본 공격 것만 들어서 불·블랙홀 법사는 공격 모션이 안 나왔다**), `GunnerAttack` 사격·레이저 유지/해제,
+    `BladeSlashVfx` 베기(번갈이 숫자 원본), `PlayerHealth` 피격. `SfxEvents`는 다시 소리 전용.
+  - `Editor/BuildCharacterFlipbooks`(메뉴 `ChronoSavior/캐릭터 애니메이션 연결`, 표가 원본): 프레임 가져오기 설정 + **묶음마다 기준점** — 가로는 머리 가운데(공격 그림 70px 캔버스는 몸이 오른쪽이라
+    가운데 기준이면 공격할 때 몸이 10px 옆으로 튀었다), 세로는 "발 + 판정 반지름"(발이 판정 원 바닥, 몬스터와 같은 규칙). 마법사 오브·일렁임은 몸 공격 그림과 같은 캔버스라 같은 기준점.
+    `Assets/Data/Characters/Anim/Flipbook_*`·`AnimSet_{Mage,Gunner,Blade}` 제자리 갱신, `CharacterArtSet.animSets`, 씬 배치·`MageChargeVfx` 칸까지 한 번에. 프레임·fps는 팀원 클립 그대로, 점프/하강 8장은 상승 3~5·하강 6~8.
+    96×48 재캔버스는 안 했다 — 묶음별 기준점으로 같은 효과(원본 PNG 그대로).
+  - `MageChargeVfx`: 오브·일렁임(빨강·보라)을 경로 문자열 로드 대신 직렬화 `SpriteFlipbook` 칸, 일렁임은 오브 앞(정렬 +2). `CharacterArtSet.animators` → `animSets`.
+  - 삭제: `Assets/Data/Characters/Animations/`·`Animators/`(클립 8·컨트롤러 4), `Editor/BuildCharacterAnimations.cs`, 루트 `Claude outputs/` 사본.
+  - 같은 브랜치에 `feature/attack-move-lock`(공격 중 이동 잠금, 로그 131) 병합 — 공격 신호를 붙이기 전에.
+  - 테스트: `CharacterFlipbookTests` 6개(루프 이어 돌기·공격 재시작 안 함·피격이 끊음·레이저 유지·루프 자세 고르기·**불/블랙홀 법사 발사 → 공격 자세**), 그림 테스트 3개(`GameBootTests`×2·`LobbySceneTests`)는
+    "그 캐릭터 자세 묶음을 입었나"로, `MageChargeVfxTests`는 직렬화 칸으로. 씬 구성 검증에 플립북·오브 칸 검사. **전체 564 중 562 통과** — 남은 실패 2:
+    `CreationOwnershipTests`의 `UI/GameplaySfx.cs`(루프용 AudioSource를 코드로 붙임, 예전부터 — 씬 배치로 옮기면 해결)·`DotScaleTests.Characters`(마법사 0.5, 팀장 결정 대기). 씬 구성 검증 통과.
+    캡처 `CaptureUiPreview.RunCharacterPoses`(세 캐릭터 × 자세 × 좌우)로 머리·발 정렬 확인.
+
+- **2026-11-16 (131, 원래 브랜치 번호 107)** — **[사용자 세션] 공격 중 이동 잠금 — `feature/attack-move-lock`, 2026-11-17 `feature/anim-flipbook`에 병합**(사용자 "공격할 때 가만히 있는 모션인 거는 정지해서 공격하는 걸로", Codex와 설계·구현 검토 2회). 팀원 캐릭터 애니메이션(`labo3`)의 공격 그림이 제자리 자세라 달리며 쏘면 미끄러져 보이는 문제의 첫 단계. **땅**: 마법사 차지(누르는 동안) + 발사 자세(원본 `attackDur` 0.2÷공속), 메카닉 레이저(누르는 동안, 차징만 보여도) 동안 좌우 이동·점프 불가, 뒤돌기는 됨, 떼면 바로 이동. **공중**: 마법사 원본대로, 레이저는 새 좌우 입력만 무시·지금 가로 속도·중력 유지(다른 게임 사례 비교 후 사용자 결정). 메카닉 일반 사격·섬영 그대로, 워리어 미적용. `CharacterMover2D.AttackLock`(키트가 매 프레임, 땅 판정은 그 자리에서 다시 잼, 막힌 점프 입력은 버림, `ResetMotion`이 풀어 줌). 의도적 편차는 `docs/original-parity.md` 9절. 테스트 `AttackMoveLockTests` 9개(실제 바닥 위 미끄럼·점프 포함). PlayMode 546/548 — 실패 2건은 main에서 이미(위 (106)). 1차 실행에서 `BladeCombatTests.SpinAttack_HealsPlayer…`가 한 번 실패했다가 재실행에서 통과(섬영은 잠금을 안 씀 — 타이밍 불안정으로 보임). **에디터에서 직접 플레이해 손맛은 아직 안 봤다**. 다음: 애니메이션 연결(코드 프레임 넘기기, Codex 결정 — 그림 캔버스 공통 규격 재배치가 먼저, 팀원과 담당 정하기).
+
+- **2026-11-17 (130)** — **[사용자 세션] 몬스터가 바닥에서 떠 보이던 것 — 발 기준점으로 해결(엘리트 포함)**(사용자 "몬스터들 바닥에서 뜨는 거 해결 안 되나?").
+  원인 둘: 그림 아래 투명 줄(쥐 3px·멧돼지 5px·오크통 2px·슬라임 10px), 엘리트는 판정만 ×1.35(그림 그대로 — main에 원래 있던 현상). GPT 상의로 **P안**:
+  `Editor/BuildEnemySkins`가 땅에 서는 종류의 그림 기준점을 "발(움직임 프레임 중 가장 낮은 불투명 줄) + 판정 반지름" 높이에 둔다 — 루트(= 판정 중심)는 그대로라
+  `EnemyMove`의 지면·발판 Y 로직은 안 바뀌고 그림만 내려온다. 엘리트용 기준점(반지름 ×1.35)은 같은 텍스처의 둘째 그림(`_Elite`, 텍스처를 Multiple로)이고
+  `RegionSkin.eliteMove`/`eliteHit` → `EnemySkinAnimator.Play(skin, elite)`. 까마귀(비행)·미배정 그림은 가운데 기준점. 오크통은 이제 도트 4에서도 묻히지 않고 정확히 닿는다.
+  테스트 `EnemySkinTests.GroundedMonsters_FeetSitOnHitboxBottom_EliteToo`(쥐·멧돼지·오크통 × 일반/엘리트 — 발 = 판정 바닥). 전체 549 중 544 통과(실패 5는 애니메이터 쪽·마법사 도트, 무관).
+  캡처 `CaptureUiPreview.RunEnemySkins`가 이제 물리가 쉬는 높이에 세우고 엘리트도 찍는다. **고블린·박쥐 옛 그림(지금 안 쓰임)과 다른 몹 종류(궁수·슬라임)는 그대로.**
+
+- **2026-11-17 (129)** — **[사용자 세션] 몬스터 그림 적용 — 박쥐 자리 까마귀·고블린 자리 쥐·멧돼지·오우거 자리 오크통, 1지역부터**
+  (팀원 요청 "2스테이지에 몬스터 적용" + 드라이브 `몬스터 모음.zip` 8종(32×32, 움직임 4 + 피격 1) → 사용자 "4종 배정" → "1스테이지도 바꿔라").
+  - `Core/EnemyData.regionSkins`(`RegionSkin`: fromRegion·움직임 `SpriteFlipbook`·피격·왼쪽 그림 여부·도트 배율) + `SkinFor(region)`. 지금은 전부 1지역부터라 옛 `sprite`는 안 쓰인다
+    (지역마다 다른 그림이 필요해지면 fromRegion이 큰 칸을 추가). `Systems/EnemySetup`이 스킨 첫 장을 꽂고 그 도트 높이로 크기를 잰다.
+  - `Enemies/EnemySkinAnimator`(몹 공용 프리팹 `Enemy_Base`에 배치 — 종류별 프리팹이 물려받음): 게임 시간으로 4장 되풀이(시작점 흩음), 직접 타격마다 0.15초 피격 그림, 걷는 방향으로 좌우 반전.
+  - `Editor/BuildEnemySkins`(메뉴 `ChronoSavior/몬스터 지역 그림 연결`): 가져오기 설정·움직임 에셋 제자리 갱신·배정표대로 연결·프리팹 부품. **배정표가 원본.**
+    민들레·상자·새싹·슬라임은 그림·움직임 에셋만(배정 미정). 슬라임·오크통·쥐는 피격 파일이 따로 없어 5번째 장을 피격으로.
+  - **오크통만 도트 4**(GPT 상의): 관례(그림 높이 = 판정 지름, 오우거 0.87)에 도트 2(0.5)면 0.19 떠 보여서 가장 가까운 정수 배율(1.0, 0.065 묻힘). `docs/pixel-standard.md`에 예외로.
+    ~~남은 것: 발을 판정 바닥에 맞추기 + 엘리트 뜸~~ → (130)에서 발 기준점으로 해결.
+  - 공용 타입 `Core/SpriteFlipbook`·`CharacterPose`·`CharacterAnimSet`(+`SpriteFlipbookTests`)도 이 커밋으로 main에 — 애니메이션 플립북 전환이 이어서 쓴다.
+  - 테스트: `EnemySkinTests` 3개, `DotScaleTests.EnemiesWithRealArt`가 스킨 프레임(PPU 128·같은 크기·도트 배율)을 본다, `MageChargeVfxTests.Bolt_ShowsBranchArt` 기대값(0차도 그림·완충 큰 그림) 갱신.
+    전체 548 중 543 통과 — 실패 5는 애니메이터 쪽(소유권 1·그림 3)과 마법사 도트 0.5(팀장 결정 대기), 이 작업과 무관. 캡처(`CaptureUiPreview.RunEnemySkins`)로 1·2지역 확인.
+
+- **2026-11-17 (128)** — **[사용자 세션] 블랙홀(중력) 법사 차지 손 구체·일렁임을 보라로**(사용자 "블랙홀 법사가 손에서 불이 차징되는 게
+  문제 — 빨간색을 다른 색으로" → 후보 3개(보라·속이 어두운 블랙홀·색상 회전) 미리보기 중 **A "중력탄 보라"** 선택).
+  `Art/Characters/Mage/Character_Mage_Attack_OrbEffectGravity_01~11`·`…_KiEffectGravity_01~06` 17장 추가 — 원본 빨강 그림의 7색을
+  중력탄(`mage/gravity_orb_small`, dark_matter 보라) 팔레트로 1:1 바꾼 사본(가져오기 설정은 원본 .meta 그대로, GUID만 새로).
+  `MageChargeVfx`가 `mageBranch == Gravity`면 이 그림을, 폭발·0차는 빨강 원본을 쓴다(`FrameName`). 런타임 틴트는 빨강이 탁한 자주가 돼서
+  그림을 따로 뒀다. 불러오는 방식(`Resources.Load` 경로)은 기존 코드 그대로 — 직렬화로 바꾸는 건 `docs/animation-flipbook-proposal.md` 트랙 B.
+  테스트 `MageChargeVfxTests.OrbAndKi_GravityBranchUsesVioletFrames` 추가. 사용자가 에디터에서 직접 보고 확인.
+
+- **2026-11-17 (127)** — **[사용자 세션] 캐릭터 애니메이션 방식 제안서 — Animator → 코드 플립북 통일(문서만, 코드 변경 없음).**
+  > **병합 메모(2026-11-18, 번호 충돌 해결)**: 이 항목은 `main` 쪽 원래 번호가 **(122)**였으나, 같은 커밋(공통 조상)에서
+  > 이미 (122)를 쓰고 있는 "2026-11-16 — 좌우반전 12프레임 폐기" 항목과 겹쳐서(아래 그대로 있음) **(127)로 재번호**했다 —
+  > `labo3` 브랜치가 그사이 (122) 다음을 (123)~(126)까지 이미 순서대로 써 둔 상태라 그 다음 번호로 이어붙임.
+  > 내용·날짜·작성자 표시는 원본 그대로이며 **번호만** 바꿨다.
+  main `668231c`·`057c9c8`(팀원, 2026-11-16)을 Claude + GPT(Codex 학교 프로필, gpt-6-luna)로 리뷰. 2026-11-15에 사용자 세션이
+  "코드 플립북 + 96×48 공통 캔버스"로 정해 놓고 문서에 안 남긴 게 원인 — 팀원 잘못 아님. 문제 11개(효과음 이벤트에 묶인 공격·피격 모션,
+  생성 메뉴가 손으로 넣은 Charge 상태를 지움, 런타임 `AddComponent<Animator>`, 경로 문자열 그림 로드, 보스 그림 갱신이 물리 콜백 안,
+  죽은 보스가 1초간 대상으로 남음 등)와 공유 계약·트랙 A/B 분업·결정 8개를 [`docs/animation-flipbook-proposal.md`](docs/animation-flipbook-proposal.md)에.
+  **main 그대로 테스트(2026-11-17)**: 컴파일 OK, 539 중 516 통과·실패 5 — 새로 깨진 4개(`CreationOwnershipTests`에 PlayerRig·LobbyAvatar,
+  `GameBootTests`×2·`LobbySceneTests`×1이 정지 그림 대신 Animator 프레임을 봄) + 예전부터의 `DotScaleTests`(마법사 0.5, 팀장 결정 대기).
+  **"이펙트가 안 보인다"**: 코드 문제 아님 — `Assets/Resources/Vfx/`는 git 밖이라 각자 팩을 받아 메뉴 `ChronoSavior/VFX 팩 가져오기`를 돌려야 한다
+  (팀원이 새로 쓴 `pj4_energy_blast_A_large_red`·`B_small_blue`·`B_large_blue` 폴더는 팩 안에 실제로 있음을 확인).
+
+- **2026-11-18 (126)** — **[나] 로비에서 점프가 안 되던 걸 고침**(사용자 "로비에서 점프가 안되는데 점프할수있게 해줄래").
+  - **진짜 원인(처음엔 몰랐던 것)**: `LobbyWorld`/`LobbyAvatar`엔 원래 "점프는 꾸밈일 뿐 로비엔 발판이 없다"는
+    의도적 설계(코드 주석에 명시)가 있어서, 처음엔 "점프 자체를 새로 만들어야 하나"로 접근했다. 그런데 실제
+    입력 경로를 보니 `GameInput.JumpDown`은 `CombatKey(0, true)`를 거치고, 그 함수는 **`GameState.IsRunning`
+    (`Current == GameScene.Run`)이 아니면 무조건 꺼진다** — 2026-10-25에 "로비에서 Z(공격)가 새 나가는" 버그를
+    막으려고 Jump·Attack·Ult 세 키를 한 문으로 묶어 "사냥 중에만" 읽게 한 게 원인이었다. 로비는 `GameScene.Lobby`라
+    이 문에 걸려서 **C를 눌러도 `JumpDown`이 항상 false** — 점프가 "안 만들어진 게" 아니라 "입력부터 막혀 있던" 거였다.
+  - **수정 1 — `Core/GameInput.cs`**: 공격·스킬은 계속 "사냥 중에만"으로 막아야 하므로(그 2026-10-25 버그가
+    재현되면 안 됨) `JumpDown`은 그대로 두고, **점프만 따로** `LobbyJumpDown`(`GameState.Current ==
+    GameScene.Lobby && !IsTransitioning && Input.GetKeyDown(KeyCode.C)`)을 새로 만들어 래칭 로직과 무관하게 읽게 했다.
+  - **수정 2 — `UI/Lobby/LobbyWorld.cs`**: 로비는 물리(Rigidbody2D)도 발판도 없어서(의도적) 점프를 실제 물리로
+    만들 수 없다 — 좌우 걷기가 이미 하던 방식(시간이 멈춘 채 `Time.unscaledDeltaTime`으로 `player.position`을
+    직접 옮김)과 같은 자리에서, **직접 적분한 포물선**으로 꾸밈 점프를 추가했다(`UpdateJump`). 초기 속도는 전투
+    `CharacterMover2D.jumpSpeed`와 같은 9.6(`JumpSpeed` 상수), 중력은 `Physics2D.gravity.y`(ProjectSettings
+    값, 전투와 같은 자리에서 읽음 — 로비는 물리 시뮬레이션이 안 돌아서 직접 적분해야 함)를 그대로 썼다. 창이
+    열려 있으면 좌우 걷기처럼 점프도 같이 멈춘다. `GroundStandY`(땅+반지름) 헬퍼로 `EnterLobby`의 기존 두 자리
+    (카메라 기준점·캐릭터 시작 위치) 수식도 같이 정리(중복 제거).
+  - **수정 3 — `UI/Lobby/LobbyAvatar.cs`**: `SetGrounded(bool)` 공개 메서드 추가 — `LobbyWorld`가 점프
+    시작/종료 때 불러서 Animator의 `Grounded`를 끄고 켠다. 기존에 이미 있던 `JumpFall` 애니메이션 상태(전투와
+    같은 `AnyState → JumpFall(Grounded==false)` 전이, `Editor/BuildCharacterAnimations.cs`)를 그대로 재사용할
+    뿐, 애니메이션 쪽은 새로 만든 게 없다.
+  - **발판이 없는 이유는 그대로 유지**: 점프해서 갈 수 있는 곳은 안 늘렸다(건물 진입 판정은 그대로 x좌표만
+    본다) — "C를 누르면 반응은 한다"는 것만 고쳤을 뿐, 로비 지형 자체를 바꾸는 건 범위 밖이라고 판단.
+  - **`Tests/PlayMode/OriginalFidelityTests.cs`에 `LobbyJumpDown`·`SetGrounded` 2개를
+    `DefinedApis_AreActuallyCalledSomewhere` 목록에 추가** — 정의(`GameInput.cs`/`LobbyAvatar.cs`)와 호출부
+    (`LobbyWorld.cs`)가 다른 파일이라, CLAUDE.md가 경고하는 "정의만 하고 호출부를 안 만드는" 부류에 해당해서
+    등록해 둠.
+  - **확인 필요**: 이 세션은 에디터에 접근할 수 없어 실제로 돌려본 적이 없다. 로비에서 C를 누르면 캐릭터가
+    떴다가 바닥으로 돌아오는지, 그 사이 JumpFall 애니메이션이 자연스럽게 재생되는지(캐릭터별로 그림이 다
+    있는 경우에만 — 정지그림 캐릭터는 `SetGrounded`가 무시되고 그대로다), 건물 진입 판정이 점프 중에도
+    문제없이 동작하는지.
+
+- **2026-11-17 (125)** — **[나] 발판 옆에 붙어 공중에 뜬 채 안 내려오는 버그 — `PlatformEffector2D.surfaceArc`를
+  180→120으로(사용자가 직접 플레이해보고 발견, "플랫폼이 정확한 직사각형이 아니라서 점프해서 플랫폼 옆에
+  붙으면 공중에 뜬채로 안 내려올 수 있다").**
+  - **원인**: 발판은 실제로는 전부 정확한 직사각형(`BoxCollider2D`)이다 — 사용자의 추정("직사각형이 아니라서")은
+    증상의 원인 추정이고 콜라이더 모양 자체는 문제가 아니었다. 진짜 원인은 `20_Combat.unity`의 발판 18개
+    (`Platforms_Normal`의 `Platform_0~13`·`Platforms_Boss`의 `Platform_0~2`, 그리고 이름이 안 겹치는
+    `Platform_14` 하나 — 총 18개, `FieldLayout`의 17개보다 하나 많다, 아래 "확인 필요" 참고) 전부에 붙은
+    `PlatformEffector2D.m_SurfaceArc`가 **180(Unity 컴포넌트 기본값, 손대지 않은 채 남아 있었다)**이었던 것.
+    SurfaceArc는 "이 각도 범위 안의 충돌 노멀만 원웨이 발판의 '바닥'으로 친다"는 설정인데, 180은 수직
+    기준 ±90°, 즉 **완전히 수평인 충돌까지도 전부 '바닥에 착지'로 인정**한다는 뜻이다. 플레이어
+    콜라이더(`CircleCollider2D`)가 발판 모서리에 옆으로 붙으면, 원이 모서리를 타고 도는 접촉 노멀 각도가
+    0°(완전히 위)부터 거의 90°(완전히 옆)까지 연속적으로 나오는데, SurfaceArc 180은 그 전부를 "바닥"으로
+    받아들여서 **옆에서 누르고 있어도 원웨이 이펙터가 떠받쳐 버린다** — 그게 "공중에 뜬 채 안 내려온다"는
+    증상이다.
+  - **수정**: 18개 전부의 `m_SurfaceArc: 180` → `120`(수직 기준 ±60°)으로 일괄 변경. 발판 위에 평평하게 서
+    있을 때 접촉 노멀은 항상 거의 0°(수직)라 ±60° 안에 넉넉히 들어오므로 정상 착지엔 전혀 영향 없고,
+    거의 수평(80~90°)인 모서리 옆구리 접촉만 "바닥 아님"으로 바뀌어 더는 안 떠받친다.
+  - **어떻게 고쳤는지(주의)**: 이 세션은 Unity 에디터에 접근할 수 없어 `20_Combat.unity`를 **텍스트
+    파일로 직접 읽고 `m_SurfaceArc: 180` 문자열만 일괄 치환**했다(다른 줄은 전혀 건드리지 않음, 치환 전후
+    개수 18/0으로 확인). YAML 구조 자체를 건드리는 편집이 아니라 스칼라 값 하나만 바꾼 것이라 씬이 깨질
+    위험은 낮다고 판단했지만, **에디터로 한 번 열어서 깨짐 없이 로드되는지, 그리고 Git diff가 이 18줄만인지
+    확인이 필요하다**(`CLAUDE.md` "배치로 씬을 열어 저장할 때 주의" 항목과 같은 이유로 — 이번엔 배치
+    실행도 아니고 아예 에디터를 거치지 않은 수정이라 더 조심해야 함).
+  - **확인 필요**: (1) 실제로 발판 옆에 점프해서 붙어봤을 때 이제 바로 떨어지는지(위/아래 양쪽 모서리
+    전부). (2) 발판이 18개인 이유 — `FieldLayout.NormalPlatforms`(14)+`BossPlatforms`(3)=17인데 씬엔
+    `Platform_14`라는 이름의 객체가 하나 더 있다. 이번 수정과 무관하게 전부 SurfaceArc를 고쳤으니 동작엔
+    문제없지만, 왜 하나가 더 있는지는 별도로 짚을 필요가 있다(테스트용 잔존 오브젝트일 가능성).
+
+- **2026-11-17 (124)** — **[나] 카메라 상하 프레이밍을 발판 층에 따라 보간하도록 변경 — "1층에선 바닥이 화면을
+  너무 차지하고 맨 위층에선 아래가 안 보인다"(사용자가 직접 플레이해보고 지적).**
+  - **원인**: `StageArtConfig.GroundScreenFraction`(0.275, 고정값) 하나를 땅부터 맨 위 발판까지 어디서나
+    똑같이 적용했다 — 1층(위로만 갈 수 있음)에서도, 맨 위 발판(아래로만 갈 수 있음)에서도 같은 비율로
+    화면을 나눠서, "더 갈 수 있는 쪽"을 오히려 적게 보여주는 게 구조적 문제였다(값 튜닝으로는 못 고침).
+  - **수정**: `StageArtConfig.cs`에 고정 상수 대신 `GroundScreenFractionAtFloor`(0.15, 땅)·
+    `GroundScreenFractionAtTop`(0.65, 맨 위 발판) 둘 + `ScreenFractionAt(t)`/`CameraOffsetAt(t)`(t=0~1 보간)
+    를 추가. `CameraFollow2D.cs`엔 `TopPlatformSurfaceY()`(발판 중 가장 높은 윗면, 없으면 땅)를 새로 공개하고
+    `MinY`/`MaxY`/`DesiredY(feetY)`를 전부 이 t-보간 공식으로 바꿨다(`NextFollowY`의 공중 캐치업 로직은
+    범위 밖이라 그대로 둠).
+  - **참조 전부 갱신**: `StageVisuals.cs`(1곳, 배경 풀밭 높이 계산) · `Editor/CaptureStagePreview.cs`(1곳, 10/24
+    일회성 비교 도구) · `Tests/PlayMode/World/StageVisualsTests.cs`(기존 3개 테스트 이름/기대값 변경 +
+    맨 위 발판 케이스용 신규 테스트 1개 추가).
+  - **커밋 직후 사용자가 실제 컴파일 에러로 알려줘서 잡은 누락**: `Assets/Scripts/UI/Lobby/LobbyWorld.cs:199`가
+    같은 상수(`CameraYOffset`)를 쓰고 있었는데 이전 참조 검색(Tests/Editor/`CombatDirector`/
+    `CombatMinimapView`만 확인)에서 안 걸렸다 — **UI/Lobby 폴더를 검색 범위에서 빼먹은 것**. 로비는 카메라가
+    안 움직이니 항상 `t=0`(땅)이라 `StageArtConfig.CameraOffsetAt(0f)`로 교체.
+  - **이 실수로 재검증**: `Assets/Scripts/`·`Assets/Editor/`·`Assets/Tests/PlayMode/` **전체(.cs 약 250개)**를
+    디바이스에서 스테이징해 `CameraYOffset`/`GroundScreenFraction` 문자열을 전수 검색 — 남은 건 주석 2곳
+    (`StageArtConfig.cs`의 "옛 상수" 설명, `LobbyWorld.cs`의 변경 이력 주석)뿐이고 실제 코드 참조는 없음을
+    확인(`StageVisuals.cs`의 스테일 주석 1곳도 `GroundScreenFractionAtFloor`로 같이 고쳤다).
+  - **확인 필요**(이 세션은 디바이스 브리지로 파일만 썼을 뿐 Unity 에디터·테스트 실행기에 접근할 수 없다):
+    1. `Tests/PlayMode/World/StageVisualsTests.cs`를 포함한 전체 PlayMode가 실제로 통과하는지(컴파일만
+       정적으로 확인했을 뿐 실행은 못 해봄).
+    2. 1층·맨 위 발판 양쪽에서 실제로 플레이해보고 체감이 자연스러운지(0.15/0.65라는 값 자체는 추정치).
+
+- **2026-11-17 (123)** — **[나] Charge 영구 보존 수정 재적용 + 1스테이지 전투 배경을 새 그림(5겹 합성)으로 교체**
+  (사용자가 전날 discard로 같이 날아간 Charge 수정을 다시 해달라고 요청 + 새 전투 배경 그림 5장(`bg_.zip`)을
+  올려줌 — "하는김에 폴더 이름 크로노세이비어로 바꿀수있나"는 오늘 작업 끝나고 마지막에 처리하기로 사용자와
+  합의, 아직 안 함).
+  - **세션 연결 폴더가 어제와 다름** — 어제는 `D:\chrono-savior`, 오늘은 `D:\그냥 과제 파일들\yokai_unity-main\
+    yokai_unity`(다른 기기). 사용자 확인: "기기가 달라서 명칭이 다를뿐 어차피 똑같은 파일 넣어야하는 폴더임"
+    — 실제로 `CLAUDE.md`/`PROGRESS.md`/코드 상태가 어제 끝낸 지점과 정확히 일치함을 직접 확인하고 진행.
+  - **Charge 수정**: 로그 (122)에서 설명한 것과 완전히 같은 내용을 `BuildCharacterAnimations.cs`에 다시
+    적용 — `Character_Mage_Charge.anim`을 `AssetDatabase.LoadAssetAtPath`로 불러와 `BuildBaseController`에
+    넘기고, `Charging`(Bool) 파라미터 + `Charge` 상태 + `AnyState→Charge`(Hit·Attack과 같은 우선순위,
+    Grounded 체크보다 먼저) + `Charge→Idle` 전이를 코드에 박아 넣음. 재적용 전에 이 기기의 `CharacterBase.
+    controller`에 Charge 상태가 멀쩡히 있는 것도 확인(어제 discard로 되돌아간 그 버전과 동일).
+  - **전투 배경 교체**: 사용자가 올린 `1.png~5.png`(640×360, 하늘→먼 산→먼 폐허→중간 폐허→가까운 폐허 순
+    5겹)를 확인한 결과, 지금 `StageArtSet`/`StageVisuals`는 배경 그림 **1장만 쓰는 구조**(진짜 다중 레이어
+    시차는 없음, 카메라 위치에 따라 큰 그림 안에서 보여줄 범위만 옮기는 방식)였다 — 사용자에게 "5장을 합쳐서
+    기존 구조에 교체" vs "진짜 레이어별 시차로 구조 확장"을 물어서 **합치는 쪽으로 결정**(빠름·안전, 구조
+    변경 없음).
+    - PIL로 5→4→3→2→1 순서(뒤에서 앞으로, alpha_composite) 합성 — 전부 같은 640×360 캔버스라 리사이즈
+      없이 그대로 겹침. 결과물은 완전 불투명(하늘이 맨 밑에 깔려 투명 구멍 없음), 육안으로도 이상 없음.
+    - `Assets/Resources/Art/Figma/Stage1/bg_forest.png`를 이 합성 그림으로 **덮어쓰기**(같은 파일명·같은
+      640×360 RGBA·같은 GUID 유지 — `StageArt_Forest.asset`의 `background` 참조·.meta 둘 다 안 건드려도 됨).
+    - `StageArt_Forest.asset`의 `backgroundTopPx`(19→**0**, 옛 숲 그림의 바위 테두리가 없어져서)·
+      `backgroundGrassYPx`(181.8→**340**, 새 그림엔 또렷한 풀밭 줄이 없어서 가장 가까운 폐허 실루엣이
+      바닥에 닿는 높이로 근사 — 1.png 실루엣 상단 y가 x축마다 233~333px, 평균 304px라는 픽셀 분석 기반
+      추정치)로 변경. `backgroundViewLeftPx`/`backgroundViewRightPx`(240/400)는 그대로 둠(새 그림이 가로로
+      비슷한 패턴이 반복돼 특별히 바꿀 이유를 못 찾음).
+    - 배경 그림 이름(`bg_forest`)과 내용(폐허)이 안 맞게 됐는데, 이번 요청 범위 밖이라 이름은 안 건드림 —
+      사용자가 원하면 나중에 따로.
+  - **확인 필요**(둘 다 에디터 접근 없이 코드/수치 추정만으로 처리함 — 위 "다음 할 일" 참고): Charge 상태가
+    메뉴 재실행 후에도 실제로 살아있는지, 그리고 `backgroundGrassYPx`/`backgroundTopPx` 추정치가 실제 플레이
+    화면에서 자연스러운지.
+
+- **2026-11-16 (122)** — **[나] 바로 아래 (121)의 "좌우반전 12프레임" 작업 전체 폐기 — 되돌림(discard) + 07~12 프레임
+  파일 삭제로 재커밋**(사용자가 실제로 플레이해보고 "좌우반전이 말 그대로 양쪽을 다 보여준다"고 지적 — 의도와
+  다르다는 걸 사용자 본인이 다시 설명해줘서 확인).
+  - **(121)이 왜 틀렸는지**: 사용자의 원래 의도는 "같은 방향을 계속 보면서 반대팔로 한 번 더 휘두르는 것"이었는데,
+    그림 전체를 좌우반전하면 **팔만 바뀌는 게 아니라 몸 전체가 반대 방향을 보게 된다** — 평면 이미지를 기계적으로
+    반전해서는 "몸은 그대로, 팔만 반대"를 만들 수 없다(팔이 겹치는 부분까지 다시 그려야 해서 사실상 새 그림이
+    필요함). 게다가 `PlayerRig.UpdateFacing()`이 지금 어느 프레임이 떠 있든 매 프레임 `sr.flipX = mover.Facing > 0`를
+    강제로 적용하는데, 07~12번은 이미 픽셀 자체가 반전된 그림이라 콤보 후반부에서 **반전이 두 번 겹쳐** 캐릭터가
+    순간적으로 다시 반대 방향을 보는 것처럼 보이는 실제 버그였다(1~6번 정상 → 7~12번에서 홱 돌아가는 증상).
+  - 이 와중에 사용자가 **별도로 보고한 "점프 모션이 이상해졌다"**도 원인을 못 찾고 있었는데(에디터 접근 없이
+    `CharacterBase.controller`/`Character_JumpFall.anim`/오버라이드 컨트롤러를 직접 열어 대조해봐도 JumpFall
+    쪽 배선 자체는 멀쩡했음), 타이밍상 **점프 중 공격(=위 이중반전 버그)을 "점프가 이상하다"로 체감했을
+    가능성이 높다** — 원인 파일 자체가 사라졌으니 더 이상 재현해서 확정할 순 없지만, 다음에 다시 점프해보고도
+    같은 증상이면 그건 진짜 별개 원인이니 다시 보고해달라고 안내함.
+  - **처리**: GitHub Desktop "Discard changes"로 `BuildCharacterAnimations.cs`·`CharacterBase.controller`·
+    `Character_Blade_Attack.anim`을 (121) 이전 커밋 상태로 되돌림(사용자가 "12프레임 작업하기 딱 전에
+    커밋했다"고 확인) → 살수 공격 다시 6프레임, Charge 상태도 원래 손으로 고쳐뒀던 버전 그대로 복귀 확인.
+  - **discard가 못 지운 것**: `Character_Blade_Attack_07~12.png`(+.meta) 12개는 새 파일이라 discard 시점에
+    GitHub Desktop이 아직 "변경사항"으로 못 잡아서 디스크에 남아있었음 — 이 세션엔 기기 파일을 **삭제**하는
+    도구가 없어서(쓰기/읽기만 가능) 사용자가 직접 Unity 프로젝트 창에서 지우고 재커밋함(확인 완료, 폴더에
+    01~06만 남음).
+  - **아직 안 끝난 것**: (122) 이전 로그에 있던 "`BuildCharacterAnimations.cs` 메뉴 재실행이 손으로 추가한
+    Animator 상태를 날려버리는" 근본 버그에 대한 영구 수정(Charge 파라미터/상태를 스크립트에 박아 넣는 안)도
+    discard로 같이 날아갔다 — **재발 방지 코드가 지금 없는 상태**다. 당장 메뉴를 다시 돌릴 계획이 없으면
+    급하진 않지만, 다음에 그 메뉴를 또 돌릴 일이 생기면 똑같이 Charge가 지워질 수 있다는 걸 알고 있을 것
+    (다시 고쳐서 커밋할지는 사용자 확인 필요).
+  - **확인 필요**: 살수 공격(6프레임으로 복귀)과 차지 모션이 실제로 정상으로 보이는지, 그리고 점프를 다시
+    테스트했을 때도 "이상하다"는 증상이 재현되는지(재현되면 위 이중반전 버그와 무관한 별개 원인).
+
+- **2026-11-16 (121)** — **[나] 살수 공격 애니메이션 6장 → 좌우반전 6장(07~12) 추가해 12장으로 — 쌍칼이라 "다른 손으로
+  한 번 더 베기" 콤보처럼 자연스럽게 이어짐**(사용자 "모션을 좌우반전해서 한번더 출력하면 1~12같은느낌으로
+  쓸수있지않을까" → "1로가자"로 확정, 반전 결과물로 **새 PNG 6장을 실제로 생성**하는 방식 선택).
+  - 먼저 그림을 확대해서 직접 확인 — 1~6번은 앞손(왼쪽) 칼이 크게 휘두르는 동작, 5~6번에서 등 뒤에 숨어있던
+    **뒷손(오른쪽) 칼**이 드러나며 회수되는 구조였다. 처음엔 "한손 무기"로 잘못 보고 반전하면 무기가 손을
+    순간이동한 것처럼 보일 거라고 답했는데, 사용자가 "쌍칼인데"로 바로잡아줘서 다시 확대해서 재확인 —
+    쌍칼이 맞았고, 그러면 반전은 "같은 손이 반대쪽에서 다시"가 아니라 **"이번엔 다른 손으로 한 번 더"**로
+    읽혀서 오히려 자연스럽다.
+  - `Assets/Resources/Art/Characters/Blade/Character_Blade_Attack_01~06.png`를 PIL로 좌우반전해서
+    `_07~12.png`로 저장(01→07, 02→08 … 06→12, 같은 순서 그대로 한 번 더) + 짝 맞춰 `.meta` 6개 수작업
+    생성(원본 메타에서 `spritePivot`·가로세로(70×48)를 그대로 읽어와 썼다 — alignment 9·pivot
+    (0.5, 0.546875)·PPU 128, `docs/pixel-standard.md` 캐릭터 규칙 그대로). 반전한 그림을 확대해서
+    직접 다시 확인 — 칼 궤적이 거울상으로 자연스럽게 뒤집혀 있고 어색한 부분 없음.
+  - **코드 수정 없음** — `Assets/Editor/BuildCharacterAnimations.cs`의 `LoadFrames()`가 폴더 안에서
+    `Character_Blade_Attack_` 접두사가 붙은 스프라이트를 이름순(Ordinal)으로 전부 긁어모으는 구조라
+    `_07~12`도 자동으로 잡힌다(`"06" < "07" < … < "12"` 문자열 비교로 순서도 정확히 맞음) — **다음에 메뉴
+    `ChronoSavior/캐릭터 애니메이션 만들기`를 실행하면 `Character_Blade_Attack` 클립이 자동으로 12프레임이
+    된다**(아직 그 메뉴 자체를 실행한 적이 없어서(로그 (106) 참고) 지금은 에셋만 준비된 상태).
+  - **확인 필요**: 에디터로 아직 못 봄 — (106)의 "아직 실행도 안 했다" 애니메이션 생성 메뉴를 실제로
+    돌려서 12프레임 클립이 의도대로(한 바퀴 재생에 시간이 2배로 늘어나는 게 맞는지, AttackFps 그대로 둬도
+    되는지) 만들어지는지 확인 필요.
+
+- **2026-11-16 (120)** — **[나] 보스 '이동' 그림, 걷기가 아니라 넉백 슬라이딩에 연결**(사용자가 (119)의 "이동은 안
+  입혔다"는 보고에 "보스도 이동하잖아 그 이동에 넣으면 되는거아닌가"라고 반박 — 다시 코드를 확인해서 맞는 말이었다).
+  - **재확인해서 알게 된 것**: "걷기(자기 의지로 방향키 누른 듯한 이동)"는 정말 없지만, **맞아서 밀리는 넉백
+    슬라이딩은 있었다** — `EnemyMove.FixedUpdate`(`vx = frozen ? 0f : ownSpeed + knockbackX`)가 이 보스의
+    own speed(땅에 있을 땐 늘 0)와 무관하게 `knockbackX`를 그냥 더하기 때문에, 지상에서 맞으면 실제로 옆으로
+    미끄러진다. 이 보스는 `IsDamageProtected`가 공중에서만 켜져서(`IsAirborne`) 지상 상태 전부(대기·점프
+    준비/후딜·투척 준비/조준/후딜)에서 맞을 수 있고, `Enemy_Base.prefab` 기준 `knockbackSpeed=2.4`·
+    `knockbackMultiplier=1`·`knockbackDecay=9`로 보스도 기본값 그대로라 맞을 때마다 ~0.25~0.4초 정도
+    실제로 슬라이딩한다. **처음에 "걷지 않는다"는 사실만 보고 이동 그림 전체가 쓸모없다고 결론 낸 게
+    성급했다** — 걷기와 넉백 슬라이딩은 별개였다.
+  - 받아 온 이동 그림 4장을 실제로 열어 확인 — 발 달린 걸음걸이가 아니라 몸 전체가 살짝 출렁이는 애니메이션
+    (대기 그림과 포즈가 거의 같고 출렁임 폭만 큼) — 다리 없는 덩어리라 "걷는 모습"보다 "밀리는 동안의 흔들림"에
+    오히려 더 잘 맞는 그림이었다.
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Move_01~04` 신설(80×64, PPU 128, 같은 방식).
+  - `Enemies/EnemyMove.cs`: `public float KnockbackMagnitude => Mathf.Abs(knockbackX);` 추가(기존
+    `Direction` 공개 프로퍼티와 같은 자리·같은 이유 — 비공개 필드를 다른 스크립트가 읽어야 함).
+  - `Enemies/BlobLordBoss.cs`: `UpdateBodySprite`에 **피격(최우선) 다음, 상태별 그림(튀어오르기·투척)보다 위**
+    우선순위로 넉백 슬라이딩 분기 추가 — `mover.KnockbackMagnitude`가 문턱(`KnockbackSlideThreshold=0.05`)을
+    넘는 동안 이동 4장을 10fps(`MoveFrameFps`)로 순환시키고(`moveCycleT`, 멎으면 0으로 리셋 — 다음 밀림은 처음
+    프레임부터), 안 밀리면 기존 상태 분기로 그대로 넘어간다. 어느 상태에서 맞든(투척 준비 중이든 대기 중이든)
+    적용된다 — 몸이 밀리는 동안은 그게 가장 눈에 띄는 동작이라 상태별 그림보다 우선했다.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(이동 그림도 이제 쓴다 — 걷기가 아니라 넉백 슬라이딩).
+  - **확인 필요**: 역시 에디터로 못 봄 — 넉백 슬라이딩 지속 시간(~0.25~0.4초)에 10fps 4프레임이 자연스럽게
+    맞물리는지, 멎을 때 기본 그림으로 바로 끊기듯 돌아가는 게 어색하지 않은지는 실제로 맞아 봐야 안다.
+
+- **2026-11-16 (119)** — **[나] 보스 애니메이션 나머지 3종 연결(조약돌 투척·피격·사망) + 사망 그림을 위해 `EnemyHealth`에
+  새 훅 추가 — 이동(4장)은 보류하고 사용자에게 물음**(사용자 "나머지도 연결해줘", (118)에서 대기·튀어오르기만
+  입히고 남겨 둔 것).
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Throw_01~04`·`_Hit_01`·`_Death_01~08` 신설(80×64,
+    PPU 128, 피벗 0.5/0.5 — (118)과 같은 방식·같은 캔버스, `.meta` 13개 수작업 생성).
+  - **조약돌 투척**: `BlobLordBoss.UpdateBodySprite`에 `State.ThrowPrep`(들어 올림, 1~2번째)·
+    `State.ThrowWarn`(조준 고정, 3~4번째) 분기 추가 — 점프의 "123 올라갈 때/456 내려올 때" 분배와 같은 방식.
+  - **피격**: `CombatEvents.EnemyDamaged`(적 전체가 같이 쓰는 전역 이벤트, `Core/CombatEvents.cs`)를
+    `OnEnable`/`OnDisable`로 구독해 **`gameObject` 일치**로 걸러 받는다(`HandleDamaged`) — 맞으면 0.15초
+    (`HitFlashDuration`) 동안 피격 그림 1장을 다른 모든 그림보다 우선해서 보여주고(`UpdateBodySprite` 맨 위에서
+    검사), 흰 피격 깜빡임(`EnemyHealth.ShowFlash`, 알파 덧칠)과는 별개로 같이 겹쳐 보인다. 화상 등 지속 피해는
+    `EnemyDamaged`를 안 올려서 자연히 제외.
+  - **사망**: `EnemyHealth.Die()`가 지금까지 **모든 적**(고블린 포함)을 조건 없이 즉시 `Destroy`했는데, 그러면
+    사망 그림 8장을 한 프레임도 못 보여준다. **`Core/IDeathAnimated.cs` 신설**(멤버 하나짜리 마커 인터페이스,
+    `PlayDeathAndDestroy()`) — `Die()`가 `GetComponent<IDeathAnimated>()`를 찾으면 그쪽에 Destroy를 맡기고,
+    없으면(고블린 등 보통 몹) 지금처럼 즉시 Destroy한다(동작 변화 없음). `BlobLordBoss`가 이걸 구현해서 죽는
+    순간 들고 있던 돌·경고 표시를 바로 치우고 사망 그림 8장을 8fps(`DeathFrameFps`)로 재생한 뒤 스스로 Destroy.
+    재생 중엔 `GetHorizontalSpeed`/`GetVerticalPosition`이 맨 위에서 `health.IsDead`를 보고 즉시 멈춰서(0 반환/
+    현재 Y 유지) 상태머신이 계속 돌며 다음 패턴을 고르거나 `UpdateBodySprite`가 사망 그림을 매 프레임 덮어쓰는
+    일이 없게 했다 — **`EnemyMove.FixedUpdate`는 `IsDead`를 안 보고 매 프레임 `GetHorizontalSpeed`를 계속
+    부르므로** 이 가드가 없으면 죽은 채로 계속 움직이거나 다음 공격을 준비했을 것(코드로 확인, `EnemyMove.cs`
+    224줄 근방). 뜬 자세로는 못 죽으므로(공중=무적, `IsDamageProtected`) 항상 지상에 서 있던 자리에서 멈춘다.
+  - **이동(4장)은 이번에도 안 입혔다 — 사용자 확인 필요**. 이 보스는 애초에 걷지 않는다(명세 밖,
+    "Codex 상의로 정한 것" 클래스 doc 콜아웃 — `State.Idle`이 수평 이동을 전혀 만들지 않고, 유일하게 X가
+    바뀌는 건 공중 추적 점프뿐인데 그건 이미 튀어오르기 그림을 쓴다). 지상에서 걷는 상태 자체가 없어 자연스러운
+    자리를 못 찾았다 — 억지로 아무 상태에나 끼워 넣기보다 사용자에게 물어서 정하는 쪽을 택함. 받아 온 그림
+    6종 중 유일하게 미사용.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(투척·피격·사망도 입혔다고 반영, 이동만 미사용으로 남김).
+  - **확인 필요**:
+    1. **여전히 Unity 에디터로 못 봄** — 컴파일·Play 모드로 투척/피격/사망 전환이 실제로 매끄러운지,
+       `EnemyHealth.Die()` 변경이 다른 적(고블린 등)의 사망 타이밍에 의도치 않은 영향을 주지 않는지(이론상
+       `IDeathAnimated` 미구현이면 그대로 즉시 Destroy라 영향 없어야 하지만 확인 필요).
+    2. **`이동` 애니메이션을 어디에 쓸지** — 위 설명대로 현재 상태머신에 걷는 상태가 없어서 그대로 두었다.
+       사용자가 원하면 (a) 지금은 안 쓰고 남겨 둔다 (b) 다른 자리(예: 추적 점프 준비 중 몸을 좌우로 살짝
+       흔드는 용도 등)로 재해석한다 (c) 그 밖의 용도 — 중 선택 필요.
+    3. (118)의 "새 `.meta` 수작업 생성" 확인 필요가 이번 13개에도 똑같이 적용된다(GUID 충돌 가능성은
+       낮음, 전부 새 랜덤값).
+
+- **2026-11-16 (118)** — **[나] 1지역 보스 '덩어리 지배자' 실제 아트 적용 + 추적 점프 강하 패턴에 튀어오르기 그림**
+  (사용자가 보스 애니메이션 zip을 올리고 "보스파일 받아왔는데 적용가능하니" → 이어서 "보스패턴중에 점프후
+  낙하하는 패턴에서 튀어오르기 123을 올라갈때 내려올때 456으로 적용좀").
+  - zip 안 폴더 6개(대기 4장·이동 4장·조약돌 투척 4장·튀어오르기 6장·피격 1장·사망 8장, 전부 80×64 캔버스)를
+    확인 — 전부 `BlobLordBoss`(1지역 보스, 추적 점프 강하·대형 조약돌 투척 두 패턴)용. **이번엔 대기 1장(틀 그림
+    교체용) + 튀어오르기 6장만 적용**, 나머지 넷은 zip에 받아 뒀지만 아직 안 입힘(아래 "확인 필요").
+  - `Assets/Resources/Art/Enemies/BlobLord/Enemy_BlobLord_Idle_01~04`·`_Bounce_01~06` 신설(80×64, PPU 128,
+    피벗 중앙 0.5/0.5 — 캐릭터 아트와 같은 방식, Resources.Load로 읽는 1인칭 자산이라 git에 들어간다. 외주
+    VFX 팩과 다른 카테고리, (116) 때와 같은 구분). `Assets/Resources/Art/Enemies/`(신규) 폴더도 생겼다.
+  - `Assets/Prefabs/Enemies/Enemy_BlobLord.prefab`: 몸 `SpriteRenderer`의 `m_Sprite` 오버라이드를 예전 기본
+    도형(`Assets/Sprites/Pixel/BlobLord.png`)에서 `Enemy_BlobLord_Idle_01`로 교체.
+  - `Enemies/BlobLordBoss.cs`: `Awake`에서 프리팹이 들고 있는 그 틀 그림을 `defaultSprite`로 캐시 + 새
+    `UpdateBodySprite()`(매 물리 프레임, `GetHorizontalSpeed` 끝에서 호출) — **올라갈 때**(`State.JumpRise`)
+    진행률로 튀어오르기 1~3번째, **정점에서 추적**(`State.JumpTrack`)은 3번째를 그대로 유지, **낙하**
+    (`State.JumpFall`)는 진행률로 4~6번째, 그 밖(대기·준비·후딜·투척 전체)은 `defaultSprite`. 사용자가 말한
+    "123/456"을 그대로: 123=올라갈 때, 456=내려올 때.
+  - **크기 계산을 코드로 확인하고 맞췄다(눈으로 아직 못 봄)**: `EnemySetup.FitToWorldSize`가 스폰 **그 순간의
+    스프라이트 크기**를 기준으로 `transform.localScale`을 **가로·세로 따로** 계산해 `BlobLordBoss.VisualSize`
+    (2.0×1.625)에 맞춘다 — 한 번만 계산하고 그 뒤로는 안 바뀐다. 그래서 틀 그림(대기 01)과 튀어오르기가
+    **같은 80×64 캔버스·같은 PPU(128)**가 아니면 튀어오르기로 바뀌는 순간 보스 크기가 눈에 보이게 틀어진다
+    — 전부 같은 캔버스로 맞춰서 이 문제는 없을 것으로 계산했다(코드만 확인, 에디터로 직접 못 봄).
+    `BlobLordBossTests.cs:111`("그림 크기")은 폭을 `VisualSize.x`와 비교하는데, 이 테스트는 **어느 그림을
+    기준으로 스케일을 잡았든 결과가 항상 `VisualSize`와 같게 나오는 구조**(`FitToWorldSize`가 역산해서
+    맞추므로)라 그대로 통과할 것으로 본다 — 역시 배치 실행으로 확인 못 함.
+  - `docs/asset-swap-points.md` 보스 줄 갱신(실제 아트 적용 + "새 상태 그림을 추가할 땐 같은 캔버스로"
+    경고 추가).
+  - **확인 필요**:
+    1. **Unity 에디터로 직접 못 봄** — 컴파일·Play 모드로 실제 크기·점프 모션이 맞는지 확인 필요.
+    2. **나머지 네 상태(이동·조약돌 투척·피격·사망)는 그림만 받아 뒀고 코드에 아직 안 연결했다** — 다음에
+       할지 사용자 의사 확인.
+    3. 새 `.meta` 파일(GUID·internalID 등)을 전부 수작업으로 생성했다 — Unity가 임포트할 때 포맷을
+       못 알아보거나 GUID 충돌이 나면(가능성 낮음, 전부 새 랜덤값) 알려 줄 것.
+
+- **2026-11-16 (117)** — **[나] 0차(갈래 없음) 기본탄에도 그림 추가**(사용자 "지금 이펙트가 없는
+  메이지 기본공격도 슈퍼픽셀 프로젝타일 팩 4에 에너지 블래스트 B 블루도 스몰 라지 적용가능?" —
+  (116)에서 완충 여부로 small/large를 바꾼 걸 기본공격에도 똑같이 적용해 달라는 요청).
+  - `MageAttack.FireAimed()`를 다시 보니 **0차도 `charged`(차지 50%↑) 값을 이미 계산해서
+    `MageProjectile.Spawn`에 넘기고 있었다** — 그동안 `BoltKey`가 `gravityOrb`/`explosive`가 둘 다
+    아니면 그냥 null을 줘서 프리팹의 원을 색칠하는 걸로 끝났을 뿐, 새 문턱을 만들 필요 없이 기존
+    값을 그대로 쓸 수 있었다.
+  - `Combat/VfxKeys`에 `MageBasicProjectile`/`MageBasicProjectileLarge`("mage/basic_projectile[_large]")
+    신설, `Assets/Editor/VfxPackImporter.cs` Manifest에 `pj4_energy_blast_B_small/large_blue`로 추가
+    (사용자가 "에너지 블래스트 B 블루"라고 직접 지정 — `_A_` 때보다 폴더명 확신도는 높지만 `_large_`
+    쪽은 여전히 추정, 위 "확인 필요"에 추가).
+  - `Characters/MageProjectile.BoltKey`가 `gravityOrb`도 `explosive`도 아닌 경우(=0차) `null` 대신
+    `charged ? MageBasicProjectileLarge : MageBasicProjectile`을 돌려주게 끝 분기 하나만 바꿨다.
+  - `ShowArt`를 부르는 회전 조건도 `explosive` 플래그 대신 `!gravityOrb`로 넓혔다 — 기본탄도
+    energy_blast 계열(혜성 모양, 오른쪽을 향함)이라 화염탄과 똑같이 날아가는 방향으로 돌려야
+    해서(보라 구체=중력 갈래만 원형이라 안 돈다).
+  - `docs/asset-swap-points.md` 마법사 탄 그림 줄에 0차 기본탄 키 추가 반영.
+  - **확인 못 함**: 역시 에디터로 가져오기 돌려서 두 폴더가 실제로 풀리는지 — 디바이스 브리지로는
+    파일만 넣었다.
+
+- **2026-11-16 (116)** — **[나] 마법사 탄 그림, 완충이면 큰 그림으로**(사용자 "발사체가 차지했을때랑
+  안했을때랑 크기가 같으면 사용자가 알기 어렵지않을까 ... 차지했을때 발사체는 large에서 차지가
+  덜되거나 안되었을때는 small에서 가져오는게 맞는것같은데" — 직전에 "판정 상자만 커지고 그림은
+  차지와 무관하게 고정"이라고 답했던 것에 대한 개선 요청).
+  - `Combat/VfxKeys`에 `MageFireProjectileLarge`("mage/fire_projectile_large") 신설. 중력 갈래는
+    `MageGravityOrbSmall`/`Large` 둘 다 2026-11-07부터 있었는데 `Large`는 지금까지 `GravityVortexVfx`
+    (중력장 구체, **중첩 수** 기준 전환)에서만 쓰고 탄 자체는 늘 `Small`만 썼다 — 이제 탄에도 같이
+    쓴다(쓰는 기준이 서로 다르다는 걸 `docs/asset-swap-points.md`에 명시).
+  - `Characters/MageProjectile.cs`: 새 `static string BoltKey(gravityOrb, explosive, charged)`가
+    **완충**(`charged` — `chargeK >= 0.5`, 번 스택·착탄마다 폭발 여부에 이미 쓰던 기존 문턱 그대로
+    재사용, 새 문턱 안 만듦) 여부로 small/large를 고른다. `ShowArt`의 혜성 그림 회전 조건을
+    `key == MageFireProjectile` 문자열 비교에서 `explosive` 플래그 인자로 바꿔 large 키에서도
+    똑같이 회전되게 함께 고쳤다.
+  - `Assets/Editor/VfxPackImporter.cs` Manifest에 `MageFireProjectileLarge ← PNG/pj4_energy_blast_A_large_red`
+    추가 — **폴더명은 dark_matter small/large 쌍과 같은 규칙으로 추정**(zip 안을 직접 못 봄). 확인
+    필요 항목으로 위에 남김.
+  - `docs/asset-swap-points.md`: 마법사 탄 그림 줄을 완충 기준으로 다시 썼고, 2026-11-07 스프린트 때
+    적어 둔 "판정 폭에 가장 가까운 정수 배율(`VfxPlayer.WholeScale`)" 문장이 그 뒤 모든 그림이
+    `DotScale` 고정으로 바뀌면서 틀린 채로 남아 있던 걸 사용자 질문에 답하다가 발견해 같이 고쳤다.
+  - **확인 못 함**: Unity 에디터에서 `ChronoSavior/VFX 팩 가져오기`를 다시 돌려 `mage/fire_projectile_large`
+    폴더가 실제로 풀리는지 — 디바이스 브리지로는 파일만 넣었고 에디터를 직접 못 열어 컴파일도
+    아직 못 봤다.
+
+- **2026-11-16 (115)** — **[나] (114) 오라 삭제로 터진 컴파일 에러 수정**(사용자 "컴파일 에러 떳는데 오라
+  관련" — 스크린샷). (114)에서 `MageChargeVfx`의 `AuraKey`/`AuraFps`/`AuraSortingOrder`/`AuraTint`를
+  지웠는데, **그걸 쓰는 다른 파일을 못 찾고 놓쳤다** — `Assets/Editor/CaptureUiPreview.cs`의
+  `RunMageVfx()`(마법사 이펙트를 전투 화면 배율로 캡처하는 에디터 도구, `-executeMethod`로 배치 실행)가
+  갈래별 오라를 찍던 블록(CS0117 5건, 167~171줄)에서 그 네 멤버를 그대로 참조하고 있었음. 로컬 grep이
+  스테이징된 파일만 보는 한계라 전체 레포를 못 훑은 게 원인 — 다음엔 공개 API를 지울 때 에디터 스크립트까지
+  훑을 것.
+  수정: 그 블록을 **실제 씬의 Player에 이미 붙어 있는 `MageChargeVfx`/`MageAttack`을 그대로 써서** 차지율
+  0.3·0.85·1.0 세 단계를 리플렉션으로 강제로 넣고 `Refresh()`를 불러 찍게 바꿨다(`mage_charge_orb_early`·
+  `_orb_ki`·`_orb_full`) — 오브·일렁임이 실제로 뭘 그리는지 그대로 캡처된다. 찍고 나면 `charging=false`로
+  되돌려 다음 캡처 블록에 안 남게.
+
+- **2026-11-16 (114)** — **[나] KiEffect 용도 정정(발사 순간→차지 일렁임) + 차지 오라 삭제**
+  (사용자 "KiEffect_01~06는 발사순간이 아니라 차지 9장쯤부터 오브 근처에 일렁이듯 반복되는 이펙트고
+  원래 차지할때 캐릭터뒤에 오라같은거는 없애줄래 필요없다" — (112)에서 내가 "발사 순간용인가 보다"라고
+  잘못 짐작했던 걸 사용자가 직접 정정).
+  1. **KiEffect = 오브 일렁임**: `MageChargeVfx.UpdateKi()` 신설 — 오브가 9번째 프레임(0-based 인덱스 8,
+     `KiEffectStartOrbFrame`)에 들어선 **이후부터** 오브와 같은 자리에 겹쳐서, 차지율이 아니라 **시간 기반**으로
+     6장을 10fps 루프(`KiEffectFps`)로 돈다 — "일렁인다"는 표현상 정지된 프레임이 아니라 계속 움직여야
+     자연스럽다고 판단. `Refresh()`가 `UpdateOrb()`의 반환값(지금 그린 오브 프레임 인덱스)을 그대로 넘겨 받아
+     문턱을 판단한다.
+  2. **차지 오라 삭제**: 2026-11-07 VFX 스프린트에서 넣었던 외주 팩 기반 오라(`scifi_charge_up_001`,
+     `VfxKeys.MageChargeSmall`/`…Violet`, 몸 뒤)를 통째로 뺐다 — `UpdateAura()`·`aura` 필드·`AuraFps`·
+     `AuraSortingOrder`·`AuraKey`·`AuraTint`·`FireTint`·`AuraVisible` 전부 삭제. 테스트도 같이 지움
+     (`ChargeAura_ShowsOnlyWhileCharging_AtFixedWorldScale`·`ChargeAura_ColorPerBranch` → 대신
+     `Orb_ShowsOnlyWhileCharging_MapsChargeRatioToFrame`·`Ki_ShowsOnlyOnceOrbReachesFrame9` 신설).
+     `docs/asset-swap-points.md`도 갱신 — "마법사 차지 오라" 행 삭제, 대신 손 오브·일렁임을
+     "바로 바꿀 수 있는 곳"(캐릭터 아트, 외주 팩 아님)에 새 행으로. `CreationOwnershipTests.cs`의
+     `MageChargeVfx.cs` 설명 문구도 현행화.
+  **아직 Play 확인 전** — 차지 9장 즈음부터 오브 주변이 일렁이는지, 캐릭터 뒤 오라가 완전히 사라졌는지.
+
+- **2026-11-16 (113)** — **[나] 공격 사운드 추가로 -4dB 더 낮춤**(사용자 "공격 사운드들이 대체로
+  너무 큰것같아" — (112)의 평균화 이후에도 여전히 크게 느껴진다는 지적). (112)는 28개를 **한 목표치**로
+  평균화한 것뿐이라 공격음도 다른 효과음과 같은 레벨(~-21dB)이었는데, 공격음은 전투 중 **반복 재생
+  빈도가 압도적으로 높아서** 같은 데시벨이라도 체감 피로도가 다른 효과음보다 훨씬 크다 — 이번엔
+  평균치가 아니라 **"자주 울리는 소리는 따로 더 낮춘다"**는 별도 기준 적용.
+  대상은 이름에 `_attack`이 붙은 것 중 **플레이어가 직접 쏘는 쪽만** 7개 — `assassin_attack1~3`,
+  `mage_basic_attack`, `mechanic_basic_attack`, `fire_attack`(마법사 폭발 갈래), `gravity_attack`
+  (마법사 중력 갈래). `player_attacked`(플레이어가 맞는 소리, 공격이 아니라 피격 피드백이라 범주가
+  다름)는 그대로 뒀다 — 이것도 낮춰야 하면 말씀해주세요.
+  (112)에서 만든 파일 위에 추가로 `volume=-4dB`만 걸어 재인코딩(192kbps 유지) — 결과 평균
+  -25.5~-27.4dB로, 나머지 효과음(-21~-26dB대)보다 뚜렷하게 조용해짐. 스킬(`fire_skill`·`gravity_skill`·
+  `assassin_spin`, 쿨다운이 길어 자주 안 울림)은 이번엔 안 건드림 — 이것도 같이 낮출지는 확인 필요.
+  **아직 Play 확인 전.**
+
+- **2026-11-16 (112)** — **[나] 차지 손 오브 추가 + 차지·점프 동시 발생 버그 수정 + SFX 음량 평균화**
+  (사용자 세 가지 동시 지적 — "차지 애니메이션 보면 이펙트도 있잖아 이것도 추가해주고" / "차지중에 점프하면
+  점프랑 차지랑 모션 둘다 출력되려고해서 되게 이상하게보이는데" / "사운드들 있잖아 ... 평균으로 맞춰주는것도
+  되려나"). 세 건 다 (111)과 무관한 별개 버그·요청.
+  1. **손 오브**: 차지 오라(`MageChargeVfx` 1번)와 헷갈려서 먼저 "그거 말고 다른 거냐"고 되물었더니
+     "차지 애니메이션 폴더 보면 이펙트가 또 따로있음"이라고 확인받음 — `Character_Mage_Attack_OrbEffect_01~11.png`
+     (몸 그림과 **똑같은 캔버스** 70×48·PPU128·피벗 0.5/0.546875, `.meta` 대조로 확인)가 안 쓰이고 있었음.
+     차지율을 11장에 그대로 매핑(루프 아님, 0%=1번·100%=11번)해서 몸 바로 앞(sortingOrder+1)에 겹쳐 그리게
+     `MageChargeVfx.UpdateOrb()` 신설. 같은 폴더의 `Character_Mage_Attack_KiEffect_01~06.png`(발사 순간 불꽃
+     6장)도 안 쓰이고 있는데, 이건 차지가 아니라 **Attack 클립**(발사 순간) 쪽이라 범위가 달라서 안 건드림 —
+     아래 "확인 필요"에 남김.
+  2. **차지+점프 동시 깜빡임 버그**: `CharacterBase.controller`의 AnyState 우선순위가
+     `[Hit, Attack, Charging→Charge, Grounded→JumpFall]` 순이었는데, 이미 Charge 상태에 있을 때
+     `Can Transition To Self: 0`이 그 전이를 막으면(자기 자신으로는 못 감) Mecanim이 그냥 포기하는 게
+     아니라 **우선순위상 다음 AnyState 전이(JumpFall)로 넘어가 버린다** — 공중에서 차지 중이면
+     Charge↔JumpFall을 매 프레임 왕복하며 그림이 번갈아 바뀌어 "둘 다 나오려는" 것처럼 보였음. (110)에서
+     JumpFall 자체는 맨 끝 우선순위라 막혀도 그냥 안 움직여서 괜찮았는데, Charge는 중간 순위라 막히면
+     다음 걸로 새는 게 문제. 수정: JumpFall 전이 조건에 `Charging IfNot`을 추가해(`Grounded IfNot` AND
+     `Charging IfNot`) 애초에 차지 중엔 이 전이 자체가 조건을 못 만족하게 — Charge가 자기 자신 전이로
+     막혀도 JumpFall로 샐 길이 없어짐(차지가 끝나야 비로소 조건이 둘 다 맞아 JumpFall로 간다).
+  3. **SFX 음량 평균화**: `Assets/Resources/Audio/Sfx/` 28개(.mp3 27·.ogg 1) 전부 ffmpeg `volumedetect`로
+     평균 음량(mean_volume) 측정 — 가장 작은 게 -31.0dB(assassin_attack3), 가장 큰 게 -4.8dB
+     (assassin_slowtime), 26dB 차이. 28개 평균(-21.3dB)을 목표로 각 파일에 게인을 적용하되, 피크가
+     -1dB를 넘겨 클리핑(찢어짐)하지 않게 게인을 자동으로 깎았다(피크 여유가 없는 타격감 위주 효과음
+     — both_mechanic_skill_ready·mechanic_drone_bullet류·ui_click 등 — 은 원래도 어택 타임이 짧아
+     "평균=피크"에 가까워서 목표치까지 못 올리고 -23~-26dB에서 멈춤, 이게 한계). 결과 분포 -26.3~-21.0dB
+     (5.3dB 차이)로 좁혀짐. mp3는 libmp3lame 192kbps, ogg는 libvorbis q6로 다시 인코딩(둘 다 원본 비트레이트와
+     비슷하거나 더 낮아 용량은 안 늘었음). **원본 파일을 덮어썼다** — 되돌리려면 git 히스토리에서.
+  **셋 다 아직 사용자 확인 전**(Play로 차지 오브가 손에 커지는지, 차지 중 점프해도 안 깜빡이는지, 사운드가
+  귀로 들었을 때 고르게 느껴지는지).
+
+- **2026-11-16 (111)** — **[나] 마법사 차지 모션 신설 — `Charge` 애니메이터 상태 추가**(사용자 "메이지 차지중 모션도
+  있을텐데 적용이 안되어있는것같다" — 지적대로 **애초에 그런 상태 자체가 Animator에 없었다**, 버그가 아니라
+  누락). `MageAttack.IsCharging`은 전부터 있었는데(`MageChargeVfx`의 깜빡임 표시가 읽음) 그림(Animator) 쪽엔
+  아무 연결이 안 돼 있어서, Z를 눌러 차지하는 동안 캐릭터는 그냥 Idle/Move 그대로였음.
+  - `Character_Mage_Attack_Body_01~03.png`(차지~시전 동작 중 앞부분, 직접 세 장 열어서 확인 — 01~03이 모아
+    당기는 듯한 자세, 04~07이 더 역동적인 시전/반동 동작이라 01~03을 차지 루프로 골랐다) 3장을 6fps 루프로
+    묶은 새 클립 `Data/Characters/Animations/Character_Mage_Charge.anim` 신설(손으로 YAML 작성 —
+    `BuildCharacterAnimations.cs`는 손 안 댐, 기존 7장짜리 Attack 클립과도 별개).
+  - `CharacterBase.controller`에 bool 파라미터 `Charging` + 상태 `Charge`(위 클립 재생) + 전이 2개 추가:
+    `AnyState→Charge`(`Charging==true`, **`Can Transition To Self: 0`으로 처음부터 넣음** — (110)에서
+    JumpFall이 당했던 것과 똑같은 함정이라 미리 막음) / `Charge→Idle`(`Charging==false`, 조건 불릴 때만).
+    AnyState 우선순위는 `Hit > Attack > Charging > Grounded(JumpFall)` 순으로 넣음(차지 중 피격/발사는
+    차지보다 먼저 보여야 하니 그대로 두고, 차지는 JumpFall보다 우선 — 공중에서 차지해도 차지 자세가 보임,
+    이건 디자인 판단이라 팀 확인 필요 항목으로 아래 추가). 베이스 컨트롤러 하나만 고쳐서 메카닉/섬영
+    override에도 `Charging` 파라미터가 생기지만, 그 둘은 아무도 이 값을 `true`로 안 보내니(차지 메커닉
+    자체가 없음) Charge 상태엔 평생 안 들어감 — 안전.
+  - `PlayerRig.UpdateAnimatorParams()`에서 `CurrentKit is MageAttack mage && mage.IsCharging`를 매 프레임
+    읽어 `Charging` bool을 갱신(`Characters` 같은 층 안의 형제 클래스 직접 참조라 계층 규칙 위반 아님 —
+    Gunner/Blade에도 "차지류" 동작이 생기면 그때 `ICharacterKit`에 공용 프로퍼티로 올릴지 고려).
+  **아직 사용자가 Play로 확인 전** — Z를 눌러 차지하는 동안 실제로 그림이 바뀌는지, 발사 순간 Attack으로
+  자연스럽게 넘어가는지 볼 것.
+
+- **2026-11-16 (110)** — **[나] 점프 애니메이션이 첫 프레임에 고정 — `CharacterBase.controller`를 직접 고침(처음으로
+  코드가 아니라 컨트롤러 자체를 수정)**(사용자 "점프가 제대로 적용이 안된것같은데"). 원인은 (108)의 공격 버그와
+  **같은 종류인데 더 심하게 나는 경우** — `AnyState→JumpFall` 전이(`Grounded==false`일 때)가
+  `m_CanTransitionToSelf: 1`로 되어 있어서, **공중에 떠 있는 동안 내내(Grounded가 계속 false) 매 프레임
+  스스로를 재진입시켜 JumpFall 클립을 계속 0프레임부터 다시 틀었다.** Attack은 트리거라 공격이 하나 끝나야
+  다음 트리거가 들어오니 "가끔" 끊겼지만, Grounded는 bool이라 **떠 있는 동안 조건이 한 번도 안 풀려서
+  점프할 때마다 100% 재현**되는 차이 — 그래서 코드 가드(이미 Attack 상태인지 검사하는 식)로는 못 막고,
+  bool 조건 자체가 매 프레임 참인 걸 또 트랜지션으로 인정하지 않게 **컨트롤러의 `m_CanTransitionToSelf`를
+  직접 `0`으로 고쳐야 했다**(파일 안 fileID `-6969518924967145165`, `AnyState→JumpFall` 전이 하나만 — Hit·Attack
+  전이는 그대로 둠, 그쪽은 재진입이 오히려 "맞을 때마다/칠 때마다 다시 번쩍"이는 의도된 연출일 수 있어서
+  손 안 댐). 베이스 컨트롤러 하나만 고치면 되므로 Mage/Gunner/Blade override controller 세 개 전부 동시에
+  적용됨(얘네는 Attack 클립만 따로 바꿔 끼우고 상태 머신 구조 자체는 베이스를 그대로 참조). **아직 사용자가
+  Play로 재확인 전** — 점프 중에 JumpFall 프레임이 실제로 넘어가는지 볼 것.
+
+- **2026-11-16 (109)** — **[나] 로비 애니메이션 안 돎 — `Animator.updateMode`가 기본값(Normal)이라 `timeScale 0`에
+  멈춰있었음**(사용자 "전투에서는 잘나오는데 왜 로비에선 안나오지"). 원인: 로비는 설계상 시간이 멈춘 채
+  (`timeScale 0`, `LobbyWorld`가 캐릭터 이동에 `Time.unscaledDeltaTime`을 쓰는 것도 이 때문) 캐릭터만 실제
+  시간으로 움직이는 화면인데(`CLAUDE.md`/`LobbyWorld.cs` 머리 주석), `LobbyAvatar.Awake()`에서 붙인
+  `Animator`는 기본 `AnimatorUpdateMode.Normal`을 써서 **`Time.timeScale`을 그대로 따라간다** — `timeScale 0`
+  에선 Animator 내부 시계가 아예 안 돌아서 Idle/Move가 멈춘 프레임 그대로 보임. 전투는 `timeScale 1`이라 이
+  문제가 안 드러났던 것. `LobbyAvatar.Awake()`에서 `anim.updateMode = AnimatorUpdateMode.UnscaledTime;`
+  한 줄 추가로 수정(`PlayerRig`는 전투가 정상 시간으로 돌아서 그대로 둠 — 일시정지로 `timeScale 0`이 되면
+  애니메이션도 같이 멈추는 게 오히려 맞는 동작이라 손 안 댐). Idle 프레임 6장 자체는 직접 PNG를 열어 확인
+  — 서로 다르게 그려진 그림이라(미세한 흔들림 정도) 그림 자체 문제는 아니었음.
+  **아직 사용자가 Play로 재확인 전.**
+
+- **2026-11-16 (108)** — **[나] 애니메이션 버그 2건 수정 — 공격 연타 시 첫 프레임만 반복 / 좌우 반전 전혀 안 됨**
+  (사용자가 Play로 직접 확인: "꾹눌러서 사용할텐데 그 경우 애니메이션 첫프레임만 반복적으로 나오네" / "오른쪽으로
+  이동하려고하는데 캐릭터는 왼쪽을 바라보고 있거든"). 둘 다 `PlayerRig.cs`/`LobbyAvatar.cs`만 고치고
+  `CharacterBase.controller`(로그 (106))는 안 건드림.
+  1. **공격 반복 시 첫 프레임 고정** — 원인: 공격 속도(쿨다운)가 Attack 클립 재생 시간보다 빠르면 매 공격마다
+     `anim.SetTrigger(Attack)`를 다시 넣게 되는데, `AnyState→Attack` 전이의 `Can Transition To Self`가 켜져 있어서
+     **이미 Attack 상태로 재생 중이어도 다시 트리거가 들어오면 그 상태를 처음부터 다시 들여보낸다** — 그래서
+     클립이 1프레임도 못 넘기고 계속 리셋되는 것처럼 보임. 고친 방법: `PlayerRig.FireAttack()`에서
+     `anim.GetCurrentAnimatorStateInfo(0).IsName("Attack")`이면 새 트리거를 그냥 무시하고 지금 재생 중인
+     모션을 끝까지 보여주게 함(실제 공격 판정·쿨다운 로직은 전투 스크립트가 그대로 처리하므로 게임플레이엔
+     영향 없음, 그림만 담당하는 메서드라 안전). **컨트롤러 쪽 설정(Can Transition To Self 끄기 등)으로도 고칠 수
+     있는 문제지만, 에디터를 직접 못 여는 세션이라 코드 쪽에서 막는 쪽을 택함** — 나중에 에디터에서 열어서
+     전이 자체를 손보고 싶으면 이 코드 가드는 걷어내도 됨.
+  2. **좌우 반전이 아예 없었음** — 원인: `CharacterMover2D.Facing`은 (106) 이전부터 있던 값인데 **공격 방향
+     계산에만 쓰였고, 실제로 그림을 뒤집는 코드가 어디에도 없었다**(좌우 대칭인 임시 흰 네모 도형일 땐 안
+     보이다가 실제 캐릭터 그림이 들어오며 드러남). 반입된 원본 프레임 기본값은 왼쪽을 보는 그림이라(실측),
+     `PlayerRig.UpdateFacing()`(매 프레임) · `LobbyAvatar.UpdateMoving()`(걷는 방향 dx 부호)에서 오른쪽을
+     볼 때만(`Facing > 0` / `dx > 0`) `SpriteRenderer.flipX`로 뒤집게 추가. `transform.localScale`은 안 건드림
+     (콜라이더 반지름 계산이 그 값을 쓰므로, `ApplySprite` 참고) — `flipX`는 렌더링만 뒤집고 물리·판정엔
+     영향 없음.
+  **아직 사용자가 Play로 재확인 전** — 공격 연타해도 매끄럽게 재생되는지, 좌우 이동 둘 다 방향 맞게 뒤집히는지
+  다음에 볼 것. 전이 우선순위(공격 중 피격 등) 세부 튜닝은 여전히 미뤄둔 상태 그대로(로그 (106)·(107) 참고).
+
+- **2026-11-16 (107)** — **[나] Animator 런타임 연결 — `CharacterArtSet`/`PlayerRig`/`LobbyAvatar` 5개 파일**(사용자가
+  (106)에서 만든 클립·컨트롤러를 유니티에서 직접 메뉴 실행해 확인("다 되어있음") → "하자"로 진행 확정). 로그 (106)이
+  "다음 단계(별도 작업)"로 미뤄뒀던 바로 그 연결 코드.
+  1. `Core/CharacterArtSet.cs` — `sprites`/`tints`/`heights`와 나란히 `animators: RuntimeAnimatorController[]` 배열 +
+     `AnimatorOf(id)` 추가. 비어 있으면(드루이드) null — 기존 정지그림 폴백 그대로 유지.
+  2. `Data/Characters/CharacterArtSet.asset` — 위 배열에 `CharacterAnim_Mage/Gunner/Blade.overrideController`를
+     guid로 직접 꽂음(`b0b009b0…`/`7559f22d…`/`5564435…`, 전부 `mainObjectFileID: 22100000`). 드루이드는 `{fileID: 0}`.
+  3. `Characters/PlayerRig.cs` — `Awake()`에서 `Animator` 없으면 `AddComponent`(프리팹을 따로 안 건드려도 되게). 선택
+     캐릭터 바뀔 때(`ApplySelection`) `ApplySprite` 직후 `ApplyAnimator(id)`를 불러 `art.AnimatorOf(id)`가 있으면
+     컨트롤러를 꽂고 켜고, 없으면 Animator를 꺼서 지금처럼 정지그림(`sr.sprite`)만 보이게 함. 공격/피격 트리거는
+     **기존 공격 스크립트를 전혀 안 건드리고** `SfxEvents.MageBasicAttack`/`MechanicBasicAttack`/`AssassinBasicAttack`/
+     `PlayerDamaged`(이미 사운드용으로 올라가고 있던 이벤트, `GameplaySfx`가 구독하는 것과 같은 지점)를 `OnEnable`에서
+     구독해 `Attack`/`Hit` 트리거로 그대로 연결 — 플레이어가 하나뿐이고 안 쓰는 캐릭터 키트는 꺼져 있어 캐릭터별로
+     걸러낼 필요가 없었음. `Update()`에 `UpdateAnimatorParams()`를 추가해 매 프레임 `Moving`(수평 속도 절대값 >0.05)·
+     `Grounded`를 갱신.
+  4. `Characters/CharacterMover2D.cs` — 기존 private `grounded` 필드를 `PlayerRig`가 읽을 수 있게 `public bool
+     Grounded => grounded;` + `public Vector2 Velocity => rb?.linearVelocity ?? Vector2.zero;` 읽기 전용 프로퍼티만
+     추가(기존 로직은 전혀 안 건드림).
+  5. `UI/Lobby/LobbyAvatar.cs` — 전투와 같은 에셋을 보되 로비는 전투가 없으니 Idle/Move만(Attack/Hit 트리거 없음),
+     `Grounded`는 항상 true(로비엔 점프가 없다). 로비는 물리가 아니라 `LobbyWorld`가 `transform.position`을 직접
+     옮기므로(Rigidbody2D 속도를 못 읽음) `Moving`은 프레임 사이 x좌표 변화량으로 판정(`UpdateMoving`).
+  **파라미터 이름은 `CharacterBase.controller`를 직접 읽어서 확인한 그대로**(`Moving`/`Grounded`는 bool, `Attack`/`Hit`은
+  trigger — 짐작으로 안 넣음). 워리어 로스터 매핑은 여전히 보류 상태 그대로(별개 사안).
+  **버그 발견·수정(같은 날, 사용자 Play 테스트)**: 컴파일은 에러 없이 끝났는데 Play해보니 Player/로비 아바타에
+  Animator 컴포넌트는 코드대로 붙었지만 **Controller 칸이 "Missing"**으로 표시됨 — `CharacterArtSet.asset`에 손으로
+  써넣은 `animators` 배열의 참조가 `{..., type: 3}`이었던 게 원인. 같은 파일 안에서 이미 멀쩡히 동작하던 `sprites`
+  배열(TextureImporter가 만든 Sprite 참조, `type: 3`이 맞음)을 보고 그대로 베껴 썼는데, `AnimatorOverrideController`는
+  `NativeFormatImporter`로 만들어지는 자산이라 **이 프로젝트의 기존 관례상 `type: 2`를 써야 한다**(씬 파일의
+  `PlayerRig.art`/`LobbyAvatar.art` 참조가 실제로 `type: 2`로 저장돼 있는 걸 대조해서 확인). `{fileID: 22100000,
+  guid: …, type: 3}` → `type: 2`로 세 줄(Mage/Gunner/Blade) 수정해서 다시 커밋. **아직 사용자가 Play로 재확인 전**
+  — 다음에 Play해서 Controller 칸이 채워지고 실제로 Idle 애니메이션이 도는지 볼 것.
+
+- **2026-11-16 (106)** — **[나] 캐릭터 애니메이션 — AnimationClip·AnimatorController를 에디터가 직접 생성(Editor 스크립트, 아직 실행 전)**(사용자 "애니메이션 삽입... 지금 하고싶다" → 손으로 쓴 YAML 대신 유니티가 직접 만들게 하는 방식(b) 선택). `Assets/Editor/BuildCharacterAnimations.cs` 신설, 메뉴 `ChronoSavior/캐릭터 애니메이션 만들기`. 실행하면: `Shared/`의 Idle(8fps·루프)·Move(12fps·루프)·JumpFall(10fps·루프)·Hit(12fps·1회) 공용 클립 4개 + `Mage/Gunner/Blade`의 Attack 클립 3개(각 폴더 `*_Attack_Body`/`*_Attack` 프레임만 — 마법사의 기/구체 이펙트는 몸 그림이 아니라 별도 VFX 레이어 몫이라 제외, 기존 `MageChargeVfx` 패턴처럼 나중에 따로)를 `Assets/Data/Characters/Animations/`에 생성. 베이스 `AnimatorController`(`Assets/Data/Characters/Animators/CharacterBase.controller`, 파라미터 `Moving`·`Grounded`(bool, 기본 true)·`Attack`·`Hit`(trigger), 상태 Idle/Move/JumpFall/Hit/Attack) + 캐릭터별 `AnimatorOverrideController` 3개(`CharacterAnim_Mage/Gunner/Blade` — Attack 클립만 교체)도 같이 생성. **전이 우선순위는 1차 기본값**: AnyState에서 Hit·Attack(트리거)을 Grounded==false보다 먼저 보게 해서 공중에서도 Hit/Attack이 씹히지 않게 했지만, 실제 느낌(공격 중 피격이 끼어들지 등)은 Animator 창에서 열어보고 다듬을 것. **PlayerRig.cs/PlayerBody.cs/LobbyAvatar.cs 읽어서 확인**: 지금은 `ApplySprite`/`Refresh`가 캐릭터 선택 시 1회 `transform.localScale`을 `EntitySizeConfig.ScaleToHeight(sprite, art.HeightOf(id))`로 고정하는 구조라, `CharacterArtSet.sprites[id]`(지금도 `chara_temp_01` 참조)를 그 스케일 기준으로 그대로 두고 **새 Animator는 별도 필드로 추가하는 설계**면 기존 동작을 안 깨고 끼울 수 있을 것으로 봄(아직 구현 전, 다음 로그에서 확정). **아직 실행도 안 했다** — 다음에 유니티에서 메뉴 눌러서 클립 7개·컨트롤러 4개가 에러 없이 만들어지는지 확인 필요. **다음 단계(별도 작업)**: `CharacterArtSet`에 오버라이드 컨트롤러 연결 필드 추가, `PlayerRig`·`LobbyAvatar`가 Animator를 붙이는 런타임 코드, `MageAttack`·`GunnerAttack`·`BladeCombat`·`PlayerHealth`에서 실제 공격/피격 시점에 `Attack`·`Hit` 트리거를 쏘는 코드 — 이건 기존 전투 코드를 건드리는 작업이라 에셋 생성과 분리.
+
+- **2026-11-15 (105)** — **[나] 캐릭터 애니메이션 프레임 72장 — Sprite import 설정 완료(발판작업, Animator는 아직)**(사용자 "애니메이션 삽입을 위한 발판작업을 해야한다는거면 지금 하고싶다"). 로그 (104)로 반입한 원본 PNG 72장을 전부 PIL 알파 bbox로 확인한 결과 **공용 이동/피격(Shared) + 마법사·메카닉·섬영 공격은 캔버스 높이가 전부 48px로 같고, 발이 거의 전부 캔버스 바닥(y=48)까지 닿아 있다**(걷기/점프 중 발 든 몇 프레임만 몇 px 뜸 — 정상, 캔버스 규격 안 바뀜). `docs/pixel-standard.md` 5절의 기존 캐릭터 예외 피벗 `(0.5, 35/64=0.546875)`를 그대로 적용(비율이라 캔버스 높이가 달라도 "가운데보다 살짝 위" 효과가 똑같이 남), PPU 128·Point 필터·무압축(`BuildPrototypeSprites.cs` pixelArt 분기와 동일 기준) — 72개 `.png.meta`를 전부 손으로 써서 커밋(GUID 72개 전부 유니크 확인). **Unity 에디터로 직접 열어서 확인은 못 했다 — 다음에 에디터 켜면 import 설정이 의도대로 보이는지, 콘솔에 import 에러가 없는지부터 확인 필요.** 결정 경위는 `docs/pixel-standard.md` 4a절. **아직 안 한 것**: Animator Controller·AnimationClip 생성, `CharacterArtSet`/`PlayerRig`/`LobbyAvatar` 연결(지금도 정지 그림 한 장 구조 그대로) — 다음 단계로 이어서 할지는 사용자 확인 후 진행.
+
+- **2026-11-15 (104)** — **[나] 캐릭터 애니메이션 원본 프레임 72장 반입(파일만, 미연결) — 매핑·스프린트 범위 둘 다 팀 확인 필요**(사용자가 압축파일로 제공, "게임 캐릭터관련 파일이 들어가있는데 적용가능할까" → 일단 파일만 정리해서 넣기로 합의). `Assets/Resources/Art/Characters/`에 `Shared/`(스탠딩 6·이동 9·점프/하강 8·피격 3 — 캐릭터 공용으로 보임)·`Mage/`(마법사 모션 7 + 기 이펙트 6 + 구체 이펙트 11)·`Gunner/`(엔지니어 공격 5)·`Blade/`(암살자 공격 6)·`Warrior_Unmapped/`(워리어 공격 11) 폴더로 원본 PNG 프레임만 정리해서 커밋 — **Animator·애니메이션 클립 연결은 전혀 안 했다.** 지금 `CharacterArtSet`은 캐릭터당 정지 그림 한 장뿐이라(이번 세션 초반 띄움버그 조사로 재확인) 실제로 쓰려면 Animator Controller·클립을 캐릭터마다 새로 만드는 작업이 필요하고, `HANDOFF.md`가 "다음 스프린트 미정"이라 지금 범위 밖이라 보류. import 설정(Texture Type/PPU/피벗)도 안 건드려서 Unity가 처음 열 때 기본값으로 잡힐 수 있음 — 실제 연결 전에 다시 설정해야 함. **막힌 것(아래 "확인 필요"에도 추가): "워리어" 그림이 코드의 `CharacterId{Mage,Gunner,Blade,Druid}` 어디에도 안 맞는다** — 엔지니어=메카닉(Gunner), 암살자=섬영(Blade)은 이름만 다르고 그대로 대응되지만, 워리어는 드루이드 자리로 볼지/새 캐릭터로 볼지/다른 클래스 리네임인지 불명. 사용자도 지금은 매핑을 보류하기로 해서 `Warrior_Unmapped/`로 분리만 해둠.
 - **2026-11-16 (108)** — **[나] UI 새 판(팀원 UI zip + Figma) — 일시정지·공용 팝업·설정·결과창, `feature/ui-figma-update`, main 미병합**(사용자 "UI부터 적용해, Codex랑 상의해서"). 팀원 zip 34장 + Figma(`9EpUO2k4…`, 페이지 32:119·53:32·414:2·77:3)에서 배치를 읽어 적용, 설정 줄 아이콘 4장은 zip에 없어 Figma에서 받음(사용자 허락). **일시정지**: 그림만(띠·▶·톱니·나가기 새 판). **공용 팝업**: 창 틀 512×304(`Common/window_tall`)·오른쪽 위 X(40×40)·버튼 셋 — 묻기는 왼쪽 취소·오른쪽 확인, 알림은 가운데 큰 확인 하나, X·ESC는 묻기면 취소·알림이면 확인(콜백 한 번), 호출 방식(`Confirm`/`Alert`)은 그대로. **설정**: Figma 줄(설정바·아이콘·◀값▶·음량 막대+숫자칸)·적용 버튼 — 항목은 예전 넷(화면 모드·해상도·배경음·효과음; Figma의 마스터 볼륨은 게임에 없어 뺐다), 음량은 0~10 저장·0~100 표시, 막대는 눌러 끌기(`UI/Pixel/PxSlider`), 값은 즉시 적용·적용 = 닫기, 조작키 안내는 자리가 없어 아래에 작게. **결과창**: 띠·칸 셋·이름표·나눔선·통계 상자·진행 막대·버튼 — 지금 기록을 그대로 옮김(시간은 띠 오른쪽, 붕괴 원인은 띠 아래, 통계 = 최대 콤보·토벌·멸망까지, 막대 = 시간 동조율 하나; Figma 예시의 준/받은 피해·막대 3줄은 데이터·뜻이 없어 안 씀 — 디자이너 확인 필요), 쓰러졌을 때도 같은 틀. Codex 상의 2회(범위·매핑 / 캡처+diff 검토). 테스트 `UiFigmaUpdateTests` 7개, PlayMode 543/545(실패 2건은 main에서 이미). **디자이너에게 물을 것**: 결과창 진행 막대 3줄의 뜻·색 변형 배경 7종의 쓰임·마스터 볼륨이 필요한지.
 
 - **2026-11-11 (103)** — **[나] 캐릭터 띄움 버그 피벗으로 확정·수정 + 효과음 3종 보강(마법사·메카닉·살수) + UI 클릭/ESC 소리 신설 + 로비 땅 타일 `labo2` 동기화 + 중복 파일 컴파일 에러 수정**(사용자 "로비에서 캐릭터 땅에서 떠있는데" / "없는 사운드 뭐냐" / "ui 클릭음 하나로 통일할까" / "esc 사운드는 esc 눌렀을때 나오는 소리임" / "라보2 타일이랑 똑같이" / "play가 안되는데"). 띄움 버그: 처음엔 `StageVisuals`/`Ground`가 Combat 전용인데 `10_Lobby.unity`에 남아있다고 의심해 꺼봤다가("타일 자체가 사라졌는데" 피드백으로 바로 되돌림 — 그 오브젝트들은 `BuildGround()`로 땅을 실제로 그리는 정상 동작이었다). 재조사 끝에 실제 렌더되는 스프라이트를 `CharacterArtSet.asset`의 guid로 역추적(마법사/건너/블레이드 슬롯 guid `3e1d94c7...`)해 `char_blade.png`가 아니라 `chara_temp_01.png`임을 확인(파일명만 보고 짐작했던 이전 분석은 틀렸다). 이 스프라이트의 import 설정이 `alignment: 9`(Custom)/`spritePivot.y: 0.33333334`로 틀어져 있었음(이미지 자체는 투명 패딩 없이 꼭 맞게 잘려 있어 중앙 0.5가 맞다) → `alignment: 0`/`spritePivot: {0.5, 0.5}`로 수정. `EntitySizeConfig`/`PlayerRig`/`LobbyAvatar`가 전부 "스프라이트 피벗 = 시각적 중앙" 가정으로 접지 높이를 계산해서 이 한 줄 수정으로 로비·전투 양쪽 다 해결(스크린샷 픽셀 색 직접 샘플링으로 뜬 높이를 재서 피벗값으로 낸 예측치와 대조 확인, 오차 0.001유닛 이내). 사용자 확인 "오케이 고쳐졌다". 효과음: `GameplaySfx.cs`의 모든 `Play()` 호출을 `Resources/Audio/Sfx` 실제 파일과 대조해 음원 없는 3개(`mage_basic_attack`/`mechanic_basic_attack`/`assassin_spin`) 확인 → AI 생성 프롬프트를 리스닝 피드백으로 여러 차례 수정(살수 칼날베기: 총소리처럼 들리던 문제 → "rapid/flurry" 제거, 바람소리만 나던 문제 → 금속/커팅 키워드 보강, "katana"→"sword"로 어휘 교체, 연속 베기 키워드 추가)해 3개 다 생성·적용. UI 사운드: `SfxEvents`에 `UiClick`/`UiEsc` 이벤트 신설(버튼마다 다른 소리 대신 공용 클릭음 하나로 통일, ESC는 전용 소리로 분리). `PxButton.Click()`에서 `RaiseUiClick()`, `PxScreen.HandleKeys()`의 모달 ESC 처리와 `GameFlow.Update()`의 일시정지 토글 ESC 처리(ESC를 읽는 자리가 이 둘뿐)에서 각각 `RaiseUiEsc()` 호출, `GameplaySfx`에 `OnUiClick`/`OnUiEsc` 핸들러 추가(`ui_click`/`esc_sound` 재생) — `ui_click.mp3`/`esc_sound.mp3` 적용. 로비 땅 타일(`ground_top.png`/`ground_dirt.png`)을 `labo2` 브랜치 버전으로 교체(처음에 top/dirt를 반대로 넣어서 "타일 반대야" 피드백으로 한 번 더 바꿔 끼움). 마지막에 Play가 안 되던 컴파일 에러(CS0101/CS0111 다수)는 위 `SfxEvents`/`GameplaySfx` 수정과 무관하게 git 동기화 중 생긴 것으로 보이는 고아 복제 파일 `SfxEvents-1.cs`/`GameplaySfx-1.cs`(+`.meta`) 때문이었음 — 이번 세션은 디바이스 브리지만 쓰고 삭제 권한이 없어 파일 경로를 짚어주고 사용자가 직접 삭제, `Core`/`UI/Pixel`/`Systems`/`Resources/Audio/Sfx` 폴더는 추가 중복 없음 확인. 이번 세션은 에디터 직접 실행 권한이 없어 PlayMode 수치는 못 돌렸고, 전부 사용자의 Play 확인("오케이 고쳐졌다"/"괜찮아 진것같긴한데"/"오류는 고쳐졌는데 타일 반대야" → 수정 후 추가 이상 없음)으로 검증.

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Boar_Move
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: -1146403306, guid: c05346839625d81459fcab3cbade3562, type: 3}
+  - {fileID: -1489538758, guid: a67688774038d484d8803c363287c914, type: 3}
+  - {fileID: -1637880863, guid: aca18373fee704e43a251c8628d17bc9, type: 3}
+  - {fileID: -785142417, guid: 6453111411bf32c4a991773d0634e797, type: 3}
+  fps: 8
+  loop: 1

@@ -50,19 +50,33 @@ public class StageVisualsTests
     }
 
     [Test]
-    public void CameraY_StandingOnGround_PutsGroundAt27Percent()
+    public void CameraY_StandingOnGround_PutsGroundAtFloorFraction()
     {
+        // 2026-11-17: 위로밖에 못 가는 땅에선 비율이 작다(GroundScreenFractionAtFloor) — 옛 27.5% 고정값에서
+        // 바닥~맨 위 발판 보간으로 바뀌었다(사용자가 실제로 플레이해보고 "바닥이 2~30%를 차지한다"고 지적).
         float y = CameraFollow2D.NextFollowY(5f, FieldBounds.GroundY, standing: true);
         float viewBottom = y - StageArtConfig.ViewHalfHeight;
         float fraction = (FieldBounds.GroundY - viewBottom) / (StageArtConfig.ViewHalfHeight * 2f);
-        Assert.AreEqual(0.275f, fraction, 1e-4f, "땅에 섰을 때 지면이 화면 아래 27.5%가 아니다(미리보기 구도)");
+        Assert.AreEqual(StageArtConfig.GroundScreenFractionAtFloor, fraction, 1e-4f, "땅(더 내려갈 데 없음)에 섰을 때 지면 비율이 GroundScreenFractionAtFloor와 다르다");
+    }
+
+    [Test]
+    public void CameraY_StandingOnTopPlatform_PutsItAtTopFraction()
+    {
+        // 위 테스트의 반대쪽 — 더 올라갈 데 없는 맨 위 발판에선 비율이 크다(아래를 넉넉히 보여준다).
+        float topY = CameraFollow2D.TopPlatformSurfaceY();
+        float y = CameraFollow2D.NextFollowY(5f, topY, standing: true);
+        float viewBottom = y - StageArtConfig.ViewHalfHeight;
+        float fraction = (topY - viewBottom) / (StageArtConfig.ViewHalfHeight * 2f);
+        Assert.AreEqual(StageArtConfig.GroundScreenFractionAtTop, fraction, 1e-4f, "맨 위 발판(더 올라갈 데 없음)에 섰을 때 비율이 GroundScreenFractionAtTop과 다르다");
     }
 
     [Test]
     public void CameraY_StandingOnPlatform_FollowsUp_AndClampsAtTop()
     {
         float layer1 = FieldLayout.PlatformTopY(0); // 1층 발판 윗면
-        Assert.AreEqual(layer1 + StageArtConfig.CameraYOffset, CameraFollow2D.NextFollowY(0f, layer1, true), 1e-4f);
+        float t = Mathf.InverseLerp(FieldBounds.GroundY, CameraFollow2D.TopPlatformSurfaceY(), layer1);
+        Assert.AreEqual(layer1 + StageArtConfig.CameraOffsetAt(t), CameraFollow2D.NextFollowY(0f, layer1, true), 1e-4f);
         Assert.AreEqual(CameraFollow2D.MaxY, CameraFollow2D.NextFollowY(0f, 50f, true), 1e-4f, "맨 위 발판보다 위로는 안 간다");
         Assert.AreEqual(CameraFollow2D.MinY, CameraFollow2D.NextFollowY(9f, -5f, true), 1e-4f, "땅보다 아래로는 안 간다");
     }
@@ -117,7 +131,7 @@ public class StageVisualsTests
         float halfHRaw = StageArtConfig.ViewHalfHeight * StageArtConfig.PixelsPerUnit / (float)art.backgroundScale;
         float halfWRaw = StageArtConfig.ViewHalfWidth * StageArtConfig.PixelsPerUnit / (float)art.backgroundScale;
         Vector2 c = StageVisuals.BackgroundRawCenter(art, StageArtConfig.ViewHalfWidth, CameraFollow2D.MinY);
-        float groundRawY = (c.y - halfHRaw) + (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw;
+        float groundRawY = (c.y - halfHRaw) + (1f - StageArtConfig.GroundScreenFractionAtFloor) * 2f * halfHRaw;
         Assert.AreEqual(art.backgroundGrassYPx, groundRawY, 36f, "그림 속 풀밭이 지면 근처에 와야 한다(테두리를 숨기느라 그림 36px 이내로 어긋날 수 있다)");
         foreach (float camX in new[] { FieldBounds.MinX, FieldBounds.MaxX })
             foreach (float camY in new[] { CameraFollow2D.MinY, CameraFollow2D.MaxY })

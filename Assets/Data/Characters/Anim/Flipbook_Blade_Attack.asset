@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Blade_Attack
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: 1ec2c3d736de432eaf7ddf9dd489f234, type: 3}
+  - {fileID: 21300000, guid: 3fe44a44923645ee9616ea1fcc17b95a, type: 3}
+  - {fileID: 21300000, guid: 78b23bdfcc9a49d3b9285b10e7fb1d59, type: 3}
+  - {fileID: 21300000, guid: f4debfb714ec41c686600646dd93cb58, type: 3}
+  - {fileID: 21300000, guid: e43faa1518fe4d628b63fc4e4c823166, type: 3}
+  - {fileID: 21300000, guid: b43c7a98b2bf48e4b45f79f85dd451b5, type: 3}
+  fps: 12
+  loop: 0

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Barrel_Move_Elite
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 1644230043, guid: 4f77722fa633cc04291d461f6c436f36, type: 3}
+  - {fileID: 722415600, guid: 375575cb5e6a12b49bac9ec7053c0e46, type: 3}
+  - {fileID: -117420000, guid: f3d71724e02e82e43b9b34e4e5fc9f61, type: 3}
+  - {fileID: 756881215, guid: 60fd75fb43e9958419f66427ed982b5e, type: 3}
+  fps: 8
+  loop: 1

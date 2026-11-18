@@ -237,7 +237,7 @@ PrefabInstance:
     - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 91b41b375f172cb41bc3395631145514, type: 3}
+      objectReference: {fileID: 21300000, guid: 12dc69c9aec4f20f5003755671645a86, type: 3}
     - target: {fileID: 855624735735475903, guid: cc7dedf3de6633f468c2ac0305c1c9f5, type: 3}
       propertyPath: m_Color.b
       value: 1
@@ -338,3 +338,8 @@ MonoBehaviour:
   boulderPrefab: {fileID: 8856943128661967390, guid: ed119b0063b335541946326dc674cda6, type: 3}
   heldBoulder: {fileID: 287257953959393601}
   throwPathLine: {fileID: 8898956547840651476}
+  bounceArt: {fileID: 11400000, guid: 86e5a7afbd5e1a947a46d1225daffd6e, type: 2}
+  throwArt: {fileID: 11400000, guid: 05828b0cdcf00bd4fa16223ec90ac5ba, type: 2}
+  moveArt: {fileID: 11400000, guid: 46639bf36da25784da2af52b46cbde67, type: 2}
+  hitArt: {fileID: 11400000, guid: 9503127193bee8f4981404ad3498c3f6, type: 2}
+  deathArt: {fileID: 11400000, guid: 24d6e71d3fe284c40bb7887e20bee98b, type: 2}

@@ -201,6 +201,13 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     public void ApplyKnockback(float velocityX) => knockbackX = velocityX;
 
     /// <summary>
+    /// 지금 넉백으로 밀리고 있는 속도의 크기(부호 없이) — 자기 걸음은 0인데 물리상 실제로 옆으로 슬라이딩
+    /// 중인지 알아야 하는 쪽(2026-11-16, `BlobLordBoss`의 "이동" 그림 — 맞아서 밀리는 동안은 제자리에
+    /// 서 있는 보스도 실제로는 바닥에서 움직인다)이 읽는다.
+    /// </summary>
+    public float KnockbackMagnitude => Mathf.Abs(knockbackX);
+
+    /// <summary>
     /// 실제 월드 반지름. 몸집이 다른 종류(오우거는 고블린의 1.74배)와 엘리트(×1.35)는 콜라이더 값을
     /// 고치는 대신 <c>transform.localScale</c>로 키운다 — 그래야 스프라이트와 판정이 같이 커진다.
     /// 그래서 `col.radius`(로컬 값)를 그대로 쓰면 큰 몹일수록 판정이 실제보다 작아진다.

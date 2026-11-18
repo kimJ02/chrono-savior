@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdec96f49626b0f499de6c697089d0a7, type: 3}
+  m_Name: Flipbook_Move
+  m_EditorClassIdentifier: 
+  frames:
+  - {fileID: 21300000, guid: 52ed65e048cb42118e56511917842045, type: 3}
+  - {fileID: 21300000, guid: 1be65a8095174b9d8fd774453f60f173, type: 3}
+  - {fileID: 21300000, guid: 649d8c0dc75449a4bfc9909d6a7dcfa3, type: 3}
+  - {fileID: 21300000, guid: dec0b95fb6bd41cba9a8ed9ce8666d05, type: 3}
+  - {fileID: 21300000, guid: 3a42f85fe66245a89a1af326729ab9bc, type: 3}
+  - {fileID: 21300000, guid: aee3237be84e4bf38c62d7d4db5d8bf3, type: 3}
+  - {fileID: 21300000, guid: 6df0a7fb68a44534b120e4a821d28207, type: 3}
+  - {fileID: 21300000, guid: 9a12e0c1831745d7a7edcfe4da0884e0, type: 3}
+  - {fileID: 21300000, guid: f09433196fad41e1b233fe62f1aba0d4, type: 3}
+  fps: 12
+  loop: 1

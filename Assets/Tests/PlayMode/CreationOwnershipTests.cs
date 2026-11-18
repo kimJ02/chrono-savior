@@ -60,7 +60,7 @@ public class CreationOwnershipTests
         // D. 그림만 있는 효과
         ["Characters/BladeSlashVfx.cs"]    = (Kind.VisualEffect, "섬영 베기 그림 풀"),
         ["Characters/PlayerAfterimages.cs"] = (Kind.VisualEffect, "잔상 그림 풀"),
-        ["Characters/MageChargeVfx.cs"]    = (Kind.VisualEffect, "차지 오라(키로 불러온 프레임 재생기)·완충 깜빡임 그림 자식"),
+        ["Characters/MageChargeVfx.cs"]    = (Kind.VisualEffect, "차지 손 오브(차지율 11등분)·오브 일렁임(9번째부터 시간 루프)·완충 깜빡임 그림 자식 — 전부 캐릭터 아트, 외주 키 재생기 아님(2026-11-16 '차지 오라'는 사용자 요청으로 뺐다)"),
         ["Characters/GunnerBeamVfx.cs"]    = (Kind.VisualEffect, "레이저 빔 그림(선 하나·총구·끝 그림) — 그림만, 판정은 GunnerLaserBeam(2026-11-09 떼어 냄)"),
         ["Characters/GunnerZapArc.cs"]     = (Kind.VisualEffect, "설치기 적중 분기 아크(LineRenderer 둘) — 그림만, GunnerZap이 풀로 돌려 쓴다(2026-11-10)"),
         ["Characters/GunnerFieldVfx.cs"]   = (Kind.VisualEffect, "설치기 링크선(레이저 그림 타일)·내부 장판 칠하기(메시)·흰 점 — 그림만, 2026-11-08 GunnerAttack에서 떼어 냄"),

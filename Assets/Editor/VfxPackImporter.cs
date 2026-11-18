@@ -63,6 +63,12 @@ namespace ChronoSavior.Editor
             yield return Recolored(Frames(VfxKeys.MageChargeSmallViolet, Gigapack, "PNG/Sci-fi/scifi_charge_up_001/scifi_charge_up_001_small_yellow"), 225f);
             // 화염탄 — 문서 예시(혜성 모양 energy_blast)의 빨강. 오른쪽을 향한 그림이라 쏠 때 속도 방향으로 돌린다(2026-11-08, 예전 plasma_ball에서 교체)
             yield return Frames(VfxKeys.MageFireProjectile, Projectiles, "PNG/pj4_energy_blast_A_small_red");
+            // 완충탄(차지 50%↑) — 안 찼을 때와 그림으로 구분되게(2026-11-16 사용자 "차지했을때 발사체는 large에서").
+            // 폴더명은 dark_matter_small/large 쌍과 같은 규칙으로 추정 — 팩에 없으면 가져오기가 오류로 알려준다(조용히 안 넘어감, 위 주석).
+            yield return Frames(VfxKeys.MageFireProjectileLarge, Projectiles, "PNG/pj4_energy_blast_A_large_red");
+            // 0차(갈래 없음) 기본탄 — 지금까지 그림이 없어 원을 색칠하던 자리. 사용자가 고른 energy_blast B 파랑(2026-11-16).
+            yield return Frames(VfxKeys.MageBasicProjectile, Projectiles, "PNG/pj4_energy_blast_B_small_blue");
+            yield return Frames(VfxKeys.MageBasicProjectileLarge, Projectiles, "PNG/pj4_energy_blast_B_large_blue");
             yield return Frames(VfxKeys.MageFireTrail, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 1");
             yield return Frames(VfxKeys.MageFireTrailSmall, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 3");
             yield return Frames(VfxKeys.MageBurn, Fire, "Pixel Fire Asset Pack Colored/fire asset red/Group 4 - 2"); // 화상 걸린 적에 붙는 불꽃

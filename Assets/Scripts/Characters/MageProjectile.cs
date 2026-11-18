@@ -71,8 +71,8 @@ public class MageProjectile : MonoBehaviour
         if (prefab == null) { Debug.LogError("[MageProjectile] 마탄 프리팹이 없다 — MageAttack의 boltPrefab을 확인"); return null; }
         var proj = Instantiate(prefab, pos, Quaternion.identity); // RunTransient가 붙어 있어 런이 끝나면 사라진다(원본 `projectiles = []`, :4318)
         proj.name = prefab.name; // "(Clone)" 없이 — 계층 창·디버그에서 종류 이름 그대로
-        proj.ShowArt(gravityOrb ? VfxKeys.MageGravityOrbSmall : explosive ? VfxKeys.MageFireProjectile : null, sizeMul,
-                     gravityOrb ? new Color(0.78f, 0.42f, 1f) : color, velocity);
+        proj.ShowArt(BoltKey(gravityOrb, explosive, charged), sizeMul,
+                     gravityOrb ? new Color(0.78f, 0.42f, 1f) : color, velocity, !gravityOrb);
         proj.box.size = new Vector2(BaseHalfWidth * 2f * sizeMul, BaseHalfHeight * 2f * sizeMul);
         proj.rb.linearVelocity = velocity;
         proj.damage = damage;
@@ -96,12 +96,28 @@ public class MageProjectile : MonoBehaviour
     public const float ArtFps = 15f;
 
     /// <summary>
-    /// 탄 그림(2026-11-07 VFX 스프린트): 폭발 갈래는 `mage/fire_projectile`(Projectiles Pack 4 energy_blast red — 문서 예시의 혜성 모양, 2026-11-08),
-    /// 중력 갈래는 `mage/gravity_orb_small`(dark_matter violet)을 되풀이한다. 배율은 **모든 그림 공통 도트 배율**(<see cref="DotScale"/>, 2026-11-09)
-    /// — 판정 상자는 그대로다(차지할수록 판정은 커지지만 그림은 같다). 혜성 그림은 오른쪽을 향해 있어 **그림만** 날아가는 방향으로 돌린다(판정 상자는 안 돈다 — 원본도 축 정렬 사각형).
-    /// 빌드 없음(0차)이거나 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
+    /// 탄 그림 키 — 갈래마다 완충(차지 50%↑, 원본 <c>w.charged</c> 문턱과 같다)이면 큰 쪽, 아니면 작은 쪽
+    /// (2026-11-16 사용자 "차지했을때 발사체는 large에서 차지가 덜되거나 안되었을때는 small" — 판정 상자만 커지고 그림은 그대로였던 걸
+    /// 눈에 보이게 구분). 폭발 갈래: `mage/fire_projectile[_large]`(Projectiles Pack 4 energy_blast A 빨강), 중력 갈래:
+    /// `mage/gravity_orb_small`/`_large`(dark_matter violet — 전엔 small만 쓰고 large는 <see cref="ChronoSavior.Combat.GravityVortexVfx"/>
+    /// 전용이었는데, 이제 탄 쪽도 같은 키를 완충 여부로 같이 쓴다). **0차(갈래 없음)도 2026-11-16부터 그림이 있다** —
+    /// 지금까지 셋 중 유일하게 그림이 없어 원을 색칠하던 자리에 `mage/basic_projectile[_large]`(energy_blast B 파랑, 사용자가 고름).
     /// </summary>
-    void ShowArt(string key, float sizeMul, Color fallbackColor, Vector2 velocity)
+    static string BoltKey(bool gravityOrb, bool explosive, bool charged)
+    {
+        if (gravityOrb) return charged ? VfxKeys.MageGravityOrbLarge : VfxKeys.MageGravityOrbSmall;
+        if (explosive) return charged ? VfxKeys.MageFireProjectileLarge : VfxKeys.MageFireProjectile;
+        return charged ? VfxKeys.MageBasicProjectileLarge : VfxKeys.MageBasicProjectile;
+    }
+
+    /// <summary>
+    /// 탄 그림(2026-11-07 VFX 스프린트, 2026-11-16 완충 대/소 분리 + 0차 기본탄 추가). 배율은 **모든 그림 공통 도트 배율**
+    /// (<see cref="DotScale"/>, 2026-11-09) — 판정 상자 크기(<see cref="BaseHalfWidth"/>×sizeMul)와는 따로다(그림은 작은/큰
+    /// 두 단계, 판정은 차지율에 맞춰 계속 커진다). 혜성 그림(화염·기본 갈래, energy_blast 계열)은 오른쪽을 향해 있어
+    /// **그림만** 날아가는 방향으로 돌린다(판정 상자는 안 돈다 — 원본도 축 정렬 사각형); 보라 구체(중력 갈래, dark_matter)만 안 돈다.
+    /// 그림이 없으면(팩을 안 가져온 클론) 예전처럼 원 그림을 색칠한다.
+    /// </summary>
+    void ShowArt(string key, float sizeMul, Color fallbackColor, Vector2 velocity, bool rotateToVelocity)
     {
         float hitWidth = BaseHalfWidth * 2f * sizeMul;
         var frames = key != null ? VfxFrames.Get(key) : System.Array.Empty<Sprite>();
@@ -112,7 +128,7 @@ public class MageProjectile : MonoBehaviour
             return;
         }
         visualTf.localScale = Vector3.one * DotScale.Value; // 모든 그림 같은 도트 크기(2026-11-09) — 판정 폭과 따로
-        if (key == VfxKeys.MageFireProjectile && velocity.sqrMagnitude > 1e-6f)
+        if (rotateToVelocity && velocity.sqrMagnitude > 1e-6f)
             visualTf.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(velocity.y, velocity.x) * Mathf.Rad2Deg);
         visualRenderer.gameObject.AddComponent<VfxPlayer>().Play(frames, ArtFps, true, 0f, Color.white);
     }

@@ -209,10 +209,10 @@ namespace ChronoSavior.World
             float tx = maxX > minX ? Mathf.InverseLerp(minX, maxX, camX) : 0.5f;
             float u = Mathf.Lerp(art.backgroundViewLeftPx, art.backgroundViewRightPx, tx);
 
-            // 땅에 섰을 때(카메라 최저) 그림 속 풀밭이 지면 높이에 오게: 지면은 화면 아래에서 GroundScreenFraction.
+            // 땅에 섰을 때(카메라 최저) 그림 속 풀밭이 지면 높이에 오게: 지면은 화면 아래에서 GroundScreenFractionAtFloor.
             float pxPerUnitRaw = art.background.pixelsPerUnit / art.backgroundScale;
             float halfHRaw = halfH * pxPerUnitRaw;
-            float vLow = art.backgroundGrassYPx - (1f - StageArtConfig.GroundScreenFraction) * 2f * halfHRaw + halfHRaw;
+            float vLow = art.backgroundGrassYPx - (1f - StageArtConfig.GroundScreenFractionAtFloor) * 2f * halfHRaw + halfHRaw;
             float vHigh = art.backgroundTopPx + halfHRaw; // 맨 위 발판에 섰을 때 — 그림 윗변(테두리 아래)이 화면 윗변
             float minY = CameraFollow2D.MinY, maxY = CameraFollow2D.MaxY;
             float ty = maxY > minY ? Mathf.InverseLerp(minY, maxY, camY) : 0f;

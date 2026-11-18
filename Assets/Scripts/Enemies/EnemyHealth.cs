@@ -342,7 +342,11 @@ namespace ChronoSavior.Enemies
             // 원본 killEnemy(project_test.html:1793)의 골드·경험치는 Died 구독자(트랙 A)가 처리.
             // 연쇄처치 보너스·슬라임 분열은 아직 범위 밖 — 나중 스프린트에서 붙인다.
             Died?.Invoke(this);
-            Destroy(gameObject);
+            // 2026-11-16, 보스 '덩어리 지배자' 사망 그림 8장 — 즉시 Destroy하면 한 프레임도 못 보여준다.
+            // IDeathAnimated를 구현한 적만 자기 연출을 맡고(끝나면 스스로 Destroy), 나머지(고블린 등)는 그대로 즉시 Destroy.
+            var animated = GetComponent<IDeathAnimated>();
+            if (animated != null) animated.PlayDeathAndDestroy();
+            else Destroy(gameObject);
         }
 
         /// <summary>

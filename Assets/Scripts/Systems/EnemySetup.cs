@@ -33,6 +33,7 @@ public static class EnemySetup
                      Random.value < eliteChance * (1f + ProfileService.Current.items.Pow("eliteLure"));
         if (elite) monster.AddComponent<EnemyElite>();
 
+        RegionSkin skin = null;
         var health = monster.GetComponent<EnemyHealth>();
         if (health != null)
         {
@@ -67,7 +68,14 @@ public static class EnemySetup
         if (data != null)
         {
             var sr = monster.GetComponent<SpriteRenderer>();
-            if (sr != null)
+            skin = data.SkinFor(regionLv);
+            if (sr != null && skin != null)
+            {
+                // 지역 그림(2026-11-17 — 예: 2지역 고블린 자리 = 쥐). 첫 장을 꽂아 크기를 재고, 움직임은 그림 부품(EnemySkinAnimator)이 넘긴다.
+                sr.sprite = skin.MoveFor(elite).frames[0];
+                sr.color = Color.white;
+            }
+            else if (sr != null)
             {
                 if (data.sprite != null)
                 {
@@ -88,7 +96,9 @@ public static class EnemySetup
         }
 
         // ⚠️ 스프라이트를 꽂은 **뒤에** 크기를 정한다 — 그림 높이를 보고 스케일을 계산하기 때문.
-        ApplySize(monster, data, elite);
+        // 지역 그림은 도트 배율로(보통 2 — 32px → 0.5유닛, 오크통만 4), 판정은 그 종류 값 그대로.
+        ApplySize(monster, data, elite, skin != null ? skin.VisualHeight : 0f);
+        if (skin != null && monster.TryGetComponent(out EnemySkinAnimator anim)) anim.Play(skin, elite);
     }
 
     /// <summary>
@@ -162,7 +172,7 @@ public static class EnemySetup
     /// 스폰 지점 Y는 프리팹 반지름(고블린 0.5) 기준으로 이미 계산돼 있으므로, 판정이 커진 만큼 들어올려
     /// 발을 지면/발판에 맞춘다. 안 그러면 큰 몹이 지면에 파묻힌 채 물리에 밀려 튀어오른다.
     /// </summary>
-    static void ApplySize(GameObject monster, EnemyData data, bool elite)
+    static void ApplySize(GameObject monster, EnemyData data, bool elite, float visualHeightOverride = 0f)
     {
         var col = monster.GetComponent<CircleCollider2D>();
         if (col == null) return;
@@ -173,7 +183,8 @@ public static class EnemySetup
         float eliteMul = elite ? DifficultyScalingConfig.EliteScale : 1f;
         float wantRadius = (data != null ? data.colliderRadius : prefabWorldRadius) * eliteMul;       // 판정
         // 그림(비어 있으면 판정 지름) — 엘리트도 **그림은 그대로**(2026-11-09 도트 통일: 모든 그림 같은 도트 크기), 판정만 ×1.35. 엘리트 표시는 오라·왕관(EnemyElite).
-        float wantHeight = data != null && data.visualHeight > 0f ? data.visualHeight : wantRadius / eliteMul * 2f;
+        float wantHeight = visualHeightOverride > 0f ? visualHeightOverride
+                         : data != null && data.visualHeight > 0f ? data.visualHeight : wantRadius / eliteMul * 2f;
 
         // ── 콜라이더와 스프라이트가 **같은 GameObject**에 있어서 `localScale`이 둘 다에 걸린다 ──
         // 스케일 하나로 그림 높이를 맞추고, 콜라이더는 `radius`를 역으로 나눠 판정 반지름을 맞춘다:

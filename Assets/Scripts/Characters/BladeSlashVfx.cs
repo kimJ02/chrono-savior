@@ -40,6 +40,7 @@ namespace ChronoSavior.Characters
 
         BladeCombat blade;
         SpriteRenderer body;
+        CharacterFlipbook flipbook; // 몸 공격 자세(2026-11-17 플립북 전환)
         CharacterMover2D mover;
         float lastCd;
         bool flip;
@@ -53,6 +54,7 @@ namespace ChronoSavior.Characters
         {
             blade = GetComponent<BladeCombat>();
             body = GetComponent<SpriteRenderer>();
+            flipbook = GetComponent<CharacterFlipbook>();
             mover = GetComponent<CharacterMover2D>();
         }
 
@@ -78,6 +80,8 @@ namespace ChronoSavior.Characters
             // 그냥 return하는 클론도 소리는 나야 하니, 그림 유무를 가리기 전에 먼저 올린다.
             int usedSwing = swing;
             SfxEvents.RaiseAssassinBasicAttack(usedSwing % SlashKeys.Length + 1);
+            // 몸 공격 자세 — 베기 번갈이 숫자의 원본이 여기(그림·소리와 같은 usedSwing)라 여기서 같이 보낸다(2026-11-17 플립북 전환).
+            if (flipbook != null) flipbook.PlayOnce(CharacterPose.Attack, usedSwing);
             var frames = Frames; // swing은 아직 안 올렸다 — 위 소리와 같은 usedSwing 값을 그대로 읽는다
             swing++;
             if (frames == null || frames.Length == 0 || body == null) return; // 그림만 생략(소리는 이미 났다)

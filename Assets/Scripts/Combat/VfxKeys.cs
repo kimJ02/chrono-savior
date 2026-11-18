@@ -15,6 +15,12 @@ namespace ChronoSavior.Combat
         public const string MageChargeLargeViolet = "mage/charge_large_violet";
         public const string MageChargeSmallViolet = "mage/charge_small_violet";
         public const string MageFireProjectile = "mage/fire_projectile";
+        /// <summary>화염탄 완충(차지 50% 이상 — MageAttack의 <c>charged</c> 문턱과 같음) — 안 찼을 땐 위 작은 쪽.</summary>
+        public const string MageFireProjectileLarge = "mage/fire_projectile_large";
+        /// <summary>0차(갈래 없음) 기본탄 — Projectiles Pack 4 energy_blast B 파랑(2026-11-16, 그 전엔 그림이 없어 원 색칠).</summary>
+        public const string MageBasicProjectile = "mage/basic_projectile";
+        /// <summary>기본탄 완충(차지 50% 이상) — 안 찼을 땐 위 작은 쪽.</summary>
+        public const string MageBasicProjectileLarge = "mage/basic_projectile_large";
         public const string MageFireTrail = "mage/fire_trail";
         public const string MageFireTrailSmall = "mage/fire_trail_small";
         /// <summary>화상 걸린 적에 붙는 불꽃(Pixel Fire).</summary>
@@ -90,7 +96,7 @@ namespace ChronoSavior.Combat
             {
                 var keys = new System.Collections.Generic.List<string>
                 {
-                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
+                    MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireProjectileLarge, MageBasicProjectile, MageBasicProjectileLarge, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,

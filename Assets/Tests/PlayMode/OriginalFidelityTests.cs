@@ -381,6 +381,7 @@ public class OriginalFidelityTests
         // SplitSpawnProtect). 그건 안 쓰면 컴파일러가 알려주므로 이 검사가 필요 없다.
         var mustBeWired = new (string api, string declaredIn)[]
         {
+            ("AttackLock",                 "CharacterMover2D.cs"),  // 공격 중 이동 잠금(2026-11-16) — 키트가 안 넣으면 조용히 원본처럼 움직인다
             ("ComputeCooldownMultiplier",  "PlayerStatCalculator.cs"),
             ("ComputeDamageTakenMultiplier","PlayerStatCalculator.cs"),
             ("ComputeAttackSpeedMultiplier","PlayerStatCalculator.cs"),
@@ -413,6 +414,8 @@ public class OriginalFidelityTests
             ("EnemySpawnPlacement.TryPick", "EnemySpawnPlacement.cs"), // EnemySpawner.SpawnWaveOf
             ("TryPayForPull",              "PlayerProfile.cs"),    // GachaService
             ("RecordPull",                 "ItemInventory.cs"),    // GachaService
+            ("LobbyJumpDown",              "GameInput.cs"),        // LobbyWorld(로비 점프 트리거, 2026-11-18)
+            ("SetGrounded",                "LobbyAvatar.cs"),      // LobbyWorld(점프 중 Animator Grounded 끄기, 2026-11-18)
         };
 
         var scriptFiles = Directory.GetFiles(

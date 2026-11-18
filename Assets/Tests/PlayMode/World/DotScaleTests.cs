@@ -41,11 +41,30 @@ public class DotScaleTests
         int checkedCount = 0;
         foreach (var data in catalog.types)
         {
-            if (data == null || data.sprite == null) continue; // 임시 도형 몹은 그림이 들어올 때
+            if (data == null) continue;
+            // 지역 그림(2026-11-17 팀원 몬스터 8종) — 칸마다 모든 프레임이 PPU 128이고 높이 = 픽셀 × 그 칸의 도트 배율(보통 2, 오크통 4 — 덩치 큰 종류 예외).
+            if (data.regionSkins != null && data.regionSkins.Length > 0)
+            {
+                foreach (var skin in data.regionSkins)
+                {
+                    Assert.IsTrue(skin.dotScale == DotScale.Value || data.type == EnemyType.Brute, $"몹 {data.name}: 도트 {skin.dotScale} — 2가 아닌 건 오우거 자리만");
+                    var frames = new System.Collections.Generic.List<Sprite>(skin.move.frames) { skin.hit };
+                    foreach (var f in frames)
+                    {
+                        Assert.IsNotNull(f, $"몹 {data.name}: 빈 프레임");
+                        Assert.AreEqual(DotScale.GridPixelsPerUnit, f.pixelsPerUnit, 1e-4f, $"몹 {data.name} {f.name}: PPU 128");
+                        Assert.AreEqual(skin.move.frames[0].rect.size, f.rect.size, $"몹 {data.name} {f.name}: 프레임 크기가 같아야 움직일 때 안 흔들린다");
+                    }
+                    Assert.AreEqual(skin.move.frames[0].rect.height * skin.dotScale / DotScale.GridPixelsPerUnit, skin.VisualHeight, 1e-4f);
+                    checkedCount++;
+                }
+                continue; // 지역 그림이 모든 지역을 덮으면 옛 sprite는 안 쓰인다
+            }
+            if (data.sprite == null) continue; // 임시 도형 몹은 그림이 들어올 때
             AssertDot("몹 " + data.name, data.sprite, data.visualHeight);
             checkedCount++;
         }
-        Assert.Greater(checkedCount, 0, "그림 있는 몹이 하나는 있어야 한다(고블린·박쥐)");
+        Assert.Greater(checkedCount, 0, "그림 있는 몹이 하나는 있어야 한다");
     }
 
     [Test]

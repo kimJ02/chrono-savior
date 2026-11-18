@@ -27,6 +27,10 @@ namespace ChronoSavior.Core
                  "지금 임시 그림은 판정 높이와 같은 0.5(그림 높이 = 판정 지름). 0(비어 있음)이면 판정 높이를 쓴다.")]
         public float[] heights = new float[Count];
 
+        [Tooltip("캐릭터별 자세 그림 묶음(2026-11-17 애니메이션 플립북 전환 — Animator 대신, Editor/BuildCharacterFlipbooks가 만든다). " +
+                 "비어 있으면(null) 그 캐릭터는 정지 그림(SpriteOf)만 쓴다 — 아직 애니메이션이 없는 캐릭터(드루이드 등)의 기본값.")]
+        public CharacterAnimSet[] animSets = new CharacterAnimSet[Count];
+
         /// <summary>그 캐릭터 그림 — 없으면 null.</summary>
         public Sprite SpriteOf(CharacterId id)
         {
@@ -46,6 +50,13 @@ namespace ChronoSavior.Core
         {
             int i = (int)id;
             return tints != null && i >= 0 && i < tints.Length && tints[i].a > 0f ? tints[i] : Color.white;
+        }
+
+        /// <summary>그 캐릭터의 자세 그림 묶음 — 없으면 null(정지 그림만).</summary>
+        public CharacterAnimSet AnimSetOf(CharacterId id)
+        {
+            int i = (int)id;
+            return animSets != null && i >= 0 && i < animSets.Length ? animSets[i] : null;
         }
     }
 }

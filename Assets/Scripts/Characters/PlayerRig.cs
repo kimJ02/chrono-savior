@@ -42,10 +42,25 @@ namespace ChronoSavior.Characters
         CharacterMover2D mover;
         SpriteRenderer sr;
 
+        /// <summary>
+        /// 몸 그림 재생(2026-11-17 애니메이션 플립북 전환 — Animator 대신). 씬의 Player에 배치돼 있다. 어떤 루프 자세인지는 여기서 매 프레임 정하고
+        /// (<see cref="UpdatePose"/>), 공격·피격은 그 일이 일어난 곳(`MageAttack` 발사·`GunnerAttack` 사격/레이저·`BladeSlashVfx` 베기·`PlayerHealth` 피격)이
+        /// 직접 <see cref="Flipbook"/>에 알린다 — 예전처럼 효과음 이벤트에 기대면 소리를 바꾸는 순간 모션이 사라지고,
+        /// 실제로 불·블랙홀 법사는 다른 효과음을 써서 공격 모션이 아예 안 나왔다.
+        /// </summary>
+        CharacterFlipbook flipbook;
+
+        /// <summary>몸 그림 재생기 — 공격·피격 신호를 보내는 쪽이 읽는다(없으면 null — 테스트용 맨 Player).</summary>
+        public CharacterFlipbook Flipbook => flipbook;
+
+        /// <summary>이 속도(유닛/초)보다 빠르면 걷는 자세 — 멈출 때 남는 미세한 속도에 걷기가 깜빡이지 않게.</summary>
+        public const float MoveThreshold = 0.05f;
+
         void Awake()
         {
             mover = GetComponent<CharacterMover2D>();
             sr = GetComponent<SpriteRenderer>();
+            flipbook = GetComponent<CharacterFlipbook>();
             // 잔상(`PlayerAfterimages`)·섬영 베기 효과(`BladeSlashVfx`)는 씬의 Player에 붙어 있다(2026-11-05 — 예전엔 씬을 다시
             // 굽지 않으려고 여기서 붙였다). 씬 검사(`Editor/SceneSetupValidator`)가 빠졌는지 본다.
             kits.Clear();
@@ -56,7 +71,6 @@ namespace ChronoSavior.Characters
             Current = HasKit(wanted) ? wanted : CharacterId.Mage;
             ApplySelection(Current, notifyPrevious: false);
         }
-
 
         /// <summary>
         /// 지금 켜져 있는 키트(<see cref="Current"/>의 것). HUD가 여기서 스킬 슬롯 상태(<see cref="ISkillSlotSource"/>)를
@@ -92,9 +106,47 @@ namespace ChronoSavior.Characters
         void Update()
         {
             var profile = ProfileService.Current;
-            if (profile.character == Current) return;
-            if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
-            else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
+            if (profile.character != Current)
+            {
+                if (HasKit(profile.character)) ApplySelection(profile.character, notifyPrevious: true);
+                else profile.SetSelectedCharacter(Current); // 키트가 없는 캐릭터(드루이드 등)를 가리키면 지금 키트로 되돌린다
+            }
+
+            UpdatePose();
+            UpdateFacing();
+        }
+
+        /// <summary>
+        /// 매 프레임 루프 자세를 정한다(2026-11-17) — 차지 &gt; 공중(오를 땐 상승, 내릴 땐 하강) &gt; 걷기 &gt; 서기. 공격·피격은 신호를 보낸 쪽이 따로 얹는다.
+        /// 차지는 지금 마법사만(`MageAttack.IsCharging`) — 다른 캐릭터에 차지 같은 자세가 생기면 `ICharacterKit`에 공용 프로퍼티로 올릴 것.
+        /// </summary>
+        void UpdatePose()
+        {
+            if (flipbook == null || mover == null) return;
+            flipbook.SetLoopPose(LoopPose(CurrentKit is MageAttack mage && mage.IsCharging, mover.Grounded, mover.Velocity));
+        }
+
+        /// <summary>루프 자세 고르기(테스트용으로 따로).</summary>
+        public static CharacterPose LoopPose(bool charging, bool grounded, Vector2 velocity)
+        {
+            if (charging) return CharacterPose.Charge;
+            if (!grounded) return velocity.y > 0f ? CharacterPose.Rise : CharacterPose.Fall;
+            return Mathf.Abs(velocity.x) > MoveThreshold ? CharacterPose.Move : CharacterPose.Idle;
+        }
+
+        /// <summary>
+        /// 그림 좌우 반전(2026-11-16 사용자 발견 — 오른쪽으로 이동해도 캐릭터가 계속 왼쪽을 보고 있었다).
+        /// 지금까지 `CharacterMover2D.Facing`은 공격 방향 계산에만 쓰이고 **그림을 실제로 뒤집는 코드가
+        /// 아예 없었다** — 좌우 대칭인 임시 흰 네모 도형일 땐 안 보이던 문제가 실제 캐릭터 그림으로
+        /// 바뀌며 드러난 것. 반입된 원본 프레임은 기본값이 왼쪽을 보는 그림이라(실측), 오른쪽(Facing
+        /// &gt; 0)일 때만 `SpriteRenderer.flipX`로 뒤집는다 — `transform.localScale`은 건드리지 않아
+        /// (콜라이더 반지름 계산이 그 값을 쓴다, <see cref="ApplySprite"/>) 판정 크기에 영향이 없다.
+        /// 애니메이션이 없는 캐릭터(정지 그림)도 그대로 적용된다.
+        /// </summary>
+        void UpdateFacing()
+        {
+            if (sr == null || mover == null) return;
+            sr.flipX = mover.Facing > 0;
         }
 
         /// <summary>
@@ -107,7 +159,9 @@ namespace ChronoSavior.Characters
         void ApplySprite(CharacterId id)
         {
             if (sr == null || art == null) return;
-            var sprite = art.SpriteOf(id);
+            // 크기 기준: 애니메이션이 있으면 그 서기 첫 장(2026-11-17 — 실제로 그려지는 그림, 전부 높이 48px), 없으면 정지 그림.
+            var animSet = art.AnimSetOf(id);
+            var sprite = animSet != null && animSet.idle != null && animSet.idle.Count > 0 ? animSet.idle.frames[0] : art.SpriteOf(id);
             if (sprite == null) return;
 
             sr.sprite = sprite;
@@ -124,6 +178,13 @@ namespace ChronoSavior.Characters
             // ⚠️ 콜라이더가 같은 GameObject에 있어서 `localScale`이 물리에도 걸린다 — 반지름을 역으로 나눠 판정 반지름을 맞춘다(적 쪽 `EnemySetup.ApplySize`와 같은 방식).
             var col = GetComponent<CircleCollider2D>();
             if (col != null) col.radius = EntitySizeConfig.PlayerRadius / scale;
+        }
+
+        /// <summary>선택된 캐릭터의 자세 그림 묶음으로 갈아끼운다(없으면 — 드루이드 등 — 정지 그림 그대로).</summary>
+        void ApplyAnimSet(CharacterId id)
+        {
+            if (flipbook == null) return;
+            flipbook.SetAnimSet(art != null ? art.AnimSetOf(id) : null);
         }
 
         void ApplySelection(CharacterId id, bool notifyPrevious)
@@ -143,6 +204,7 @@ namespace ChronoSavior.Characters
             Current = id;
             ProfileService.Current.SetSelectedCharacter(id);
             ApplySprite(id);
+            ApplyAnimSet(id);
 
             foreach (var kit in kits)
             {

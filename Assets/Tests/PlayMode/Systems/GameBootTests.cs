@@ -382,8 +382,22 @@ public class GameBootTests
         yield return ToLobby();
         yield return null; // LobbyAvatar가 프로필을 읽는 프레임
         var avatar = InScene<LobbyAvatar>(GameFlow.LobbyScene).Single();
-        Assert.AreSame(avatar.Art.SpriteOf(SavedCharacter), avatar.GetComponent<SpriteRenderer>().sprite);
+        Assert.IsNotNull(avatar.Art.AnimSetOf(SavedCharacter), "저장된 캐릭터는 애니메이션이 있다");
+        CollectionAssert.Contains(AnimFrames(avatar.Art, SavedCharacter), avatar.GetComponent<SpriteRenderer>().sprite, "그 캐릭터의 자세 그림을 입었다");
+        Assert.IsTrue(avatar.GetComponent<ChronoSavior.Characters.CharacterFlipbook>().useUnscaledTime, "로비는 실제 시간(시간이 멈춘 로비에서도 걷는다)");
     }
+
+    /// <summary>그 캐릭터의 자세 그림 묶음에 든 모든 프레임(2026-11-17 플립북 전환 — 몸은 정지 그림이 아니라 지금 자세의 프레임을 입는다).</summary>
+    static System.Collections.Generic.List<Sprite> AnimFrames(CharacterArtSet art, CharacterId id)
+    {
+        var set = art.AnimSetOf(id);
+        var all = new System.Collections.Generic.List<Sprite>();
+        if (set == null) return all;
+        foreach (var b in new[] { set.idle, set.move, set.rise, set.fall, set.charge, set.hit }) if (b != null) all.AddRange(b.frames);
+        foreach (var b in set.attacks) if (b != null) all.AddRange(b.frames);
+        return all;
+    }
+
 
     // ───────────────────────── 전투 씬 구성 (사냥에 들어가서 본다) ─────────────────────────
 
@@ -421,7 +435,8 @@ public class GameBootTests
         Assert.AreEqual(SavedCharacter, rig.Current);
         Assert.IsNotNull(rig.Art, "Player에 캐릭터 그림 에셋이 연결돼 있다");
         var sr = rig.GetComponent<SpriteRenderer>();
-        Assert.AreSame(rig.Art.SpriteOf(SavedCharacter), sr.sprite);
+        CollectionAssert.Contains(AnimFrames(rig.Art, SavedCharacter), sr.sprite, "그 캐릭터의 자세 그림을 입었다(2026-11-17 플립북)");
+        Assert.AreSame(rig.Art.AnimSetOf(SavedCharacter), rig.Flipbook.Set, "씬의 Player에 배치된 플립북이 그 캐릭터 묶음을 돈다");
         Assert.AreEqual(rig.Art.TintOf(SavedCharacter), sr.color);
     }
 
