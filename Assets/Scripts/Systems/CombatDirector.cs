@@ -77,6 +77,8 @@ namespace ChronoSavior.Systems
             CombatEvents.ShrineBuffGranted += CombatModifiers.GrantShrineBuff;
             RunEvents.BossPortalRequested += HandleBossPortalRequested;
             RunEvents.BossDefeated += HandleBossDefeated;
+            RunEvents.StageCleared += HandleStageCleared;
+            RunEvents.MidBossReady += HandleMidBossReady;
             // 켜지면 카메라가 이 씬의 플레이어를 본다 — 꺼질 때(OnDisable) 놓으므로, 전환이 실패해 멈췄던 전투 씬이 다시 켜질 때도 되돌아온다.
             if (player != null) CameraFollow2D.Track(player.transform);
         }
@@ -93,6 +95,8 @@ namespace ChronoSavior.Systems
             CombatEvents.ShrineBuffGranted -= CombatModifiers.GrantShrineBuff;
             RunEvents.BossPortalRequested -= HandleBossPortalRequested;
             RunEvents.BossDefeated -= HandleBossDefeated;
+            RunEvents.StageCleared -= HandleStageCleared;
+            RunEvents.MidBossReady -= HandleMidBossReady;
         }
 
         void Update()
@@ -225,7 +229,8 @@ namespace ChronoSavior.Systems
         void HandleBossPortalRequested()
         {
             if (GameState.Current != GameScene.Run) return;
-            if (!ProfileService.Current.IsBossUnlocked(RunState.Region)) return;
+            if (RunState.Stage != ChapterConfig.StagesPerChapter) return;                 // 2026-11-19 — 포탈은 5스테이지에만
+            if (!ProfileService.Current.IsMidBossReady(RunState.Region)) return;         // 처치 100을 채워야 중간 보스로
             EnterBossField();
         }
 
@@ -238,6 +243,22 @@ namespace ChronoSavior.Systems
         void HandleBossDefeated() => bossDeadTimer = BossDeadEndDelay;
 
         void HandlePlayerDied() => RunEvents.RequestRunEnd(RunEndReason.Dead); // 원본 :1927
+
+        // 2026-11-19 챕터 구조 — 알림만, 판은 계속(사용자: 시간이 끝날 때까지 사냥)
+        static readonly Color StageClearColor = new Color(1f, 0.85f, 0.3f);
+        void HandleStageCleared()
+        {
+            Vector2 at = player != null ? (Vector2)player.transform.position + Vector2.up * 1.6f : Vector2.zero;
+            CombatEvents.RaisePopup(at, $"스테이지 클리어! {ChapterConfig.StageLabel(RunState.Region, RunState.Stage)}", StageClearColor);
+            HitFeel.Shake(6f, 0.25f);
+        }
+
+        void HandleMidBossReady()
+        {
+            Vector2 at = player != null ? (Vector2)player.transform.position + Vector2.up * 1.6f : Vector2.zero;
+            CombatEvents.RaisePopup(at, "중간 보스 포탈이 열렸다!", StageClearColor);
+            HitFeel.Shake(6f, 0.25f);
+        }
 
         void HandleEnemyKilled(GameObject enemy)
         {

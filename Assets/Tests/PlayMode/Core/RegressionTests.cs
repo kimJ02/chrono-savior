@@ -106,7 +106,7 @@ public class RegressionTests
         p.upgrades.atk = 30; p.upgrades.crit = 12;
         p.spUsed = 6; p.mageBranch = MageBranch.Gravity; p.mageTier = 3;
         p.MarkBossCleared(1); p.MarkBossCleared(2); p.MarkBossCleared(3);
-        for (int i = 0; i < 40; i++) p.RegisterRegionKill(2);
+        for (int i = 0; i < 40; i++) p.RegisterStageKill(2, 1);
 
         int expected = RegressionConfig.ShardsOfRegion(1) + RegressionConfig.ShardsOfRegion(2) + RegressionConfig.ShardsOfRegion(3);
         int gained = p.DoRegression();
@@ -124,9 +124,11 @@ public class RegressionTests
         Assert.AreEqual(0, p.spUsed);
         Assert.AreEqual(MageBranch.None, p.mageBranch);
         Assert.AreEqual(0, p.mageTier);
-        Assert.IsFalse(p.IsBossCleared(1));
-        Assert.AreEqual(0, p.RegionKills(2));
-        Assert.IsFalse(p.IsRegionOpen(2), "지역 진행이 초기화됐으면 2지역은 다시 잠겨야 한다");
+        // 2026-11-19 챕터 구조 — 챕터·스테이지 진행과 처치 수는 **남는다**(사용자: 깬 곳은 열린 채, 다음 스테이지부터 이어서)
+        Assert.IsTrue(p.IsBossCleared(1), "환생해도 챕터 보스 정복은 남는다");
+        Assert.AreEqual(40, p.StageKills(2, 1), "환생해도 스테이지 처치 수는 남는다");
+        Assert.IsTrue(p.IsRegionOpen(2), "환생해도 열린 챕터는 열린 채");
+        Assert.AreEqual(0, p.ShardPreview(), "이번 생 보스 처치는 정산하고 비운다 — 같은 진행으로 또 받지 않는다");
     }
 
     /// <summary>

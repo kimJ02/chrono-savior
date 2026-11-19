@@ -244,7 +244,7 @@ public class UiFigmaUpdateTests
         Assert.IsFalse(Label(result, "Cause").enabled, "끝까지 버티면 붕괴 원인 줄이 없다");
         Assert.AreEqual("준 피해량", Label(result, "StatLabel0").text, "Figma 통계 세 줄");
         Assert.AreEqual("받은 피해", Label(result, "StatLabel2").text);
-        StringAssert.StartsWith("토벌", Label(result, "BarText0").text, "진행 막대 1 = 토벌");
+        StringAssert.Contains("토벌", Label(result, "BarText0").text, "진행 막대 1 = 그 스테이지 토벌(2026-11-19 \"1-1 토벌 n/100\")");
         Assert.IsNull(Label(result, "BarText1"), "시간 동조율 막대는 뺐다(2026-11-18)");
         Assert.IsNull(Label(result, "BarText2"), "멸망까지 막대는 뺐다(2026-11-18)");
         Assert.AreEqual("다시 입장", Find(result, "Retry").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text);

@@ -368,7 +368,10 @@ namespace ChronoSavior.UI
                 timer.SetVerticesDirty();
             }
 
-            kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : RegionConfig.BossNameOf(RunState.Region);
+            // 2026-11-19 챕터 구조 — "1-3 토벌 37/100", 중간 보스전은 "1-5 중간 보스", 보스 스테이지는 보스 이름
+            string label = ChapterConfig.StageLabel(RunState.Region, RunState.Stage);
+            kills.text = RunState.Mode == RunMode.Normal ? $"{label} 토벌 {v.Kills}/{ChapterConfig.StageKillTarget}"
+                       : RunState.IsMidBoss ? $"{label} 중간 보스" : RegionConfig.BossNameOf(RunState.Region);
             buffs.text = v.Buffs ?? "";
 
             bool combo = v.Combo > 0; // 원본: 0이면 숨김(:1633)
@@ -382,7 +385,7 @@ namespace ChronoSavior.UI
             portal.enabled = v.PortalInRange;
             if (v.PortalInRange)
             {
-                portal.text = v.PortalUnlocked ? "F — 보스 필드로 들어가기" : $"토벌 {v.Kills}/{RunState.RegionKillTarget} — 아직 열리지 않았다";
+                portal.text = v.PortalUnlocked ? "F — 중간 보스에게 가기" : $"토벌 {v.Kills}/{ChapterConfig.StageKillTarget} — 아직 열리지 않았다";
                 portal.color = v.PortalUnlocked ? PortalOpen : PortalLocked;
             }
 
@@ -435,7 +438,7 @@ namespace ChronoSavior.UI
                 ExpRatio = need > 0 ? profile.exp / (float)need : 0f,
                 TimeLeft = RunState.TimeLeft,
                 Combo = CombatModifiers.Combo,
-                Kills = profile.RegionKills(RunState.Region),
+                Kills = profile.StageKills(RunState.Region, RunState.Stage),
                 Attack = src != null ? src.AttackSlot : default,
                 Skill = src != null ? src.SkillSlot : default,
                 Player = view != null ? view.PlayerPosition : Vector2.zero,

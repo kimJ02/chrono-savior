@@ -145,6 +145,17 @@ namespace ChronoSavior.Core
         public bool[] regionBossUnlocked = new bool[RegionConfig.Count];
         public bool[] regionBossCleared = new bool[RegionConfig.Count];
 
+        // ── 챕터·스테이지(2026-11-19, `docs/chapter-stage-spec.md`) ──
+        // 챕터 번호 = 지역 번호. 챕터 보스 정복은 위 regionBossCleared를 그대로 쓴다.
+        // **환생해도 지우지 않는다**(사용자 — 깬 스테이지는 열린 채, 다음 스테이지부터 이어서).
+
+        /// <summary>스테이지별 누적 처치(최대 100) — 칸 = <see cref="ChapterConfig.Index"/>. 스테이지끼리 따로 센다.</summary>
+        public int[] stageKills = new int[ChapterConfig.StageCount];
+        /// <summary>스테이지 클리어(1~4 = 처치 100, 5 = 중간 보스 처치).</summary>
+        public bool[] stageCleared = new bool[ChapterConfig.StageCount];
+        /// <summary>이번 생(회귀 사이)에 잡은 챕터 보스 — 시간의 파편 정산용(GPT와 정함). 회귀 때 정산하고 비운다.</summary>
+        public bool[] bossKilledThisLife = new bool[ChapterConfig.ChapterCount];
+
         /// <summary>캐릭터 칸 수 — <see cref="CharacterId"/> 값 개수(원본 `CHARACTERS` 4종).</summary>
         static readonly int CharacterCount = System.Enum.GetValues(typeof(CharacterId)).Length;
 
@@ -175,12 +186,88 @@ namespace ChronoSavior.Core
 
         static bool InRange(int region) => region >= 1 && region <= RegionConfig.Count;
 
-        /// <summary>원본 `regionOpen(r) = r === 1 || regions[r-1].bossCleared`(project_test.html:6434).</summary>
+        /// <summary>
+        /// 그 챕터(= 지역)에 들어갈 수 있는지 — 원본 `regionOpen(r) = r === 1 || regions[r-1].bossCleared`(project_test.html:6434)에
+        /// 2026-11-19 "챕터 3~5는 보스가 없어 잠금"(<see cref="ChapterConfig.PlayableChapters"/>)을 더했다.
+        /// </summary>
         public bool IsRegionOpen(int region)
         {
+            if (!ChapterConfig.IsPlayable(region)) return false;
             if (region <= 1) return true;
             if (!InRange(region)) return false;
-            return regionBossCleared[region - 2]; // 이전 지역
+            return regionBossCleared[region - 2]; // 이전 챕터 보스
+        }
+
+        // ── 챕터·스테이지 진행 ──
+
+        void EnsureStageArrays()
+        {
+            if (stageKills == null || stageKills.Length < ChapterConfig.StageCount) System.Array.Resize(ref stageKills, ChapterConfig.StageCount);
+            if (stageCleared == null || stageCleared.Length < ChapterConfig.StageCount) System.Array.Resize(ref stageCleared, ChapterConfig.StageCount);
+            if (bossKilledThisLife == null || bossKilledThisLife.Length < ChapterConfig.ChapterCount) System.Array.Resize(ref bossKilledThisLife, ChapterConfig.ChapterCount);
+        }
+
+        public int StageKills(int chapter, int stage)
+        {
+            EnsureStageArrays();
+            int i = ChapterConfig.Index(chapter, stage);
+            return i >= 0 ? stageKills[i] : 0;
+        }
+
+        /// <summary>그 스테이지를 깼는지. 보스 스테이지 = 챕터 보스 정복.</summary>
+        public bool IsStageCleared(int chapter, int stage)
+        {
+            EnsureStageArrays();
+            if (stage == ChapterConfig.BossStage) return IsBossCleared(chapter);
+            int i = ChapterConfig.Index(chapter, stage);
+            return i >= 0 && stageCleared[i];
+        }
+
+        /// <summary>
+        /// 그 스테이지에 들어갈 수 있는지 — 챕터가 열려 있고, 1스테이지는 늘, 2~5는 앞 스테이지를 깼으면,
+        /// 보스 스테이지는 1~5를 **모두** 깼으면.
+        /// </summary>
+        public bool IsStageOpen(int chapter, int stage)
+        {
+            if (!IsRegionOpen(chapter)) return false;
+            if (stage == 1) return true;
+            if (stage == ChapterConfig.BossStage)
+            {
+                for (int s = 1; s <= ChapterConfig.StagesPerChapter; s++) if (!IsStageCleared(chapter, s)) return false;
+                return true;
+            }
+            return stage >= 2 && stage <= ChapterConfig.StagesPerChapter && IsStageCleared(chapter, stage - 1);
+        }
+
+        /// <summary>5스테이지 처치 목표를 채워 중간 보스 포탈이 열렸는지.</summary>
+        public bool IsMidBossReady(int chapter) => StageKills(chapter, ChapterConfig.StagesPerChapter) >= ChapterConfig.StageKillTarget;
+
+        public enum StageKillResult { None, StageCleared, MidBossReady }
+
+        /// <summary>
+        /// 그 스테이지에서 1마리 잡았다 — 100에서 더 안 센다. 1~4스테이지는 100이 되는 순간 클리어,
+        /// 5스테이지는 중간 보스 포탈만 열린다(클리어는 중간 보스 처치).
+        /// </summary>
+        public StageKillResult RegisterStageKill(int chapter, int stage)
+        {
+            EnsureStageArrays();
+            int i = ChapterConfig.Index(chapter, stage);
+            if (i < 0 || stageKills[i] >= ChapterConfig.StageKillTarget) return StageKillResult.None;
+            stageKills[i]++;
+            if (stageKills[i] < ChapterConfig.StageKillTarget) return StageKillResult.None;
+            if (stage == ChapterConfig.StagesPerChapter) return StageKillResult.MidBossReady;
+            stageCleared[i] = true;
+            return StageKillResult.StageCleared;
+        }
+
+        /// <summary>스테이지를 클리어로 표시(5스테이지 중간 보스 처치·세이브 시나리오).</summary>
+        public void MarkStageCleared(int chapter, int stage)
+        {
+            EnsureStageArrays();
+            int i = ChapterConfig.Index(chapter, stage);
+            if (i < 0) return;
+            stageCleared[i] = true;
+            stageKills[i] = Mathf.Max(stageKills[i], ChapterConfig.StageKillTarget);
         }
 
         public int RegionKills(int region) => InRange(region) ? regionKills[region - 1] : 0;
@@ -214,6 +301,8 @@ namespace ChronoSavior.Core
         public void MarkBossCleared(int region)
         {
             if (InRange(region)) regionBossCleared[region - 1] = true;
+            EnsureStageArrays();
+            if (region >= 1 && region <= ChapterConfig.ChapterCount) bossKilledThisLife[region - 1] = true; // 파편 정산(이번 생, 2026-11-19)
         }
 
         /// <summary>
@@ -258,9 +347,12 @@ namespace ChronoSavior.Core
         /// </summary>
         public int ShardPreview()
         {
+            // 2026-11-19 챕터 구조 — 진행이 환생해도 남으므로 "정복한 지역" 대신 **이번 생에 잡은 챕터 보스**마다 한 번(GPT와 정함).
+            // 지급량은 원본 그대로 max(1, floor(c² × 0.6)) = 1·2·5·9·15.
+            EnsureStageArrays();
             int sum = 0;
-            for (int r = 1; r <= RegionConfig.Count; r++)
-                if (IsBossCleared(r)) sum += RegressionConfig.ShardsOfRegion(r);
+            for (int c = 1; c <= ChapterConfig.ChapterCount; c++)
+                if (bossKilledThisLife[c - 1]) sum += ChapterConfig.ShardsOfChapter(c);
             return sum;
         }
 
@@ -325,9 +417,10 @@ namespace ChronoSavior.Core
             bladeBranch = BladeBranch.None;
             bladeTier = 0;
 
-            regionKills = new int[RegionConfig.Count];
-            regionBossUnlocked = new bool[RegionConfig.Count];
-            regionBossCleared = new bool[RegionConfig.Count];
+            // 2026-11-19 챕터 구조 — 챕터·스테이지 진행과 처치 수는 **지우지 않는다**(사용자: 깬 스테이지는 열린 채, 다음 스테이지부터 이어서).
+            // 원본은 regionKills·regionBossUnlocked·regionBossCleared를 여기서 비웠다. 이번 생 보스 처치(파편 정산용)만 비운다.
+            EnsureStageArrays();
+            System.Array.Clear(bossKilledThisLife, 0, bossKilledThisLife.Length);
 
             // 시작의 유산 — 골드 강화를 맨바닥이 아니라 몇 레벨 쥐고 시작한다(원본 `headstart` :6524).
             int head = Mathf.RoundToInt(items.Pow("headstart"));

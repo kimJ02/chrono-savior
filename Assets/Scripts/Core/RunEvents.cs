@@ -41,12 +41,19 @@ namespace ChronoSavior.Core
         /// </summary>
         public static event Action BossDefeated;
 
+        /// <summary>일반 스테이지(1~4) 처치 100을 채웠다 — "스테이지 클리어" 알림(2026-11-19 챕터 구조). 판은 계속된다.</summary>
+        public static event Action StageCleared;
+        /// <summary>5스테이지 처치 100을 채웠다 — 중간 보스 포탈이 열렸다는 알림.</summary>
+        public static event Action MidBossReady;
+
         /// <summary>런을 끝내 달라(`CombatDirector` → `GameFlow.EndRun`). 원본 `endRun(reason)`을 부르던 자리들.</summary>
         public static event Action<RunEndReason> RunEndRequested;
 
         public static void RequestBossPortal() => BossPortalRequested?.Invoke();
         public static void RaiseBossFieldEntered() => BossFieldEntered?.Invoke();
         public static void RaiseBossDefeated() => BossDefeated?.Invoke();
+        public static void RaiseStageCleared() => StageCleared?.Invoke();
+        public static void RaiseMidBossReady() => MidBossReady?.Invoke();
         public static void RequestRunEnd(RunEndReason reason) => RunEndRequested?.Invoke(reason);
 
         /// <summary>테스트 격리용 — 정적 이벤트라 구독이 남으면 테스트끼리 오염된다.</summary>
@@ -55,6 +62,8 @@ namespace ChronoSavior.Core
             BossPortalRequested = null;
             BossFieldEntered = null;
             BossDefeated = null;
+            StageCleared = null;
+            MidBossReady = null;
             RunEndRequested = null;
         }
     }

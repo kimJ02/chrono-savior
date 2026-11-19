@@ -43,6 +43,13 @@ namespace ChronoSavior.Core
         /// <summary>현재 지역 1~9. 원본 `run.region`.</summary>
         public static int Region { get; private set; } = 1;
         public static RunMode Mode { get; private set; } = RunMode.Normal;
+        /// <summary>
+        /// 이번 판의 스테이지(2026-11-19 챕터 구조) — 1~5 일반, <see cref="ChapterConfig.BossStage"/> = 보스 스테이지.
+        /// 챕터는 <see cref="Region"/>(챕터 번호 = 지역 번호).
+        /// </summary>
+        public static int Stage { get; private set; } = 1;
+        /// <summary>5스테이지에서 포탈로 넘어간 중간 보스전인지(보스 무대·<see cref="RunMode.Boss"/>지만 챕터 보스가 아니다).</summary>
+        public static bool IsMidBoss => Mode == RunMode.Boss && Stage == ChapterConfig.StagesPerChapter;
 
         /// <summary>남은 시간(초). 0이 되면 원본은 `endRun('timeout')`(:4413).</summary>
         public static float TimeLeft { get; private set; }
@@ -88,10 +95,14 @@ namespace ChronoSavior.Core
         public static bool Over { get; private set; }
 
         /// <summary>원본 `startRun`(:4293)의 런 상태 초기화 부분.</summary>
-        public static void Begin(int region, RunMode mode)
+        public static void Begin(int region, RunMode mode) =>
+            Begin(region, mode, mode == RunMode.Boss ? ChapterConfig.BossStage : 1);
+
+        public static void Begin(int region, RunMode mode, int stage)
         {
             Region = region;
             Mode = mode;
+            Stage = stage;
             TimeLeft = mode == RunMode.Normal ? NormalTime : BossTime;
             Kills = 0;
             Elapsed = 0f;
@@ -157,7 +168,7 @@ namespace ChronoSavior.Core
         /// <summary>런 상태 전체의 사본 — 사냥에 들어가다 실패하면 들어가기 전(예: 결과 화면의 지난 런)으로 되돌릴 때(`GameFlow.StartRun`, 2026-11-05 씬 분할 2차).</summary>
         public readonly struct Snapshot
         {
-            internal readonly int region, kills, fury, gold, maxCombo;
+            internal readonly int region, kills, fury, gold, maxCombo, stage;
             internal readonly RunMode mode;
             internal readonly float timeLeft, elapsed;
             internal readonly GameObject deathSource;
@@ -166,8 +177,9 @@ namespace ChronoSavior.Core
             internal readonly bool over;
 
             internal Snapshot(int region, RunMode mode, float timeLeft, float elapsed, GameObject deathSource,
-                              int kills, int fury, int gold, long exp, int maxCombo, bool over, double dealt, double taken)
+                              int kills, int fury, int gold, long exp, int maxCombo, bool over, double dealt, double taken, int stage)
             {
+                this.stage = stage;
                 this.region = region; this.mode = mode; this.timeLeft = timeLeft; this.elapsed = elapsed; this.deathSource = deathSource;
                 this.kills = kills; this.fury = fury; this.gold = gold; this.exp = exp; this.maxCombo = maxCombo; this.over = over;
                 this.dealt = dealt; this.taken = taken;
@@ -175,13 +187,13 @@ namespace ChronoSavior.Core
         }
 
         public static Snapshot Capture() =>
-            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, MaxCombo, Over, damageDealt, damageTaken);
+            new Snapshot(Region, Mode, TimeLeft, Elapsed, DeathSource, Kills, Fury, GoldEarned, ExpEarned, MaxCombo, Over, damageDealt, damageTaken, Stage);
 
         public static void Restore(Snapshot s)
         {
             Region = s.region; Mode = s.mode; TimeLeft = s.timeLeft; Elapsed = s.elapsed; DeathSource = s.deathSource;
             Kills = s.kills; Fury = s.fury; GoldEarned = s.gold; ExpEarned = s.exp; MaxCombo = s.maxCombo; Over = s.over;
-            damageDealt = s.dealt; damageTaken = s.taken;
+            damageDealt = s.dealt; damageTaken = s.taken; Stage = s.stage;
         }
     }
 }

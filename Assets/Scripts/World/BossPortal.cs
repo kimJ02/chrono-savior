@@ -52,7 +52,7 @@ namespace ChronoSavior.World
 
         /// <summary>지금 이 포탈로 들어갈 수 있는지. HUD가 안내를 띄울지 결정할 때 읽는다.</summary>
         public bool IsUnlocked =>
-            ProfileService.Current.IsBossUnlocked(RunState.Region);
+            ProfileService.Current.IsMidBossReady(RunState.Region); // 2026-11-19 — 5스테이지 처치 100이면 중간 보스로
 
         /// <summary>플레이어가 상호작용 범위 안에 있는지.</summary>
         public bool PlayerInRange { get; private set; }
@@ -62,7 +62,8 @@ namespace ChronoSavior.World
         /// 보스 필드로 넘어간 뒤에도 포탈이 남아 있으면 같은 포탈을 또 밟을 수 있다.
         /// </summary>
         public bool ShouldBeVisible =>
-            GameState.Current == GameScene.Run && RunState.Mode == RunMode.Normal && !RunState.Over;
+            GameState.Current == GameScene.Run && RunState.Mode == RunMode.Normal && !RunState.Over
+            && RunState.Stage == ChapterConfig.StagesPerChapter; // 2026-11-19 챕터 구조 — 포탈은 5스테이지(중간 보스)에만. 챕터 보스는 보스 스테이지로 따로 들어간다
 
         void Awake() => sr = GetComponent<SpriteRenderer>();
 

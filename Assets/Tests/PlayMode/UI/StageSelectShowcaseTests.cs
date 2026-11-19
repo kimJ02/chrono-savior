@@ -85,10 +85,14 @@ public class StageSelectShowcaseTests
             yield return null;
 
             var mobs = (Image[])typeof(StageSelectScreen).GetField("mobs", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(screen);
-            var boss = (Image)typeof(StageSelectScreen).GetField("boss", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(screen);
-            Assert.AreSame(flyer.sprite, mobs[0].sprite, "1지역 첫 칸 = 박쥐");
-            Assert.AreSame(grunt.sprite, mobs[1].sprite, "1지역 둘째 칸 = 고블린");
-            Assert.IsFalse(mobs[2].enabled, "1지역은 두 종류뿐 — 나머지 칸은 숨긴다");
+            Assert.AreSame(flyer.sprite, mobs[0].sprite, "1챕터 첫 칸 = 박쥐");
+            Assert.AreSame(grunt.sprite, mobs[1].sprite, "1챕터 둘째 칸 = 고블린");
+            Assert.IsFalse(mobs[2].enabled, "1챕터는 두 종류뿐 — 나머지 칸은 숨긴다");
+
+            // 2026-11-19 챕터 구조 — ▶로 넘기면 1챕터 보스 쪽(빨간 화면)에 보스 그림
+            typeof(StageSelectScreen).GetMethod("Step", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(screen, new object[] { 1 });
+            yield return null;
+            var boss = (Image)typeof(StageSelectScreen).GetField("bossPortrait", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(screen);
             Assert.AreSame(catalog.boss, boss.sprite);
             Assert.IsTrue(boss.enabled);
         }

@@ -106,8 +106,8 @@ namespace ChronoSavior.UI
         {
             var p = ProfileService.Current;
             doom.text = $"멸망까지 남은 기간 {p.doomDays}일";
-            int s = RegressionScreen.HighestStage(p);
-            region.text = $"다음 원정 stage {s} · {RegionConfig.NameOf(s)}";
+            var (c, st, _) = StageSelectScreen.NextPlay(p); // 2026-11-19 챕터 구조 — 이어서 할 곳
+            region.text = $"다음 원정 {ChapterConfig.StageLabel(c, st)} · {ChapterConfig.NameOf(c)}";
             int id = (int)p.character;
             who.text = $"{(id < CharacterNames.Length ? CharacterNames[id] : "?")}  Lv.{p.level}  ·  SP {p.SpAvailable}";
             money.text = $"{p.gold:N0} G  ·  시간의 파편 {p.shards:N0}";

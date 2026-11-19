@@ -91,7 +91,8 @@ namespace ChronoSavior.UI
         {
             var p = ProfileService.Current;
             int gain = p.ShardPreview();
-            values[0].text = $"stage {HighestStage(p)}";
+            var (nc, ns, _) = StageSelectScreen.NextPlay(p);
+            values[0].text = ChapterConfig.StageLabel(nc, ns); // 2026-11-19 챕터 구조 — 진행은 환생해도 남는다
             values[1].text = gain.ToString("N0");
             values[2].text = $"Lv.{HighestLevel(p)}";
             values[3].text = p.stats.totalKills.ToString("N0");

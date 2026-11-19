@@ -19,7 +19,10 @@ public static class EnemyRewards
     /// 성소 :1797에서 `return`, 보스는 <see cref="GrantBossKill"/>).
     /// </summary>
     /// <param name="data">그 몹의 종류 데이터 — 없으면 기본 보상(EXP 8, 골드 5~10).</param>
-    public static void GrantKill(EnemyHealth enemy, EnemyData data)
+    public static void GrantKill(EnemyHealth enemy, EnemyData data) => GrantKill(enemy, data, 1f);
+
+    /// <param name="rewardMult">보상 배수 — 중간 보스는 ×10(2026-11-19).</param>
+    public static void GrantKill(EnemyHealth enemy, EnemyData data, float rewardMult)
     {
         bool elite = enemy.GetComponent<EnemyElite>() != null;
 
@@ -28,12 +31,22 @@ public static class EnemyRewards
         // 결과 화면·HUD가 읽는 이번 런 집계. 원본도 `run.kills`와 누적 통계를 따로 센다(:1857).
         RunState.RegisterKill(isBoss: false);
         // 지역 토벌 진행도 — 100마리를 채우면 그 지역 보스가 열린다(원본 :1866).
-        ProfileService.Current.RegisterRegionKill(RunState.Region);
+        // 2026-11-19 챕터 구조 — 그 스테이지 누적 처치(100에서 멈춤). 1~4 = 100이면 클리어, 5 = 중간 보스 포탈이 열린다.
+        // 중간 보스전(보스 무대)의 잡몹은 세지 않는다.
+        if (RunState.Mode == RunMode.Normal)
+        {
+            var result = ProfileService.Current.RegisterStageKill(RunState.Region, RunState.Stage);
+            if (result == PlayerProfile.StageKillResult.StageCleared)
+                RunEvents.RaiseStageCleared();
+            else if (result == PlayerProfile.StageKillResult.MidBossReady)
+                RunEvents.RaiseMidBossReady();
+        }
 
         int enemyLevel = enemy.Level;
         float sc = DifficultyScalingConfig.RewardMultiplier(RunState.Region);
         // 원본 `eliteMult = e.elite ? CONFIG.elite.rewardMult : 1`(project_test.html:1810).
         if (elite) sc *= DifficultyScalingConfig.EliteRewardMult;
+        sc *= ChapterConfig.RewardStageMult(RunState.Stage) * rewardMult; // 챕터 안 스테이지 단계·중간 보스(2026-11-19)
 
         float baseExp = data != null ? data.exp : 8f;
         int goldMin = data != null ? data.goldMin : 5;
@@ -77,7 +90,7 @@ public static class EnemyRewards
     /// </summary>
     public static void GrantBossKill(int region)
     {
-        float sc = DifficultyScalingConfig.RewardMultiplier(region);
+        float sc = DifficultyScalingConfig.RewardMultiplier(region) * ChapterConfig.BossRewardMult; // 보스 스테이지 한 단계(2026-11-19)
 
         int exp = (int)JsMath.Round(Boss.RewardExp * sc);
         int gold = (int)JsMath.Round(Boss.RewardGold * sc); // 보스는 확률 무시하고 항상 드랍(:1818)

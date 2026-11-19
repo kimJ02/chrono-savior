@@ -167,7 +167,8 @@ public class EnemySpawner : MonoBehaviour
         waveTimer = minionInterval;
         shrineTimer = Shrine.FirstAt; // 보스전엔 성소가 안 나오지만(:4430) 다음 런을 위해 되돌린다
         aliveShrine = null;
-        SpawnBoss();
+        if (RunState.IsMidBoss) SpawnMidBoss(); // 2026-11-19 — 5스테이지 포탈은 중간 보스로
+        else SpawnBoss();
     }
 
     /// <summary>
@@ -327,6 +328,38 @@ public class EnemySpawner : MonoBehaviour
 
         // 웨이브 상한엔 **안 넣는다** — 원본 `enemies.filter(e => !e.boss && !e.shrine)`(:3978).
         // 넣으면 보스전 상한(4) 한 자리를 보스가 먹어 잡몹이 3마리만 나온다.
+    }
+
+    /// <summary>
+    /// 중간 보스(2026-11-19 챕터 구조, 사용자 확정) — 그 스테이지 몹 하나를 크기 ×2·체력 ×20·공격력 ×5로 키운 것.
+    /// 그림은 정수배(도트 배율 ×2)라 깨지지 않는다. 잡으면 5스테이지 클리어 + 보상 ×10, 보스처럼 판이 끝난다.
+    /// </summary>
+    void SpawnMidBoss()
+    {
+        var data = PickEnemyData();
+        float x = Mathf.Lerp(FieldBounds.MinX, FieldBounds.MaxX, 0.62f);
+        var go = SpawnMonsterAt(PrefabOf(data), new Vector3(x, FieldBounds.GroundY + 1.2f, 0f));
+        if (go == null) return;
+        go.name = "MidBoss";
+        ApplyEnemyData(go, data, false);
+        if (go.TryGetComponent(out EnemyHealth health))
+        {
+            health.Died -= HandleEnemyDied; // 일반 처치 보상 대신 아래 전용 처리
+            health.SetMaxHp(JsMath.Round(health.MaxHp * ChapterConfig.MidBossHpMult));
+            health.Died += HandleMidBossDied;
+        }
+        if (go.TryGetComponent(out EnemyMove move)) move.attackPower = JsMath.Round(move.attackPower * ChapterConfig.MidBossDmgMult);
+        go.transform.localScale *= ChapterConfig.MidBossScale;
+        HitFeel.Shake(8f, 0.5f);
+    }
+
+    void HandleMidBossDied(EnemyHealth enemy)
+    {
+        spawnedData.TryGetValue(enemy.gameObject, out var data);
+        EnemyRewards.GrantKill(enemy, data, ChapterConfig.MidBossRewardMult);
+        spawnedData.Remove(enemy.gameObject);
+        ProfileService.Current.MarkStageCleared(RunState.Region, ChapterConfig.StagesPerChapter);
+        RunEvents.RaiseBossDefeated(); // 보스처럼 잠깐 뒤 판이 끝난다(결과 화면)
     }
 
     /// <summary>보스가 쓰러졌다 — 보상(<see cref="EnemyRewards.GrantBossKill"/>)을 주고 전투 담당에 알린다.</summary>

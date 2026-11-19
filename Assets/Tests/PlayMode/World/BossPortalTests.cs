@@ -65,7 +65,8 @@ public class BossPortalTests
     static void FillRegionKills(int region)
     {
         var p = ProfileService.Current;
-        for (int i = 0; i < RunState.RegionKillTarget; i++) p.RegisterRegionKill(region);
+        // 2026-11-19 챕터 구조 — 포탈은 5스테이지(중간 보스)에만, 그 스테이지 처치 100이면 열린다
+        for (int i = 0; i < ChapterConfig.StageKillTarget; i++) p.RegisterStageKill(region, ChapterConfig.StagesPerChapter);
     }
 
     // ────────────────────────── 잠금 ──────────────────────────
@@ -77,13 +78,13 @@ public class BossPortalTests
     [Test]
     public void Portal_IsLockedUntilRegionKillTargetReached()
     {
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         var portal = NewPortal();
 
         Assert.IsFalse(portal.IsUnlocked, "토벌 0마리인데 포탈이 열려 있다");
 
         FillRegionKills(1);
-        Assert.IsTrue(portal.IsUnlocked, $"토벌 {RunState.RegionKillTarget}마리를 채웠는데 안 열린다");
+        Assert.IsTrue(portal.IsUnlocked, $"5스테이지 토벌 {ChapterConfig.StageKillTarget}마리를 채웠는데 안 열린다");
     }
 
     /// <summary>
@@ -94,11 +95,11 @@ public class BossPortalTests
     public void Portal_StaysUnlockedInLaterRuns()
     {
         FillRegionKills(1);
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         var portal = NewPortal();
         Assert.IsTrue(portal.IsUnlocked);
 
-        RunState.Begin(1, RunMode.Normal); // 새 런
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter); // 새 런
         Assert.IsTrue(portal.IsUnlocked, "누적 해금인데 새 런에서 다시 잠겼다");
     }
 
@@ -109,10 +110,10 @@ public class BossPortalTests
         FillRegionKills(1);
         var portal = NewPortal();
 
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         Assert.IsTrue(portal.IsUnlocked);
 
-        RunState.Begin(2, RunMode.Normal);
+        RunState.Begin(2, RunMode.Normal, ChapterConfig.StagesPerChapter);
         Assert.IsFalse(portal.IsUnlocked, "1지역 토벌로 2지역 포탈이 열렸다");
     }
 
@@ -125,16 +126,31 @@ public class BossPortalTests
     public void Portal_HidesOutsideNormalField()
     {
         GameState.Set(GameScene.Run);
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         var portal = NewPortal();
         Assert.IsTrue(portal.ShouldBeVisible, "일반 필드 사냥 중인데 포탈이 숨었다");
 
         RunState.EnterBossField();
         Assert.IsFalse(portal.ShouldBeVisible, "보스 필드인데 포탈이 남아 있다");
 
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         RunState.MarkOver();
         Assert.IsFalse(portal.ShouldBeVisible, "런이 끝났는데 포탈이 남아 있다");
+    }
+
+    /// <summary>2026-11-19 챕터 구조 — 포탈은 5스테이지에만 보인다(1~4스테이지·보스 스테이지엔 없다).</summary>
+    [Test]
+    public void Portal_OnlyInStageFive()
+    {
+        GameState.Set(GameScene.Run);
+        var portal = NewPortal();
+        for (int st = 1; st < ChapterConfig.StagesPerChapter; st++)
+        {
+            RunState.Begin(1, RunMode.Normal, st);
+            Assert.IsFalse(portal.ShouldBeVisible, $"{st}스테이지인데 포탈이 보인다");
+        }
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
+        Assert.IsTrue(portal.ShouldBeVisible);
     }
 
     /// <summary>플레이어가 멀리 있으면 상호작용 범위 밖이다(HUD 안내도 이 값으로 뜬다).</summary>
@@ -142,7 +158,7 @@ public class BossPortalTests
     public IEnumerator Portal_DetectsPlayerOnlyWhenClose()
     {
         GameState.Set(GameScene.Run);
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         var portal = NewPortal();
 
         var player = NewPlayerAt(new Vector3(2.2f, FieldBounds.GroundY + 1f, 0f)); // 시작 지점
@@ -190,7 +206,7 @@ public class BossPortalTests
     [Test]
     public void EnterBossField_IsIgnoredWhenAlreadyInBossField()
     {
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         Assert.IsTrue(RunState.EnterBossField());
 
         RunState.Tick(30f);
@@ -204,7 +220,7 @@ public class BossPortalTests
     [Test]
     public void EnterBossField_IsIgnoredAfterRunIsOver()
     {
-        RunState.Begin(1, RunMode.Normal);
+        RunState.Begin(1, RunMode.Normal, ChapterConfig.StagesPerChapter);
         RunState.MarkOver();
         Assert.IsFalse(RunState.EnterBossField());
         Assert.AreEqual(RunMode.Normal, RunState.Mode);
@@ -223,7 +239,7 @@ public class BossPortalTests
         var run = TestFlow.Create();
         yield return null;
 
-        run.StartRun(1, RunMode.Normal);
+        run.StartStage(1, ChapterConfig.StagesPerChapter);
         yield return null;
 
         RunEvents.RequestBossPortal(); // 토벌 0마리 — 잠겨 있다
@@ -241,7 +257,7 @@ public class BossPortalTests
         var run = TestFlow.Create();
         yield return null;
 
-        run.StartRun(1, RunMode.Normal);
+        run.StartStage(1, ChapterConfig.StagesPerChapter);
         yield return null;
         Assert.AreEqual(FieldLayout.NormalMapWidth, FieldBounds.MaxX, 1e-3f);
 
@@ -263,7 +279,7 @@ public class BossPortalTests
         var run = TestFlow.Create();
         yield return null;
 
-        run.StartRun(1, RunMode.Normal);
+        run.StartStage(1, ChapterConfig.StagesPerChapter);
         CombatDirector.Current.EnterBossField();
         yield return null;
 

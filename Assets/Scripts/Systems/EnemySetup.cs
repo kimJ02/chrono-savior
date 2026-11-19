@@ -38,7 +38,7 @@ public static class EnemySetup
         if (health != null)
         {
             float baseHp = data != null ? data.maxHp : health.MaxHp;
-            float hp = DifficultyScalingConfig.ScaledHp(baseHp, regionLv);
+            float hp = DifficultyScalingConfig.ScaledHp(baseHp, regionLv) * ChapterConfig.HpStageMult(RunState.Stage); // 챕터 안 스테이지 단계(2026-11-19)
             // 회귀 장벽 — 권장 회귀에 모자란 지역이면 몹이 훨씬 단단해진다(원본 `rebirthWallHpMult` :975).
             hp *= RegressionConfig.WallEnemyHp(regionLv, ProfileService.Current.regressions);
             if (elite) hp *= DifficultyScalingConfig.EliteHpMult;
@@ -48,7 +48,7 @@ public static class EnemySetup
             health.SetMaxHp(hp);
             // 원본 `enemyLv()`(project_test.html:3924) — 지역 기준 레벨 ±1, 1~40으로 제한.
             // 난이도가 아니라 **레벨 페널티 전용**이다(체력·피해는 위 지역 배율이 이미 정했다).
-            health.SetLevel(Mathf.Clamp(RegionConfig.RecommendedLevel(regionLv) + Random.Range(0, 2), 1, 40));
+            health.SetLevel(Mathf.Clamp(RegionConfig.RecommendedLevel(regionLv) + ChapterConfig.StageLevelBonus(RunState.Stage) + Random.Range(0, 2), 1, 40));
             if (data != null) health.knockbackMultiplier = data.knockbackMultiplier;
         }
 
@@ -56,7 +56,7 @@ public static class EnemySetup
         if (move != null)
         {
             float baseDmg = data != null ? data.attackPower : move.attackPower;
-            float dmg = DifficultyScalingConfig.ScaledDmg(baseDmg, regionLv);
+            float dmg = DifficultyScalingConfig.ScaledDmg(baseDmg, regionLv) * ChapterConfig.DmgStageMult(RunState.Stage);
             dmg *= RegressionConfig.WallEnemyDamage(regionLv, ProfileService.Current.regressions); // 원본 :976
             if (elite) dmg *= DifficultyScalingConfig.EliteDmgMult;
             move.attackPower = JsMath.Round(dmg); // 원본 `dmg: Math.round(...)`(:3959)
@@ -139,7 +139,8 @@ public static class EnemySetup
         if (health != null)
         {
             // 보스도 회귀 장벽을 받는다(원본 `spawnBoss`의 `rebirthWallHpMult(r)` :4159).
-            health.SetMaxHp(JsMath.Round(Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, ProfileService.Current.regressions))); // 원본 `Math.round(...)`(:4159)
+            health.SetMaxHp(JsMath.Round(Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, ProfileService.Current.regressions)
+                                         * ChapterConfig.BossHpMult)); // 원본 `Math.round(...)`(:4159) × 보스 스테이지 한 단계(2026-11-19)
             health.SetLevel(Boss.LevelForRegion(region));
             health.knockbackMultiplier = Boss.KnockbackMultiplier; // 거의 안 밀린다
         }
@@ -148,7 +149,8 @@ public static class EnemySetup
         if (move != null)
         {
             move.attackPower = JsMath.Round(Boss.DamageForRegion(region)
-                                            * RegressionConfig.WallEnemyDamage(region, ProfileService.Current.regressions)); // 원본 `Math.round(...)`(:4165)
+                                            * RegressionConfig.WallEnemyDamage(region, ProfileService.Current.regressions)
+                                            * ChapterConfig.BossDmgMult); // 원본 `Math.round(...)`(:4165) × 보스 스테이지 한 단계
             move.moveSpeed = Boss.MoveSpeed;
         }
 

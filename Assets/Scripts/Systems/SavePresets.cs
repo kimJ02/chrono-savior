@@ -6,8 +6,8 @@ namespace ChronoSavior.Systems
     /// 세이브 슬롯 3개의 시나리오(2026-11-19, 교수님 지시 — 다음 주 수요일 플레이테스트. 처음부터 끝까지 다 해 보기 어려우니
     /// 게임의 초반 / 조금 성장한 상태 / 유물 + 능력치 풀 상태를 바로 해 볼 수 있게).
     /// 1. 새 출발 — 아무것도 없는 처음 상태. 들어가면 캐릭터부터 고른다.
-    /// 2. 성장 — 중력 법사, 레벨 16, 중력 5층(스킬만 다 찍음), 골드 강화·유물 없음, 1~2지역 정복.
-    /// 3. 중력 법사 풀세팅 — 레벨 25, 중력 5층, 골드 강화 각 15, 유물 전부 각성(스폰 유물 각성 = 몬스터 2배) + 슬롯 전용 몬스터 2배 더, 1~2지역 정복.
+    /// 2. 성장 — 중력 법사, 레벨 16, 중력 5층(스킬만 다 찍음), 골드 강화·유물 없음, 챕터 1 클리어(다음 2-1).
+    /// 3. 중력 법사 풀세팅 — 레벨 25, 중력 5층, 골드 강화 각 15, 유물 전부 각성(스폰 유물 각성 = 몬스터 2배) + 슬롯 전용 몬스터 2배 더, 챕터 1~2 클리어(다음 3-1 — 잠겨 있어 1~2챕터를 다시 돈다).
     /// 수치는 팀이 플레이해 보고 바꾸면 된다(이 파일만 고치면 다음 초기화부터 반영).
     /// </summary>
     public static class SavePresets
@@ -43,7 +43,7 @@ namespace ChronoSavior.Systems
                     p.character = CharacterId.Mage;
                     p.level = 16;                                     // SP 15
                     for (int i = 0; i < 5; i++) p.TryLearnMageTier(MageBranch.Gravity); // 1+2+3+4+5 = SP 15
-                    Conquer(p, 2);
+                    Conquer(p, 1); // 챕터 1 클리어 → 다음은 2-1(사용자 2026-11-19)
                     break;
 
                 case 3:
@@ -67,14 +67,13 @@ namespace ChronoSavior.Systems
             p.upgrades.atk = p.upgrades.hp = p.upgrades.ms = p.upgrades.atkSpeed = p.upgrades.crit = n;
         }
 
-        /// <summary>1~n지역을 정복한 상태(토벌 목표 채움 + 보스 열림·처치).</summary>
-        static void Conquer(PlayerProfile p, int regions)
+        /// <summary>챕터 1~n을 모두 깬 상태(스테이지 1~5 클리어 + 챕터 보스 정복, 2026-11-19 챕터 구조).</summary>
+        static void Conquer(PlayerProfile p, int chapters)
         {
-            for (int r = 1; r <= regions && r <= RegionConfig.Count; r++)
+            for (int c = 1; c <= chapters && c <= ChapterConfig.ChapterCount; c++)
             {
-                p.regionKills[r - 1] = RunState.RegionKillTarget;
-                p.regionBossUnlocked[r - 1] = true;
-                p.MarkBossCleared(r);
+                for (int st = 1; st <= ChapterConfig.StagesPerChapter; st++) p.MarkStageCleared(c, st);
+                p.MarkBossCleared(c);
             }
         }
     }

@@ -136,10 +136,13 @@ namespace ChronoSavior.UI
             string[] statVals = { $"{RunState.DamageDealt:N0}", $"{RunState.MaxCombo:N0}", $"{RunState.DamageTaken:N0}" };
             for (int i = 0; i < 3; i++) { statLabels[i].text = statNames[i]; statValues[i].text = statVals[i]; }
 
-            int target = Mathf.Max(1, RunState.RegionKillTarget);
-            int regionKills = Mathf.Min(p.RegionKills(s), target);
-            barFills[0].fillAmount = regionKills / (float)target;
-            barTexts[0].text = $"토벌 {regionKills}/{target}";
+            // 2026-11-19 챕터 구조 — 그 스테이지 누적 처치(보스 스테이지는 격파 여부)
+            int target = ChapterConfig.StageKillTarget;
+            bool bossStage = RunState.Stage == ChapterConfig.BossStage;
+            int stageKills = bossStage ? (p.IsBossCleared(s) ? target : 0) : Mathf.Min(p.StageKills(s, RunState.Stage), target);
+            barFills[0].fillAmount = stageKills / (float)target;
+            barTexts[0].text = bossStage ? (p.IsBossCleared(s) ? $"{ChapterConfig.StageLabel(s, RunState.Stage)} 격파" : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 도전 중")
+                             : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 토벌 {stageKills}/{target}";
 
             retryLabel.text = dead ? "재동기화" : "다시 입장";
             okLabel.text = dead ? "성문으로" : "마을로";
@@ -158,7 +161,7 @@ namespace ChronoSavior.UI
             return "몬스터";
         }
 
-        void Retry() => StageSelectScreen.TryEnter(Flow, RunState.Region);
+        void Retry() => StageSelectScreen.TryEnter(Flow, RunState.Region, RunState.Stage); // 같은 스테이지(중간 보스전이었으면 5스테이지)
 
         void ToLobby() => Flow?.EnterLobby(CommonPopup.AlertIfTransitionFails("로비"));
     }

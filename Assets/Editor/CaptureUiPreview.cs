@@ -125,6 +125,9 @@ namespace ChronoSavior.Editor
 
             var stage = pc.GetComponent<StageSelectScreen>();
             Shot(pc, cam, outDir, "스테이지선택", sel => stage.ShowForCapture(sel));
+            // 2026-11-19 챕터 구조 — 1챕터 1~5를 깬 상태면 보스 쪽(빨간 화면)이 열린다
+            for (int st = 1; st <= ChapterConfig.StagesPerChapter; st++) prof.MarkStageCleared(1, st);
+            Shot(pc, cam, outDir, "스테이지선택_보스", sel => stage.ShowForCapture(sel));
             var charSel = pc.GetComponent<CharacterSelectScreen>();
             Shot(pc, cam, outDir, "캐릭터선택", sel => charSel.ShowForCapture(sel));
             var result = pc.GetComponent<RunResultScreen>();

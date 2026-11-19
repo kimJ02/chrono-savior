@@ -119,6 +119,16 @@ namespace ChronoSavior.Systems
         /// </summary>
         /// <param name="spendDay">스테이지에 들어갈 때마다 멸망까지 하루가 준다(사용자 결정 2026-10-24) — 에디터 디버그 진입만 false.</param>
         public bool StartRun(int region, RunMode mode, System.Action<bool> done = null, bool spendDay = true) =>
+            StartStage(region, mode == RunMode.Boss ? ChapterConfig.BossStage : 1, done, spendDay);
+
+        /// <summary>
+        /// 챕터의 그 스테이지로 사냥을 시작한다(2026-11-19 챕터 구조) — 1~5 일반 사냥, <see cref="ChapterConfig.BossStage"/>면 바로 보스전.
+        /// 들어가면 멸망까지 하루가 준다(보스 스테이지 포함).
+        /// </summary>
+        public bool StartStage(int chapter, int stage, System.Action<bool> done = null, bool spendDay = true) =>
+            StartRunAt(chapter, stage, stage == ChapterConfig.BossStage ? RunMode.Boss : RunMode.Normal, done, spendDay);
+
+        bool StartRunAt(int region, int stage, RunMode mode, System.Action<bool> done, bool spendDay) =>
             BeginTransition(CombatScene, false, () =>
             {
                 var director = CombatDirector.Current;
@@ -130,7 +140,7 @@ namespace ChronoSavior.Systems
                 var runBefore = RunState.Capture();
                 try
                 {
-                    RunState.Begin(region, mode);
+                    RunState.Begin(region, mode, stage);
                     hitstopLeft = 0f;
                     hitstopCooldown = 0f;
                     director.BeginField(mode);
@@ -143,7 +153,8 @@ namespace ChronoSavior.Systems
                     throw;
                 }
                 // 날짜는 들어가는 데 성공한 사냥만 쓴다(그래서 되돌릴 일이 없다). 보스 포탈로 보스 필드에 넘어가는 건 같은 원정이라 안 준다(이 함수를 안 거친다).
-                if (spendDay && mode == RunMode.Normal) ProfileService.Current.SpendDay();
+                // 2026-11-19 챕터 구조 — 보스 스테이지도 들어갈 때 하루(사용자). 5스테이지 포탈로 중간 보스에 넘어가는 건 같은 판이라 안 거친다.
+                if (spendDay) ProfileService.Current.SpendDay();
                 GameState.Set(GameScene.Run);
                 Time.timeScale = 1f;
                 return true;

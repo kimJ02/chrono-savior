@@ -581,7 +581,7 @@ public class GameBootTests
         typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
         var blob = Object.FindFirstObjectByType<ChronoSavior.Enemies.BlobLordBoss>();
         var blobHealth = blob.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
-        Assert.AreEqual(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions), blobHealth.MaxHp, 0.01f);
+        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions) * ChapterConfig.BossHpMult), blobHealth.MaxHp, 0.01f);
         Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), blobHealth.Level);
         AssertSize(blob.gameObject, ChronoSavior.Enemies.BlobLordBoss.VisualSize, ChronoSavior.Enemies.BlobLordBoss.HitRadius);
         Object.Destroy(blob.gameObject);
@@ -592,7 +592,7 @@ public class GameBootTests
         var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
         var bossHealth = boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
         var bossMove = boss.GetComponent<ChronoSavior.Enemies.EnemyMove>();
-        Assert.AreEqual(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions), bossHealth.MaxHp, 0.01f);
+        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions) * ChapterConfig.BossHpMult), bossHealth.MaxHp, 0.01f);
         Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), bossHealth.Level);
         Assert.AreEqual(ChronoSavior.Enemies.Boss.KnockbackMultiplier, bossHealth.knockbackMultiplier, 0.0001f);
         Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.DamageForRegion(region) * RegressionConfig.WallEnemyDamage(region, regressions)), bossMove.attackPower, 0.01f); // SetupBoss가 원본처럼 반올림한다(1지역 30은 정수라 예전엔 안 드러났다)

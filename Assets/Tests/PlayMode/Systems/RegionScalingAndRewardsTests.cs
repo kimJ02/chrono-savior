@@ -168,7 +168,7 @@ public class RegionScalingAndRewardsTests
     public void BossKill_GrantsScaledFixedRewards_AndConquersTheRegion()
     {
         RunState.Begin(2, RunMode.Boss);
-        float sc = DifficultyScalingConfig.RewardMultiplier(2);
+        float sc = DifficultyScalingConfig.RewardMultiplier(2) * ChapterConfig.BossRewardMult; // 보스 스테이지 한 단계(2026-11-19)
 
         EnemyRewards.GrantBossKill(2);
 

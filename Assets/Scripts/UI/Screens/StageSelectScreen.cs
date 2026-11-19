@@ -6,13 +6,17 @@ using ChronoSavior.Systems;
 namespace ChronoSavior.UI
 {
     /// <summary>
-    /// 마왕성 길목 선택(스테이지 선택) — Figma "마왕성 길목 선택"(32:56)의 640×360판: 왼쪽 판 = 스테이지 목록, 오른쪽 판 = 고른 스테이지
-    /// (stage N · 등장 몬스터 5칸 · 스테이지 진행도 막대 · 보스 정보 · ↻ 닫기 · 원정 떠나기). 로비의 "던전" 건물에서 연다.
+    /// 마왕성 길목 선택(스테이지 선택) — Figma "마왕성 길목 선택"(32:56) 2026-11-19판, 챕터 구조(`docs/chapter-stage-spec.md`).
+    /// 로비의 "던전" 건물에서 연다.
     ///
-    /// Figma 640판은 왼쪽 판이 비어 있어서 **옛 1920판 목록**(stage1~9 · 돌파도 · 진입/잠김)으로 채웠다. ↻ = 창 닫기(사용자 "설정창 끄는 버튼").
-    /// 보스 도전 버튼은 640판에 없다 — 보스는 지금처럼 필드 끝 포탈(사용자 2026-09-16).
-    /// 원정 떠나기 = 사냥 시작, 그리고 **멸망까지 하루가 준다**(사용자 2026-10-24, `PlayerProfile.doomDays`). 입장료는 없다(사용자 2026-10-25 — 원본은 받았다).
-    /// 등장 몬스터는 실제 출현표(`EnemySpawnTable`, 원본 `rollSpawnType`)대로, 그림은 스포너가 쓰는 몹 그림 그대로.
+    /// - 왼쪽 = 세계 지도 한 장(섬). 지도 위 리본 5개 = 챕터 위치(사용자 2026-11-19: 1 오른쪽 아래 숲 · 2 가운데 아래 마을 ·
+    ///   3 왼쪽 위 · 4 오른쪽 설산 · 5 오른쪽 위 하늘 신전). 지금 챕터(또는 마우스를 올린 챕터) 리본 위에 ▼ 표시.
+    /// - 아래 띠 = [◀ 챕터 n · 이름 ▶] + 스테이지 칸 5개(1-1 ~ 1-5)와 이어진 선. ◀▶는 "챕터 n 스테이지 → 챕터 n 보스 → 챕터 n+1 스테이지" 순으로 넘긴다
+    ///   (Figma 보스 화면의 아래 띠도 같은 ◀ 챕터 ▶ 판이라 보스를 한 쪽으로 봤다).
+    /// - 오른쪽 판(일반) = 스테이지 이름 리본·등장 몬스터 3칸·스테이지 진행도(처치 n/100)·원정 떠나기.
+    ///   오른쪽 판(보스) = 빨간 판·보스 아이콘·보스 정보(초상·이름)·주요 패턴 2칸·원정 떠나기.
+    /// - 잠긴 챕터(3~5, <see cref="ChapterConfig.PlayableChapters"/>)·잠긴 스테이지는 보이되 들어갈 수 없다.
+    /// 그림은 Figma 원본 이미지 그대로(1:1, 큰 리본·보스 아이콘만 정확히 2배) — 도트가 안 깨지게. 배경만 큰 일러스트라 원본을 640×360으로 한 번 줄여 넣었다.
     /// </summary>
     public class StageSelectScreen : PxScreen
     {
@@ -31,41 +35,74 @@ namespace ChronoSavior.UI
 
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
-        protected override NavLayout Layout => NavLayout.Vertical;
+        protected override NavLayout Layout => NavLayout.Horizontal;
 
-        // Figma 좌표(640판 원점 = 배경 181:7의 23·21)
-        static readonly Color Bg = Px.Hex(0x656565);                         // 181:7
-        static readonly Color BgBorder = Px.Hex(0x472e17);
-        static readonly Rect ListFrame = new Rect(17f, 23f, 240f, 272f);      // 184:3 "스테이지 창 프레임 2"
-        static readonly Rect InfoFrame = new Rect(337f, 23f, 240f, 272f);     // 184:2 "스테이지 창 프레임 1"
-        static readonly Rect StageTitle = new Rect(349f, 34f, 200f, 29f);     // 189:2 "stage 3" 20px
-        static readonly Rect MobLabel = new Rect(349f, 78f, 120f, 16f);       // 191:3 "등장 몬스터" 12px
-        static readonly float[] MobX = { 357f, 399f, 441f, 483f, 525f };     // 187:8~187:12 32×32
-        const float MobY = 109f, MobSize = 32f;
-        static readonly Rect ProgLabel = new Rect(349f, 159f, 120f, 14f);     // 191:4 "스테이지 진행도" 12px
-        static readonly Rect ProgBar = new Rect(349f, 194f, 128f, 32f);       // 184:5 "진행도 1"
-        static readonly Rect ProgText = new Rect(349f, 202f, 128f, 16f);      // 191:8 "100/100" 12px 가운데
-        static readonly Rect BossLabel = new Rect(493f, 159f, 80f, 14f);      // 191:5 "보스 정보" 12px
-        static readonly Rect BossFrame = new Rect(493f, 178f, 64f, 64f);      // 186:7 (32px 그림 2배)
-        static readonly Rect CloseBox = new Rect(368f, 260f, 24f, 24f);       // 195:10 + 195:11 ↻(19×19)
-        static readonly Rect EnterBox = new Rect(429f, 257f, 128f, 32f);      // 193:9 + 195:12 "원정 떠나기" 12px #03193f
-        // 왼쪽 목록(Figma에 없음 — 옛 1920판 내용)
-        const float RowX = 27f, RowW = 220f, RowTop = 32f, RowStep = 28.5f, RowH = 24f;
-        static readonly Color RowPlate = new Color(0f, 0f, 0f, 0.18f);
-        static readonly Color RowSelected = Px.Hex(0xfac70e);
-        static readonly Color EnterText = Px.Hex(0x03193f);
-        static readonly Color32 BarRed = new Color32(234, 50, 60, 255);
-        static readonly Color32 BarEmpty = new Color32(57, 31, 33, 255);
+        // ── Figma 좌표(640판 원점 = 배경 181:7의 23·21, 보스 화면은 592:85의 720·21) ──
+        const string A = "StageMap/";
+        static readonly Rect Map = new Rect(29f, 12f, 298f, 272f);                  // 590:63
+        /// <summary>챕터 1~5 리본 자리(지도 위, 64×16) — 사용자가 알려 준 챕터 위치에 맞춰 Figma 리본 5개를 배정.</summary>
+        static readonly Vector2[] Ribbon =
+        {
+            new Vector2(228f, 184f), // 1 오른쪽 아래 숲      (539:44)
+            new Vector2(134f, 176f), // 2 가운데 아래 마을    (539:43)
+            new Vector2(85f, 97f),   // 3 왼쪽 위             (539:42)
+            new Vector2(207f, 86f),  // 4 오른쪽 설산         (590:64)
+            new Vector2(239f, 55f),  // 5 오른쪽 위 하늘 신전 (539:47)
+        };
+        const float RibbonW = 64f, RibbonH = 16f, MarkerDX = 24f, MarkerDY = -19f, MarkerSize = 16f; // 선택 1(539:50) = 리본 기준 +24·-19
 
-        readonly Text[] rowNames = new Text[RegionConfig.Count];
-        readonly Text[] rowStates = new Text[RegionConfig.Count];
-        readonly Image[] mobs = new Image[5];
-        Text title, infoLine, progText;
-        Image progFill, boss;
-        Image cursor;
-        PxButton enter;
-        int selected = 1;
-        Vector2Int barSpan;
+        static readonly Rect Bar = new Rect(32f, 303f, 576f, 48f);                  // 539:67 stagebar
+        static readonly Rect BossBar = new Rect(34f, 299f, 576f, 48f);              // 592:125 boss_stage
+        static readonly Rect Plate = new Rect(32f, 303f, 110f, 48f);                // 539:70 chapter
+        static readonly Rect BossPlate = new Rect(34f, 299f, 110f, 48f);            // 592:81
+        static readonly Rect ArrowL = new Rect(52f, 319f, 16f, 16f), ArrowR = new Rect(122f, 319f, 16f, 16f);         // 539:75·539:74
+        static readonly Rect BossArrowL = new Rect(38f, 315f, 16f, 16f), BossArrowR = new Rect(140f, 315f, 16f, 16f); // 590:71·590:72
+        static readonly float[] FrameX = { 159f, 247f, 335f, 423f, 511f };          // 539:55~539:59 80×36
+        const float FrameY = 305f, FrameW = 80f, FrameH = 36f;
+        static readonly Rect Line = new Rect(199f, 339f, 352f, 4f);                 // 539:62
+        const float NodeY = 333f, NodeSize = 16f;                                   // 539:60~539:66 (칸 가운데 아래)
+        static readonly Rect BossFrame = new Rect(337f, 305f, 80f, 36f);            // 590:65
+
+        static readonly Rect Panel = new Rect(370f, 23f, 240f, 272f);               // 539:76 맵선택
+        static readonly Rect TitleRibbon = new Rect(426f, 36f, 128f, 32f);          // 539:51 (64×16 그림 2배)
+        static readonly Rect MobLabel = new Rect(383f, 94f, 120f, 16f);             // 191:3 "등장 몬스터"
+        static readonly float[] MobX = { 412f, 474f, 536f };                        // 540:81~540:83 32×32
+        const float MobY = 126f, MobSize = 32f;
+        static readonly Rect ProgLabel = new Rect(383f, 175f, 120f, 14f);           // 191:4 "스테이지 진행도"
+        static readonly Rect Prog = new Rect(390f, 208f, 200f, 24f);                // 597:141·597:142
+        static readonly Rect EnterBox = new Rect(426f, 245f, 128f, 24f);            // 626:4 + 195:12 "원정 떠나기"
+
+        static readonly Rect BossIcon = new Rect(458f, 38f, 64f, 64f);              // 610:43 (32×32 그림 2배)
+        static readonly Rect BossInfoLabel = new Rect(384f, 101f, 86f, 14f);        // 592:91 "보스 정보"
+        static readonly Rect BossPortrait = new Rect(384f, 121f, 48f, 48f);         // 593:128
+        static readonly Rect BossName = new Rect(440f, 121f, 120f, 48f);            // 593:131 "보스 이름"
+        static readonly Rect PatternLabel = new Rect(383f, 176f, 80f, 17f);         // 593:132 "주요 패턴"
+        static readonly float[] PatternX = { 438f, 538f };                          // 593:135·593:136 32×32
+        const float PatternY = 199f;
+
+        static readonly Color TextDark = Px.Hex(0x03193f);
+        static readonly Color Gold = Px.Hex(0xfac70e);
+        static readonly Color Dim = new Color(1f, 1f, 1f, 0.4f);
+        static readonly Color NodeDone = Px.Hex(0xfac70e);
+        static readonly Color NodeTodo = new Color(0.55f, 0.55f, 0.6f, 1f);
+
+        // ── 상태 ──
+        int chapter = 1;
+        bool bossPage;
+        int stage = 1;        // 고른 스테이지(일반 쪽)
+        int hoverChapter;     // 지도 리본에 마우스를 올린 챕터(0 = 없음)
+
+        // ── 화면 조각 ──
+        RectTransform normalRoot, bossRoot;
+        readonly PxButton[] frames = new PxButton[ChapterConfig.StagesPerChapter];
+        readonly Text[] frameLabels = new Text[ChapterConfig.StagesPerChapter];
+        readonly Image[] nodes = new Image[ChapterConfig.StagesPerChapter];
+        readonly Text[] ribbonLabels = new Text[ChapterConfig.ChapterCount];
+        PxButton bossFrame, arrowL, arrowR, bossArrowL, bossArrowR, enter, bossEnter;
+        Text plateNum, plateName, bossPlateNum, bossPlateName, bossFrameLabel;
+        Text title, progText, lockText, bossNameText, bossLockText;
+        Image marker, progFill, bossPortrait;
+        readonly Image[] mobs = new Image[3];
 
         protected override void Awake()
         {
@@ -82,126 +119,234 @@ namespace ChronoSavior.UI
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Background", Bg);
-            Px.Fill(Content, "Border", BgBorder, 0f, 0f, PixelCanvas.Width, PixelCanvas.Height);
-            Px.Fill(Content, "Inner", Bg, 1f, 1f, PixelCanvas.Width - 2f, PixelCanvas.Height - 2f);
-            Px.Image(Content, "ListFrame", PxArt.Get("Stage/frame_list"), ListFrame.x, ListFrame.y, ListFrame.width, ListFrame.height);
-            Px.Image(Content, "InfoFrame", PxArt.Get("Stage/frame_info"), InfoFrame.x, InfoFrame.y, InfoFrame.width, InfoFrame.height);
+            Px.FullFill(Back, "Letterbox", Color.black);
+            Px.Image(Content, "Background", PxArt.Get(A + "background"), 0f, 0f, PixelCanvas.Width, PixelCanvas.Height);
+            Px.Image(Content, "Map", PxArt.Get(A + "map"), Map.x, Map.y, Map.width, Map.height);
 
-            for (int i = 0; i < RegionConfig.Count; i++)
+            // 지도 위 챕터 리본 — 마우스를 올리면 ▼, 누르면 그 챕터로
+            for (int i = 0; i < ChapterConfig.ChapterCount; i++)
             {
-                int region = i + 1;
-                float y = RowTop + i * RowStep;
-                var plate = Px.Fill(Content, "Row" + region, RowPlate, RowX, y, RowW, RowH);
-                var inner = Px.Stretch(plate.transform, "Inner");
-                var b = plate.gameObject.AddComponent<PxButton>();
-                b.Init(plate, inner);
-                b.OnClick = () => { selected = region; Enter(); };
-                rowNames[i] = Px.Text(inner, "Name", $"stage {region}", 18f, 0f, 120f, RowH, 12, Color.white, TextAnchor.MiddleLeft);
-                rowStates[i] = Px.Text(inner, "State", "", 100f, 0f, RowW - 106f, RowH, 8, Color.white, TextAnchor.MiddleRight);
-                AddNav(b);
+                int c = i + 1;
+                var b = Px.Button(Content, "Chapter" + c, PxArt.Get(A + "ribbon"), Ribbon[i].x, Ribbon[i].y, RibbonW, RibbonH,
+                                  () => GoChapter(c, false), out var inner);
+                ribbonLabels[i] = Px.Text(inner, "Label", ChapterConfig.NameOf(c), 0f, 0f, RibbonW, RibbonH - 2f, 8, TextDark);
+                b.OnHover = () => hoverChapter = c;
+                var hov = b.gameObject.AddComponent<RelicCellHover>();
+                hov.Exit = () => { if (hoverChapter == c) hoverChapter = 0; };
             }
-            cursor = Px.Image(Content, "Cursor", PxArt.Get("Common/cursor"), 0f, 0f, 12f, 12f);
+            marker = Px.Image(Content, "Marker", PxArt.Get(A + "select_marker"), 0f, 0f, MarkerSize, MarkerSize);
 
-            title = Px.Text(Content, "Title", "", StageTitle.x, StageTitle.y, StageTitle.width, StageTitle.height, 20, Color.white,
-                            TextAnchor.MiddleLeft);
-            infoLine = Px.Text(Content, "Info", "", 349f, 61f, 216f, 12f, 8, Color.white, TextAnchor.MiddleLeft);
-            Px.Text(Content, "MobLabel", "등장 몬스터", MobLabel.x, MobLabel.y, MobLabel.width, MobLabel.height, 12, Color.white,
-                    TextAnchor.MiddleLeft);
-            for (int i = 0; i < 5; i++)
+            BuildNormal();
+            BuildBoss();
+        }
+
+        void BuildNormal()
+        {
+            normalRoot = Px.Stretch(Content, "Normal");
+            var n = normalRoot;
+            Px.Image(n, "Panel", PxArt.Get(A + "panel"), Panel.x, Panel.y, Panel.width, Panel.height);
+            Px.Image(n, "TitleRibbon", PxArt.Get(A + "ribbon_title"), TitleRibbon.x, TitleRibbon.y, TitleRibbon.width, TitleRibbon.height);
+            title = Px.Text(n, "Title", "", TitleRibbon.x, TitleRibbon.y, TitleRibbon.width, TitleRibbon.height - 6f, 12, TextDark);
+            Px.Text(n, "MobLabel", "등장 몬스터", MobLabel.x, MobLabel.y, MobLabel.width, MobLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
+            for (int i = 0; i < 3; i++)
             {
-                Px.Image(Content, "MobFrame" + i, PxArt.Get("Stage/mob_frame"), MobX[i], MobY, MobSize, MobSize);
-                mobs[i] = Px.Image(Content, "Mob" + i, null, MobX[i] + 4f, MobY + 4f, MobSize - 8f, MobSize - 8f);
+                Px.Image(n, "MobSlot" + i, PxArt.Get(A + "monster_slot"), MobX[i], MobY, MobSize, MobSize);
+                mobs[i] = Px.Image(n, "Mob" + i, null, MobX[i] + 4f, MobY + 4f, MobSize - 8f, MobSize - 8f);
                 mobs[i].preserveAspect = true;
             }
-
-            Px.Text(Content, "ProgLabel", "스테이지 진행도", ProgLabel.x, ProgLabel.y, ProgLabel.width, ProgLabel.height, 12, Color.white,
-                    TextAnchor.MiddleLeft);
-            var bar = PxArt.Get("Stage/progress");
-            barSpan = PxArt.ColorSpanX(bar, BarRed);
-            Px.Image(Content, "ProgBack", PxArt.Derive(bar, "empty", c => PxArt.Same(c, BarRed) ? BarEmpty : c),
-                     ProgBar.x, ProgBar.y, ProgBar.width, ProgBar.height);
-            progFill = Px.Image(Content, "ProgFill", PxArt.Derive(bar, "fill", c => PxArt.Same(c, BarRed) ? c : new Color32(0, 0, 0, 0)),
-                                ProgBar.x, ProgBar.y, ProgBar.width, ProgBar.height);
+            Px.Text(n, "ProgLabel", "스테이지 진행도", ProgLabel.x, ProgLabel.y, ProgLabel.width, ProgLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
+            Px.Image(n, "ProgBack", PxArt.Get(A + "progress_back"), Prog.x, Prog.y, Prog.width, Prog.height);
+            progFill = Px.Image(n, "ProgFill", PxArt.Get(A + "progress_fill"), Prog.x, Prog.y, Prog.width, Prog.height);
             progFill.type = Image.Type.Filled;
             progFill.fillMethod = Image.FillMethod.Horizontal;
-            progText = Px.Text(Content, "ProgText", "", ProgText.x, ProgText.y, ProgText.width, ProgText.height, 12, Color.white)
+            progText = Px.Text(n, "ProgText", "", Prog.x + 5f, Prog.y, Prog.width - 10f, Prog.height, 12, Color.white, TextAnchor.MiddleLeft)
                          .WithOutline(Px.Ink);
+            lockText = Px.Text(n, "Lock", "", Panel.x + 12f, 229f, Panel.width - 24f, 14f, 8, Gold);
 
-            Px.Text(Content, "BossLabel", "보스 정보", BossLabel.x, BossLabel.y, BossLabel.width, BossLabel.height, 12, Color.white,
-                    TextAnchor.MiddleLeft);
-            Px.Image(Content, "BossFrame", PxArt.Get("Stage/boss_frame"), BossFrame.x, BossFrame.y, BossFrame.width, BossFrame.height);
-            boss = Px.Image(Content, "Boss", null, BossFrame.x + 8f, BossFrame.y + 8f, 48f, 48f);
-            boss.preserveAspect = true;
+            Px.Image(n, "Bar", PxArt.Get(A + "stage_bar"), Bar.x, Bar.y, Bar.width, Bar.height);
+            Px.Image(n, "Plate", PxArt.Get(A + "chapter_plate"), Plate.x, Plate.y, Plate.width, Plate.height);
+            plateNum = Px.Text(n, "PlateNum", "", Plate.x + 22f, Plate.y + 5f, 66f, 17f, 12, Color.white);
+            plateName = Px.Text(n, "PlateName", "", Plate.x + 8f, Plate.y + 24f, 94f, 17f, 10, Color.white);
+            Px.Image(n, "Line", PxArt.Get(A + "stage_line"), Line.x, Line.y, Line.width, Line.height);
+            for (int i = 0; i < ChapterConfig.StagesPerChapter; i++)
+            {
+                int s = i + 1;
+                nodes[i] = Px.Image(n, "Node" + s, PxArt.Get(A + "stage_node"), FrameX[i] + (FrameW - NodeSize) / 2f, NodeY, NodeSize, NodeSize);
+                frames[i] = Px.Button(n, "Stage" + s, PxArt.Get(A + "stage_frame"), FrameX[i], FrameY, FrameW, FrameH,
+                                      () => EnterSelected(), out var inner);
+                frameLabels[i] = Px.Text(inner, "Label", "", 0f, 0f, FrameW, FrameH - 4f, 12, Color.white);
+            }
 
-            AddNav(Px.IconButton(Content, "Close", PxArt.Get("Common/button_small"), PxArt.Get("Icons/close"), CloseBox.x, CloseBox.y,
-                                 CloseBox.width, CloseBox.height, 2f, 2f, 19f, 19f, Close));
-            enter = AddNav(Px.TextButton(Content, "Enter", PxArt.Get("Common/button_long"), EnterBox.x, EnterBox.y, EnterBox.width,
-                                         EnterBox.height, "원정 떠나기", 12, EnterText, Enter));
+            arrowL = Px.Button(n, "Prev", PxArt.Get(A + "arrow_left"), ArrowL.x, ArrowL.y, ArrowL.width, ArrowL.height, () => Step(-1), out _);
+            arrowR = Px.Button(n, "Next", PxArt.Get(A + "arrow_right"), ArrowR.x, ArrowR.y, ArrowR.width, ArrowR.height, () => Step(+1), out _);
+            enter = Px.TextButton(n, "Enter", PxArt.Get(A + "enter_button"), EnterBox.x, EnterBox.y, EnterBox.width, EnterBox.height,
+                                  "원정 떠나기", 12, TextDark, EnterSelected);
+
+            // 키보드 순서: ◀ · 1~5 · ▶ · 원정 떠나기 (보스 쪽은 아래에서 따로)
+            AddNav(arrowL);
+            foreach (var f in frames) AddNav(f);
+            AddNav(arrowR);
+            AddNav(enter);
         }
+
+        void BuildBoss()
+        {
+            bossRoot = Px.Stretch(Content, "Boss");
+            var b = bossRoot;
+            Px.Image(b, "Panel", PxArt.Get(A + "boss_panel"), Panel.x, Panel.y, Panel.width, Panel.height);
+            Px.Image(b, "Icon", PxArt.Get(A + "boss_icon"), BossIcon.x, BossIcon.y, BossIcon.width, BossIcon.height);
+            Px.Text(b, "InfoLabel", "보스 정보", BossInfoLabel.x, BossInfoLabel.y, BossInfoLabel.width, BossInfoLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
+            Px.Image(b, "PortraitFrame", PxArt.Get(A + "boss_portrait"), BossPortrait.x, BossPortrait.y, BossPortrait.width, BossPortrait.height);
+            bossPortrait = Px.Image(b, "Portrait", null, BossPortrait.x + 8f, BossPortrait.y + 8f, BossPortrait.width - 16f, BossPortrait.height - 16f);
+            bossPortrait.preserveAspect = true;
+            bossNameText = Px.Text(b, "Name", "", BossName.x, BossName.y, BossName.width, BossName.height, 12, Color.white, TextAnchor.MiddleLeft);
+            Px.Text(b, "PatternLabel", "주요 패턴", PatternLabel.x, PatternLabel.y, PatternLabel.width, PatternLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
+            foreach (var x in PatternX) Px.Image(b, "Pattern", PxArt.Get(A + "pattern_frame"), x, PatternY, 32f, 32f);
+            bossLockText = Px.Text(b, "Lock", "", Panel.x + 12f, 232f, Panel.width - 24f, 12f, 8, Gold);
+
+            Px.Image(b, "Bar", PxArt.Get(A + "boss_bar"), BossBar.x, BossBar.y, BossBar.width, BossBar.height);
+            Px.Image(b, "Plate", PxArt.Get(A + "boss_chapter_plate"), BossPlate.x, BossPlate.y, BossPlate.width, BossPlate.height);
+            bossPlateNum = Px.Text(b, "PlateNum", "", BossPlate.x + 22f, BossPlate.y + 5f, 66f, 17f, 12, Color.white);
+            bossPlateName = Px.Text(b, "PlateName", "", BossPlate.x + 8f, BossPlate.y + 24f, 94f, 17f, 10, Color.white);
+            bossFrame = Px.Button(b, "BossStage", PxArt.Get(A + "boss_frame"), BossFrame.x, BossFrame.y, BossFrame.width, BossFrame.height,
+                                  () => EnterSelected(), out var inner);
+            bossFrameLabel = Px.Text(inner, "Label", "", 0f, 0f, BossFrame.width, BossFrame.height - 4f, 12, Color.white);
+
+            bossArrowL = Px.Button(b, "Prev", PxArt.Get(A + "boss_arrow_left"), BossArrowL.x, BossArrowL.y, 16f, 16f, () => Step(-1), out _);
+            bossArrowR = Px.Button(b, "Next", PxArt.Get(A + "boss_arrow_right"), BossArrowR.x, BossArrowR.y, 16f, 16f, () => Step(+1), out _);
+            bossEnter = Px.TextButton(b, "Enter", PxArt.Get(A + "boss_enter_button"), EnterBox.x, EnterBox.y, EnterBox.width, EnterBox.height,
+                                      "원정 떠나기", 12, Color.white, EnterSelected);
+            AddNav(bossArrowL);
+            AddNav(bossFrame);
+            AddNav(bossArrowR);
+            AddNav(bossEnter);
+        }
+
+        // Nav 순서: 일반 0 ◀, 1~5 스테이지, 6 ▶, 7 원정 / 보스 8 ◀, 9 보스, 10 ▶, 11 원정
+        const int NavStage0 = 1, NavNormalEnter = 7, NavBossFrame = 9, NavBossEnter = 11;
 
         protected override void OnShown()
         {
-            // 처음엔 열린 가장 높은 스테이지
-            selected = RegressionScreen.HighestStage(ProfileService.Current);
+            // 처음엔 지금 이어서 할 곳 — 열린 가장 앞 챕터에서 아직 안 깬 첫 스테이지(다 깼으면 보스, 보스까지 깼으면 그 챕터 5스테이지)
+            var p = ProfileService.Current;
+            (chapter, stage, bossPage) = NextPlay(p);
+            hoverChapter = 0;
         }
 
-        protected override int DefaultNav => Mathf.Clamp(selected - 1, 0, RegionConfig.Count - 1);
+        /// <summary>이어서 할 곳(챕터, 스테이지, 보스 쪽인지).</summary>
+        public static (int chapter, int stage, bool boss) NextPlay(PlayerProfile p)
+        {
+            int best = 1;
+            for (int c = 1; c <= ChapterConfig.PlayableChapters; c++) if (p.IsRegionOpen(c)) best = c;
+            for (int s = 1; s <= ChapterConfig.StagesPerChapter; s++)
+                if (!p.IsStageCleared(best, s)) return (best, s, false);
+            if (!p.IsBossCleared(best)) return (best, ChapterConfig.BossStage, true);
+            return (best, ChapterConfig.StagesPerChapter, false);
+        }
+
+        protected override int DefaultNav => bossPage ? NavBossFrame : NavStage0 + stage - 1;
 
         protected override void OnEscape() => Close();
 
         protected override void OnNavChanged(int index)
         {
-            if (index < RegionConfig.Count) selected = index + 1;
-            if (cursor != null)
-                ((RectTransform)cursor.transform).anchoredPosition =
-                    new Vector2(RowX + 3f, -(RowTop + (selected - 1) * RowStep + (RowH - 12f) / 2f));
+            // 키보드·마우스로 스테이지 칸을 고르면 그 스테이지가 오른쪽 판에
+            if (!bossPage && index >= NavStage0 && index < NavStage0 + ChapterConfig.StagesPerChapter) stage = index - NavStage0 + 1;
+        }
+
+        /// <summary>◀▶ — 챕터 n 스테이지 → 챕터 n 보스 → 챕터 n+1 스테이지 …</summary>
+        void Step(int dir)
+        {
+            int page = (chapter - 1) * 2 + (bossPage ? 1 : 0) + dir;
+            int max = ChapterConfig.ChapterCount * 2 - 1;
+            if (page < 0 || page > max) return;
+            GoChapter(page / 2 + 1, page % 2 == 1);
+        }
+
+        void GoChapter(int c, bool boss)
+        {
+            chapter = Mathf.Clamp(c, 1, ChapterConfig.ChapterCount);
+            bossPage = boss;
+            if (!boss) stage = Mathf.Clamp(stage, 1, ChapterConfig.StagesPerChapter);
+            Refresh();
+            SelectNav(boss ? NavBossFrame : NavStage0 + stage - 1);
         }
 
         protected override void Refresh()
         {
             var p = ProfileService.Current;
-            for (int i = 0; i < RegionConfig.Count; i++)
+            normalRoot.gameObject.SetActive(!bossPage);
+            bossRoot.gameObject.SetActive(bossPage);
+            for (int k = 0; k < Nav.Count; k++)
             {
-                int r = i + 1;
-                bool openRegion = p.IsRegionOpen(r);
-                rowNames[i].color = r == selected ? RowSelected : openRegion ? Color.white : new Color(1f, 1f, 1f, 0.45f);
-                rowStates[i].text = !openRegion ? "잠김"
-                    : p.IsBossCleared(r) ? "보스 격파"
-                    : p.IsBossUnlocked(r) ? "포탈 열림"
-                    : $"토벌 {p.RegionKills(r)}/{RunState.RegionKillTarget}";
-                rowStates[i].color = openRegion ? Color.white : new Color(1f, 1f, 1f, 0.45f);
+                bool bossItem = k >= NavBossFrame - 1;
+                if (bossItem == bossPage) continue;
+                Nav[k].Selected = false;
             }
 
-            int s = selected;
-            title.text = $"stage {s}";
-            infoLine.text = $"{RegionConfig.NameOf(s)} · 권장 Lv.{RegionConfig.RecommendedLevel(s)}+ · 멸망까지 {p.doomDays}일";
+            // 지도 — 리본 글자, ▼(마우스를 올린 챕터 → 없으면 지금 챕터)
+            for (int i = 0; i < ChapterConfig.ChapterCount; i++)
+                ribbonLabels[i].color = p.IsRegionOpen(i + 1) ? TextDark : new Color(TextDark.r, TextDark.g, TextDark.b, 0.45f);
+            int mc = hoverChapter > 0 ? hoverChapter : chapter;
+            var m = Ribbon[mc - 1];
+            ((RectTransform)marker.transform).anchoredPosition = new Vector2(m.x + MarkerDX, -(m.y + MarkerDY));
 
-            var types = MonstersOf(s);
-            for (int i = 0; i < 5; i++)
+            bool chapterOpen = p.IsRegionOpen(chapter);
+            string chapterLock = !ChapterConfig.IsPlayable(chapter) ? "아직 열리지 않은 챕터" : !chapterOpen ? "앞 챕터 보스를 잡아야 열린다" : "";
+
+            if (!bossPage)
             {
-                Sprite sp = i < types.Length ? SpriteOf(types[i]) : null;
-                mobs[i].sprite = sp;
-                mobs[i].enabled = sp != null;
+                plateNum.text = $"챕터 {chapter}";
+                plateName.text = ChapterConfig.NameOf(chapter);
+                arrowL.Interactable = chapter > 1;
+                for (int i = 0; i < ChapterConfig.StagesPerChapter; i++)
+                {
+                    int s = i + 1;
+                    bool openS = p.IsStageOpen(chapter, s), done = p.IsStageCleared(chapter, s);
+                    frameLabels[i].text = ChapterConfig.StageLabel(chapter, s);
+                    frameLabels[i].color = s == stage ? Gold : openS ? Color.white : Dim;
+                    nodes[i].color = done ? NodeDone : NodeTodo;
+                }
+
+                title.text = ChapterConfig.StageLabel(chapter, stage);
+                var types = MonstersOf(chapter);
+                for (int i = 0; i < 3; i++)
+                {
+                    Sprite sp = i < types.Length ? SpriteOf(types[i]) : null;
+                    mobs[i].sprite = sp;
+                    mobs[i].enabled = sp != null;
+                }
+                int kills = Mathf.Min(p.StageKills(chapter, stage), ChapterConfig.StageKillTarget);
+                float ratio = kills / (float)ChapterConfig.StageKillTarget;
+                progFill.fillAmount = Mathf.Round(ratio * Prog.width) / Prog.width; // 도트 단위로 채운다
+                bool done5 = p.IsStageCleared(chapter, stage);
+                progText.text = done5 ? "클리어" : $"{Mathf.RoundToInt(ratio * 100f)}%";
+                bool can = p.IsStageOpen(chapter, stage);
+                lockText.text = chapterLock != "" ? chapterLock : !can ? "앞 스테이지를 깨야 열린다"
+                              : stage == ChapterConfig.StagesPerChapter && !done5 ? $"{ChapterConfig.StageKillTarget}마리 처치 후 포탈 → 중간 보스" : "";
+                enter.Interactable = can && p.CanEnterStage;
             }
-            var bs = catalog != null ? catalog.boss : null;
-            boss.sprite = bs;
-            boss.enabled = bs != null;
-
-            int kills = Mathf.Min(p.RegionKills(s), RunState.RegionKillTarget);
-            float ratio = kills / (float)RunState.RegionKillTarget;
-            float w = PxArt.Get("Stage/progress").rect.width;
-            int span = barSpan.y - barSpan.x + 1;
-            progFill.fillAmount = (barSpan.x + Mathf.Round(ratio * span)) / Mathf.Max(1f, w);
-            progText.text = $"{kills}/{RunState.RegionKillTarget}";
-
-            enter.Interactable = p.IsRegionOpen(s);
+            else
+            {
+                bossPlateNum.text = $"챕터 {chapter}";
+                bossPlateName.text = ChapterConfig.NameOf(chapter);
+                bossFrameLabel.text = ChapterConfig.StageLabel(chapter, ChapterConfig.BossStage);
+                bossArrowR.Interactable = chapter < ChapterConfig.ChapterCount;
+                bossNameText.text = RegionConfig.BossNameOf(chapter);
+                var bs = catalog != null ? catalog.boss : null;
+                bossPortrait.sprite = bs;
+                bossPortrait.enabled = bs != null;
+                bool can = p.IsStageOpen(chapter, ChapterConfig.BossStage);
+                bossLockText.text = chapterLock != "" ? chapterLock : p.IsBossCleared(chapter) ? "격파함 — 다시 도전할 수 있다"
+                                  : !can ? "1~5 스테이지를 모두 깨야 열린다" : "";
+                bossEnter.Interactable = can && p.CanEnterStage;
+            }
         }
 
         /// <summary>
-        /// 그 지역 카드에 **보여 줄** 몹 종류(칸 5개) — 원본 `rollSpawnType` 순서(박쥐·고블린 → 멧돼지 → 해골 궁수 → 슬라임, 2지역부터 오우거).
-        /// 스폰 확률표(`Systems/EnemySpawnTable`)의 복사본이 아니라 **표시 정책**이다 — 4지역부터는 나오는 종류가 6가지라 칸이 모자라 오우거를 뺀다.
-        /// 표와 어긋나지 않게 `Tests/PlayMode/UI/StageSelectShowcaseTests`가 '보여 주는 종류는 그 지역에서 실제로 나온다'와 지역별 순서를 고정한다.
+        /// 그 챕터 카드에 **보여 줄** 몹 종류(칸 3개) — 원본 `rollSpawnType` 순서(박쥐·고블린 → 멧돼지 → 해골 궁수 → 슬라임, 2지역부터 오우거).
+        /// 스폰 확률표(`Systems/EnemySpawnTable`)의 복사본이 아니라 **표시 정책**이다. 챕터 = 지역 번호.
+        /// 표와 어긋나지 않게 `Tests/PlayMode/UI/StageSelectShowcaseTests`가 '보여 주는 종류는 그 지역에서 실제로 나온다'를 고정한다.
         /// </summary>
         public static EnemyType[] MonstersOf(int region)
         {
@@ -217,28 +362,39 @@ namespace ChronoSavior.UI
             return d != null ? d.sprite : null;
         }
 
-        void Enter()
-        {
-            TryEnter(Flow, selected, () => open = false); // 전투 씬이 실제로 뜬 뒤에만 닫는다
-        }
+        void EnterSelected() =>
+            TryEnter(Flow, chapter, bossPage ? ChapterConfig.BossStage : stage, () => open = false); // 전투 씬이 실제로 뜬 뒤에만 닫는다
 
         /// <summary>
-        /// 스테이지에 들어간다 — 잠김·멸망(0일)을 확인하고(안 되면 공용 팝업으로 알림) 사냥을 시작한다. 입장료는 없다(사용자 2026-10-25).
-        /// 스테이지 선택의 "원정 떠나기"와 결과 화면의 "다시 원정"이 같이 쓴다. 들어가면 멸망까지 하루가 준다(`GameFlow.StartRun`).
-        /// 전투 씬 불러오기는 시간이 걸린다(2026-11-05 씬 분할 2차 3-4) — 들어가는 데 성공하면 <paramref name="entered"/>를 부르고,
-        /// 실패하면(이전 화면으로 되돌아온다) 공용 팝업으로 알린다. 돌려주는 값은 '요청을 받아들였는지'(전환 중이면 false).
+        /// 그 챕터의 스테이지에 들어간다 — 잠김·멸망(0일)을 확인하고(안 되면 공용 팝업) 사냥을 시작한다. 들어가면 멸망까지 하루(보스 스테이지 포함).
+        /// 스테이지 선택의 "원정 떠나기"와 결과 화면의 "다시 입장"이 같이 쓴다.
         /// </summary>
-        public static bool TryEnter(GameFlow flow, int s, System.Action entered = null)
+        public static bool TryEnter(GameFlow flow, int chapter, int stage, System.Action entered = null)
         {
             var p = ProfileService.Current;
-            if (!p.IsRegionOpen(s)) { CommonPopup.Alert($"stage {s}", "이전 스테이지의 보스를 잡아야 열린다."); return false; }
+            string label = ChapterConfig.StageLabel(chapter, stage);
+            if (!ChapterConfig.IsPlayable(chapter)) { CommonPopup.Alert(label, "아직 열리지 않은 챕터다."); return false; }
+            if (!p.IsStageOpen(chapter, stage))
+            {
+                CommonPopup.Alert(label, stage == ChapterConfig.BossStage ? "1~5 스테이지를 모두 깨야 열린다." : "앞 스테이지를 깨야 열린다.");
+                return false;
+            }
             if (!p.CanEnterStage)
             {
                 CommonPopup.Alert("멸망", "멸망까지 남은 기간이 다했다.\n시간 회귀(환생)로 되돌아가야 한다.");
                 return false;
             }
             if (flow == null) return false;
-            return flow.StartRun(s, RunMode.Normal, CommonPopup.AlertIfTransitionFails($"stage {s}", entered));
+            return flow.StartStage(chapter, stage, CommonPopup.AlertIfTransitionFails(label, entered));
+        }
+
+        /// <summary>예전 호출(지역 하나) — 그 챕터에서 이어서 할 스테이지로.</summary>
+        public static bool TryEnter(GameFlow flow, int chapter, System.Action entered = null)
+        {
+            var p = ProfileService.Current;
+            int s = 1;
+            while (s < ChapterConfig.StagesPerChapter && p.IsStageCleared(chapter, s)) s++;
+            return TryEnter(flow, chapter, s, entered);
         }
     }
 }
