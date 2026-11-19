@@ -277,7 +277,9 @@ namespace ChronoSavior.Combat
                 bool gold = Relics.Awakened("gravitySpring");
                 foreach (var c in centers)
                 {
-                    RelicPullZone.Spawn(c, 1.3f, life, 7f, mult, GravityRingColor, VfxKeys.MageGravityOrbLarge, VfxKeys.MageGravityExplosion);
+                    // 블랙홀 그림은 쓰지 않는다 — X로 다 터뜨렸는데 남은 블랙홀처럼 보였다(2026-11-19 사용자). 보라 고리 + 불꽃만.
+                    RelicPullZone.Spawn(c, 1.3f, life, 7f, mult, GravityRingColor, null, VfxKeys.MageGravityExplosion);
+                    VfxPlayer.Spawn(VfxKeys.MageGravitySparkLarge, c, DotScale.Value, 15f, ExplosionSortingOrder);
                     if (gold) RelicFx.After(life + 0.2f, () => RelicFx.Circle(c, 1.3f, mult * 0.35f, RelicFx.Gold, VfxKeys.MageGravityExplosion));
                 }
             }

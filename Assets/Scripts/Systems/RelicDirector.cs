@@ -147,7 +147,7 @@ namespace ChronoSavior.Systems
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 9f, 1.8f) ?? pos;
                 Echo("moonMeteor", m => RelicProjectile.Spawn(at + new Vector2(-1.5f, 7f), new Vector2(0.22f, -1f), 11f, 2.5f, m,
-                    RelicProjectile.Mode.Falling, VfxKeys.MageGravityOrbLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, VfxKeys.MageGravityExplosion),
+                    RelicProjectile.Mode.Falling, VfxKeys.MageBasicProjectileLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, VfxKeys.MageGravityExplosion), // 블랙홀과 헷갈리지 않게 파란 탄 그림
                     Relics.V("moonMeteor", 1));
             }
 

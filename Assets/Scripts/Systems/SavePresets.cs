@@ -7,7 +7,7 @@ namespace ChronoSavior.Systems
     /// 게임의 초반 / 조금 성장한 상태 / 유물 + 능력치 풀 상태를 바로 해 볼 수 있게).
     /// 1. 새 출발 — 아무것도 없는 처음 상태. 들어가면 캐릭터부터 고른다.
     /// 2. 성장 — 중력 법사, 레벨 16, 중력 5층(스킬만 다 찍음), 골드 강화·유물 없음, 1~2지역 정복.
-    /// 3. 중력 법사 풀세팅 — 레벨 25, 중력 5층, 골드 강화 각 15, 유물 32종 전부 각성(스폰 유물 각성 = 몬스터 2배), 1~2지역 정복.
+    /// 3. 중력 법사 풀세팅 — 레벨 25, 중력 5층, 골드 강화 각 15, 유물 전부 각성(스폰 유물 각성 = 몬스터 2배) + 슬롯 전용 몬스터 2배 더, 1~2지역 정복.
     /// 수치는 팀이 플레이해 보고 바꾸면 된다(이 파일만 고치면 다음 초기화부터 반영).
     /// </summary>
     public static class SavePresets
@@ -24,7 +24,7 @@ namespace ChronoSavior.Systems
         {
             1 => "처음부터 — 캐릭터를 고르고 시작",
             2 => "스킬 5층까지 — 유물·강화 없음",
-            3 => "유물 전부 각성 + 능력치 최대 + 몬스터 2배",
+            3 => "유물 전부 각성 + 능력치 최대 + 몬스터 4배",
             _ => "",
         };
 
@@ -56,6 +56,7 @@ namespace ChronoSavior.Systems
                     foreach (var d in ItemDatabase.All)
                         while (p.items.Count(d.id) < ItemDatabase.Cap(d.grade)) p.items.Add(d.id);
                     Conquer(p, 2);
+                    p.spawnScale = 2f; // 몬스터 수 2배 더(사용자 2026-11-19) — 유물 각성 2배와 곱해져 원래의 약 4배
                     break;
             }
             return p;

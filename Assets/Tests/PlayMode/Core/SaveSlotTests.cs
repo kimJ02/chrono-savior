@@ -57,6 +57,8 @@ public class SaveSlotTests
             Assert.AreEqual(ItemDatabase.Cap(d.grade), full.items.Count(d.id), $"{d.id}가 각성(상한)이 아니다");
         Assert.AreEqual(1f, Relics.Value(full, "spawnCap", 0), 0.001f, "요기 응집석 각성 = 몬스터 상한 2배");
         Assert.AreEqual(1f, Relics.Value(full, "spawnRate", 0), 0.001f, "황천의 문 각성 = 나오는 빈도 2배");
+        Assert.AreEqual(2f, full.spawnScale, 0.001f, "슬롯 3 전용 몬스터 2배 더(2026-11-19)");
+        Assert.AreEqual(1f, mid.spawnScale, 0.001f, "다른 슬롯은 그대로");
     }
 
     [Test]

@@ -247,7 +247,7 @@ public class EnemySpawner : MonoBehaviour
                 // 황천의 문 — 스폰 속도가 빨라진다(원본 `effWaveInterval() = waveInterval / (1 + itemAdd('rate'))` :3930).
                 // 황천의 문(2026-11-19 유물) — 나오는 빈도 +30/60/100%
                 waveTimer = waveInterval / (1f + ProfileService.Current.items.Add(ItemStat.Rate) + Relics.V("spawnRate", 0));
-                float more = 1f + Relics.V("spawnCap", 0);
+                float more = (1f + Relics.V("spawnCap", 0)) * Mathf.Max(1f, ProfileService.Current.spawnScale); // 슬롯 3은 2배 더
                 SpawnWaveOf(Mathf.RoundToInt(maxSpawnPerWave * more), Mathf.RoundToInt(cap * more));
             }
         }
