@@ -11,7 +11,7 @@ namespace ChronoSavior.UI
     /// 칸 셋(128×56 — 전리품·경험치·처치 수) · "원정 통계" 이름표 + 나눔선 · 통계 상자(192×64, 세 줄) · 오른쪽 진행 막대 · 버튼 둘(96×32).
     /// Codex(2026-11-16): 새 배치에 **지금 기록을 그대로 옮긴다** — 기록·잔존 시간은 띠 오른쪽, 사망 원인은 띠 아래 한 줄,
     /// 통계 세 줄 = Figma대로 준 피해량·최대 콤보·받은 피해(2026-11-16 집계 신설 — `RunState.DamageDealt/Taken`),
-    /// "원정 진행도" 막대 세 줄 = 토벌 진행(n/목표) · 시간 동조율(레벨 경험치) · 멸망까지(남은 날/7일) — Figma엔 뜻이 안 적혀 있어 Codex와 정함.
+    /// "원정 진행도" 막대 = 토벌 진행(n/목표) 한 줄만(2026-11-18 사용자 — 시간 동조율·멸망까지 막대는 뺐다. 레벨·남은 날은 다른 화면에서 본다).
     /// 쓰러졌을 때(시간선 붕괴)도 같은 틀 — 제목이 붉고 칸 순서·버튼 글자만 다르다.
     /// "다시 입장"·"재동기화" = 같은 스테이지에 다시 들어간다(멸망 하루 — 스테이지 선택과 같은 규칙). "마을로"·"성문으로" = 로비.
     /// </summary>
@@ -36,7 +36,7 @@ namespace ChronoSavior.UI
         const float StatRowH = 18f;
         static readonly Rect ProgressPlate = new Rect(335f, 203f, 64f, 20f); // 590:43 이름표 "원정 진행도"
         const float BarX = 340f, BarW = 180f, BarH = 16f;
-        static readonly float[] BarY = { 223f, 241f, 259f };                // 590:47 · 590:46 · 448:37 막대 세 줄(이름표·버튼과 안 겹치게 조금 내림)
+        static readonly float[] BarY = { 223f };                // 590:47 · 590:46 · 448:37 막대 세 줄(이름표·버튼과 안 겹치게 조금 내림)
         static readonly Rect RetryBox = new Rect(341f, 278f, 96f, 32f);   // 590:50 "버튼 1"
         static readonly Rect OkBox = new Rect(447f, 278f, 96f, 32f);      // 448:47
         static readonly Color Dead = Px.Hex(0xff6a5a);
@@ -46,8 +46,8 @@ namespace ChronoSavior.UI
         readonly Text[] boxValues = new Text[3];
         readonly Text[] statLabels = new Text[3];
         readonly Text[] statValues = new Text[3];
-        readonly Image[] barFills = new Image[3];
-        readonly Text[] barTexts = new Text[3];
+        readonly Image[] barFills = new Image[1];
+        readonly Text[] barTexts = new Text[1];
 
         protected override void Build()
         {
@@ -76,15 +76,10 @@ namespace ChronoSavior.UI
                 statValues[i] = Px.Text(Content, "StatValue" + i, "", StatsBox.x + 92f, y, 92f, StatRowH, 10, Color.white, TextAnchor.MiddleRight);
             }
 
-            // 막대 셋 — 바탕 → 채움(1 진한 하늘·2 밝은 하늘·3 회색, Figma 색) → 틀 → 글자
+            // 막대 하나 — 바탕 → 채움(진한 하늘, Figma 색) → 틀 → 글자
             var fill = PxArt.Get("Result/bar_fill");
-            Sprite[] fills =
-            {
-                fill,
-                PxArt.Derive(fill, "light", c => new Color32((byte)(c.r + (255 - c.r) / 2), (byte)(c.g + (255 - c.g) / 2), (byte)(c.b + (255 - c.b) / 2), c.a)),
-                PxArt.Derive(fill, "gray", c => new Color32(150, 156, 170, c.a)),
-            };
-            for (int i = 0; i < 3; i++)
+            Sprite[] fills = { fill };
+            for (int i = 0; i < 1; i++)
             {
                 float y = BarY[i];
                 Px.Image(Content, "BarBack" + i, PxArt.Get("Result/bar_back"), BarX, y, BarW, BarH);
@@ -143,15 +138,8 @@ namespace ChronoSavior.UI
 
             int target = Mathf.Max(1, RunState.RegionKillTarget);
             int regionKills = Mathf.Min(p.RegionKills(s), target);
-            long need = PlayerProfile.RequiredExp(p.level);
-            float expRatio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;
-            int days = Mathf.Clamp(p.doomDays, 0, PlayerProfile.DoomDaysStart);
             barFills[0].fillAmount = regionKills / (float)target;
-            barFills[1].fillAmount = expRatio;
-            barFills[2].fillAmount = days / (float)PlayerProfile.DoomDaysStart;
             barTexts[0].text = $"토벌 {regionKills}/{target}";
-            barTexts[1].text = $"시간 동조율 Lv.{p.level} · {Mathf.FloorToInt(expRatio * 100f)}%";
-            barTexts[2].text = $"멸망까지 {days}일";
 
             retryLabel.text = dead ? "재동기화" : "다시 입장";
             okLabel.text = dead ? "성문으로" : "마을로";
