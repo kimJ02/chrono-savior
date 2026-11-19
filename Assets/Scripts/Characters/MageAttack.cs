@@ -281,6 +281,16 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         MageProjectile.Spawn(boltPrefab, spawnPos, aim * spd, dmg, pierce, life, sizeMul, boltColor,
             inf, charged, explosive, explosionPower, gravityOrb, chargeK, tier, transform.position, facing);
 
+        // 마법사 세트 3(2026-11-19 유물) — Z를 0.6초 안에 이어 쏘면 메아리 탄 2발(35%)
+        if (Relics.CharacterSet3 && Time.time - lastZTime < SetEchoWindow)
+            for (int i = 0; i < 2; i++)
+            {
+                Vector2 v = (Vector2)(Quaternion.Euler(0f, 0f, i == 0 ? 8f : -8f) * aim) * spd;
+                MageProjectile.Spawn(boltPrefab, spawnPos, v, dmg * 0.35f, 0, life * 0.7f, sizeMul * 0.6f, RelicFx.Gold,
+                    false, false, explosive, explosionPower * 0.5f, gravityOrb, 0f, tier, transform.position, facing);
+            }
+        lastZTime = Time.time;
+
         // 잔광 탄환(마법사 기본공격, 2026-11-19 테스트 유물) — n번째 Z마다 옆으로 갈라지는 작은 탄
         if (Relics.Rank("mageEcho") > 0)
         {
@@ -303,7 +313,9 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
 
     /// <summary>완충으로 볼 차지 값(이 이상이면 화염왕관이 발동).</summary>
     const float FullChargeK = 0.95f;
+    const float SetEchoWindow = 0.6f;
     int echoShots;
+    float lastZTime = -10f;
 
     /// <summary>화염왕관 — 조준 방향의 가장 가까운 적(없으면 앞 5유닛) 위로 파편이 쏟아진다.</summary>
     void FireFlameCrown(Vector2 from, Vector2 aim)
@@ -318,8 +330,8 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
             if (d < best) { best = d; target = p; }
         }
         int n = Relics.VI("flameCrown", 0);
-        float mult = Relics.V("flameCrown", 1);
         bool gold = Relics.Awakened("flameCrown");
+        float mult = Relics.V("flameCrown", 1) * (gold ? 1.35f : 1f); // 각성 — 파편 위력 +35%
         for (int i = 0; i < n; i++)
         {
             float x = target.x + (i - (n - 1) * 0.5f) * 0.7f + Random.Range(-0.2f, 0.2f);

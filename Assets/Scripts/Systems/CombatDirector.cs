@@ -119,6 +119,7 @@ namespace ChronoSavior.Systems
 
             // 콤보 창·연쇄 처치 창·성소 버프 감소(원본 `updateCombo` :1630 등).
             CombatModifiers.Tick(Time.deltaTime);
+            RelicDirector.Tick(); // 콤보 종착역(2026-11-19 유물)
         }
 
         // ───────────────────────── 전투 화면이 읽는 것 (ICombatView) ─────────────────────────
@@ -180,6 +181,7 @@ namespace ChronoSavior.Systems
             HitFeel.Reset();
             bossDeadTimer = -1f;
             ResetPlayer();
+            RelicDirector.OnRunStarted(); // 입장 유물(칠일의 모래·문턱의 시계, 2026-11-19)
             // 사냥 화면의 카메라 대상 = 플레이어(로비에선 로비 기준점이었다). 부드럽게 따라간다(예전처럼).
             if (player != null) CameraFollow2D.Track(player.transform);
         }
@@ -269,7 +271,11 @@ namespace ChronoSavior.Systems
         /// 평타·무기 틱으로 몹을 맞혔을 때 약하게 흔든다(`HitFeel.HitShakePx` — 원본엔 없는 연출, 사용자 2026-10-28).
         /// 마지막 흔들림에서 `HitShakeGap`초가 안 지났으면 건너뛴다. 멈춘 시간(unscaled)으로 잰다 — 히트스톱 중에도 간격이 흐르게.
         /// </summary>
-        void HandleEnemyHit(GameObject enemy) => GappedShake(ref nextHitShakeTime, HitFeel.HitShakePx, HitFeel.HitShakeTime);
+        void HandleEnemyHit(GameObject enemy)
+        {
+            GappedShake(ref nextHitShakeTime, HitFeel.HitShakePx, HitFeel.HitShakeTime);
+            RelicDirector.OnEnemyHit(enemy); // 회귀 엽서(2026-11-19 유물)
+        }
 
         /// <summary>지속 피해 틱(레이저·깔린 블랙홀 등)은 평타보다 약하게, 간격은 따로(`HitFeel.TickShakePx`, 사용자 2026-10-28).</summary>
         void HandleEnemyTick(GameObject enemy) => GappedShake(ref nextTickShakeTime, HitFeel.TickShakePx, HitFeel.TickShakeTime);

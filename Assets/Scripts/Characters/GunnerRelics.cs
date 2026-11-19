@@ -16,13 +16,41 @@ namespace ChronoSavior.Characters
     public static class GunnerRelics
     {
         static int zHits, beamHits, fieldHitsDischarge, fieldHitsCross;
+        static bool setArmed;
 
-        public static void ResetForRun() { zHits = beamHits = fieldHitsDischarge = fieldHitsCross = 0; }
+        public static void ResetForRun() { zHits = beamHits = fieldHitsDischarge = fieldHitsCross = 0; setArmed = false; }
+
+        /// <summary>
+        /// X를 썼다 — 메카닉 세트 3: 다음 Z 적중에 보조 사격(유도탄 2발 35%). 세트 5: 3초 뒤 정면 일제 광선(공격력 60% × 4줄).
+        /// </summary>
+        public static void OnSkillUsed(Transform player, int facing)
+        {
+            if (Relics.CharacterSet3) setArmed = true;
+            if (!Relics.CharacterSet5) return;
+            RelicFx.After(3f, () =>
+            {
+                if (player == null) return;
+                Vector2 o = (Vector2)player.position + Vector2.up * 0.5f;
+                for (int i = 0; i < 4; i++)
+                {
+                    Vector2 d = Quaternion.Euler(0f, 0f, (i - 1.5f) * 9f) * new Vector2(facing, 0f);
+                    RelicFx.Line(o, o + d * 9f, 0.4f, 0.6f, RelicFx.Gold, 0.3f);
+                }
+                VfxPlayer.Spawn(VfxKeys.MechanicDroneMuzzle, o, DotScale.Value, 15f, RelicFx.SortingOrder);
+            });
+        }
 
         /// <summary>Z(총알·광선)가 적을 맞혔다 — 잔탄 포켓.</summary>
         public static void OnZHit(Vector2 from, Vector2 at)
         {
-            if (Relics.InRelicDamage || Relics.Rank("spareRounds") <= 0) return;
+            if (Relics.InRelicDamage) return;
+            if (setArmed)
+            {
+                setArmed = false;
+                Missile(from, at - from + Vector2.up, 0.35f, RelicFx.Gold);
+                Missile(from, at - from + Vector2.down, 0.35f, RelicFx.Gold);
+            }
+            if (Relics.Rank("spareRounds") <= 0) return;
             if (++zHits < Relics.VI("spareRounds", 0)) return;
             zHits = 0;
             float mult = Relics.V("spareRounds", 1);
@@ -59,8 +87,8 @@ namespace ChronoSavior.Characters
         {
             if (Relics.InRelicDamage || Relics.Rank("autoTurret") <= 0) return;
             int n = Relics.VI("autoTurret", 0);
-            float mult = Relics.V("autoTurret", 1);
             bool gold = Relics.Awakened("autoTurret");
+            float mult = Relics.V("autoTurret", 1) * (gold ? 1.35f : 1f); // 각성 — 유도탄 위력 +35%
             for (int i = 0; i < n; i++)
             {
                 float deg = 90f + (i - (n - 1) * 0.5f) * 35f;

@@ -86,10 +86,33 @@ namespace ChronoSavior.Core
         public const float ShrineBuffDuration = 15f;
 
         /// <summary>적이 자기 피해에 곱할 값. 성소가 없으면 1.</summary>
-        public static float EnemyDamageMultiplier => ShrineActive ? ShrineEnemyDamageMult : 1f;
+        public static float EnemyDamageMultiplier => (ShrineActive ? ShrineEnemyDamageMult : 1f)
+            * (1f + Relics.V("doomBell", 2)); // 종언의 종(저주 유물, 2026-11-19) — 적 공격력 +10/15/20%
         /// <summary>적이 자기 이동속도에 곱할 값. 성소(가속)와 살수 집중(둔화)이 둘 다 걸리면 곱으로 겹친다.</summary>
         public static float EnemyMoveSpeedMultiplier =>
-            (ShrineActive ? ShrineEnemyMoveSpeedMult : 1f) * (FocusSlowActive ? FocusEnemySlowMult : 1f);
+            (ShrineActive ? ShrineEnemyMoveSpeedMult : 1f) * (FocusSlowActive ? FocusEnemySlowMult : 1f)
+            * (RelicFreezeLeft > 0f ? 0f : RelicSlowLeft > 0f ? RelicSlowMult : 1f); // 문턱의 시계(멈춤)·칠일의 모래 3랭크(둔화)
+
+        // ---- 유물 런 상태(2026-11-19 테스트 유물) — 여러 도메인이 같이 읽어서 Core에 둔다 ----
+
+        /// <summary>적 이동을 멈추는 남은 시간(문턱의 시계).</summary>
+        public static float RelicFreezeLeft { get; private set; }
+        /// <summary>적 이동을 늦추는 남은 시간과 배수(칠일의 모래 3랭크).</summary>
+        public static float RelicSlowLeft { get; private set; }
+        public const float RelicSlowMult = 0.5f;
+        public static void FreezeEnemies(float seconds) => RelicFreezeLeft = Mathf.Max(RelicFreezeLeft, seconds);
+        public static void SlowEnemies(float seconds) => RelicSlowLeft = Mathf.Max(RelicSlowLeft, seconds);
+
+        /// <summary>유리 서약 — 처치하면 몇 초간 공격력이 오르고 받는 피해도 오른다. 맞으면 깨진다.</summary>
+        public static float GlassLeft { get; private set; }
+        public const float GlassDuration = 4f;
+        public static void GrantGlass() { if (Relics.Rank("glassOath") > 0) GlassLeft = GlassDuration; }
+        /// <summary>맞았을 때 — 유리가 있었으면 깨고 true(유리 파동은 부르는 쪽이).</summary>
+        public static bool BreakGlass() { if (GlassLeft <= 0f) return false; GlassLeft = 0f; return true; }
+        /// <summary>공격력 배수(유리 서약 중이면 1 + 25/40/60%).</summary>
+        public static float RelicAtkMultiplier => GlassLeft > 0f ? 1f + Relics.V("glassOath", 0) : 1f;
+        /// <summary>받는 피해 배수(유리 서약 중이면 1 + 15/25/40%).</summary>
+        public static float RelicDamageTakenMultiplier => GlassLeft > 0f ? 1f + Relics.V("glassOath", 1) : 1f;
 
         /// <summary>성소가 나타나거나 부서질 때 필드가 알려 준다.</summary>
         public static void SetShrineActive(bool active) => ShrineActive = active;
@@ -186,6 +209,9 @@ namespace ChronoSavior.Core
             }
 
             if (ShrineBuffLeft > 0f) ShrineBuffLeft = Mathf.Max(0f, ShrineBuffLeft - dt);
+            if (RelicFreezeLeft > 0f) RelicFreezeLeft = Mathf.Max(0f, RelicFreezeLeft - dt);
+            if (RelicSlowLeft > 0f) RelicSlowLeft = Mathf.Max(0f, RelicSlowLeft - dt);
+            if (GlassLeft > 0f) GlassLeft = Mathf.Max(0f, GlassLeft - dt);
         }
 
         /// <summary>
@@ -225,6 +251,7 @@ namespace ChronoSavior.Core
             ShrineBuffLeft = 0f;
             ShrineActive = false;
             FocusSlowActive = false;
+            RelicFreezeLeft = RelicSlowLeft = GlassLeft = 0f;
         }
 
         /// <summary>테스트 격리용(정적 상태 오염 방지) — 게임에선 <see cref="ResetForRun"/>.</summary>

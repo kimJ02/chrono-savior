@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using ChronoSavior.Combat;
 using ChronoSavior.Core;
 
 namespace ChronoSavior.Characters
@@ -150,6 +151,8 @@ namespace ChronoSavior.Characters
             // 아이템에서 오는 **런 한정** 자원 — 원본 `startRun`이 매 런 다시 채운다(:4310).
             guardLeft = Mathf.RoundToInt(profile.items.Pow("guard"));
             reviveLeft = Mathf.RoundToInt(profile.items.Pow("revive"));
+            rebootLeft = Relics.Rank("timelineReboot") > 0 ? 1 : 0; // 시간선 재기동(2026-11-19 유물) — 사냥당 1번
+            timeShieldReady = Relics.TagCount("시간") >= 4;            // 시간 세트 4 — 스테이지마다 첫 피격을 되감는다
             regenTick = 0f;
         }
 
@@ -162,6 +165,10 @@ namespace ChronoSavior.Characters
         public int guardLeft;
         /// <summary>최후의 발악으로 남은 부활 횟수(런 한정).</summary>
         public int reviveLeft;
+        /// <summary>시간선 재기동으로 남은 되감기 횟수(런 한정).</summary>
+        public int rebootLeft;
+        /// <summary>시간 세트 4 — 이번 사냥 첫 피격을 아직 안 되감았는지.</summary>
+        public bool timeShieldReady;
         float regenTick;
 
         /// <summary>
@@ -235,9 +242,27 @@ namespace ChronoSavior.Characters
                 return;
             }
 
+            // 시간 세트 4(2026-11-19 유물) — 이번 사냥 첫 피격을 1초 되감아 없던 일로 + 시간 파동(80%)
+            if (timeShieldReady)
+            {
+                timeShieldReady = false;
+                SetHitInvuln(1f);
+                RelicFx.Circle((Vector2)transform.position + Vector2.up * 0.4f, 3f, 0.8f, RelicFx.Light, VfxKeys.AssassinLandRing);
+                return;
+            }
+
             // 원본 `dmg = max(1, round(dmg * mult * drMult() * rand(0.9,1.1)))`(:1904).
             // `drMult()`가 '불괴의 갑주'다. 난수를 **여기서** 굴리는 게 원본 구조다(클래스 주석 참고).
-            float dr = PlayerStatCalculator.ComputeDamageTakenMultiplier(profile);
+            float dr = PlayerStatCalculator.ComputeDamageTakenMultiplier(profile)
+                       * CombatModifiers.RelicDamageTakenMultiplier; // 유리 서약 중엔 더 아프다(2026-11-19 유물)
+            // 유리 서약 — 맞으면 유리가 깨지며 주변에 파동, 강화 끝
+            if (CombatModifiers.BreakGlass())
+            {
+                float m = Relics.V("glassOath", 2);
+                Vector2 at = transform.position;
+                RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), VfxKeys.AssassinBurstSpark);
+                if (Relics.Awakened("glassOath")) RelicFx.After(0.2f, () => RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m * 0.35f, RelicFx.Gold));
+            }
             int applied = Mathf.Max(1, Mathf.RoundToInt(amount * dr * UnityEngine.Random.Range(0.9f, 1.1f)));
             if (GameState.IsRunning) RunState.NoteDamageTaken(Mathf.Min(applied, Mathf.Max(0f, CurrentHp))); // 결과창 "받은 피해"
             CurrentHp -= applied;
@@ -265,6 +290,20 @@ namespace ChronoSavior.Characters
 
             if (CurrentHp <= 0f)
             {
+                // 시간선 재기동(2026-11-19 유물) — 쓰러지는 대신 시간이 되감기며 체력 회복 + 화면 전체 폭발. 최후의 발악보다 먼저.
+                if (rebootLeft > 0)
+                {
+                    rebootLeft--;
+                    CurrentHp = Mathf.Round(maxHp * Relics.V("timelineReboot", 0));
+                    GrantInvuln(ReviveInvuln);
+                    Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
+                    float m = Relics.V("timelineReboot", 1);
+                    RelicFx.Circle(at, 14f, m, RelicFx.Light, VfxKeys.MageCollapseCritical, 3f);
+                    if (Relics.Awakened("timelineReboot")) RelicFx.After(0.2f, () => RelicFx.Circle(at, 14f, m * 0.35f, RelicFx.Gold));
+                    HitFeel.Shake(16f, 0.5f);
+                    return;
+                }
+
                 // 최후의 발악 — 쓰러지는 대신 체력 40%로 다시 일어난다(원본 `revive` :1917).
                 // **아이템이 있을 때만, 사냥당 정해진 횟수만** — 원본에 R키 같은 수동 부활은 없다.
                 if (reviveLeft > 0)

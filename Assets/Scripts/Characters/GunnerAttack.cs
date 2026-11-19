@@ -347,6 +347,7 @@ namespace ChronoSavior.Characters
                 GunnerDrone.Summon(dronePrefab, this, tier, stackSpend);
                 HitFeel.Shake(3f + tier * 0.5f, 0.14f); // 원본 :2401
                 ultCdTimer = ultCdMax = GunnerSpecConfig.DroneUltCooldown(tier) * cdMult;
+                GunnerRelics.OnSkillUsed(transform, Facing); // 메카닉 세트(2026-11-19 유물)
                 return;
             }
 
@@ -367,6 +368,7 @@ namespace ChronoSavior.Characters
             GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier);
             HitFeel.Shake(2f + tier * 0.4f, 0.1f); // 원본 :2416
             ultCdTimer = ultCdMax = GunnerSpecConfig.TurretUltCooldown(tier) * cdMult;
+            GunnerRelics.OnSkillUsed(transform, Facing); // 메카닉 세트(2026-11-19 유물)
         }
 
         /// <summary>

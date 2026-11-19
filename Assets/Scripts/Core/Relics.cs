@@ -79,6 +79,45 @@ namespace ChronoSavior.Core
             return arr[Mathf.Clamp(r - 1, 0, arr.Length - 1)];
         }
 
+        /// <summary>그 프로필 기준 k번째 수치(<see cref="V"/>의 프로필 지정판).</summary>
+        public static float Value(PlayerProfile p, string id, int k)
+        {
+            int r = Rank(p, id);
+            if (r <= 0) return 0f;
+            var def = ItemDatabase.Get(id);
+            if (k < 0 || k >= def.values.Length) return 0f;
+            var arr = def.values[k];
+            return arr[Mathf.Clamp(r - 1, 0, arr.Length - 1)];
+        }
+
+        // ── 세트(2026-11-19) — 같은 유물 중복은 1로 센다 ──
+
+        /// <summary>지금 캐릭터 전용 유물을 몇 종 가졌는지(갈래 무관) — 캐릭터 세트 3·5개.</summary>
+        public static int CharacterSetCount()
+        {
+            var p = ProfileService.Current;
+            var owner = p.character == CharacterId.Mage ? RelicOwner.Mage
+                      : p.character == CharacterId.Gunner ? RelicOwner.Gunner
+                      : p.character == CharacterId.Blade ? RelicOwner.Blade : RelicOwner.Common;
+            if (owner == RelicOwner.Common) return 0;
+            int n = 0;
+            foreach (var d in ItemDatabase.All) if (d.owner == owner && p.items.Count(d.id) > 0) n++;
+            return n;
+        }
+
+        /// <summary>그 태그(공용 "연쇄"·"시간")의 유물을 몇 종 가졌는지 — 태그 세트 2·4개.</summary>
+        public static int TagCount(string tag)
+        {
+            var p = ProfileService.Current;
+            int n = 0;
+            foreach (var d in ItemDatabase.All)
+                if (p.items.Count(d.id) > 0 && System.Array.IndexOf(d.tags, tag) >= 0) n++;
+            return n;
+        }
+
+        public static bool CharacterSet3 => CharacterSetCount() >= 3;
+        public static bool CharacterSet5 => CharacterSetCount() >= 5;
+
         /// <summary><see cref="V"/>의 정수판(간격·개수).</summary>
         public static int VI(string id, int k) => Mathf.RoundToInt(V(id, k));
     }

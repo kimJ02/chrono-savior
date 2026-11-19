@@ -119,6 +119,9 @@ namespace ChronoSavior.Core
         /// </summary>
         public int doomDays = DoomDaysStart;
         public const int DoomDaysStart = 7;
+
+        /// <summary>일곱째 날의 왕관(2026-11-19 유물) 봉인 — 회귀할 때 쓴 날짜만큼 채워지고, 연쇄 처치 때 하나씩 쓴다.</summary>
+        public int relicSeals;
         public bool CanEnterStage => doomDays > 0;
         public void SpendDay() { if (doomDays > 0) doomDays--; }
 
@@ -289,6 +292,12 @@ namespace ChronoSavior.Core
             int keptGunnerTier = gunnerTier;
             var keptBladeBranch = bladeBranch;
             int keptBladeTier = bladeTier;
+
+            // 일곱째 날의 왕관(2026-11-19 유물) — 이번 회차에 쓴 날짜가 다음 회차 봉인이 된다(랭크별 상한 3/5/7)
+            int seventh = Relics.Rank(this, "seventhCrown");
+            relicSeals = seventh > 0
+                ? Mathf.Min(Mathf.Max(0, DoomDaysStart - doomDays), Mathf.RoundToInt(Relics.Value(this, "seventhCrown", 0)))
+                : 0;
 
             shards += gain;
             regressions++;

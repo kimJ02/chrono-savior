@@ -15,11 +15,29 @@ namespace ChronoSavior.Characters
     public static class BladeRelics
     {
         const float WaveSpeed = 13f, WaveLife = 0.55f;
-        static int spins, stormKills, stormCharges, spirits;
+        static int spins, stormKills, stormCharges, spirits, skillKills;
+        static bool inSkill;
         static Vector2 focusStart;
         static bool focusTracking;
 
-        public static void ResetForRun() { spins = stormKills = stormCharges = spirits = 0; focusTracking = false; }
+        public static void ResetForRun() { spins = stormKills = stormCharges = spirits = skillKills = 0; focusTracking = false; inSkill = false; }
+
+        /// <summary>X(집중·칼날폭풍)가 시작됐다 — 섬영 세트 5가 X 중 처치를 센다.</summary>
+        public static void OnSkillStart() { inSkill = true; skillKills = 0; }
+
+        /// <summary>
+        /// X가 끝났다 — 섬영 세트 3: 끝난 자리에 유령 베기(공격력 60%). 세트 5: X 중 처치 3마리마다 검령 1개, 끝날 때 부채꼴(40%).
+        /// </summary>
+        public static void OnSkillEnd(Vector2 pos, int facing)
+        {
+            if (!inSkill) return;
+            inSkill = false;
+            if (Relics.CharacterSet3)
+                RelicFx.Circle(pos + Vector2.up * 0.4f, 1.8f, 0.6f, RelicFx.Gold, VfxKeys.AssassinSpin);
+            if (Relics.CharacterSet5 && skillKills >= 3)
+                Fan(pos, facing, Mathf.Min(skillKills / 3, 8), 120f, 0.4f, RelicFx.Gold);
+            skillKills = 0;
+        }
 
         /// <summary>Z 회전 베기 한 번(맞았든 안 맞았든) — 잔영 칼끝.</summary>
         public static void OnSpin(Vector2 pos, int facing)
@@ -37,7 +55,7 @@ namespace ChronoSavior.Characters
         {
             if (Relics.Rank("focusHeart") <= 0) return;
             int n = Relics.VI("focusHeart", 0);
-            float mult = Relics.V("focusHeart", 1);
+            float mult = Relics.V("focusHeart", 1) * (Relics.Awakened("focusHeart") ? 1.35f : 1f); // 각성 — 위력 +35%
             bool boomerang = Relics.Rank("focusHeart") >= 3;
             Vector2 pos = player.position;
             for (int i = 0; i < n; i++)
@@ -51,7 +69,9 @@ namespace ChronoSavior.Characters
         /// <summary>회전 베기로 적을 쓰러뜨렸다(Z·칼날폭풍 유지 틱 모두) — 폭풍 칼집.</summary>
         public static void OnSpinKill(Vector2 pos, int facing)
         {
-            if (Relics.InRelicDamage || Relics.Rank("stormSheath") <= 0) return;
+            if (Relics.InRelicDamage) return;
+            if (inSkill) skillKills++;
+            if (Relics.Rank("stormSheath") <= 0) return;
             if (++stormKills < Relics.VI("stormSheath", 0)) return;
             stormKills = 0;
             if (++stormCharges < 3) return;
@@ -65,7 +85,8 @@ namespace ChronoSavior.Characters
         /// <summary>집중이 켜지고 꺼질 때 — 질주 찢개(꺼질 때 달린 길을 벤다).</summary>
         public static void OnFocusChanged(bool on, Vector2 pos)
         {
-            if (on) { focusStart = pos; focusTracking = true; return; }
+            if (on) { focusStart = pos; focusTracking = true; OnSkillStart(); return; }
+            OnSkillEnd(pos, pos.x >= focusStart.x ? 1 : -1);
             if (!focusTracking) return;
             focusTracking = false;
             if (Relics.Rank("dashRipper") <= 0) return;
@@ -93,6 +114,7 @@ namespace ChronoSavior.Characters
         /// <summary>칼날폭풍이 끝났다 — 모은 검령을 부채꼴로.</summary>
         public static void OnStormEnd(Vector2 pos, int facing)
         {
+            OnSkillEnd(pos, facing);
             if (spirits <= 0) return;
             int n = spirits;
             spirits = 0;

@@ -62,6 +62,7 @@ public static class EnemyRewards
             // 원본 연쇄 분기(:1835~:1836) — 멈춤 0.10, 엘리트면 연쇄 수만큼 세게 흔든다.
             CombatEvents.RequestHitstop(HitFeel.HitstopChain);
             if (elite) HitFeel.Shake(Mathf.Min(14f, 5f + CombatModifiers.ChainKills), 0.25f);
+            RelicDirector.OnChainKill(enemy.transform.position); // 연쇄 처치 유물(2026-11-19)
         }
 
         // 원본 `run.goldEarned += g; run.expEarned += exp`(:1816·:1820) — 결과 화면에 쓴다.

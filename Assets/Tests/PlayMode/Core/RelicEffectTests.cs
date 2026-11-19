@@ -38,6 +38,7 @@ public class RelicEffectTests
         RunTransient.Reset();
         GunnerRelics.ResetForRun();
         BladeRelics.ResetForRun();
+        RelicDirector.ResetForRun();
     }
 
     static EnemyHealth NewEnemy(Vector3 pos, float hp = 100000f)
@@ -167,6 +168,84 @@ public class RelicEffectTests
         float t = 0f;
         while (t < 1.5f && e.CurrentHp >= e.MaxHp) { t += Time.deltaTime; yield return null; }
         Assert.Less(e.CurrentHp, e.MaxHp, "유도탄이 적에게 안 닿았다");
+    }
+    // ───────────────────────── 공용 유물·세트 ─────────────────────────
+
+    static GameObject Dummy() => new GameObject("TestEnemy"); // 처치 이벤트만 받는 빈 몹(콜라이더 없음)
+
+    [UnityTest]
+    public IEnumerator Lantern_EveryEightKills_PulsesNearestPack()
+    {
+        ProfileService.Current.items.Add("lantern"); // 1랭크 = 8처치
+        var target = NewEnemy(new Vector3(0.6f, 0.5f, 0f)); // 플레이어 자리(전투 화면 없으면 0,0) 근처
+        yield return new WaitForFixedUpdate();
+
+        for (int i = 0; i < 7; i++) RelicDirector.OnEnemyKilled(Dummy());
+        Assert.AreEqual(target.MaxHp, target.CurrentHp, "8번 전에 터졌다");
+        RelicDirector.OnEnemyKilled(Dummy());
+        Assert.Less(target.CurrentHp, target.MaxHp, "8번째 처치에 등불 파동이 없다");
+    }
+
+    [Test]
+    public void KillsFromRelicDamage_DoNotCount()
+    {
+        ProfileService.Current.items.Add("lantern");
+        using (Relics.Damaging())
+            for (int i = 0; i < 20; i++) RelicDirector.OnEnemyKilled(Dummy());
+        RelicDirector.OnEnemyKilled(Dummy());
+        // 유물 처치를 셌다면 이미 두 번 터지고 카운터가 5였을 것 — 정상이면 1
+        var counters = (System.Collections.Generic.Dictionary<string, int>)typeof(RelicDirector)
+            .GetField("killCounters", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null);
+        Assert.AreEqual(1, counters["lantern"], "유물 피해로 난 처치까지 셌다");
+    }
+
+    [Test]
+    public void GlassOath_KillBuffsAttack_AndRaisesDamageTaken()
+    {
+        var p = ProfileService.Current;
+        float atk0 = PlayerStatCalculator.ComputeAtk(p);
+        p.items.Add("glassOath");
+        RelicDirector.OnEnemyKilled(Dummy());
+        Assert.Greater(PlayerStatCalculator.ComputeAtk(p), atk0 * 1.2f, "유리 서약 처치 강화가 공격력에 안 붙는다");
+        Assert.Greater(CombatModifiers.RelicDamageTakenMultiplier, 1f);
+        Assert.IsTrue(CombatModifiers.BreakGlass(), "맞으면 깨져야 한다");
+        Assert.AreEqual(atk0, PlayerStatCalculator.ComputeAtk(p), 0.001f, "깨진 뒤에도 강화가 남았다");
+    }
+
+    [Test]
+    public void DoomBell_RaisesEnemyDamage()
+    {
+        float before = CombatModifiers.EnemyDamageMultiplier;
+        ProfileService.Current.items.Add("doomBell");
+        Assert.AreEqual(before * 1.10f, CombatModifiers.EnemyDamageMultiplier, 0.001f, "종언의 종 저주(적 공격력 +10%)");
+    }
+
+    [Test]
+    public void SeventhCrown_StoresSpentDaysAsSeals_OnRegression()
+    {
+        var p = ProfileService.Current;
+        p.items.Add("seventhCrown"); // 1랭크 = 봉인 최대 3
+        p.doomDays = PlayerProfile.DoomDaysStart - 5; // 5일 씀
+        p.MarkBossCleared(1);
+        p.DoRegression();
+        Assert.AreEqual(3, p.relicSeals, "쓴 날짜 5일이 상한 3으로 잘려 봉인이 되어야 한다");
+    }
+
+    [Test]
+    public void CharacterSet_CountsDistinctOwnRelics()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Mage;
+        p.items.Add("mageEcho"); p.items.Add("mageEcho"); // 중복은 1종
+        p.items.Add("emberLedger");
+        p.items.Add("spareRounds");                       // 메카닉 것은 안 센다
+        Assert.AreEqual(2, Relics.CharacterSetCount());
+        Assert.IsFalse(Relics.CharacterSet3);
+        p.items.Add("gravitySpring");
+        Assert.IsTrue(Relics.CharacterSet3, "마법사 유물 3종이면 세트 3");
+        Assert.AreEqual(0, Relics.TagCount("연쇄"));
+        p.items.Add("lantern"); p.items.Add("letter");
+        Assert.AreEqual(2, Relics.TagCount("연쇄"));
     }
 }
 

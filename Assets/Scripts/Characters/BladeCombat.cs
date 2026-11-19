@@ -801,6 +801,7 @@ namespace ChronoSavior.Characters
             stormGrab.Clear(); // 원본 `p.stormGrab = []`(:2626).
             SfxEvents.RaiseAssassinSpinAttack(); // 2026-11-10 사운드 — 칼날폭풍(아직 음원 없음, 나중에 채우면 바로 남)
             storming = true;
+            BladeRelics.OnSkillStart(); // 섬영 세트 5 — X 중 처치를 센다(2026-11-19 유물)
         }
 
         /// <summary>

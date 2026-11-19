@@ -22,7 +22,8 @@ namespace ChronoSavior.Core
         // 원본 statAtk/statMaxHp는 완성된 스탯 전체에 캐릭터 배수를 곱한다(`charStatMult()`, :1284~1285).
         // ms/as/crit(:1286~1288)엔 곱하지 않는다 — 원본 그대로이니 "일관성"을 이유로 바꾸지 말 것.
         public static float ComputeAtk(PlayerProfile p) =>
-            (BaseAtk + p.upgrades.atk * 3f + p.items.Add(ItemStat.Atk)) * CharacterStats.StatMultiplier(p.character);
+            (BaseAtk + p.upgrades.atk * 3f + p.items.Add(ItemStat.Atk)) * CharacterStats.StatMultiplier(p.character)
+            * CombatModifiers.RelicAtkMultiplier; // 유리 서약(2026-11-19 유물) — 사냥 중 잠깐만
 
         public static float ComputeMaxHp(PlayerProfile p) =>
             Mathf.Round((BaseMaxHp + p.upgrades.hp * 25f + p.items.Add(ItemStat.Hp)) * CharacterStats.StatMultiplier(p.character));

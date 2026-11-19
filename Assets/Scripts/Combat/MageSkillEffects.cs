@@ -47,6 +47,9 @@ namespace ChronoSavior.Combat
             }
             HitFeel.Shake(hit ? 7f : 4f, 0.18f); // 원본 :1992
             ShowExplosion(VfxKeys.MageFireExplosion, pos, r);
+            // 마법사 세트 5(2026-11-19 유물) — 폭발 뒤 작은 후속 폭발(공격력 60%)
+            if (Relics.CharacterSet5 && !Relics.InRelicDamage)
+                RelicFx.After(0.25f, () => RelicFx.Circle(pos, r * 0.7f, 0.6f, RelicFx.Gold, VfxKeys.MageFireExplosion));
             return hit;
         }
 
@@ -262,6 +265,10 @@ namespace ChronoSavior.Combat
         /// </summary>
         static void RelicAfterCollapse(System.Collections.Generic.List<Vector2> centers, int wellCount, int tier)
         {
+            // 마법사 세트 5 — 붕괴 뒤 같은 자리에 작은 후속 끌어당김·폭발(공격력 60%)
+            if (Relics.CharacterSet5)
+                foreach (var c in centers)
+                    RelicPullZone.Spawn(c, 1.4f, 0.5f, 8f, 0.6f, RelicFx.Gold, null, VfxKeys.MageCollapseExplosion);
             if (Relics.Rank("gravitySpring") > 0)
             {
                 float life = Relics.V("gravitySpring", 0), mult = Relics.V("gravitySpring", 1);
