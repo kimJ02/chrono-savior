@@ -171,7 +171,7 @@ namespace ChronoSavior.UI
         {
             typeof(CombatHud), typeof(PauseMenu), typeof(SettingsWindow), typeof(TitleMenu), typeof(RegressionScreen),
             typeof(RelicScreen), typeof(AwakenScreen), typeof(StageSelectScreen), typeof(CharacterSelectScreen),
-            typeof(RunResultScreen), typeof(LobbyHud), typeof(AchievementsScreen), typeof(CommonPopup),
+            typeof(RunResultScreen), typeof(LobbyHud), typeof(AchievementsScreen), typeof(SaveSlotScreen), typeof(CommonPopup),
         };
     }
 }

@@ -31,7 +31,68 @@ namespace ChronoSavior.Systems
         /// (에디터/윈도우는 `%USERPROFILE%/AppData/LocalLow/<회사>/<제품>`).
         /// 프로젝트 폴더에 쓰면 git에 섞이고 빌드본에선 쓰기 권한이 없을 수 있다.
         /// </summary>
-        public static string SavePath => PathOverride ?? Path.Combine(Application.persistentDataPath, FileName);
+        public static string SavePath => Slot > 0 ? SlotPath(Slot) : PathOverride ?? Path.Combine(Application.persistentDataPath, FileName);
+
+        // ── 세이브 슬롯(2026-11-19, 교수님 지시 — 플레이테스트용 시나리오 3개) ──
+        // 슬롯 3개는 고정 시나리오(<see cref="SavePresets"/>): 1 새 출발 · 2 성장 · 3 중력 법사 풀세팅. 슬롯마다 진행이 따로 저장되고,
+        // 초기화하면 그 시나리오 처음으로 돌아간다. 슬롯을 고르기 전(타이틀)엔 아무 파일도 읽지 않는다 — 예전 profile.json은 건드리지 않고 남겨 둔다.
+
+        public const int SlotCount = 3;
+
+        /// <summary>지금 쓰는 슬롯(1~3). 0이면 슬롯을 아직 안 고름 — 그때 저장은 예전 profile.json으로 간다(테스트·옛 흐름).</summary>
+        public static int Slot { get; private set; }
+
+        public static string SlotPath(int slot) => Path.Combine(SlotDirOverride ?? Application.persistentDataPath, $"slot_{slot}.json");
+
+        /// <summary>테스트용 — 슬롯 파일을 둘 폴더(실제 세이브 폴더를 안 건드리게).</summary>
+        public static string SlotDirOverride;
+        public static bool SlotExists(int slot) => File.Exists(SlotPath(slot));
+
+        /// <summary>없는 슬롯은 시나리오 처음 상태로 만든다(게임 시작 때 — 빈 슬롯이 없게).</summary>
+        public static void EnsureSlots()
+        {
+            for (int i = 1; i <= SlotCount; i++)
+                if (!SlotExists(i)) ResetSlot(i);
+        }
+
+        /// <summary>그 슬롯을 시나리오 처음 상태로 덮어쓴다. 지금 쓰는 슬롯이면 메모리 프로필도 바꾼다.</summary>
+        public static bool ResetSlot(int slot)
+        {
+            var profile = SavePresets.Build(slot);
+            try { File.WriteAllText(SlotPath(slot), JsonUtility.ToJson(profile, true)); }
+            catch (System.Exception e) { Debug.LogWarning($"[SaveService] 슬롯 {slot} 초기화 실패: {e.Message}"); return false; }
+            if (Slot == slot) ProfileService.Replace(profile);
+            return true;
+        }
+
+        /// <summary>그 슬롯을 지금 슬롯으로 정하고 불러온다. 파일이 깨졌으면 시나리오 처음 상태로 되살린다.</summary>
+        public static bool SelectSlot(int slot)
+        {
+            Slot = slot;
+            if (!SlotExists(slot)) ResetSlot(slot);
+            if (Load()) return true;
+            Debug.LogWarning($"[SaveService] 슬롯 {slot}을 못 읽어 시나리오 처음으로 되돌린다");
+            return ResetSlot(slot) && Load();
+        }
+
+        /// <summary>슬롯 화면이 보여 줄 요약 — 파일을 읽기만 한다(지금 프로필은 안 바뀐다). 못 읽으면 null.</summary>
+        public static PlayerProfile Peek(int slot)
+        {
+            try
+            {
+                if (!SlotExists(slot)) return null;
+                var p = new PlayerProfile();
+                JsonUtility.FromJsonOverwrite(File.ReadAllText(SlotPath(slot)), p);
+                return p;
+            }
+            catch { return null; }
+        }
+
+        /// <summary>슬롯 파일을 마지막으로 쓴 시각(없으면 null).</summary>
+        public static System.DateTime? SlotTime(int slot) => SlotExists(slot) ? File.GetLastWriteTime(SlotPath(slot)) : (System.DateTime?)null;
+
+        /// <summary>테스트용 — 슬롯 선택을 지운다.</summary>
+        public static void ClearSlotForTests() => Slot = 0;
 
         /// <summary>
         /// 테스트 전용 저장 위치. 실제 게임 씬을 띄우는 통합 테스트(`GameBootTests`)가 개발자의 진짜 세이브를 건드리지 않게

@@ -83,6 +83,9 @@ namespace ChronoSavior.Editor
             var title = pc.GetComponent<TitleMenu>();
             var popup = pc.GetComponent<CommonPopup>();
             Shot(pc, cam, outDir, "타이틀", sel => title.ShowForCapture(sel));
+            ChronoSavior.Systems.SaveService.EnsureSlots(); // 슬롯 창(2026-11-19) — 비어 있으면 시나리오 처음 상태로
+            var slots = pc.GetComponent<SaveSlotScreen>();
+            Shot(pc, cam, outDir, "세이브슬롯", sel => { title.ShowForCapture(false); slots.ShowForCapture(sel); });
             Shot(pc, cam, outDir, "공용팝업", sel =>
             {
                 title.ShowForCapture(false);

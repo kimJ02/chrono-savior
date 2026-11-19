@@ -54,7 +54,7 @@ namespace ChronoSavior.UI
 
         protected override void Refresh()
         {
-            Nav[1].Interactable = SaveService.HasSave; // 불러오기 — 기록이 없으면 누를 게 없다
+            Nav[1].Interactable = true; // 불러오기 — 2026-11-19부터 세이브 슬롯 창을 연다(슬롯은 늘 셋 다 있다)
             for (int i = 0; i < 4; i++)
             {
                 Color c = i == NavIndex ? Selected : Normal;
@@ -77,13 +77,11 @@ namespace ChronoSavior.UI
         {
             switch (i)
             {
+                // 2026-11-19 세이브 슬롯(교수님 지시 — 플레이테스트 시나리오 3개): "새 원정"·"불러오기" 둘 다 슬롯 창을 연다.
+                // 타이틀 모양은 그대로(Figma). 새 출발은 슬롯 1, 처음부터 다시는 슬롯의 [초기화].
                 case 0:
-                    if (SaveService.HasSave)
-                        CommonPopup.Confirm("새 원정", "지금까지의 기록이 모두 지워집니다.\n처음부터 새로 시작할까요?", StartFresh, "시작");
-                    else StartFresh();
-                    break;
                 case 1:
-                    if (SaveService.HasSave) Flow?.EnterLobby(CommonPopup.AlertIfTransitionFails("불러오기"));
+                    SaveSlotScreen.Open();
                     break;
                 case 2:
                     SettingsWindow.Open();

@@ -21,11 +21,11 @@ public class ItemAndGachaTests
 
     // ────────────────────────── 정의 ──────────────────────────
 
-    /// <summary>30종 = 캐릭터마다 5종(전설 1종씩) + 공용 15종. 등급 합계 N12/R10/E5/L3. 아이디 중복 없음.</summary>
+    /// <summary>32종 = 캐릭터마다 5종(전설 1종씩) + 공용 17종(스폰 유물 2종 포함). 등급 합계 N13/R11/E5/L3. 아이디 중복 없음.</summary>
     [Test]
     public void RelicDatabase_Has30_FivePerCharacter_AndGradeSplit()
     {
-        Assert.AreEqual(30, ItemDatabase.All.Length);
+        Assert.AreEqual(32, ItemDatabase.All.Length);
         var ids = new HashSet<string>();
         var perOwner = new Dictionary<RelicOwner, int>();
         var legendPerOwner = new Dictionary<RelicOwner, int>();
@@ -40,14 +40,14 @@ public class ItemAndGachaTests
             perGrade[d.grade] = perGrade.TryGetValue(d.grade, out var g) ? g + 1 : 1;
             if (d.grade == ItemGrade.Legend) legendPerOwner[d.owner] = legendPerOwner.TryGetValue(d.owner, out var l) ? l + 1 : 1;
         }
-        Assert.AreEqual(15, perOwner[RelicOwner.Common]);
+        Assert.AreEqual(17, perOwner[RelicOwner.Common]);
         foreach (var o in new[] { RelicOwner.Mage, RelicOwner.Gunner, RelicOwner.Blade })
         {
             Assert.AreEqual(5, perOwner[o], $"{o} 전용 유물 수");
             Assert.AreEqual(1, legendPerOwner[o], $"{o} 전설 수");
         }
-        Assert.AreEqual(12, perGrade[ItemGrade.Common]);
-        Assert.AreEqual(10, perGrade[ItemGrade.Rare]);
+        Assert.AreEqual(13, perGrade[ItemGrade.Common]);
+        Assert.AreEqual(11, perGrade[ItemGrade.Rare]);
         Assert.AreEqual(5, perGrade[ItemGrade.Epic]);
         Assert.AreEqual(3, perGrade[ItemGrade.Legend]);
     }

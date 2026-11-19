@@ -17,7 +17,9 @@ namespace ChronoSavior.Systems
     {
         void Awake()
         {
-            if (SaveService.Load()) Debug.Log($"[GameBoot] 세이브 불러옴 — {SaveService.SavePath}");
+            // 2026-11-19 세이브 슬롯 — 시작할 땐 슬롯 파일 3개가 있게만 하고 아무것도 읽지 않는다. 타이틀의 슬롯 창에서 고를 때 그 슬롯을 읽는다.
+            // 예전 profile.json은 읽지도 지우지도 않는다(남겨 둠).
+            SaveService.EnsureSlots();
         }
     }
 }

@@ -232,6 +232,7 @@ public class EnemySpawner : MonoBehaviour
             bool boss = RunState.Mode == RunMode.Boss;
             // 요기 응집 — 필드 최대 몹이 늘어난다(원본 `effMaxEnemies() = baseMax + itemAdd('mob')` :3929).
             int cap = maxAliveTotal + Mathf.RoundToInt(ProfileService.Current.items.Add(ItemStat.Mob));
+            // 요기 응집석(2026-11-19 유물) — 필드 상한·한 번에 나오는 수 +30/60/100%(보스전 잡몹엔 안 붙는다)
 
             if (boss)
             {
@@ -244,8 +245,10 @@ public class EnemySpawner : MonoBehaviour
             else
             {
                 // 황천의 문 — 스폰 속도가 빨라진다(원본 `effWaveInterval() = waveInterval / (1 + itemAdd('rate'))` :3930).
-                waveTimer = waveInterval / (1f + ProfileService.Current.items.Add(ItemStat.Rate));
-                SpawnWaveOf(maxSpawnPerWave, cap);
+                // 황천의 문(2026-11-19 유물) — 나오는 빈도 +30/60/100%
+                waveTimer = waveInterval / (1f + ProfileService.Current.items.Add(ItemStat.Rate) + Relics.V("spawnRate", 0));
+                float more = 1f + Relics.V("spawnCap", 0);
+                SpawnWaveOf(Mathf.RoundToInt(maxSpawnPerWave * more), Mathf.RoundToInt(cap * more));
             }
         }
 

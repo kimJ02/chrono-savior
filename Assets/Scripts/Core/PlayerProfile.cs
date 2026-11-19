@@ -120,6 +120,9 @@ namespace ChronoSavior.Core
         public int doomDays = DoomDaysStart;
         public const int DoomDaysStart = 7;
 
+        /// <summary>세이브 슬롯 "새 출발"(2026-11-19) — 처음 로비에 들어가면 캐릭터 선택부터 연다. 열고 나면 false.</summary>
+        public bool needsCharacterSelect;
+
         /// <summary>일곱째 날의 왕관(2026-11-19 유물) 봉인 — 회귀할 때 쓴 날짜만큼 채워지고, 연쇄 처치 때 하나씩 쓴다.</summary>
         public int relicSeals;
         public bool CanEnterStage => doomDays > 0;

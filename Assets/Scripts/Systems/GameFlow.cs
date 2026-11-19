@@ -158,6 +158,11 @@ namespace ChronoSavior.Systems
         /// </summary>
         public bool StartNewExpedition(System.Action<bool> done = null) => EnterLobbyThen(SaveService.DeleteSave, done);
 
+        /// <summary>
+        /// 세이브 슬롯(2026-11-19)으로 들어간다 — 로비 씬을 불러온 뒤 그 슬롯을 읽고 로비로. 이후 자동 저장은 그 슬롯 파일에 간다.
+        /// </summary>
+        public bool EnterSlot(int slot, System.Action<bool> done = null) => EnterLobbyThen(() => SaveService.SelectSlot(slot), done);
+
         // 로비는 일반 무대 기준(가운데 자리·카메라 범위) — 로비 씬이 뜨며 준비하기 전에 바꾼다(normalArena). 실패하면 전환이 되돌린다.
         bool EnterLobbyThen(System.Action beforeLobby, System.Action<bool> done) =>
             BeginTransition(LobbyScene, true, () =>

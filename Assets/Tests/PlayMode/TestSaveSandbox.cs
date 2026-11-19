@@ -17,19 +17,28 @@ namespace ChronoSavior.Tests.PlayMode
     {
         /// <summary>테스트 전체가 같이 쓰는 임시 세이브 경로.</summary>
         public static string Path { get; private set; }
+        /// <summary>세이브 슬롯 파일(2026-11-19)을 둘 임시 폴더 — 부팅(`GameBoot`)이 슬롯 3개를 만들기 때문.</summary>
+        public static string SlotDir { get; private set; }
 
         [OneTimeSetUp]
         public void Begin()
         {
             Path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ChronoSavior_TestSave_{System.Guid.NewGuid():N}.json");
             SaveService.PathOverride = Path;
+            SlotDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"ChronoSavior_TestSlots_{System.Guid.NewGuid():N}");
+            Directory.CreateDirectory(SlotDir);
+            SaveService.SlotDirOverride = SlotDir;
+            SaveService.ClearSlotForTests();
         }
 
         [OneTimeTearDown]
         public void End()
         {
             SaveService.PathOverride = null;
+            SaveService.SlotDirOverride = null;
+            SaveService.ClearSlotForTests();
             try { if (File.Exists(Path)) File.Delete(Path); } catch (IOException) { }
+            try { if (Directory.Exists(SlotDir)) Directory.Delete(SlotDir, true); } catch (IOException) { }
         }
     }
 }

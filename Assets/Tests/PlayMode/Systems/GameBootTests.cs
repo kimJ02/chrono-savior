@@ -29,6 +29,7 @@ namespace ChronoSavior.Tests.PlayMode
 public class GameBootTests
 {
     string tempSave;
+    int bootGold;
 
     const string PersistentScene = GameFlow.PersistentScene;
     static readonly string[] WorldScenes = { GameFlow.LobbyScene, GameFlow.CombatScene };
@@ -36,17 +37,20 @@ public class GameBootTests
     [UnitySetUp]
     public IEnumerator Setup()
     {
-        tempSave = Path.Combine(Path.GetTempPath(), $"ChronoSavior_GameBootTests_{System.Guid.NewGuid():N}.json"); // 실행마다 다른 파일
-        SaveService.PathOverride = tempSave;
+        // 2026-11-19 세이브 슬롯 — 부팅은 슬롯 3개가 있게만 하고 아무것도 안 읽는다. 슬롯 창에서 고르면 그 슬롯을 읽는다.
+        // 여기선 슬롯 1에 기본값과 다른 세이브를 두고, 부팅 뒤 "슬롯 1을 고른 것"으로 친다(월드가 뜨기 전 — 플레이어가 그 캐릭터를 입는지 보려고).
+        tempSave = Path.Combine(Path.GetTempPath(), $"ChronoSavior_GameBootTests_{System.Guid.NewGuid():N}"); // 실행마다 다른 폴더
+        Directory.CreateDirectory(tempSave);
+        SaveService.SlotDirOverride = tempSave;
+        SaveService.ClearSlotForTests();
         ResetStatics();
-        // 기본값과 다른 세이브를 둔다 — 부팅이 '다른 컴포넌트가 프로필을 읽기 전에' 이걸 불러오는지 보려고.
-        ProfileService.Current.character = SavedCharacter;
-        ProfileService.Current.gold = SavedGold;
-        Assert.IsTrue(SaveService.Save());
-        ProfileService.Reset(); // 메모리는 기본값으로 — 부팅이 파일에서 다시 읽어야 위 값이 된다
+        var saved = new PlayerProfile { character = SavedCharacter, gold = SavedGold };
+        File.WriteAllText(SaveService.SlotPath(1), JsonUtility.ToJson(saved));
 
         yield return SceneManager.LoadSceneAsync(PersistentScene, LoadSceneMode.Additive);
         yield return null; // GameFlow.Start(타이틀)까지 한 프레임
+        bootGold = ProfileService.Current.gold; // 부팅만으로는 안 읽혀야 한다
+        Assert.IsTrue(SaveService.SelectSlot(1));
     }
 
     [UnityTearDown]
@@ -54,8 +58,10 @@ public class GameBootTests
     {
         // 경로·시간부터 되돌린다 — 아래 씬 내리기가 실패해도 다음 테스트가 테스트용 경로를 물려받지 않게
         SaveService.PathOverride = TestSaveSandbox.Path; // 테스트 전체 임시 경로로 되돌린다(null이면 진짜 경로)
+        SaveService.SlotDirOverride = TestSaveSandbox.SlotDir;
+        SaveService.ClearSlotForTests();
         Time.timeScale = 1f;
-        try { if (File.Exists(tempSave)) File.Delete(tempSave); } catch (IOException) { }
+        try { if (Directory.Exists(tempSave)) Directory.Delete(tempSave, true); } catch (IOException) { }
         // 상주 씬(흐름)을 먼저 내려 진행 중인 전환을 멈춘 뒤, 남은 월드 씬을 전부(재도전 중이면 같은 이름 둘) 내린다.
         var persistent = SceneManager.GetSceneByName(PersistentScene);
         if (persistent.isLoaded) yield return SceneManager.UnloadSceneAsync(persistent);
@@ -115,10 +121,12 @@ public class GameBootTests
     // ───────────────────────── 부팅 ─────────────────────────
 
     [Test]
-    public void Boot_LoadsTheSave_AndUsesTheTestSavePath()
+    public void Boot_MakesSlots_LoadsNothing_AndSlotChoiceLoadsIt()
     {
-        Assert.AreEqual(SavedGold, ProfileService.Current.gold, "GameBoot가 세이브를 불러왔다");
-        Assert.AreEqual(tempSave, SaveService.SavePath, "이 테스트는 진짜 세이브 위치를 쓰면 안 된다");
+        for (int i = 1; i <= SaveService.SlotCount; i++) Assert.IsTrue(SaveService.SlotExists(i), $"부팅이 슬롯 {i}을 만들지 않았다");
+        Assert.AreNotEqual(SavedGold, bootGold, "부팅만으로 세이브를 읽었다(슬롯을 고르기 전엔 안 읽는다)");
+        Assert.AreEqual(SavedGold, ProfileService.Current.gold, "슬롯 1을 고르면 그 세이브를 읽는다");
+        StringAssert.StartsWith(tempSave, SaveService.SavePath, "이 테스트는 진짜 세이브 위치를 쓰면 안 된다");
     }
 
     [Test]
