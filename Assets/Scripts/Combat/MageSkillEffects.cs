@@ -146,10 +146,11 @@ namespace ChronoSavior.Combat
         /// </summary>
         public static bool AnyWellInCollapseRange(Vector2 playerPos) => GravityWellZone.Active.Any(w => InCollapseRange(w, playerPos));
 
-        static bool InCollapseRange(GravityWellZone w, Vector2 playerPos) =>
-            w != null &&
-            Mathf.Abs(w.transform.position.x - playerPos.x) < MageSpecConfig.CollapseSearchHalfWidth &&
-            Mathf.Abs(w.transform.position.y - playerPos.y) < MageSpecConfig.CollapseSearchHalfHeight;
+        /// <summary>
+        /// 2026-11-19 사용자 "X 눌러도 모든 블랙홀이 터지지 않는다" — 깔아 둔 블랙홀은 거리와 상관없이 **전부** 터진다(의도적 편차).
+        /// 원본은 플레이어 주변(좌우 7.6·위아래 4.2, <see cref="MageSpecConfig.CollapseSearchHalfWidth"/>) 안의 것만 터뜨렸다.
+        /// </summary>
+        static bool InCollapseRange(GravityWellZone w, Vector2 playerPos) => w != null;
 
         /// <summary>
         /// 원본 `gravityCollapse`(project_test.html:2081) — X 스킬(중력 계열). 살아있는 중력점을

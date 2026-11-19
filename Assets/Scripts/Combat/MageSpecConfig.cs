@@ -141,6 +141,12 @@ namespace ChronoSavior.Combat
         // ---- X 스킬 쿨다운 (tryMageSkill, project_test.html:2177) ----
         public const float UltBaseCooldown = 30f; // 원본 CONFIG.ult.cd
         public static float UltCooldown(MageBranch branch, int tier) =>
-            UltBaseCooldown * (branch == MageBranch.Explosion ? 0.34f : 0.28f) * (tier >= 4 ? 0.68f : 1f);
+            UltBaseCooldown * (branch == MageBranch.Explosion ? 0.34f : GravityUltCooldownShare) * (tier >= 4 ? 0.68f : 1f);
+
+        /// <summary>
+        /// 중력 X(붕괴) 쿨타임 비율 — 원본 0.28(8.4초, 4층부터 5.7초). 2026-11-19 사용자 "X 스킬 쿨타임 더 줄여줘"로 0.18
+        /// (5.4초, 4층부터 3.7초, 역행의 시계핵 각성이면 2.0초). 의도적 편차.
+        /// </summary>
+        public const float GravityUltCooldownShare = 0.18f;
     }
 }
