@@ -4,7 +4,8 @@
     "references": [
         "ChronoSavior.Core",
         "ChronoSavior.World",
-        "ChronoSavior.Enemies"
+        "ChronoSavior.Enemies",
+        "ChronoSavior.Combat"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

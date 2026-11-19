@@ -302,6 +302,19 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-19 (136)** — **[사용자 세션] 유물 30종 교체(테스트 유물) 1단계: 캐릭터 전용 15종 효과 구현**. 원본 35종은 버림(사용자 "원본 유물은 신경 안 써도 된다 —
+  팀원이 새로 기획 중, 테스트 유물을 넣어 두고 기획서가 오면 바꾼다"). GPT와 3차례 논의한 설계 `C:\dev\유물_테스트기획_초안.md`(레포 밖).
+  - 구조: 캐릭터마다 5종(기본공격 1 + 갈래별 2, 전설 1) + 공용 15종. 보유 = 적용(장착 칸 없음), 중복 = 랭크(일반·희귀 3, 영웅·전설 2), 상한 = 각성(0.2초 뒤 35% 메아리 + 금색).
+    뽑기 확률 Figma 70/27/2/1%. 정의 `Core/ItemDatabase.cs`(이름·주인·갈래·태그·랭크별 수치), 켜짐·랭크 조회 `Core/Relics.cs`.
+  - 구현(캐릭터 전용 15): 마법사 잔광 탄환·불씨 장부·화염왕관·중력 태엽·압축 특이점(`MageAttack`·`MageSkillEffects`·`Systems/RelicDirector`),
+    메카닉 잔탄 포켓·프리즘 구경·자율 포좌·삼각 방전·교차 전류(`Characters/GunnerRelics` + 총알·광선·설치 장 훅),
+    섬영 잔영 칼끝·집중의 심장·질주 찢개·폭풍 칼집·무한 검무(`Characters/BladeRelics` + `BladeCombat` 훅). 공용 도구 `Combat/RelicFx`(범위·선 피해, 늦게 터뜨리기)·`RelicProjectile`(직선·유도·낙하·부메랑, 끌어당기는 장).
+  - 유물 피해는 다른 유물을 다시 발동시키지 않는다(`Relics.Damaging()`). 유물 화면 설명에 전용 캐릭터·갈래·랭크·각성 표시, 에디터 전용 "유물 전부 각성" 버튼.
+  - 원본 스탯 유물 훅(`items.Add/Mul/Pow`)은 남아 있지만 해당 유물이 없어 0 — 원본 아이템 테스트(ItemAndGacha 일부, OriginalFidelity 2개)는 지우고 새 유물 검사 `RelicEffectTests` 7개 추가.
+  - **남은 것**: 공용 15종 효과 → 세트·각성 → 세이브 슬롯 3종(교수님 지시, 다음 주 수요일 테스트).
+  - 같이 고침: 팀원 "pixel fix"(92771f1) 병합이 `FigmaArtImporter`의 Skills/ 일러스트 해제(2026-11-18)를 덮어써 새로 받는 컴퓨터에선 스킬 아이콘이 다시 흐려졌다 → v8로 복구.
+  - **팀원 main(b471628)에서 원래 깨지는 테스트 5개**(내 변경 없이도 같음): BlobLord 카탈로그, 마법사 도트 배율 0.375, GameBoot 보스 2건, 중력장 보스 면역 끌어당김.
+
 - **2026-11-18 (137)** — **[나] 캐릭터 그림 축소 + 땅·발판 타일 도트 1 — 사용자 직접 요청**("캐릭터 배율좀 줄이고싶은데" → "배경이랑 포탈만 2로 하고 나머지는 다 1로", 범위는 "땅·발판 타일만 1"로 확정).
   - **캐릭터**: `Assets/Data/Characters/CharacterArtSet.asset` `heights` 마법사·메카닉·섬영 0.75 → 0.375(그림 32×48px·PPU128 원본 크기 = 도트 1). 판정(`EntitySizeConfig.PlayerHeight` 0.5)은 그대로, 드루이드(1.0)는 기획 제외라 안 건드림. 발 기준점은 사용자가 `캐릭터 애니메이션 연결` 메뉴로 이미 맞췄다.
   - **타일**: `Resources/Art/Figma/Stage1/ground_top·ground_dirt·platform_tile.png.meta` `spritePixelsToUnits` 64 → 128(도트 2 → 1). 땅 타일 0.5→0.25유닛, 발판 타일 0.25→0.125유닛. `World/StageVisuals.GroundRows` 3 → 6(땅 깊이 1.5유닛 유지 — 안 늘리면 카메라 아래쪽에 빈 틈이 보인다). 배경·포탈은 그대로 도트 2(`StageArt_Forest.backgroundScale`·`portalScale` = 2).

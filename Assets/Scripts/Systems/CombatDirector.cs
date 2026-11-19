@@ -176,6 +176,7 @@ namespace ChronoSavior.Systems
             ShowArena(mode == RunMode.Boss);
             RunTransient.DestroyAllIn(gameObject.scene); // 원본 `enemies = []; projectiles = []; zones = []; ...`(:4318) — 이 씬의 지난 런 잔해(재도전의 옛 전투 씬은 건드리지 않는다)
             CombatModifiers.ResetForRun();  // 원본 `combo.n = 0; run.chainN = 0`(:4307·:4319)
+            RelicDirector.ResetForRun();    // 유물 발동 집계(처치 n번마다 등) — 2026-11-19 테스트 유물
             HitFeel.Reset();
             bossDeadTimer = -1f;
             ResetPlayer();
@@ -244,6 +245,7 @@ namespace ChronoSavior.Systems
                 enemy != null && enemy.GetComponent<ChronoSavior.Enemies.EnemyElite>() != null);
             CombatEvents.RequestHitstop(stop);
             if (shakeMag > 0f) HitFeel.Shake(shakeMag, shakeDur);
+            RelicDirector.OnEnemyKilled(enemy); // 처치 발동 유물(2026-11-19)
 
             // ⚠️ 보스 격파 뒤 결과 화면 예약은 **여기서 하지 않는다** — `RunEvents.BossDefeated` → <see cref="HandleBossDefeated"/>
             // (멈춘 시간 기준)가 한다. 예전엔 여기서도 `Invoke(EndRunAfterBoss, 1.6)`를 걸어 **두 번** 예약했는데, `Invoke`는 게임 시간

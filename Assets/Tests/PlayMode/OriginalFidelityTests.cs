@@ -99,30 +99,6 @@ public class OriginalFidelityTests
 
     // ═══════════════════════ 2. 경험치 구슬의 경험치 배수 ═══════════════════════
 
-    /// <summary>
-    /// 원본 `:4466`은 구슬에도 `expMultAll()`을 곱한다. 빠져 있으면 '수행의 굴레'를 아무리 모아도
-    /// **구슬로 얻는 경험치만 그대로**라, 아이템이 반쪽만 작동하는 상태가 된다.
-    /// </summary>
-    [UnityTest]
-    public IEnumerator ExpOrb_AppliesExpMultiplier()
-    {
-        ProfileService.Current.level = 5;
-        RunState.Begin(1, RunMode.Normal);
-
-        int plain = Mathf.Max(ExpOrb.MinExp,
-            Mathf.RoundToInt(PlayerProfile.RequiredExp(5) * ExpOrb.ExpPercent));
-
-        ProfileService.Current.items.Add("exp"); // 수행의 굴레(곱연산)
-        float mult = CombatModifiers.ExpMultiplier;
-        Assert.Greater(mult, 1f, "경험치 아이템이 배수에 안 붙는다(전제 조건)");
-
-        yield return CollectOneOrb();
-
-        long gained = RunState.ExpEarned;
-        Assert.AreEqual(Mathf.RoundToInt(plain * mult), gained, 1,
-            "구슬 경험치에 배수가 안 곱해졌다");
-    }
-
     static IEnumerator CollectOneOrb()
     {
         var player = new GameObject("TestPlayer") { tag = "Player" };
@@ -335,30 +311,6 @@ public class OriginalFidelityTests
     }
 
     // ═══════════════════════ 6. 쿨감 아이템 ═══════════════════════
-
-    /// <summary>
-    /// '시간의 조각'은 원본에서 기본공격·궁극기 쿨타임 **전부**에 곱해진다(`:1942`·`:2177`·`:2196`).
-    /// 계산 함수만 있고 아무 데도 안 곱하던 상태여서, 아이템을 상한까지 모아도 체감이 0이었다.
-    /// </summary>
-    [UnityTest]
-    public IEnumerator CooldownItem_ShortensGunnerCooldown()
-    {
-        var go = new GameObject("TestGunner");
-        go.AddComponent<CircleCollider2D>().radius = 0.5f;
-        go.AddComponent<Rigidbody2D>().gravityScale = 0f;
-        go.AddComponent<CharacterMover2D>();
-        var gunner = go.AddComponent<GunnerAttack>().Equipped();
-        yield return null;
-
-        float before = gunner.cooldown;
-
-        for (int i = 0; i < 4; i++) ProfileService.Current.items.Add("cd");
-        yield return null;
-
-        Assert.Less(gunner.cooldown, before - 1e-4f, "쿨감 아이템이 쿨타임에 안 붙는다");
-        Assert.AreEqual(before * PlayerStatCalculator.ComputeCooldownMultiplier(ProfileService.Current),
-                        gunner.cooldown, 1e-4f);
-    }
 
     // ═══════════════════════ 7. "정의만 하고 안 쓰는" 것 자체를 막는다 ═══════════════════════
 

@@ -251,7 +251,40 @@ namespace ChronoSavior.Combat
             // 원본 shake(5, 0.16)·임계 shake(9, 0.24)(:2128)는 거의 안 느껴져서 키웠다 — 2026-10-28 사용자 "블랙홀 X 눌렀을 때 화면 흔들림 넣어줘".
             // 플레이어가 맞을 때(12)만큼, 임계는 그보다 세게. 화면에선 여기에 HitFeel.ShakeStrength(1.5배)가 더 곱해진다(의도적 편차).
             HitFeel.Shake(anyCritical ? CollapseShakeCriticalPx : CollapseShakePx, anyCritical ? 0.3f : 0.24f);
+            RelicAfterCollapse(centers.ConvertAll(c => c.pos), wells.Count, tier);
             return (totalCount, anyCritical, centers.Count);
+        }
+
+        /// <summary>
+        /// 붕괴 뒤 유물(2026-11-19 테스트 유물):
+        /// - 중력 태엽 — 붕괴 자리마다 작은 중력장이 잠깐 남아 끌어당긴 뒤 폭발.
+        /// - 압축 특이점 — 중력점 3개 이상을 터뜨렸으면 가운데서 내파가 몇 번 더(0.25초 간격).
+        /// </summary>
+        static void RelicAfterCollapse(System.Collections.Generic.List<Vector2> centers, int wellCount, int tier)
+        {
+            if (Relics.Rank("gravitySpring") > 0)
+            {
+                float life = Relics.V("gravitySpring", 0), mult = Relics.V("gravitySpring", 1);
+                bool gold = Relics.Awakened("gravitySpring");
+                foreach (var c in centers)
+                {
+                    RelicPullZone.Spawn(c, 1.3f, life, 7f, mult, GravityRingColor, VfxKeys.MageGravityOrbLarge, VfxKeys.MageGravityExplosion);
+                    if (gold) RelicFx.After(life + 0.2f, () => RelicFx.Circle(c, 1.3f, mult * 0.35f, RelicFx.Gold, VfxKeys.MageGravityExplosion));
+                }
+            }
+            if (Relics.Rank("compressedSingularity") > 0 && wellCount >= 3 && centers.Count > 0)
+            {
+                Vector2 mid = Vector2.zero;
+                foreach (var c in centers) mid += c;
+                mid /= centers.Count;
+                int n = Relics.VI("compressedSingularity", 0);
+                float mult = Relics.V("compressedSingularity", 1);
+                float r = MageSpecConfig.CollapseRadius(tier, 3) * 0.9f;
+                for (int i = 0; i < n; i++)
+                    RelicFx.After(0.3f + i * 0.25f, () => RelicFx.Circle(mid, r, mult, GravityRingColor, VfxKeys.MageCollapseExplosion));
+                if (Relics.Awakened("compressedSingularity"))
+                    RelicFx.After(0.3f + n * 0.25f + 0.2f, () => RelicFx.Circle(mid, r, mult * 0.35f, RelicFx.Gold, VfxKeys.MageCollapseCritical));
+            }
         }
     }
 }

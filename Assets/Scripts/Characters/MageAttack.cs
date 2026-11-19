@@ -270,8 +270,64 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         // 똑바로 쏠 때도 바라보는 쪽에서 나간다 — 예전엔 조준의 x 부호를 써서 수직 조준이면 늘 오른쪽에서 나갔다.
         // 높이는 몸 중심에서 재면 키 0.5짜리 고블린 머리 위로 지나간다(발 기준, PlayerBody).
         Vector3 spawnPos = new Vector3(feet.x + facing * 0.26f, feet.y + 0.36f, 0f);
+
+        // 화염왕관(폭발 전설, 2026-11-19 테스트 유물) — 완충 Z가 조준 지점에 떨어지는 화염 파편으로 바뀐다
+        if (chargeK >= FullChargeK && Relics.Rank("flameCrown") > 0)
+        {
+            FireFlameCrown(spawnPos, aim);
+            return;
+        }
+
         MageProjectile.Spawn(boltPrefab, spawnPos, aim * spd, dmg, pierce, life, sizeMul, boltColor,
             inf, charged, explosive, explosionPower, gravityOrb, chargeK, tier, transform.position, facing);
+
+        // 잔광 탄환(마법사 기본공격, 2026-11-19 테스트 유물) — n번째 Z마다 옆으로 갈라지는 작은 탄
+        if (Relics.Rank("mageEcho") > 0)
+        {
+            echoShots++;
+            if (echoShots >= Relics.VI("mageEcho", 0))
+            {
+                echoShots = 0;
+                int n = Relics.VI("mageEcho", 1);
+                float mult = Relics.V("mageEcho", 2) * (Relics.Awakened("mageEcho") ? 1.35f : 1f);
+                for (int i = 0; i < n; i++)
+                {
+                    float deg = (i % 2 == 0 ? 1f : -1f) * (14f + 10f * (i / 2));
+                    Vector2 v = (Vector2)(Quaternion.Euler(0f, 0f, deg) * aim) * spd;
+                    MageProjectile.Spawn(boltPrefab, spawnPos, v, dmg * mult, 0, life * 0.8f, sizeMul * 0.7f, boltColor,
+                        false, false, explosive, explosionPower * 0.6f, gravityOrb, 0f, tier, transform.position, facing);
+                }
+            }
+        }
+    }
+
+    /// <summary>완충으로 볼 차지 값(이 이상이면 화염왕관이 발동).</summary>
+    const float FullChargeK = 0.95f;
+    int echoShots;
+
+    /// <summary>화염왕관 — 조준 방향의 가장 가까운 적(없으면 앞 5유닛) 위로 파편이 쏟아진다.</summary>
+    void FireFlameCrown(Vector2 from, Vector2 aim)
+    {
+        Vector2 target = from + aim * 5f;
+        float best = float.MaxValue;
+        foreach (var c in RelicFx.Nearest(from, 8, 9f))
+        {
+            Vector2 p = RelicFx.Center(c);
+            if (Vector2.Dot(p - from, aim) < 0f) continue;
+            float d = (p - from).sqrMagnitude;
+            if (d < best) { best = d; target = p; }
+        }
+        int n = Relics.VI("flameCrown", 0);
+        float mult = Relics.V("flameCrown", 1);
+        bool gold = Relics.Awakened("flameCrown");
+        for (int i = 0; i < n; i++)
+        {
+            float x = target.x + (i - (n - 1) * 0.5f) * 0.7f + Random.Range(-0.2f, 0.2f);
+            var start = new Vector2(x - 1.2f, target.y + 5.5f + i * 0.35f);
+            RelicProjectile.Spawn(start, new Vector2(0.25f, -1f), 9f, 2.5f, mult, RelicProjectile.Mode.Falling,
+                VfxKeys.MageFireProjectileLarge, gold ? RelicFx.Gold : Color.white, 0.3f, 0, 1.0f, VfxKeys.MageFireExplosion);
+        }
+        HitFeel.Shake(4f, 0.15f);
     }
 
     /// <summary>원본 `tryMageSkill()`(project_test.html:2164) — X 스킬.</summary>

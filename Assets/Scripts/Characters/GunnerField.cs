@@ -193,6 +193,7 @@ namespace ChronoSavior.Characters
 
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
             bool hit = false;
+            relicHits.Clear();
             foreach (var e in GunnerTargets.Query(c, r))
             {
                 float linkW = GunnerSpecConfig.LinkHitWidth(tier) + e.width * GunnerSpecConfig.LinkEnemyWidthFactor;
@@ -206,10 +207,14 @@ namespace ChronoSavior.Characters
                 float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3);
                 float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                       // 원본 kb:0 + noHitstop
+                relicHits.Add(e.collider);
                 // 그림만 — 맞은 적 자리 전기 + 때린 곳(가장 가까운 연결선, 안쪽이면 도형 변)에서 그 적까지 아크(적마다 0.25초에 한 번, 2026-11-10)
                 if (GunnerZap.Ready(e.collider)) GunnerZap.At(e.collider, e.center, NearestOnEdges(e.center, onLink ? segs : null, pts), e.width * 0.5f);
             }
+            GunnerRelics.OnFieldTick(relicHits, pts); // 유물(2026-11-19) — 삼각 방전·교차 전류
             return hit;
         }
+
+        static readonly List<Collider2D> relicHits = new List<Collider2D>();
     }
 }

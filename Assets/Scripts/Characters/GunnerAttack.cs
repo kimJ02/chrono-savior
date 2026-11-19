@@ -186,6 +186,7 @@ namespace ChronoSavior.Characters
         /// </summary>
         public void ResetForRun()
         {
+            GunnerRelics.ResetForRun(); // 유물 발동 집계(2026-11-19)
             OnSelected();
             Stacks = Branch == GunnerBranch.Installer ? 1 : 0;
             PartHits = 0;

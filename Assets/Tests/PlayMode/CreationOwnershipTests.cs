@@ -41,6 +41,8 @@ public class CreationOwnershipTests
     {
         // A. 전투 물체 — 각 클래스의 정적 생성 함수가 본체·그림 자식·판정·RunTransient를 짓는다
         ["Characters/GunnerBullet.cs"]     = (Kind.CombatObject, "메카닉 탄 — 프리팹(Prefabs/Combat/GunnerBullet)을 세운다. 프리팹은 쏘는 쪽(GunnerAttack·드론)이 넘긴다. 드론 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
+        ["Combat/RelicProjectile.cs"]      = (Kind.CombatObject, "유물 탄·끌어당기는 장(2026-11-19 테스트 유물) — 팀원 유물 기획서가 오면 바뀔 임시 유물이라 프리팹 없이 코드로 세운다. 그림은 기존 VFX 키 재사용"),
+        ["Combat/RelicFx.cs"]              = (Kind.VisualEffect, "유물 효과의 늦게 터뜨리기 타이머·선 그림(LineRenderer) — 판정은 즉시 범위 검사, 오브젝트는 그림·타이머뿐(2026-11-19)"),
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다. 갈래별 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Enemies/BoulderProjectile.cs"]   = (Kind.CombatObject, "덩어리 지배자 조약돌 — 프리팹(Prefabs/Combat/BlobLordBoulder)을 세운다. 프리팹은 보스 프리팹(Enemy_BlobLord)이 넘긴다(2026-11-10)"),

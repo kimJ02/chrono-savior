@@ -254,16 +254,21 @@ namespace ChronoSavior.Characters
                 ? Mathf.Max(Vector2.Distance(CurveControl, Origin), Vector2.Distance(CurveEnd, Origin))
                 : Range;
 
+            relicHits.Clear();
             foreach (var e in GunnerTargets.Query(Origin, reach + Width + GunnerTargets.QueryMargin))
             {
                 if (!OnBeam(e)) continue;
+                relicHits.Add(e.center);
 
                 float dmg = DamageCalculator.Roll(atk * mult, crit, out _);
                 e.damageable.TakeTickDamage(dmg);
                 if (vfx != null) vfx.Spark(e.collider, e.center, Direction); // 맞은 자리에 작은 충격(그림만, 적마다 0.25초에 한 번)
                 kit.AddStack(1);
             }
+            GunnerRelics.OnBeamTick(Origin, Direction, relicHits); // 유물(2026-11-19) — 프리즘 구경·잔탄 포켓
         }
+
+        readonly System.Collections.Generic.List<Vector2> relicHits = new System.Collections.Generic.List<Vector2>();
 
         // ---- 표시(그림은 GunnerBeamVfx — 경로·층·끝 그림 여부만 넘긴다) ----
 

@@ -124,6 +124,18 @@ namespace ChronoSavior.UI
                                           Pull10Box.width, Pull10Box.height, "10회 개방", 13, Color.white, () => Pull(10)));
             Px.IconButton(Content, "Close", PxArt.Get("Common/button_small"), PxArt.Get("Icons/close"), CloseBox.x, CloseBox.y,
                           CloseBox.width, CloseBox.height, 2f, 2f, 19f, 19f, Close);
+#if UNITY_EDITOR
+            // 에디터 전용 "유물 전부 지급"(2026-11-19 테스트 유물 확인용) — 30종을 모두 상한(각성)까지. 빌드한 게임엔 없다.
+            var all = Px.TextButton(Content, "TestAllRelics", PxArt.Sliced("Common/button", 4), 352f, 272f, 120f, 16f, "유물 전부 각성 (테스트)", 8,
+                                    Color.white, () =>
+                                    {
+                                        var inv = ProfileService.Current.items;
+                                        foreach (var d in ItemDatabase.All)
+                                            while (inv.Count(d.id) < ItemDatabase.Cap(d.grade)) inv.Add(d.id);
+                                        SaveService.Save();
+                                    });
+            all.Art.type = Image.Type.Sliced;
+#endif
             tip = new PxTooltip(Content);
         }
 
@@ -146,7 +158,7 @@ namespace ChronoSavior.UI
                 gems[i].color = ItemDatabase.GradeColor(def.grade);
                 locks[i].enabled = n <= 0;
                 counts[i].enabled = n > 0;
-                if (n > 0) counts[i].text = n >= ItemDatabase.CapOf(def.id) ? "MAX" : n.ToString();
+                if (n > 0) counts[i].text = n >= ItemDatabase.CapOf(def.id) ? "각성" : n.ToString();
             }
             shardText.text = p.shards.ToString("N0");
             costText.text = $"1회 개방에 파편 {GachaService.Cost}개 · 천장 {inv.pity}/{GachaService.PityAt}";
@@ -171,9 +183,14 @@ namespace ChronoSavior.UI
             int n = ProfileService.Current.items.Count(def.id);
             int cap = ItemDatabase.CapOf(def.id);
             string grade = $"<color=#{ColorUtility.ToHtmlStringRGB(ItemDatabase.GradeColor(def.grade))}>{GradeNames[(int)def.grade]}</color>";
+            // 2026-11-19 테스트 유물 — 누구 전용·어느 갈래인지, 랭크(상한 = 각성), 지금 캐릭터에서 켜지는지
+            string who = def.owner == RelicOwner.Common ? "공용"
+                : $"{ItemDatabase.OwnerName(def.owner)} 전용 · {ItemDatabase.BranchName(def.branch)}";
+            bool on = Relics.IsActiveFor(ProfileService.Current, def);
             string body = n > 0
-                ? $"{def.name}  {grade}\n보유 {n}/{cap}{(n >= cap ? "  MAX" : "")}\n{def.description}"
-                : $"미확인 유물  {grade}";
+                ? $"{def.name}  {grade}  <color=#9aa4b8>{who}</color>\n랭크 {Mathf.Min(n, cap)}/{cap}{(n >= cap ? "  <color=#fac70e>각성</color>" : "")}"
+                  + (on ? "" : "  <color=#9aa4b8>(지금 꺼짐)</color>") + $"\n{def.description}"
+                : $"미확인 유물  {grade}  <color=#9aa4b8>{who}</color>";
             var r = new Rect(GridX + (i % Cols) * GridStep, GridY + (i / Cols) * GridStep, SlotSize, SlotSize);
             tip.Show(body, r);
         }

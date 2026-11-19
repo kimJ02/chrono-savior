@@ -315,7 +315,9 @@ namespace ChronoSavior.Characters
 
         /// <summary>새 사냥 시작 시 쿨다운/스킬 상태 초기화 — 원본 `resetPlayerForRun()`의 `p.atkCds`·
         /// `p.focusT`·`p.storm` 등(:1516 언저리, 런 전환 시 전부 비운다).</summary>
-        public void ResetForRun() => OnSelected();
+        public void ResetForRun() { BladeRelics.ResetForRun(); OnSelected(); }
+
+        int RelicFacing => mover != null ? mover.Facing : 1;
 
         void Awake()
         {
@@ -505,6 +507,7 @@ namespace ChronoSavior.Characters
                 // 흡혈은 **실제로 준 피해**의 합으로(원본 `totalDmg += dealDamage(...)` :2493 — 대상 배수·반올림 뒤)
                 totalDealt += target.TakeDamageWithKnockback(dmg, gameObject, dirSign, SpinKnockback);
                 anyHit = true;
+                if (target.IsDead) BladeRelics.OnSpinKill(transform.position, RelicFacing); // 폭풍 칼집(2026-11-19 유물)
             }
 
             // bladeLifesteal(:2498~2508) — 이번 회전베기로 입힌 피해 "합계"의 15%를 한 번에 회복한다
@@ -514,7 +517,9 @@ namespace ChronoSavior.Characters
             {
                 float heal = Mathf.Round(totalDealt * LifestealRatio);
                 if (heal > 0f) playerHealth.Heal(heal);
+                BladeRelics.OnLifesteal(transform, RelicFacing); // 집중의 심장(2026-11-19 유물)
             }
+            if (lifesteal) BladeRelics.OnSpin(transform.position, RelicFacing); // 잔영 칼끝 — Z 회전 베기만 센다
         }
 
         /// <summary>
@@ -626,7 +631,11 @@ namespace ChronoSavior.Characters
             CombatModifiers.SetFocusSlow(focusingNow);
             // 2026-11-10 정정 — 사운드 루프를 더 이상 고정 시간으로 끊지 않는다. On/Off가 "바뀐" 순간만
             // 알려서(레이저와 같은 패턴) 실제 지속시간(3~5층 +1초 포함)이 끝나는 순간과 정확히 맞춘다.
-            if (focusingNow != focusSoundOn) SfxEvents.RaiseAssassinFocusActive(focusingNow);
+            if (focusingNow != focusSoundOn)
+            {
+                SfxEvents.RaiseAssassinFocusActive(focusingNow);
+                BladeRelics.OnFocusChanged(focusingNow, transform.position); // 질주 찢개(2026-11-19 유물)
+            }
             focusSoundOn = focusingNow;
             if (focusingNow) focusT -= dt;
 
@@ -830,6 +839,7 @@ namespace ChronoSavior.Characters
             bool was = storming;
             storming = false;
             if (was) StormEnded?.Invoke();
+            if (was) BladeRelics.OnStormEnd(transform.position, RelicFacing); // 무한 검무 발사(2026-11-19 유물)
         }
 
         /// <summary>
@@ -932,6 +942,7 @@ namespace ChronoSavior.Characters
                             offsetX = Random.Range(StormGrabOffsetXMin, StormGrabOffsetXMax),
                             offsetY = Random.Range(StormGrabOffsetYMin, StormGrabOffsetYMax),
                         });
+                        BladeRelics.OnGrab(); // 무한 검무 검령(2026-11-19 유물)
                     }
                 }
 
