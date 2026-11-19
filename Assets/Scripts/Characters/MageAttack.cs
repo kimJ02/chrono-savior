@@ -298,6 +298,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
             if (echoShots >= Relics.VI("mageEcho", 0))
             {
                 echoShots = 0;
+                Relics.Proc("mageEcho");
                 int n = Relics.VI("mageEcho", 1);
                 float mult = Relics.V("mageEcho", 2) * (Relics.Awakened("mageEcho") ? 1.35f : 1f);
                 for (int i = 0; i < n; i++)
@@ -329,6 +330,7 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
             float d = (p - from).sqrMagnitude;
             if (d < best) { best = d; target = p; }
         }
+        Relics.Proc("flameCrown");
         int n = Relics.VI("flameCrown", 0);
         bool gold = Relics.Awakened("flameCrown");
         float mult = Relics.V("flameCrown", 1) * (gold ? 1.35f : 1f); // 각성 — 파편 위력 +35%
@@ -363,7 +365,9 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         }
         // 원본 `p.ultCdMax = ... * cdMult()`(:2177) — 궁극기 쿨타임에도 '시간의 조각'이 붙는다.
         ultCdTimer = ultCdMax = MageSpecConfig.UltCooldown(branch, tier)
-                     * PlayerStatCalculator.ComputeCooldownMultiplier(ProfileService.Current); // 원본 :2177
+                     * PlayerStatCalculator.ComputeCooldownMultiplier(ProfileService.Current) // 원본 :2177
+                     * (1f - Relics.V("rewindCore", 0)); // 역행의 시계핵(중력 갈래 유물, 2026-11-19) — 붕괴 쿨타임 -15/30/45%
+        if (Relics.Rank("rewindCore") > 0) Relics.Proc("rewindCore");
     }
 
     /// <summary>원본 `mageFireTeleport()`(project_test.html:2132) — 방향키 방향(없으면 정면)으로

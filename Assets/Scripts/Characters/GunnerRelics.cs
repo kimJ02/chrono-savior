@@ -53,6 +53,7 @@ namespace ChronoSavior.Characters
             if (Relics.Rank("spareRounds") <= 0) return;
             if (++zHits < Relics.VI("spareRounds", 0)) return;
             zHits = 0;
+            Relics.Proc("spareRounds");
             float mult = Relics.V("spareRounds", 1);
             bool gold = Relics.Awakened("spareRounds");
             Missile(from, at - from, mult, gold ? RelicFx.Gold : RelicFx.Blue);
@@ -67,6 +68,7 @@ namespace ChronoSavior.Characters
             if (Relics.Rank("prismBore") <= 0) return;
             if (++beamHits < Relics.VI("prismBore", 0)) return;
             beamHits = 0;
+            Relics.Proc("prismBore");
             int n = Relics.VI("prismBore", 1);
             float mult = Relics.V("prismBore", 2);
             Vector2 at = hitCenters[0];
@@ -86,6 +88,7 @@ namespace ChronoSavior.Characters
         public static void OnDroneKill(Vector2 at)
         {
             if (Relics.InRelicDamage || Relics.Rank("autoTurret") <= 0) return;
+            Relics.Proc("autoTurret");
             int n = Relics.VI("autoTurret", 0);
             bool gold = Relics.Awakened("autoTurret");
             float mult = Relics.V("autoTurret", 1) * (gold ? 1.35f : 1f); // 각성 — 유도탄 위력 +35%
@@ -110,6 +113,7 @@ namespace ChronoSavior.Characters
                 if (fieldHitsDischarge >= every)
                 {
                     fieldHitsDischarge = 0;
+                    Relics.Proc("triangleDischarge");
                     Chain(hits[0], Relics.VI("triangleDischarge", 1), Relics.V("triangleDischarge", 2),
                           Relics.Awakened("triangleDischarge"));
                 }
@@ -121,6 +125,7 @@ namespace ChronoSavior.Characters
                 if (fieldHitsCross >= Relics.VI("crossCurrent", 0))
                 {
                     fieldHitsCross = 0;
+                    Relics.Proc("crossCurrent");
                     float mult = Relics.V("crossCurrent", 1);
                     bool gold = Relics.Awakened("crossCurrent");
                     var copy = new List<Vector2>(pts);

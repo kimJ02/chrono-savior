@@ -25,7 +25,7 @@ public class ItemAndGachaTests
     [Test]
     public void RelicDatabase_Has30_FivePerCharacter_AndGradeSplit()
     {
-        Assert.AreEqual(32, ItemDatabase.All.Length);
+        Assert.AreEqual(33, ItemDatabase.All.Length);
         var ids = new HashSet<string>();
         var perOwner = new Dictionary<RelicOwner, int>();
         var legendPerOwner = new Dictionary<RelicOwner, int>();
@@ -43,11 +43,11 @@ public class ItemAndGachaTests
         Assert.AreEqual(17, perOwner[RelicOwner.Common]);
         foreach (var o in new[] { RelicOwner.Mage, RelicOwner.Gunner, RelicOwner.Blade })
         {
-            Assert.AreEqual(5, perOwner[o], $"{o} 전용 유물 수");
+            Assert.AreEqual(o == RelicOwner.Mage ? 6 : 5, perOwner[o], $"{o} 전용 유물 수(마법사는 역행의 시계핵까지 6)");
             Assert.AreEqual(1, legendPerOwner[o], $"{o} 전설 수");
         }
         Assert.AreEqual(13, perGrade[ItemGrade.Common]);
-        Assert.AreEqual(11, perGrade[ItemGrade.Rare]);
+        Assert.AreEqual(12, perGrade[ItemGrade.Rare]);
         Assert.AreEqual(5, perGrade[ItemGrade.Epic]);
         Assert.AreEqual(3, perGrade[ItemGrade.Legend]);
     }

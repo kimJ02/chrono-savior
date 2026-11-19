@@ -45,6 +45,7 @@ namespace ChronoSavior.Characters
             if (Relics.Rank("afterEdge") <= 0) return;
             if (++spins < Relics.VI("afterEdge", 0)) return;
             spins = 0;
+            Relics.Proc("afterEdge");
             float mult = Relics.V("afterEdge", 1);
             Wave(pos, new Vector2(facing, 0f), mult, RelicFx.Cyan, RelicProjectile.Mode.Straight);
             if (Relics.Awakened("afterEdge")) RelicFx.After(0.2f, () => Wave(pos, new Vector2(facing, 0f), mult * 0.35f, RelicFx.Gold, RelicProjectile.Mode.Straight));
@@ -54,6 +55,7 @@ namespace ChronoSavior.Characters
         public static void OnLifesteal(Transform player, int facing)
         {
             if (Relics.Rank("focusHeart") <= 0) return;
+            Relics.Proc("focusHeart");
             int n = Relics.VI("focusHeart", 0);
             float mult = Relics.V("focusHeart", 1) * (Relics.Awakened("focusHeart") ? 1.35f : 1f); // 각성 — 위력 +35%
             bool boomerang = Relics.Rank("focusHeart") >= 3;
@@ -76,6 +78,7 @@ namespace ChronoSavior.Characters
             stormKills = 0;
             if (++stormCharges < 3) return;
             stormCharges = 0;
+            Relics.Proc("stormSheath");
             int n = Relics.VI("stormSheath", 1);
             float mult = Relics.V("stormSheath", 2);
             Fan(pos, facing, n, 70f, mult, RelicFx.Cyan);
@@ -91,6 +94,7 @@ namespace ChronoSavior.Characters
             focusTracking = false;
             if (Relics.Rank("dashRipper") <= 0) return;
             if ((pos - focusStart).sqrMagnitude < 1f) return; // 거의 안 달렸으면 없음
+            Relics.Proc("dashRipper");
             int n = Relics.VI("dashRipper", 0);
             float mult = Relics.V("dashRipper", 1);
             bool gold = Relics.Awakened("dashRipper");
@@ -119,6 +123,7 @@ namespace ChronoSavior.Characters
             int n = spirits;
             spirits = 0;
             if (Relics.Rank("endlessDance") <= 0) return;
+            Relics.Proc("endlessDance");
             float mult = Relics.V("endlessDance", 1);
             Fan(pos, facing, n, 150f, mult, new Color(0.7f, 0.9f, 1f, 0.9f));
             if (Relics.Awakened("endlessDance")) RelicFx.After(0.2f, () => Fan(pos, facing, n, 150f, mult * 0.35f, RelicFx.Gold));

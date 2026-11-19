@@ -40,6 +40,7 @@ namespace ChronoSavior.Systems
         /// <summary>각성이면 0.2초 뒤 35% 위력으로 한 번 더.</summary>
         static void Echo(string id, System.Action<float> fire, float mult)
         {
+            Relics.Proc(id);
             fire(mult);
             if (Relics.Awakened(id)) RelicFx.After(AwakenDelay, () => fire(mult * AwakenPower));
         }
@@ -188,6 +189,7 @@ namespace ChronoSavior.Systems
             // 편지 — 가까운 적 n마리에 편지, 1초 뒤 그 자리 폭발
             if (Relics.Rank("letter") > 0)
             {
+                Relics.Proc("letter");
                 float m = Relics.V("letter", 1);
                 bool gold = Relics.Awakened("letter");
                 foreach (var c in RelicFx.Nearest(pos, Relics.VI("letter", 0), 6f))

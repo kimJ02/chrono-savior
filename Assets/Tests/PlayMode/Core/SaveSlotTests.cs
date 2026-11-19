@@ -45,8 +45,9 @@ public class SaveSlotTests
         var mid = SavePresets.Build(2);
         Assert.AreEqual(CharacterId.Mage, mid.character);
         Assert.AreEqual(MageBranch.Gravity, mid.mageBranch);
-        Assert.AreEqual(2, mid.mageTier, "성장 — 중력 2층");
-        Assert.Greater(mid.upgrades.atk, 0);
+        Assert.AreEqual(5, mid.mageTier, "성장 — 스킬만 5층(2026-11-19 사용자)");
+        Assert.AreEqual(16, mid.level);
+        Assert.AreEqual(0, mid.upgrades.atk + mid.upgrades.hp + mid.upgrades.ms + mid.upgrades.atkSpeed + mid.upgrades.crit, "성장 슬롯은 강화 없음");
         Assert.AreEqual(0, mid.items.stacks.Count, "성장 슬롯엔 유물이 없다");
 
         var full = SavePresets.Build(3);
@@ -65,12 +66,12 @@ public class SaveSlotTests
         for (int i = 1; i <= SaveService.SlotCount; i++) Assert.IsTrue(SaveService.SlotExists(i));
 
         Assert.IsTrue(SaveService.SelectSlot(2));
-        Assert.AreEqual(2, ProfileService.Current.mageTier);
+        Assert.AreEqual(16, ProfileService.Current.level);
         ProfileService.Current.gold = 777;
         SaveService.Save();
 
         Assert.IsTrue(SaveService.SelectSlot(3));
-        Assert.AreEqual(5, ProfileService.Current.mageTier, "슬롯 3을 골랐는데 다른 슬롯이 열렸다");
+        Assert.AreEqual(25, ProfileService.Current.level, "슬롯 3을 골랐는데 다른 슬롯이 열렸다");
         Assert.AreEqual(777, SaveService.Peek(2).gold, "슬롯 2 진행이 따로 남아야 한다");
         Assert.AreNotEqual(777, SaveService.Peek(3).gold);
     }

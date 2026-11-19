@@ -271,6 +271,7 @@ namespace ChronoSavior.Combat
                     RelicPullZone.Spawn(c, 1.4f, 0.5f, 8f, 0.6f, RelicFx.Gold, null, VfxKeys.MageCollapseExplosion);
             if (Relics.Rank("gravitySpring") > 0)
             {
+                Relics.Proc("gravitySpring");
                 float life = Relics.V("gravitySpring", 0), mult = Relics.V("gravitySpring", 1);
                 bool gold = Relics.Awakened("gravitySpring");
                 foreach (var c in centers)
@@ -281,6 +282,7 @@ namespace ChronoSavior.Combat
             }
             if (Relics.Rank("compressedSingularity") > 0 && wellCount >= 3 && centers.Count > 0)
             {
+                Relics.Proc("compressedSingularity");
                 Vector2 mid = Vector2.zero;
                 foreach (var c in centers) mid += c;
                 mid /= centers.Count;

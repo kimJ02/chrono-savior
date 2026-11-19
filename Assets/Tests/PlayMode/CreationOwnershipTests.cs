@@ -85,6 +85,7 @@ public class CreationOwnershipTests
         ["UI/Screens/CharacterSelectScreen.cs"] = (Kind.UiBuild, "캐릭터 목록 가림막"),
         ["UI/Screens/CombatHud.cs"]        = (Kind.UiBuild, "미니맵 가림막·글자 그라데이션"),
         ["UI/Screens/StageSelectScreen.cs"] = (Kind.UiBuild, "스테이지 칸 버튼"),
+        ["UI/Screens/RelicHudStrip.cs"]    = (Kind.UiBuild, "전투 화면 유물 칸의 마우스 올림 알림(RelicCellHover, 2026-11-19)"),
         ["UI/Screens/SettingsWindow.cs"]   = (Kind.UiBuild, "음량 막대 누르기 칸(PxSlider) — 2026-11-16 Figma 새 설정창, 다른 화면처럼 코드로 짓는 UI 부품"),
         ["UI/Screens/TitleMenu.cs"]        = (Kind.UiBuild, "타이틀 메뉴 버튼"),
         ["UI/Lobby/LobbyWorld.cs"]         = (Kind.UiBuild, "로비 건물(월드 캔버스, 건물 표 Buildings에서 짓는다 — 건물 그림이 생기면 씬/프리팹으로). 카메라 기준점은 씬에 놓인다"),

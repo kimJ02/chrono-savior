@@ -25,6 +25,15 @@ namespace ChronoSavior.Core
             public void Dispose() => InRelicDamage = prev;
         }
 
+        // ── 발동 알림(2026-11-19 전투 화면 유물 칸이 반짝이게) ──
+        static readonly System.Collections.Generic.Dictionary<string, float> lastProc = new System.Collections.Generic.Dictionary<string, float>();
+
+        /// <summary>유물이 발동했다 — 전투 화면 유물 칸이 잠깐 반짝인다.</summary>
+        public static void Proc(string id) => lastProc[id] = Time.unscaledTime;
+
+        /// <summary>마지막 발동 뒤 지난 실제 시간(발동한 적 없으면 큰 값).</summary>
+        public static float SinceProc(string id) => lastProc.TryGetValue(id, out var t) ? Time.unscaledTime - t : 999f;
+
         /// <summary>그 유물이 지금 켜져 있는 랭크(0 = 꺼짐). 보유 수를 상한으로 자른다.</summary>
         public static int Rank(string id) => Rank(ProfileService.Current, id);
 

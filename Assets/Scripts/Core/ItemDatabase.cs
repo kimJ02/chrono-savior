@@ -52,7 +52,7 @@ namespace ChronoSavior.Core
     ///
     /// - 보유 = 적용(장착 칸 없음). 같은 유물을 또 얻으면 **랭크**가 오른다 — 상한 일반·희귀 3, 영웅·전설 2.
     /// - 캐릭터 유물은 그 캐릭터일 때만, 갈래 유물은 그 갈래를 골랐을 때만 켜진다(<see cref="Relics.Rank"/>).
-    /// - 등급 합계 N13/R11/E5/L3. 뽑기 확률은 Figma 70/27/2/1%.
+    /// - 등급 합계 N13/R12/E5/L3(33종 — 마법사 6종: 역행의 시계핵 추가). 뽑기 확률은 Figma 70/27/2/1%.
     /// </summary>
     public static class ItemDatabase
     {
@@ -139,6 +139,9 @@ namespace ChronoSavior.Core
             R("gravitySpring", "중력 태엽", M, RelicBranch.Gravity, Ra,
               "중력 붕괴 뒤 작은 중력장이 0.8/1.2/1.6초 남아 적을 끌어당긴 뒤 폭발(공격력 40/50/60%).", null,
               V(0.8f, 1.2f, 1.6f), V(0.40f, 0.50f, 0.60f)),                           // 지속, 피해 배수
+            R("rewindCore", "역행의 시계핵", M, RelicBranch.Gravity, Ra,
+              "중력 붕괴(X) 쿨타임 -15/30/45%.", null,
+              V(0.15f, 0.30f, 0.45f)),                                                // 쿨타임 감소(사용자 2026-11-19 추가)
             R("compressedSingularity", "압축 특이점", M, RelicBranch.Gravity, E,
               "중력점 3개 이상을 붕괴시키면 내파가 2/3번 더 터진다(공격력 35/45%).", null,
               V(2, 3), V(0.35f, 0.45f)),                                              // 내파 수, 피해 배수

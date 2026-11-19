@@ -212,6 +212,7 @@ namespace ChronoSavior.UI
 
             BuildStatusFrame();
             BuildTexts();
+            relicStrip = new RelicHudStrip(Content); // 보유 유물 칸(2026-11-19 — Figma에 없음, 오른쪽 빈자리)
             for (int i = 0; i < 3; i++) slots[i] = BuildSlot(i);
             minimap = new CombatMinimapView(Content, Minimap);
             BuildBossBar();
@@ -344,10 +345,13 @@ namespace ChronoSavior.UI
 
         // ───────────────────────── 갱신 ─────────────────────────
 
+        RelicHudStrip relicStrip;
+
         protected override void Refresh()
         {
             var v = Preview ?? Live();
             UpdatePopups();
+            relicStrip?.Refresh(true);
 
             // 체력 — 칸 폭을 도트 단위로 채운다(반 도트가 안 생기게)
             float ratio = v.MaxHp > 0f ? Mathf.Clamp01(v.Hp / v.MaxHp) : 0f;

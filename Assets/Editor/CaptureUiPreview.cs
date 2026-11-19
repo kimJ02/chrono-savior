@@ -77,6 +77,18 @@ namespace ChronoSavior.Editor
             Shot(pc, cam, outDir, "전투HUD_보스전", sel => hud.ShowForCapture(sel));
             ChronoSavior.Core.RunState.Reset();
 
+            // 보유 유물 칸(2026-11-19) — 슬롯 3(중력 법사 풀세팅) 프로필로, 몇 칸은 막 발동한 것처럼 반짝이게
+            ChronoSavior.Core.ProfileService.Replace(ChronoSavior.Systems.SavePresets.Build(3));
+            hud.Preview = new CombatHud.PreviewState
+            {
+                Hp = 72f, MaxHp = 100f, ExpRatio = 0.62f, TimeLeft = 47f, Combo = 32, Kills = 37,
+                Attack = default, Skill = ChronoSavior.Core.SkillSlotState.Cooldown(1.2f, 3f),
+                Player = new Vector2(4f, FieldBounds.GroundY), Enemies = new Vector2[0],
+            };
+            foreach (var id in new[] { "lantern", "gravitySpring", "doomBell" }) ChronoSavior.Core.Relics.Proc(id);
+            Shot(pc, cam, outDir, "전투HUD_유물", sel => hud.ShowForCapture(sel));
+            ChronoSavior.Core.ProfileService.Reset();
+
             Shot(pc, cam, outDir, "일시정지", sel => pause.ShowForCapture(sel));
             Shot(pc, cam, outDir, "설정", sel => { pause.ShowForCapture(false); settings.ShowForCapture(sel); });
 

@@ -258,6 +258,7 @@ namespace ChronoSavior.Characters
             // 유리 서약 — 맞으면 유리가 깨지며 주변에 파동, 강화 끝
             if (CombatModifiers.BreakGlass())
             {
+                Relics.Proc("glassOath");
                 float m = Relics.V("glassOath", 2);
                 Vector2 at = transform.position;
                 RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), VfxKeys.AssassinBurstSpark);
@@ -294,6 +295,7 @@ namespace ChronoSavior.Characters
                 if (rebootLeft > 0)
                 {
                     rebootLeft--;
+                    Relics.Proc("timelineReboot");
                     CurrentHp = Mathf.Round(maxHp * Relics.V("timelineReboot", 0));
                     GrantInvuln(ReviveInvuln);
                     Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
