@@ -20,9 +20,9 @@ namespace ChronoSavior.Editor
 
         /// <summary>도트가 아닌 큰 그림(타이틀 배경·로고 1672×941, 스킬 아이콘 314px) — 화면 크기에 맞춰 부드럽게 줄여 그린다.</summary>
         public static bool IsIllustration(string path) =>
-            path.StartsWith(UiFolder + "Title/") || path.StartsWith(UiFolder + "Skills/");
+            path.StartsWith(UiFolder + "Title/"); // Skills/는 2026-11-18부터 30×30 도트 아이콘 — 점 필터·1:1(쌍선형이면 흐려진다)
 
-        public override uint GetVersion() => 7; // 7: 땅·발판 타일 PPU 64 → 128
+        public override uint GetVersion() => 8; // 7: 땅·발판 타일 PPU 64 → 128, 8: Skills/ 일러스트 취급 해제(2026-11-18 변경이 병합에서 빠졌던 것 복구)
 
         void OnPreprocessTexture()
         {
