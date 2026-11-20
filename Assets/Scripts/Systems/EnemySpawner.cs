@@ -223,11 +223,11 @@ public class EnemySpawner : MonoBehaviour
 
     void Update()
     {
-        aliveMonsters.RemoveAll(t => t == null);
-
         waveTimer -= Time.deltaTime;
         if (waveTimer <= 0f)
         {
+            // 죽은 몹 정리는 웨이브를 세울 때만(2026-11-20 최적화 — 예전엔 매 프레임 수백 마리 목록을 훑었다). 수를 세는 곳이 여기뿐이다.
+            aliveMonsters.RemoveAll(t => t == null);
             // 보스전은 잡몹이 훨씬 드물게, 적게, 상한도 낮게 나온다(원본 `:4444`) —
             // 보스와 싸우는 게 본체라 잡몹이 화면을 채우면 안 된다.
             bool boss = RunState.Mode == RunMode.Boss;
@@ -379,6 +379,7 @@ public class EnemySpawner : MonoBehaviour
 
     void SpawnWaveOf(int count, int aliveCap)
     {
+        aliveMonsters.RemoveAll(t => t == null); // 살아 있는 수를 세기 전에 정리(매 프레임 대신 여기서, 2026-11-20)
         if (monsterPrefab == null)
         {
             Debug.LogWarning("[EnemySpawner] monsterPrefab이 비어 있어 스폰을 건너뜀.");

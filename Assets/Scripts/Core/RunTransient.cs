@@ -49,6 +49,7 @@ namespace ChronoSavior.Core
         /// </summary>
         public static void DestroyAllIn(Scene scene)
         {
+            Generation++;
             for (int i = Active.Count - 1; i >= 0; i--)
             {
                 var t = Active[i];
@@ -60,6 +61,12 @@ namespace ChronoSavior.Core
         }
 
         /// <summary>테스트 격리용(정적 목록이라 테스트끼리 샌다).</summary>
-        public static void Reset() => Active.Clear();
+        public static void Reset() { Active.Clear(); Generation++; }
+
+        /// <summary>
+        /// 정리할 때마다 오르는 번호(2026-11-20) — 런 오브젝트를 다시 쓰는 쪽(유물 지연 대기열·선 풀)이 "정리 뒤라 곧 지워질 것"을
+        /// 알아보는 데 쓴다. Destroy는 프레임 끝에 반영돼, 정리 직후 같은 프레임엔 지워질 오브젝트가 아직 살아 있어 보인다.
+        /// </summary>
+        public static int Generation { get; private set; }
     }
 }

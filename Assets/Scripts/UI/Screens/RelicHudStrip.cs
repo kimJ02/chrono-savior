@@ -33,12 +33,17 @@ namespace ChronoSavior.UI
             public Text label;
             public Image[] pips;
             public ItemDef def;
+            public bool awakened;
         }
 
         readonly Cell[] cells = new Cell[Max];
         readonly PxTooltip tip;
         readonly List<ItemDef> active = new List<ItemDef>();
         int hover = -1, shownHover = -2;
+        // 2026-11-20 최적화 — 목록·글자·랭크 점은 유물 상태가 바뀔 때만 다시 그린다(매 프레임은 발동 테두리만)
+        int builtStamp = -1;
+        bool builtVisible;
+        int shownCount;
 
         public RelicHudStrip(Transform parent)
         {
@@ -68,40 +73,18 @@ namespace ChronoSavior.UI
         /// <summary>매 프레임 — 켜진 유물 목록·랭크·발동 반짝임·설명 상자.</summary>
         public void Refresh(bool visible)
         {
-            active.Clear();
             var p = ProfileService.Current;
-            if (visible)
-                foreach (var d in ItemDatabase.All)
-                    if (Relics.Rank(p, d.id) > 0) active.Add(d);
+            int st = Relics.StateVersion;
+            if (st != builtStamp || visible != builtVisible) Rebuild(p, visible, st);
 
-            int overflow = active.Count > Max ? active.Count - (Max - 1) : 0;
-            for (int i = 0; i < Max; i++)
+            // 매 프레임 — 보이는 칸의 발동 테두리만(값이 같으면 Unity가 다시 그리지 않는다)
+            for (int i = 0; i < shownCount; i++)
             {
                 var c = cells[i];
-                bool more = overflow > 0 && i == Max - 1;
-                var def = !more && i < active.Count ? active[i] : null;
-                c.def = def;
-                c.root.gameObject.SetActive(def != null || more);
-                if (more)
-                {
-                    c.gem.enabled = false;
-                    c.label.text = $"+{overflow}";
-                    foreach (var pip in c.pips) pip.enabled = false;
-                    c.edge.color = Edge;
-                    continue;
-                }
-                if (def == null) continue;
-                int rank = Relics.Rank(p, def.id), cap = ItemDatabase.Cap(def.grade);
-                c.gem.enabled = true;
-                c.gem.color = ItemDatabase.GradeColor(def.grade);
-                c.label.text = Short(def.name);
-                for (int k = 0; k < 3; k++)
-                {
-                    c.pips[k].enabled = k < cap;
-                    c.pips[k].color = k < rank ? PipOn : PipOff;
-                }
-                bool flash = Relics.SinceProc(def.id) < FlashTime;
-                c.edge.color = flash ? Color.white : rank >= cap ? GoldEdge : Edge;
+                if (c.def == null) continue;
+                bool flash = Relics.SinceProc(c.def.id) < FlashTime;
+                var want = flash ? Color.white : c.awakened ? GoldEdge : Edge;
+                if (c.edge.color != want) c.edge.color = want;
             }
 
             if (hover != shownHover)
@@ -119,6 +102,49 @@ namespace ChronoSavior.UI
                 }
             }
             if (!visible) { tip.Hide(); shownHover = -2; }
+        }
+
+        void Rebuild(PlayerProfile p, bool visible, int st)
+        {
+            builtStamp = st;
+            builtVisible = visible;
+            active.Clear();
+            if (visible)
+                foreach (var d in ItemDatabase.All)
+                    if (Relics.Rank(p, d.id) > 0) active.Add(d);
+
+            int overflow = active.Count > Max ? active.Count - (Max - 1) : 0;
+            shownCount = Mathf.Min(active.Count, Max);
+            for (int i = 0; i < Max; i++)
+            {
+                var c = cells[i];
+                bool more = overflow > 0 && i == Max - 1;
+                var def = !more && i < active.Count ? active[i] : null;
+                c.def = def;
+                c.awakened = false;
+                c.root.gameObject.SetActive(def != null || more);
+                if (more)
+                {
+                    c.gem.enabled = false;
+                    c.label.text = $"+{overflow}";
+                    foreach (var pip in c.pips) pip.enabled = false;
+                    c.edge.color = Edge;
+                    continue;
+                }
+                if (def == null) continue;
+                int rank = Relics.Rank(p, def.id), cap = ItemDatabase.Cap(def.grade);
+                c.awakened = rank >= cap;
+                c.gem.enabled = true;
+                c.gem.color = ItemDatabase.GradeColor(def.grade);
+                c.label.text = Short(def.name);
+                for (int k = 0; k < 3; k++)
+                {
+                    c.pips[k].enabled = k < cap;
+                    c.pips[k].color = k < rank ? PipOn : PipOff;
+                }
+                c.edge.color = c.awakened ? GoldEdge : Edge;
+            }
+            shownHover = -2; // 설명 상자도 새 내용으로
         }
 
         /// <summary>이름 앞 두 글자(띄어쓰기 빼고).</summary>

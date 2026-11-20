@@ -114,6 +114,10 @@ namespace ChronoSavior.UI
         {
             base.OnDestroy();
             if (instance == this) instance = null;
+            // 직접 잘라 만든 보스 얼굴 그림만 지운다(목록의 원래 그림은 에셋이라 건드리지 않는다, 2026-11-20)
+            foreach (var sp in createdPortraits) if (sp != null) Destroy(sp);
+            createdPortraits.Clear();
+            portraitCache.Clear();
         }
 
         protected override void Build()
@@ -151,8 +155,9 @@ namespace ChronoSavior.UI
             for (int i = 0; i < 3; i++)
             {
                 Px.Image(n, "MobSlot" + i, PxArt.Get(A + "monster_slot"), MobX[i], MobY, MobSize, MobSize);
-                mobs[i] = Px.Image(n, "Mob" + i, null, MobX[i] + 4f, MobY + 4f, MobSize - 8f, MobSize - 8f);
-                mobs[i].preserveAspect = true;
+                // 몬스터 그림은 32×32 — 칸과 같은 자리에 1:1(줄이면 도트가 뭉개진다, 2026-11-19 사용자)
+                mobs[i] = Px.Image(n, "Mob" + i, null, MobX[i], MobY, MobSize, MobSize);
+                mobs[i].color = Color.white; // 그림 없이 만들 때 깔린 경고색(반투명 분홍)을 걷는다 — 안 걷으면 몹 그림이 분홍으로 물든다(2026-11-20)
             }
             Px.Text(n, "ProgLabel", "스테이지 진행도", ProgLabel.x, ProgLabel.y, ProgLabel.width, ProgLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
             Px.Image(n, "ProgBack", PxArt.Get(A + "progress_back"), Prog.x, Prog.y, Prog.width, Prog.height);
@@ -172,8 +177,9 @@ namespace ChronoSavior.UI
             {
                 int s = i + 1;
                 nodes[i] = Px.Image(n, "Node" + s, PxArt.Get(A + "stage_node"), FrameX[i] + (FrameW - NodeSize) / 2f, NodeY, NodeSize, NodeSize);
+                // 칸을 누르면 그 스테이지를 고르기만 한다 — 출발은 "원정 떠나기"(2026-11-20 사용자: 누르자마자 하루가 줄던 것)
                 frames[i] = Px.Button(n, "Stage" + s, PxArt.Get(A + "stage_frame"), FrameX[i], FrameY, FrameW, FrameH,
-                                      () => EnterSelected(), out var inner);
+                                      () => PickStage(s), out var inner);
                 frameLabels[i] = Px.Text(inner, "Label", "", 0f, 0f, FrameW, FrameH - 4f, 12, Color.white);
             }
 
@@ -197,8 +203,9 @@ namespace ChronoSavior.UI
             Px.Image(b, "Icon", PxArt.Get(A + "boss_icon"), BossIcon.x, BossIcon.y, BossIcon.width, BossIcon.height);
             Px.Text(b, "InfoLabel", "보스 정보", BossInfoLabel.x, BossInfoLabel.y, BossInfoLabel.width, BossInfoLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
             Px.Image(b, "PortraitFrame", PxArt.Get(A + "boss_portrait"), BossPortrait.x, BossPortrait.y, BossPortrait.width, BossPortrait.height);
-            bossPortrait = Px.Image(b, "Portrait", null, BossPortrait.x + 8f, BossPortrait.y + 8f, BossPortrait.width - 16f, BossPortrait.height - 16f);
-            bossPortrait.preserveAspect = true;
+            // 보스 그림(80×64)에서 위쪽 가운데 32×32를 잘라 1:1로(줄이면 도트가 뭉개진다)
+            bossPortrait = Px.Image(b, "Portrait", null, BossPortrait.x + 8f, BossPortrait.y + 8f, 32f, 32f);
+            bossPortrait.color = Color.white; // 경고색(분홍) 걷기 — 위와 같다
             bossNameText = Px.Text(b, "Name", "", BossName.x, BossName.y, BossName.width, BossName.height, 12, Color.white, TextAnchor.MiddleLeft);
             Px.Text(b, "PatternLabel", "주요 패턴", PatternLabel.x, PatternLabel.y, PatternLabel.width, PatternLabel.height, 12, Color.white, TextAnchor.MiddleLeft);
             foreach (var x in PatternX) Px.Image(b, "Pattern", PxArt.Get(A + "pattern_frame"), x, PatternY, 32f, 32f);
@@ -208,8 +215,9 @@ namespace ChronoSavior.UI
             Px.Image(b, "Plate", PxArt.Get(A + "boss_chapter_plate"), BossPlate.x, BossPlate.y, BossPlate.width, BossPlate.height);
             bossPlateNum = Px.Text(b, "PlateNum", "", BossPlate.x + 22f, BossPlate.y + 5f, 66f, 17f, 12, Color.white);
             bossPlateName = Px.Text(b, "PlateName", "", BossPlate.x + 8f, BossPlate.y + 24f, 94f, 17f, 10, Color.white);
+            // 보스 칸도 누르면 고르기만(출발은 원정 떠나기 — 일반 칸과 같다, 2026-11-20). 키보드 확인이면 원정 떠나기로 선택 이동.
             bossFrame = Px.Button(b, "BossStage", PxArt.Get(A + "boss_frame"), BossFrame.x, BossFrame.y, BossFrame.width, BossFrame.height,
-                                  () => EnterSelected(), out var inner);
+                                  () => SelectNav(GameInput.MenuConfirmDown ? NavBossEnter : NavBossFrame), out var inner);
             bossFrameLabel = Px.Text(inner, "Label", "", 0f, 0f, BossFrame.width, BossFrame.height - 4f, 12, Color.white);
 
             bossArrowL = Px.Button(b, "Prev", PxArt.Get(A + "boss_arrow_left"), BossArrowL.x, BossArrowL.y, 16f, 16f, () => Step(-1), out _);
@@ -312,7 +320,7 @@ namespace ChronoSavior.UI
                 var types = MonstersOf(chapter);
                 for (int i = 0; i < 3; i++)
                 {
-                    Sprite sp = i < types.Length ? SpriteOf(types[i]) : null;
+                    Sprite sp = i < types.Length ? SpriteOf(types[i], chapter) : null;
                     mobs[i].sprite = sp;
                     mobs[i].enabled = sp != null;
                 }
@@ -333,7 +341,7 @@ namespace ChronoSavior.UI
                 bossFrameLabel.text = ChapterConfig.StageLabel(chapter, ChapterConfig.BossStage);
                 bossArrowR.Interactable = chapter < ChapterConfig.ChapterCount;
                 bossNameText.text = RegionConfig.BossNameOf(chapter);
-                var bs = catalog != null ? catalog.boss : null;
+                var bs = BossPortraitOf(chapter);
                 bossPortrait.sprite = bs;
                 bossPortrait.enabled = bs != null;
                 bool can = p.IsStageOpen(chapter, ChapterConfig.BossStage);
@@ -356,10 +364,61 @@ namespace ChronoSavior.UI
             return new[] { EnemyType.Flyer, EnemyType.Grunt, EnemyType.Charger, EnemyType.Shooter, EnemyType.Splitter };
         }
 
-        Sprite SpriteOf(EnemyType type)
+        /// <summary>
+        /// 그 챕터에서 실제로 보이는 그림 — 지역 그림(움직임 첫 장, 까마귀·쥐·멧돼지·오크통 32×32)이 있으면 그것, 없으면 예전 기본 그림.
+        /// 예전엔 기본 그림(분홍 도깨비불 등)만 읽어 게임과 다른 몹이 떴다(2026-11-19 사용자).
+        /// </summary>
+        Sprite SpriteOf(EnemyType type, int chapter)
         {
             var d = catalog != null ? catalog.Find(type) : null;
-            return d != null ? d.sprite : null;
+            if (d == null) return null;
+            var skin = d.SkinFor(chapter);
+            if (skin != null && skin.move != null && skin.move.frames != null && skin.move.frames.Length > 0 && skin.move.frames[0] != null)
+                return skin.move.frames[0];
+            return d.sprite;
+        }
+
+        readonly System.Collections.Generic.Dictionary<int, Sprite> portraitCache = new System.Collections.Generic.Dictionary<int, Sprite>();
+        readonly System.Collections.Generic.List<Sprite> createdPortraits = new System.Collections.Generic.List<Sprite>();
+
+        /// <summary>그 챕터 보스 그림에서 위쪽 가운데 32×32(얼굴)를 잘라 낸 것 — 1:1로 찍어 도트를 지킨다. 그림이 없으면 목록의 예전 보스 그림.</summary>
+        Sprite BossPortraitOf(int chapter)
+        {
+            if (portraitCache.TryGetValue(chapter, out var cached)) return cached;
+            Sprite src = null;
+            var prefab = catalog != null ? catalog.BossPrefabFor(chapter) : null;
+            if (prefab != null)
+            {
+                // 보스 그림은 프리팹의 움직이는 그림(서 있기·튀기 첫 장) — 렌더러 기본 그림은 조약돌 같은 대체 그림이라 안 쓴다
+                SpriteFlipbook fb = null;
+                var goddess = prefab.GetComponent<ChronoSavior.Enemies.BrokenGoddessBoss>();
+                var blob = prefab.GetComponent<ChronoSavior.Enemies.BlobLordBoss>();
+                if (goddess != null) fb = goddess.IdleArt;
+                else if (blob != null) fb = blob.BounceArt;
+                if (fb != null && fb.frames != null && fb.frames.Length > 0) src = fb.frames[0];
+            }
+            Sprite result = catalog != null ? catalog.boss : null;
+            if (src != null)
+            {
+                var r = src.textureRect;
+                const float S = 32f;
+                float w = Mathf.Min(S, r.width), h = Mathf.Min(S, r.height);
+                float x = Mathf.Round(r.x + (r.width - w) / 2f), y = Mathf.Round(r.y + r.height - h - Mathf.Max(0f, (r.height - h) * 0.25f));
+                result = Sprite.Create(src.texture, new Rect(x, y, w, h), new Vector2(0.5f, 0.5f), src.pixelsPerUnit);
+                result.name = src.name + "_portrait";
+                createdPortraits.Add(result);
+            }
+            portraitCache[chapter] = result;
+            return result;
+        }
+
+        /// <summary>스테이지 칸을 눌렀다 — 그 스테이지를 고르고 선택 표시도 그 칸으로(출발하지 않는다).</summary>
+        void PickStage(int s)
+        {
+            if (bossPage) return;
+            stage = s;
+            // 키보드 확인이면 선택을 "원정 떠나기"로 넘긴다(한 번 더 누르면 출발) — 마우스는 고르기만
+            SelectNav(GameInput.MenuConfirmDown ? NavNormalEnter : NavStage0 + s - 1);
         }
 
         void EnterSelected() =>

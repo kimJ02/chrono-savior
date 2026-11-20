@@ -88,6 +88,17 @@ public class StageSelectShowcaseTests
             Assert.AreSame(flyer.sprite, mobs[0].sprite, "1챕터 첫 칸 = 박쥐");
             Assert.AreSame(grunt.sprite, mobs[1].sprite, "1챕터 둘째 칸 = 고블린");
             Assert.IsFalse(mobs[2].enabled, "1챕터는 두 종류뿐 — 나머지 칸은 숨긴다");
+            Assert.AreEqual(Color.white, mobs[0].color, "몹 그림이 물들었다(그림 없이 만들 때의 분홍 경고색이 남음, 2026-11-20)");
+
+            // 2026-11-20 — 스테이지 칸을 누르면 고르기만 한다(예전엔 누르자마자 출발해 하루가 줄었다)
+            var frames = (PxButton[])typeof(StageSelectScreen).GetField("frames", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(screen);
+            var stageField = typeof(StageSelectScreen).GetField("stage", BindingFlags.NonPublic | BindingFlags.Instance);
+            int days = ProfileService.Current.doomDays;
+            frames[3].Click();
+            yield return null;
+            Assert.AreEqual(4, (int)stageField.GetValue(screen), "4번 칸을 누르면 1-4가 골라진다");
+            Assert.IsTrue(StageSelectScreen.IsOpen, "칸을 눌러도 화면은 그대로(출발은 원정 떠나기)");
+            Assert.AreEqual(days, ProfileService.Current.doomDays, "칸만 눌렀는데 날짜가 줄었다");
 
             // 2026-11-19 챕터 구조 — ▶로 넘기면 1챕터 보스 쪽(빨간 화면)에 보스 그림
             typeof(StageSelectScreen).GetMethod("Step", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(screen, new object[] { 1 });

@@ -83,6 +83,7 @@ namespace ChronoSavior.Systems
                 if (!SlotExists(slot)) return null;
                 var p = new PlayerProfile();
                 JsonUtility.FromJsonOverwrite(File.ReadAllText(SlotPath(slot)), p);
+                p.items?.MarkDirty();
                 return p;
             }
             catch { return null; }
@@ -127,6 +128,7 @@ namespace ChronoSavior.Systems
                 string json = File.ReadAllText(SavePath);
                 var profile = new PlayerProfile(); // 기본값에서 시작 — 위 "기본값 위에 덮어쓰는 이유" 참고
                 JsonUtility.FromJsonOverwrite(json, profile);
+                profile.items?.MarkDirty(); // 덮어쓴 보유 목록 — 조회 캐시를 새로(2026-11-20)
                 MigrateLegacyRebirthFields(json, profile);
                 MigrateSharedProgress(json, profile);
                 ProfileService.Replace(profile);

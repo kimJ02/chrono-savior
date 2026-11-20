@@ -124,6 +124,8 @@ namespace ChronoSavior.Editor
             Shot(pc, cam, outDir, "각성", sel => awaken.ShowForCapture(sel));
 
             var stage = pc.GetComponent<StageSelectScreen>();
+            // 몬스터 칸·보스 그림을 실제 에셋으로 보이게(게임에선 00_Persistent 씬에 연결돼 있다, 2026-11-20)
+            if (stage.Catalog == null) stage.Catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
             Shot(pc, cam, outDir, "스테이지선택", sel => stage.ShowForCapture(sel));
             // 2026-11-19 챕터 구조 — 1챕터 1~5를 깬 상태면 보스 쪽(빨간 화면)이 열린다
             for (int st = 1; st <= ChapterConfig.StagesPerChapter; st++) prof.MarkStageCleared(1, st);

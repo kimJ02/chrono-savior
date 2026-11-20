@@ -347,6 +347,13 @@ namespace ChronoSavior.UI
 
         RelicHudStrip relicStrip;
 
+        // 2026-11-20 최적화 — 값이 바뀔 때만 글자를 새로 만든다(매 프레임 문자열을 만들던 것)
+        int shownHp = int.MinValue, shownMaxHp = int.MinValue, shownTime = int.MinValue, shownCombo = int.MinValue;
+        int shownKills = int.MinValue, shownRegion = int.MinValue, shownStage = int.MinValue, shownPortalKills = int.MinValue;
+        RunMode shownMode;
+        bool shownMidBoss, shownPortalUnlocked;
+        string shownBuffs;
+
         protected override void Refresh()
         {
             var v = Preview ?? Live();
@@ -356,10 +363,15 @@ namespace ChronoSavior.UI
             // 체력 — 칸 폭을 도트 단위로 채운다(반 도트가 안 생기게)
             float ratio = v.MaxHp > 0f ? Mathf.Clamp01(v.Hp / v.MaxHp) : 0f;
             hpFill.fillAmount = (HpX0 + Mathf.Round(ratio * HpW)) / FrameW;
-            hpText.text = $"{Mathf.Ceil(v.Hp)}/{Mathf.Ceil(v.MaxHp)}";
+            int hpNow = Mathf.CeilToInt(v.Hp), hpMax = Mathf.CeilToInt(v.MaxHp);
+            if (hpNow != shownHp || hpMax != shownMaxHp)
+            {
+                shownHp = hpNow; shownMaxHp = hpMax;
+                hpText.text = $"{hpNow}/{hpMax}";
+            }
 
             int t = Mathf.CeilToInt(v.TimeLeft);
-            timer.text = t.ToString();
+            if (t != shownTime) { shownTime = t; timer.text = t.ToString(); }
             bool low = t <= 10; // 원본 `classList.toggle('low', t <= 10)`
             if (timerGradient.Top != (low ? TimerLow : Color.white))
             {
@@ -369,22 +381,30 @@ namespace ChronoSavior.UI
             }
 
             // 2026-11-19 챕터 구조 — "1-3 토벌 37/100", 중간 보스전은 "1-5 중간 보스", 보스 스테이지는 보스 이름
-            string label = ChapterConfig.StageLabel(RunState.Region, RunState.Stage);
-            kills.text = RunState.Mode == RunMode.Normal ? $"{label} 토벌 {v.Kills}/{ChapterConfig.StageKillTarget}"
-                       : RunState.IsMidBoss ? $"{label} 중간 보스" : RegionConfig.BossNameOf(RunState.Region);
-            buffs.text = v.Buffs ?? "";
+            if (v.Kills != shownKills || RunState.Region != shownRegion || RunState.Stage != shownStage
+                || RunState.Mode != shownMode || RunState.IsMidBoss != shownMidBoss)
+            {
+                shownKills = v.Kills; shownRegion = RunState.Region; shownStage = RunState.Stage;
+                shownMode = RunState.Mode; shownMidBoss = RunState.IsMidBoss;
+                string label = ChapterConfig.StageLabel(RunState.Region, RunState.Stage);
+                kills.text = RunState.Mode == RunMode.Normal ? $"{label} 토벌 {v.Kills}/{ChapterConfig.StageKillTarget}"
+                           : RunState.IsMidBoss ? $"{label} 중간 보스" : RegionConfig.BossNameOf(RunState.Region);
+            }
+            string b = v.Buffs ?? "";
+            if (!string.Equals(b, shownBuffs)) { shownBuffs = b; buffs.text = b; }
 
             bool combo = v.Combo > 0; // 원본: 0이면 숨김(:1633)
             comboLabel.enabled = comboNum.enabled = combo;
-            if (combo) comboNum.text = v.Combo.ToString();
+            if (combo && v.Combo != shownCombo) { shownCombo = v.Combo; comboNum.text = v.Combo.ToString(); }
 
             RefreshSlot(slots[0], v.Attack);
             RefreshSlot(slots[1], v.Skill);
             RefreshSlot(slots[2], default); // 점프는 원본도 쿨다운이 없다
 
             portal.enabled = v.PortalInRange;
-            if (v.PortalInRange)
+            if (v.PortalInRange && (v.PortalUnlocked != shownPortalUnlocked || v.Kills != shownPortalKills || portal.text.Length == 0))
             {
+                shownPortalUnlocked = v.PortalUnlocked; shownPortalKills = v.Kills;
                 portal.text = v.PortalUnlocked ? "F — 중간 보스에게 가기" : $"토벌 {v.Kills}/{ChapterConfig.StageKillTarget} — 아직 열리지 않았다";
                 portal.color = v.PortalUnlocked ? PortalOpen : PortalLocked;
             }
@@ -406,6 +426,27 @@ namespace ChronoSavior.UI
         /// 2026-11-04 옛 IMGUI HUD를 지우면서 새 HUD에 다시 붙였다(사용자 "버프 표시줄 추가").
         /// </summary>
         public static string BuffLine(ISkillSlotSource kit)
+        {
+            // 2026-11-20 최적화 — 들어가는 값이 지난번과 같으면 지난 줄을 그대로 돌려준다(매 프레임 목록·문자열을 만들던 것)
+            float dm = CombatModifiers.DamageMultiplier;
+            int dmKey = dm > 1.01f ? Mathf.RoundToInt(dm * 100f) : 0;
+            int shrineLeft = CombatModifiers.ShrineBuffLeft > 0f ? Mathf.CeilToInt(CombatModifiers.ShrineBuffLeft) : 0;
+            int gapKey = RegressionConfig.Gap(RunState.Region, ProfileService.Current.regressions);
+            string ownKey = kit?.BuffText;
+            if (buffLine != null && dmKey == buffDm && RunState.Fury == buffFury && shrineLeft == buffShrine
+                && CombatModifiers.ShrineActive == buffShrineActive && gapKey == buffGap && string.Equals(ownKey, buffOwn))
+                return buffLine;
+            buffDm = dmKey; buffFury = RunState.Fury; buffShrine = shrineLeft;
+            buffShrineActive = CombatModifiers.ShrineActive; buffGap = gapKey; buffOwn = ownKey;
+            buffLine = BuildBuffLine(kit);
+            return buffLine;
+        }
+
+        static string buffLine, buffOwn;
+        static int buffDm, buffFury, buffShrine, buffGap;
+        static bool buffShrineActive;
+
+        static string BuildBuffLine(ISkillSlotSource kit)
         {
             var parts = new List<string>();
             float dm = CombatModifiers.DamageMultiplier;

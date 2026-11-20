@@ -47,6 +47,7 @@ namespace ChronoSavior.UI
         readonly Text[] statLabels = new Text[3];
         readonly Text[] statValues = new Text[3];
         readonly Image[] barFills = new Image[1];
+        const float BarFillPx = 182f; // 채움 그림 폭(칸)
         readonly Text[] barTexts = new Text[1];
 
         protected override void Build()
@@ -83,7 +84,7 @@ namespace ChronoSavior.UI
             {
                 float y = BarY[i];
                 Px.Image(Content, "BarBack" + i, PxArt.Get("Result/bar_back"), BarX, y, BarW, BarH);
-                barFills[i] = Px.Image(Content, "BarFill" + i, fills[i], BarX - 1f, y, 182f, BarH); // 채움 그림은 182칸
+                barFills[i] = Px.Image(Content, "BarFill" + i, fills[i], BarX - 1f, y, BarFillPx, BarH); // 채움 그림은 182칸
                 barFills[i].type = Image.Type.Filled;
                 barFills[i].fillMethod = Image.FillMethod.Horizontal;
                 Px.Image(Content, "BarFrame" + i, PxArt.Get("Result/bar_frame"), BarX, y, BarW, BarH);
@@ -121,7 +122,9 @@ namespace ChronoSavior.UI
 
             title.text = dead ? "시간선 붕괴" : "원정 기록";
             title.color = dead ? Dead : Color.white;
-            sub.text = dead ? $"stage {s} 실패" : reason == RunEndReason.BossDead ? $"stage {s} 돌파" : $"stage {s} 원정 종료";
+            // 2026-11-20 — 챕터 번호만 나오던 것("stage 2 실패")을 스테이지까지("stage 2-4 실패")
+            string sl = ChapterConfig.StageLabel(s, RunState.Stage);
+            sub.text = dead ? $"stage {sl} 실패" : reason == RunEndReason.BossDead ? $"stage {sl} 돌파" : $"stage {sl} 원정 종료";
             time.text = dead ? $"잔존 시간 {Clock(RunState.TimeLeft)}" : $"기록 시간 {Clock(RunState.Elapsed)}";
 
             string[] labels = dead ? new[] { "처치 수", "획득 전리품", "획득 경험치" } : new[] { "전리품", "경험치", "처치 수" };
@@ -140,7 +143,8 @@ namespace ChronoSavior.UI
             int target = ChapterConfig.StageKillTarget;
             bool bossStage = RunState.Stage == ChapterConfig.BossStage;
             int stageKills = bossStage ? (p.IsBossCleared(s) ? target : 0) : Mathf.Min(p.StageKills(s, RunState.Stage), target);
-            barFills[0].fillAmount = stageKills / (float)target;
+            // 채움 그림 182칸을 정수 칸으로 — 100마리 기준이면 1마리 = 1.82칸이라 끝이 반 도트에 걸렸다(2026-11-20)
+            barFills[0].fillAmount = Mathf.Round(stageKills / (float)target * BarFillPx) / BarFillPx;
             barTexts[0].text = bossStage ? (p.IsBossCleared(s) ? $"{ChapterConfig.StageLabel(s, RunState.Stage)} 격파" : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 도전 중")
                              : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 토벌 {stageKills}/{target}";
 

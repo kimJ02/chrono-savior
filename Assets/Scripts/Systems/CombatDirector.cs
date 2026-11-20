@@ -204,7 +204,9 @@ namespace ChronoSavior.Systems
             // 일반 필드의 잡몹·투사체·장판을 지운다. 안 지우면 좁아진 보스 무대에 이전 필드의 몹이 맵 밖 좌표로 남아,
             // 플레이어가 닿을 수 없는 곳에서 계속 살아 있다.
             RunTransient.DestroyAllIn(gameObject.scene);
-            ResetPlayer(); // 좁아진 무대의 시작 지점으로
+            // 좁아진 무대의 시작 지점으로. 5스테이지 중간 보스는 같은 원정의 관문이라 체력·런 한정 자원(가드·부활·재기동)을 그대로 둔다
+            // (2026-11-20 GPT와 정함 — 예전 보스 포탈처럼 다 채우면 5스테이지에서 쓴 자원이 다시 생겼다). 보스 스테이지 포탈은 원래대로.
+            ResetPlayer(keepHealth: RunState.IsMidBoss);
             RunEvents.RaiseBossFieldEntered(); // 스포너가 보스를 세운다
             return true;
         }
@@ -313,11 +315,15 @@ namespace ChronoSavior.Systems
         /// 원본 `resetPlayerForRun()`(:1511). 구체 타입을 모르고 <see cref="IRunResettable"/>만 보고 부른다 — `Systems`(3층)가
         /// `Characters`(2층)의 키트 클래스를 하나하나 알 필요가 없다. 키트가 이 인터페이스만 구현하면 자동으로 같이 초기화된다.
         /// </summary>
-        void ResetPlayer()
+        void ResetPlayer(bool keepHealth = false)
         {
             if (player == null) return; // 씬엔 늘 있다(씬 검증이 본다) — 플레이어 없이 도는 테스트용
             foreach (var resettable in player.GetComponents<IRunResettable>())
+            {
+                // 체력 담당(플레이어에서 IDamageable은 체력 하나뿐 — Systems는 Characters를 모른다)
+                if (keepHealth && resettable is IDamageable) continue;
                 resettable.ResetForRun();
+            }
         }
     }
 }

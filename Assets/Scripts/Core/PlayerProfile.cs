@@ -297,6 +297,16 @@ namespace ChronoSavior.Core
             return false;
         }
 
+        /// <summary>
+        /// 이번 생 보스 처치 기록을 비운다 — 세이브 슬롯 프리셋이 "이미 깬 진행"만 만들 때(2026-11-20: 프리셋이 정복 표시를 하면서
+        /// 이번 생 처치까지 남겨, 보스를 안 잡고 회귀해도 파편이 나왔다). 회귀 정산 때도 같은 일을 한다.
+        /// </summary>
+        public void ForgetThisLifeBossKills()
+        {
+            EnsureStageArrays();
+            System.Array.Clear(bossKilledThisLife, 0, bossKilledThisLife.Length);
+        }
+
         /// <summary>보스를 잡았다 — 다음 지역이 열린다. 원본 `onBossKilled`(project_test.html:4282).</summary>
         public void MarkBossCleared(int region)
         {

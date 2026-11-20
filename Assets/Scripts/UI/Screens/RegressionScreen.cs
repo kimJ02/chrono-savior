@@ -122,11 +122,13 @@ namespace ChronoSavior.UI
         void Regress()
         {
             var p = ProfileService.Current;
+            int before = p.regressions;
             int got = p.DoRegression();
             open = false;
-            if (got <= 0) return;
+            if (p.regressions == before) return; // 회귀가 일어나지 않았다
+            // 파편 0개 회귀(멸망 0일에서 정복 없이)도 회귀다 — 바로 저장한다(2026-11-20, 예전엔 0개면 저장을 건너뛰었다)
             SaveService.Save();
-            CommonPopup.Alert("시간 회귀", $"시간의 파편 +{got}\n새 회차가 시작됐다.");
+            CommonPopup.Alert("시간 회귀", got > 0 ? $"시간의 파편 +{got}\n새 회차가 시작됐다." : "새 회차가 시작됐다.");
         }
     }
 }

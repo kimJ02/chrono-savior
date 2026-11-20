@@ -152,6 +152,36 @@ public class GameFlowTests
         Assert.AreEqual(health.MaxHp, health.CurrentHp, 0.01f, "런 시작인데 풀피가 아니다");
     }
 
+    /// <summary>
+    /// 5스테이지 중간 보스 포탈은 같은 원정의 관문 — 체력을 다시 채우지 않는다(2026-11-20 GPT와 정함). 자리는 좁은 무대 시작점으로.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator MidBossPortal_KeepsHealth_ButMovesPlayer()
+    {
+        var player = new GameObject("TestPlayer");
+        player.tag = "Player";
+        player.AddComponent<Rigidbody2D>().gravityScale = 0f;
+        player.AddComponent<CircleCollider2D>().radius = 0.5f;
+        var health = player.AddComponent<PlayerHealth>();
+        player.AddComponent<CharacterMover2D>();
+        yield return null;
+
+        var rc = NewController(player);
+        yield return null;
+        rc.StartStage(1, 5, null, spendDay: false);
+        yield return null;
+        health.TakeDamage(20f, null);
+        float hurt = health.CurrentHp;
+        Assert.Less(hurt, health.MaxHp);
+        player.transform.position = new Vector3(18f, 4f, 0f);
+
+        Assert.IsTrue(CombatDirector.Current.EnterBossField());
+        Assert.IsTrue(RunState.IsMidBoss);
+        yield return null;
+        Assert.AreEqual(hurt, health.CurrentHp, 0.01f, "중간 보스 포탈인데 체력이 다시 찼다");
+        Assert.AreNotEqual(18f, player.transform.position.x, "좁은 무대 시작점으로 옮겨져야 한다");
+    }
+
     // ────────────────────────── 일시정지 ──────────────────────────
 
     /// <summary>

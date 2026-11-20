@@ -39,11 +39,66 @@ namespace ChronoSavior.Core
 
         public static int Rank(PlayerProfile p, string id)
         {
-            var def = ItemDatabase.Get(id);
-            if (def == null || p == null) return 0;
-            int n = Mathf.Min(p.items.Count(id), ItemDatabase.Cap(def.grade));
-            if (n <= 0) return 0;
-            return IsActiveFor(p, def) ? n : 0;
+            if (p == null || id == null) return 0;
+            Ensure(p);
+            return ranks.TryGetValue(id, out var r) ? r : 0;
+        }
+
+        // ── 랭크·세트·태그 캐시(2026-11-20 최적화) ──
+        // 처치·피격·폭발·매 프레임 HUD마다 유물 33종 × 보유 목록을 다시 훑던 것을, 프로필·보유·캐릭터·갈래가 바뀔 때만 다시 센다.
+        static PlayerProfile cP;
+        static ItemInventory cInv;
+        static int cVer = -1;
+        static CharacterId cChar;
+        static MageBranch cMage;
+        static GunnerBranch cGunner;
+        static BladeBranch cBlade;
+        static int cCharSet;
+        static readonly System.Collections.Generic.Dictionary<string, int> ranks = new System.Collections.Generic.Dictionary<string, int>();
+        static readonly System.Collections.Generic.Dictionary<string, int> tagCounts = new System.Collections.Generic.Dictionary<string, int>();
+
+        static int stamp;
+
+        /// <summary>켜진 유물·랭크가 바뀔 때마다 오르는 번호 — 화면이 "다시 그릴지" 정하는 데 쓴다(전투 화면 유물 칸).</summary>
+        public static int StateVersion
+        {
+            get
+            {
+                var p = ProfileService.Current;
+                if (p != null) Ensure(p);
+                return stamp;
+            }
+        }
+
+        static void Ensure(PlayerProfile p)
+        {
+            var inv = p.items;
+            int ver = inv != null ? inv.Version : 0;
+            if (ReferenceEquals(cP, p) && ReferenceEquals(cInv, inv) && cVer == ver && cChar == p.character
+                && cMage == p.mageBranch && cGunner == p.gunnerBranch && cBlade == p.bladeBranch) return;
+            cP = p; cInv = inv; cVer = ver; cChar = p.character;
+            cMage = p.mageBranch; cGunner = p.gunnerBranch; cBlade = p.bladeBranch;
+            stamp++;
+
+            ranks.Clear();
+            tagCounts.Clear();
+            cCharSet = 0;
+            var owner = p.character == CharacterId.Mage ? RelicOwner.Mage
+                      : p.character == CharacterId.Gunner ? RelicOwner.Gunner
+                      : p.character == CharacterId.Blade ? RelicOwner.Blade : RelicOwner.Common;
+            if (inv == null) return;
+            foreach (var def in ItemDatabase.All)
+            {
+                int owned = inv.Count(def.id);
+                if (owned <= 0) continue;
+                // 세트 — 같은 유물 중복은 1로 센다(켜짐·갈래 무관, 예전 CharacterSetCount/TagCount와 같다)
+                if (owner != RelicOwner.Common && def.owner == owner) cCharSet++;
+                if (def.tags != null)
+                    foreach (var t in def.tags)
+                        if (t != null) tagCounts[t] = (tagCounts.TryGetValue(t, out var c) ? c : 0) + 1;
+                int n = Mathf.Min(owned, ItemDatabase.Cap(def.grade));
+                if (IsActiveFor(p, def)) ranks[def.id] = n;
+            }
         }
 
         /// <summary>그 유물이 이 프로필(캐릭터·갈래)에서 켜지는 종류인지 — 보유 여부와 무관.</summary>
@@ -105,23 +160,18 @@ namespace ChronoSavior.Core
         public static int CharacterSetCount()
         {
             var p = ProfileService.Current;
-            var owner = p.character == CharacterId.Mage ? RelicOwner.Mage
-                      : p.character == CharacterId.Gunner ? RelicOwner.Gunner
-                      : p.character == CharacterId.Blade ? RelicOwner.Blade : RelicOwner.Common;
-            if (owner == RelicOwner.Common) return 0;
-            int n = 0;
-            foreach (var d in ItemDatabase.All) if (d.owner == owner && p.items.Count(d.id) > 0) n++;
-            return n;
+            if (p == null) return 0;
+            Ensure(p);
+            return cCharSet;
         }
 
         /// <summary>그 태그(공용 "연쇄"·"시간")의 유물을 몇 종 가졌는지 — 태그 세트 2·4개.</summary>
         public static int TagCount(string tag)
         {
             var p = ProfileService.Current;
-            int n = 0;
-            foreach (var d in ItemDatabase.All)
-                if (p.items.Count(d.id) > 0 && System.Array.IndexOf(d.tags, tag) >= 0) n++;
-            return n;
+            if (p == null || tag == null) return 0;
+            Ensure(p);
+            return tagCounts.TryGetValue(tag, out var n) ? n : 0;
         }
 
         public static bool CharacterSet3 => CharacterSetCount() >= 3;

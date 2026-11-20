@@ -75,6 +75,8 @@ namespace ChronoSavior.Systems
                 for (int st = 1; st <= ChapterConfig.StagesPerChapter; st++) p.MarkStageCleared(c, st);
                 p.MarkBossCleared(c);
             }
+            // 프리셋은 "지난 생에 깬 진행"이다 — 이번 생 보스 처치로 남기면 보스를 안 잡고 회귀해도 파편이 나온다(2026-11-20)
+            p.ForgetThisLifeBossKills();
         }
     }
 }

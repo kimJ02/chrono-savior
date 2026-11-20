@@ -95,10 +95,10 @@ namespace ChronoSavior.Combat
             {
                 case Mode.Homing:
                 {
-                    var t = RelicFx.Nearest(transform.position, 1, 8f, hit);
-                    if (t.Count > 0)
+                    var t = RelicFx.NearestOne(transform.position, 8f, hit);
+                    if (t != null)
                     {
-                        Vector2 want = (RelicFx.Center(t[0]) - (Vector2)transform.position).normalized * speed;
+                        Vector2 want = (RelicFx.Center(t) - (Vector2)transform.position).normalized * speed;
                         vel = Vector2.Lerp(vel, want, Mathf.Clamp01(turnRate * dt));
                         vel = vel.normalized * speed;
                     }
@@ -118,23 +118,31 @@ namespace ChronoSavior.Combat
 
             if (mode == Mode.Falling && GroundBelow()) { Explode(); Destroy(gameObject); return; }
 
-            foreach (var col in Physics2D.OverlapCircleAll(transform.position, radius))
+            var cols = RelicFx.QueryCircle(transform.position, radius); // 비할당(2026-11-20 최적화)
+            try
             {
-                if (hit.Contains(col) || !RelicFx.IsTarget(col, out _)) continue;
-                hit.Add(col);
-                if (explodeRadius > 0f) { Explode(); Destroy(gameObject); return; }
-                RelicFx.Hit(col, atkMult, Mathf.Sign(vel.x == 0f ? 1f : vel.x), 1.2f);
-                if (pierceLeft == 0) { Destroy(gameObject); return; }
-                if (pierceLeft > 0) pierceLeft--;
+                foreach (var col in cols)
+                {
+                    if (col == null || hit.Contains(col) || !RelicFx.IsTarget(col, out _)) continue;
+                    hit.Add(col);
+                    if (explodeRadius > 0f) { Explode(); Destroy(gameObject); return; }
+                    RelicFx.Hit(col, atkMult, Mathf.Sign(vel.x == 0f ? 1f : vel.x), 1.2f);
+                    if (pierceLeft == 0) { Destroy(gameObject); return; }
+                    if (pierceLeft > 0) pierceLeft--;
+                }
             }
+            finally { RelicFx.Release(cols); }
         }
 
         bool GroundBelow()
         {
             if (vel.y >= 0f) return false;
-            foreach (var col in Physics2D.OverlapCircleAll(transform.position, 0.1f))
-                if (!col.isTrigger && !col.CompareTag("Enemy") && !col.CompareTag("Player")) return true;
-            return false;
+            var cols = RelicFx.QueryCircle(transform.position, 0.1f);
+            bool ground = false;
+            foreach (var col in cols)
+                if (col != null && !col.isTrigger && !col.CompareTag("Enemy") && !col.CompareTag("Player")) { ground = true; break; }
+            RelicFx.Release(cols);
+            return ground;
         }
 
         void Explode()
@@ -175,9 +183,10 @@ namespace ChronoSavior.Combat
             float dt = Time.deltaTime;
             t += dt;
             Vector2 c = transform.position;
-            foreach (var col in Physics2D.OverlapCircleAll(c, radius * 1.4f))
+            var cols = RelicFx.QueryCircle(c, radius * 1.4f); // 비할당(2026-11-20 최적화)
+            foreach (var col in cols)
             {
-                if (!RelicFx.IsTarget(col, out _)) continue;
+                if (col == null || !RelicFx.IsTarget(col, out _)) continue;
                 if (col.GetComponent<ICrowdControlImmune>() != null) continue;
                 var g = col.GetComponent<IGravityAffectable>();
                 if (g == null) continue;
@@ -185,6 +194,7 @@ namespace ChronoSavior.Combat
                 float d = Mathf.Max(to.magnitude, 0.05f);
                 g.ApplyGravityWellPull(to / d * pull * dt * new Vector2(1f, 0.3f));
             }
+            RelicFx.Release(cols);
             if (t >= life)
             {
                 RelicFx.Circle(c, radius, atkMult, color, burstKey);

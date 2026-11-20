@@ -182,6 +182,7 @@ namespace ChronoSavior.Combat
 
             int totalCount = 0;
             bool anyCritical = false;
+            var primarySet = new System.Collections.Generic.HashSet<Collider2D>(); // 2차 링 중복 확인을 한 번에(2026-11-20 최적화 — 예전엔 목록을 매번 훑어 적 수의 제곱)
 
             for (int idx = 0; idx < centers.Count; idx++)
             {
@@ -189,17 +190,21 @@ namespace ChronoSavior.Combat
                 float r = MageSpecConfig.CollapseRadius(tier, stack);
 
                 var primaryTargets = new System.Collections.Generic.List<(Collider2D col, IDamageable dmg)>();
+                primarySet.Clear();
                 float distSum = 0f;
-                foreach (var col in Physics2D.OverlapCircleAll(cx, r))
+                var found = RelicFx.QueryCircle(cx, r);
+                foreach (var col in found)
                 {
-                    if (!col.CompareTag("Enemy")) continue;
+                    if (col == null || !col.CompareTag("Enemy")) continue;
                     var protectable = col.GetComponent<ISpawnProtectable>();
                     if (protectable != null && protectable.IsSpawnProtected) continue;
                     var target = col.GetComponent<IDamageable>();
                     if (target == null || target.IsDead) continue;
                     primaryTargets.Add((col, target));
+                    primarySet.Add(col);
                     distSum += Vector2.Distance(col.transform.position, cx);
                 }
+                RelicFx.Release(found);
 
                 int count = primaryTargets.Count;
                 totalCount += count;
@@ -230,10 +235,11 @@ namespace ChronoSavior.Combat
                 if (critical)
                 {
                     float r2 = r * MageSpecConfig.CollapseCriticalRingMult(tier);
-                    foreach (var col in Physics2D.OverlapCircleAll(cx, r2))
+                    var ring = RelicFx.QueryCircle(cx, r2);
+                    foreach (var col in ring)
                     {
-                        if (!col.CompareTag("Enemy")) continue;
-                        if (primaryTargets.Exists(p => p.col == col)) continue;
+                        if (col == null || !col.CompareTag("Enemy")) continue;
+                        if (primarySet.Contains(col)) continue;
                         var protectable = col.GetComponent<ISpawnProtectable>();
                         if (protectable != null && protectable.IsSpawnProtected) continue;
                         var target = col.GetComponent<IDamageable>();
@@ -246,6 +252,7 @@ namespace ChronoSavior.Combat
                         if (Mathf.Approximately(dir, 0f)) dir = playerFacing;
                         target.TakeDamageWithKnockback(dmg2, null, dir, MageSpecConfig.CollapseCriticalRingKnockback, HitFeel.HitstopLight); // 원본 hitstop: 0.03(:2120)
                     }
+                    RelicFx.Release(ring);
                     RangeRing.Show(cx, r2, Color.white, RangeRing.Life * 2f); // 임계 2차 범위 — 밝게, 조금 오래(그림만)
                 }
 
