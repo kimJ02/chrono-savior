@@ -30,6 +30,7 @@ namespace ChronoSavior.Characters
         CharacterPose oneShotPose;
         SpriteFlipbook oneShotBook;
         float oneShotT;
+        float oneShotSpeed = 1f; // 한 번 재생의 배속(공속에 맞춰 빨리 돌릴 때)
 
         bool heldOn;
         SpriteFlipbook heldBook;
@@ -75,6 +76,27 @@ namespace ChronoSavior.Characters
             oneShotPose = pose;
             oneShotBook = book;
             oneShotT = 0f;
+            oneShotSpeed = 1f;
+        }
+
+        /// <summary>
+        /// 공격을 **발사 순간에 맞춰** 다시 튼다(2026-11-22 사용자 "마법사 스프라이트가 타이밍에 안 맞는다") — 진행 중이어도 처음부터,
+        /// <paramref name="startFrame"/>번 그림부터(차지 자세가 이미 보여 준 준비 동작은 건너뜀), 남은 그림이 <paramref name="maxSeconds"/> 안에 끝나게 빨리.
+        /// 피격 중이면 피격을 끝까지 둔다.
+        /// </summary>
+        public void PlayAttackSynced(int startFrame, float maxSeconds, int attackIndex = 0)
+        {
+            if (set == null) return;
+            if (oneShotOn && oneShotPose == CharacterPose.Hit && oneShotT < oneShotBook.Duration) return;
+            var book = set.Get(CharacterPose.Attack, attackIndex);
+            if (book == null || book.Count == 0 || book.fps <= 0f) return;
+            startFrame = Mathf.Clamp(startFrame, 0, book.Count - 1);
+            float rest = (book.Count - startFrame) / book.fps; // 원래 속도로 남은 길이
+            oneShotOn = true;
+            oneShotPose = CharacterPose.Attack;
+            oneShotBook = book;
+            oneShotT = startFrame / book.fps;
+            oneShotSpeed = maxSeconds > 0f && rest > maxSeconds ? rest / maxSeconds : 1f;
         }
 
         /// <summary>누르는 동안 공격 자세를 붙잡는다(메카닉 레이저) — 한 번 돌고 마지막 프레임에서 멈춘다. <see cref="ReleaseHeldPose"/>까지.</summary>
@@ -101,7 +123,7 @@ namespace ChronoSavior.Characters
             if (heldOn) heldT += dt;
             if (oneShotOn)
             {
-                oneShotT += dt;
+                oneShotT += dt * oneShotSpeed;
                 if (oneShotT >= oneShotBook.Duration) oneShotOn = false; // 되풀이 묶음이 와도 한 바퀴로 끝
             }
             Draw();

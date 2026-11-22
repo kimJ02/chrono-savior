@@ -247,6 +247,9 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         float ownSpeed = frozen ? 0f
             : motion != null ? motion.GetHorizontalSpeed(Time.fixedDeltaTime, target, buffedSpeed)
             : dir * buffedSpeed;
+        // 비행형(까마귀 등)은 방향 판단을 자기 이동이 하는데 방향을 안 알려 줘, 처음 방향 그대로 뒤로 날아오는 것처럼 보였다(2026-11-22 사용자).
+        // 자기 이동 속도의 부호로 바라보는 쪽을 맞춘다(넉백은 제외 — 밀려나는 동안 돌아보지 않게).
+        if (verticalMotion != null && !frozen && Mathf.Abs(ownSpeed) > 0.01f) dir = ownSpeed > 0f ? 1 : -1;
         float vx = frozen ? 0f : ownSpeed + knockbackX; // 원본 `e.vx + e.kbx`
 
         float minX = FieldBounds.MinX + edgeMargin;

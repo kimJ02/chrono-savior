@@ -65,6 +65,10 @@ public class CharacterSelectTests
         yield return null;
 
         Pick(screen, 1); // 둘째 카드 = 메카닉
+        // 2026-11-22 — 고르면 "이번 회차에서는 바꿀 수 없다" 확인창이 먼저 뜬다
+        Assert.IsTrue(CommonPopup.IsOpen, "고르면 경고 확인창이 뜬다");
+        Assert.AreEqual(CharacterId.Mage, ProfileService.Current.character, "확인 전엔 안 바뀐다");
+        System.Linq.Enumerable.First(pc.GetComponentsInChildren<PxButton>(true), btn => btn.name == "Ok").Click();
         Assert.AreEqual(CharacterId.Gunner, ProfileService.Current.character, "고르면 세이브의 캐릭터 값이 바뀐다");
         Assert.IsFalse(CharacterSelectScreen.IsOpen, "고르면 창이 닫힌다");
         Assert.IsTrue(File.Exists(SaveService.SavePath), "고르면 저장한다");
@@ -82,6 +86,16 @@ public class CharacterSelectTests
         Pick(screen, 3); // "???" — 아직 없는 캐릭터
         Assert.AreEqual(CharacterId.Mage, ProfileService.Current.character);
         Assert.IsFalse(File.Exists(SaveService.SavePath), "잠긴 카드는 저장도 안 한다");
+    }
+
+    /// <summary>회차 시작의 캐릭터 고르기는 Esc로 닫히지 않는다(2026-11-22 — 회차마다 한 번 반드시 고른다).</summary>
+    [Test]
+    public void OpenForRun_CannotBeEscaped()
+    {
+        var screen = pc.GetComponent<CharacterSelectScreen>();
+        CharacterSelectScreen.OpenForRun();
+        typeof(CharacterSelectScreen).GetMethod("OnEscape", BindingFlags.NonPublic | BindingFlags.Instance).Invoke(screen, null);
+        Assert.IsTrue(CharacterSelectScreen.IsOpen, "회차 시작 선택인데 Esc로 닫혔다");
     }
 
     [Test]

@@ -265,9 +265,15 @@ public class EnemySpawner : MonoBehaviour
     /// **동시에 하나만** 존재한다(`if (enemies.some(e => e.shrine)) return`, `:3997`) —
     /// 여러 개가 겹치면 적 버프가 중첩되는 게 아니라 그냥 부수기만 번거로워진다.
     /// </summary>
+    /// <summary>
+    /// 성소를 게임에 내보낼지 — **2026-11-22 사용자 "성소 없애 줘"로 끔**(의도적 편차: 원본은 35초마다 성소). 코드·테스트는 남겨 두어 다시 켤 수 있다.
+    /// 성소 타이머를 직접 보는 테스트만 켠다.
+    /// </summary>
+    public static bool ShrinesInGame = false;
+
     void UpdateShrine(float dt)
     {
-        if (!spawnShrines || monsterPrefab == null) return;
+        if (!ShrinesInGame || !spawnShrines || monsterPrefab == null) return;
         // 원본은 성소 타이머 자체가 `if (run.mode === 'normal')` 블록 안에 있다(`:4430`) —
         // **보스전엔 성소가 안 나온다.** 좁은 보스 무대에 구조물이 서면 피할 자리가 사라진다.
         if (RunState.Mode != RunMode.Normal) return;
@@ -338,6 +344,12 @@ public class EnemySpawner : MonoBehaviour
     /// 중간 보스(2026-11-19 챕터 구조, 사용자 확정) — 그 스테이지 몹 하나를 크기 ×2·체력 ×20·공격력 ×5로 키운 것.
     /// 그림은 정수배(도트 배율 ×2)라 깨지지 않는다. 잡으면 5스테이지 클리어 + 보상 ×10, 보스처럼 판이 끝난다.
     /// </summary>
+    /// <summary>
+    /// 지금 살아 있는 5스테이지 중간 보스(없으면 null) — 전투 HUD의 보스 체력바가 읽는다(2026-11-22 사용자 "중간 보스 체력바").
+    /// 중간 보스는 보스 표시(isBoss)를 안 단다 — 달면 레벨 보정·보상 규칙이 보스 것으로 바뀐다.
+    /// </summary>
+    public static EnemyHealth ActiveMidBoss { get; private set; }
+
     void SpawnMidBoss()
     {
         var data = PickEnemyData();
@@ -351,6 +363,7 @@ public class EnemySpawner : MonoBehaviour
             health.Died -= HandleEnemyDied; // 일반 처치 보상 대신 아래 전용 처리
             health.SetMaxHp(JsMath.Round(health.MaxHp * ChapterConfig.MidBossHpMult));
             health.Died += HandleMidBossDied;
+            ActiveMidBoss = health;
         }
         if (go.TryGetComponent(out EnemyMove move)) move.attackPower = JsMath.Round(move.attackPower * ChapterConfig.MidBossDmgMult);
         go.transform.localScale *= ChapterConfig.MidBossScale;
@@ -359,6 +372,7 @@ public class EnemySpawner : MonoBehaviour
 
     void HandleMidBossDied(EnemyHealth enemy)
     {
+        if (ActiveMidBoss == enemy) ActiveMidBoss = null;
         spawnedData.TryGetValue(enemy.gameObject, out var data);
         EnemyRewards.GrantKill(enemy, data, ChapterConfig.MidBossRewardMult);
         spawnedData.Remove(enemy.gameObject);

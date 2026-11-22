@@ -96,7 +96,7 @@ namespace ChronoSavior.UI
         void StartFresh()
         {
             // 새 원정은 캐릭터부터 고른다(캐릭터 선택창 뼈대의 뒤로가기/선택하기) — 로비 씬이 실제로 뜬 뒤에만 연다.
-            Flow?.StartNewExpedition(CommonPopup.AlertIfTransitionFails("새 원정", CharacterSelectScreen.Open));
+            Flow?.StartNewExpedition(CommonPopup.AlertIfTransitionFails("새 원정", CharacterSelectScreen.OpenForRun));
         }
 
         static void Quit()

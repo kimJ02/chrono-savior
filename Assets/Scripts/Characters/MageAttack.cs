@@ -62,7 +62,8 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
 
     void ApplyMoveLock()
     {
-        if (mover != null) mover.AttackLock = HoldsPosition ? CharacterMover2D.AttackMoveLock.RootOnGround : CharacterMover2D.AttackMoveLock.None;
+        // 2026-11-22 사용자 — 점프 중에 공격을 꾹 누르면 공중에서도 좌우로 안 움직인다(예전 RootOnGround는 공중 자유)
+        if (mover != null) mover.AttackLock = HoldsPosition ? CharacterMover2D.AttackMoveLock.Root : CharacterMover2D.AttackMoveLock.None;
     }
 
     // ---- HUD 스킬 슬롯 (원본 syncHUD 슬롯 부분 :6319~:6352) ----
@@ -105,6 +106,9 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
     /// <summary>발사 자세 시간(초) ÷ 공속 배수 — 원본 `p.attackDur = 0.2 / statAs()`(:1939). 원본은 이 동안도 이동 자유(`attackRapid`)지만,
     /// 2026-11-16부터 땅에선 이 동안 제자리(<see cref="CharacterMover2D.AttackMoveLock.RootOnGround"/>, 의도적 편차).</summary>
     public const float FirePoseBase = 0.2f;
+
+    /// <summary>발사 때 공격 그림을 이 번호(0부터)부터 튼다 — 5번째 그림(몸을 앞으로 기울임) → 6번 내뻗기 → 7번 마무리.</summary>
+    public const int AttackCastFrame = 4;
     public float nearestEnemySearchRadius = 6.2f; // 원본 nearestEnemy(maxDist=620px)(project_test.html:2155)
 
     [Tooltip("마탄 프리팹(Assets/Prefabs/Combat/MageBolt).")]
@@ -244,7 +248,9 @@ public class MageAttack : MonoBehaviour, ICharacterKit, IRunResettable, ISkillSl
         else if (branch == MageBranch.Gravity) SfxEvents.RaiseMageGravityAttack();
         else SfxEvents.RaiseMageBasicAttack();
         // 공격 자세는 갈래와 상관없이 발사마다(예전엔 효과음 이벤트 중 기본 공격 것만 들어서 불·블랙홀 법사는 모션이 안 나왔다 — 2026-11-17)
-        if (flipbook != null) flipbook.PlayOnce(CharacterPose.Attack);
+        // 2026-11-22 — 차지 자세가 준비 동작(1~3번)을 이미 보여 주므로 발사 땐 5번(내뻗기 직전)부터, 다음 발사 전에 끝나게 빨리.
+        // 예전엔 1번부터 다시 틀어(0.58초) 실제 시전(6번)이 탄보다 0.4초 늦었고, 공속이 빠르면 재생 중이라 다음 발사를 무시했다.
+        if (flipbook != null) flipbook.PlayAttackSynced(AttackCastFrame, Mathf.Min(cooldown, FirePoseBase + 0.1f));
         if (gravityOrb && aimY < 0f && aimX == 0f)
             MageSkillEffects.DetonateGravityOrb(feet + new Vector2(0f, 0.34f), tier, chargeK, facing);
 

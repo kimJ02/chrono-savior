@@ -28,7 +28,13 @@ namespace ChronoSavior.UI
 
         public static bool IsOpen => instance != null && instance.open;
         public static void Open() { if (instance != null) instance.open = true; }
-        public static void Close() { if (instance != null) instance.open = false; }
+        public static void Close() { if (instance != null) { instance.open = false; instance.forced = false; } }
+
+        // 2026-11-22 사용자 — 캐릭터는 **회차마다 한 번** 고른다(로비 버튼 없음). 새 원정·환생 직후에 열리고 닫을 수 없다.
+        bool forced;
+
+        /// <summary>회차 시작의 캐릭터 고르기 — 고르기 전엔 닫히지 않는다(Esc 무시).</summary>
+        public static void OpenForRun() { if (instance != null) { instance.open = true; instance.forced = true; } }
 
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
@@ -160,7 +166,7 @@ namespace ChronoSavior.UI
             }
         }
 
-        protected override void OnEscape() => Close();
+        protected override void OnEscape() { if (!forced) Close(); }
 
         protected override void OnHidden() => hoveredType = -1;
 
@@ -222,9 +228,14 @@ namespace ChronoSavior.UI
             var e = Entries[i];
             shownCard = i;
             if (!e.Id.HasValue) return;
-            ProfileService.Current.SetSelectedCharacter(e.Id.Value); // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
-            SaveService.Save();
-            Close();
+            var id = e.Id.Value;
+            // 2026-11-22 사용자 — 고르면 경고: 이번 회차에서는 바꿀 수 없다
+            CommonPopup.Confirm("캐릭터 선택", $"{e.Name}(으)로 이번 회차를 시작한다.\n이번 회차에서는 캐릭터를 바꿀 수 없다.", () =>
+            {
+                ProfileService.Current.SetSelectedCharacter(id); // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
+                SaveService.Save();
+                Close();
+            }, "시작", "다시 고르기");
         }
 
         /// <summary>계열 칸 위에 마우스가 올라온 걸 화면에 알린다(<see cref="PxButton"/>은 키보드 선택용이라 따로 둔다).</summary>

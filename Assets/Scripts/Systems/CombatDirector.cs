@@ -157,6 +157,9 @@ namespace ChronoSavior.Systems
             {
                 foreach (var e in EnemyHealth.Active)
                     if (e != null && e.isBoss && !e.IsDead && e.MaxHp > 0f) return e.CurrentHp / e.MaxHp;
+                // 5스테이지 중간 보스도 보스 체력바에(2026-11-22 사용자)
+                var mid = EnemySpawner.ActiveMidBoss;
+                if (RunState.IsMidBoss && mid != null && !mid.IsDead && mid.MaxHp > 0f) return mid.CurrentHp / mid.MaxHp;
                 return null;
             }
         }

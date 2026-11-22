@@ -32,6 +32,7 @@ public class OriginalFidelityTests
     [TearDown]
     public void Teardown()
     {
+        EnemySpawner.ShrinesInGame = false;
         foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsSortMode.None))
         {
             if (go != null && (go.name.StartsWith("Test") || go.name == "Shrine"
@@ -170,6 +171,7 @@ public class OriginalFidelityTests
     [Test]
     public void ShrineTimer_KeepsTickingWhileOneIsAlive()
     {
+        EnemySpawner.ShrinesInGame = true; // 게임에선 꺼져 있다(2026-11-22) — 타이머 규칙만 본다(TearDown에서 끈다)
         var spawner = NewSpawner();
         RunState.Begin(1, RunMode.Normal);
         SetShrineTimer(spawner, 5f);

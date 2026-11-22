@@ -43,9 +43,15 @@ namespace ChronoSavior.UI
             who = Px.Text(Content, "Who", "", 12f, 8f, 168f, 18f, 12, Color.white, TextAnchor.MiddleLeft);
             money = Px.Text(Content, "Money", "", 12f, 26f, 168f, 14f, 10, Gold, TextAnchor.MiddleLeft);
 
-            QuickButton(0, "캐릭터", CharacterSelectScreen.Open);
-            QuickButton(1, "업적", AchievementsScreen.Open);
-            QuickButton(2, "설정", SettingsWindow.Open);
+            // 캐릭터 버튼은 뺐다(2026-11-22 사용자 — 캐릭터는 새 원정·환생 때만 고른다, CharacterSelectScreen.OpenForRun)
+            QuickButton(0, "업적", AchievementsScreen.Open);
+            QuickButton(1, "설정", SettingsWindow.Open);
+            // 타이틀로(2026-11-22 사용자) — 저장하고 묻는다. 타이틀에서 다른 세이브 슬롯을 고를 수 있다.
+            QuickButton(2, "타이틀", () => CommonPopup.Confirm("타이틀로", "진행을 저장하고 타이틀 화면으로 돌아간다.", () =>
+            {
+                SaveService.Save();
+                Flow?.EnterTitle(CommonPopup.AlertIfTransitionFails("타이틀로"));
+            }, "돌아가기", "취소"));
 
             Px.Fill(Content, "MinimapPlate", Plate, Minimap.x, Minimap.y, Minimap.width, Minimap.height);
             Px.Fill(Content, "MinimapGround", Px.Ink, Minimap.x + 2f, Minimap.y + 24f, Minimap.width - 4f, 1f);

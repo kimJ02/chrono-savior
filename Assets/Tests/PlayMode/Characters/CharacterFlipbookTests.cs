@@ -85,6 +85,23 @@ public class CharacterFlipbookTests
         StringAssert.StartsWith("move", sr.sprite.name);
     }
 
+    /// <summary>마법사 발사(2026-11-22) — 준비 동작을 건너뛰고 시전 그림부터, 다음 발사 전에 끝나게 빨리, 발사마다 처음부터.</summary>
+    [Test]
+    public void AttackSynced_StartsAtCastFrame_SpeedsUp_AndRestartsEachShot()
+    {
+        var (fb, sr) = NewFlip();
+        fb.PlayAttackSynced(2, 0.1f); // 남은 2장(0.2초)을 0.1초에 — 2배속
+        fb.Refresh(0f);
+        Assert.AreEqual("atk2", sr.sprite.name, "시전 그림부터");
+        fb.Refresh(0.05f);
+        Assert.AreEqual("atk3", sr.sprite.name, "2배속");
+        fb.PlayAttackSynced(2, 0.1f); // 다음 발사 — 재생 중이어도 처음부터
+        fb.Refresh(0f);
+        Assert.AreEqual("atk2", sr.sprite.name, "발사마다 다시");
+        fb.Refresh(0.11f);
+        Assert.AreEqual(CharacterPose.Idle, fb.Current, "다 돌면 루프 자세로");
+    }
+
     [Test]
     public void Hit_InterruptsAttack_AttackDuringHitIgnored()
     {

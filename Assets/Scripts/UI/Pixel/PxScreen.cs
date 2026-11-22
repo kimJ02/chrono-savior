@@ -174,13 +174,19 @@ namespace ChronoSavior.UI
         /// <summary>키를 받는 화면인가(버튼이 있거나 모달).</summary>
         protected virtual bool TakesKeys => Nav.Count > 0 || Modal;
 
+        /// <summary>
+        /// 방향키·확인키를 화면이 직접 처리하는가(<see cref="OnKeys"/>에서) — 켜면 공용 버튼 이동·확인을 건너뛴다.
+        /// 2026-11-22 스테이지 선택: 좌우는 스테이지 1~5만, 위아래는 챕터·보스(공용 이동은 모든 버튼을 한 줄로 돌았다).
+        /// </summary>
+        protected virtual bool OwnsNavKeys => false;
+
         void HandleKeys()
         {
             if (Time.frameCount == shownFrame || !HasKeyFocus) return; // 이 화면을 연 키가 바로 눌리지 않게
             if (!PixelCanvas.AcceptsInput) return; // 화면을 옮기는 동안엔 키를 받지 않는다(마우스는 판의 GraphicRaycaster, 4-0)
             if (Modal && GameInput.PauseDown) { SfxEvents.RaiseUiEsc(); OnEscape(); return; }
             OnKeys();
-            if (Nav.Count == 0) return;
+            if (Nav.Count == 0 || OwnsNavKeys) return;
 
             int cols = Layout == NavLayout.Horizontal ? Nav.Count : Layout == NavLayout.Vertical ? 1 : Mathf.Max(1, NavColumns);
             int dx = (GameInput.MenuRightDown ? 1 : 0) - (GameInput.MenuLeftDown ? 1 : 0);

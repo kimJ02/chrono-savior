@@ -133,7 +133,7 @@ namespace ChronoSavior.UI
                 {
                     ProfileService.Current.needsCharacterSelect = false;
                     SaveService.Save();
-                    CharacterSelectScreen.Open();
+                    CharacterSelectScreen.OpenForRun();
                 }
             }));
         }

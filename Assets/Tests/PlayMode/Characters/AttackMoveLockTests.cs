@@ -46,6 +46,7 @@ public class AttackMoveLockTests
         // 공중 — 마법사는 입력대로(원본), 레이저는 지금 속도 유지(새 입력 무시)
         Assert.AreEqual(-1.35f, CharacterMover2D.ApplyAttackLock(Lock.RootOnGround, false, -1.35f, 5f));
         Assert.AreEqual(5f, CharacterMover2D.ApplyAttackLock(Lock.RootOnGroundNoSteerInAir, false, -2.7f, 5f));
+        Assert.AreEqual(0f, CharacterMover2D.ApplyAttackLock(Lock.Root, false, -2.7f, 5f), "Root는 공중에서도 좌우 0(마법사 차지, 2026-11-22)");
     }
 
     [Test]
@@ -107,13 +108,13 @@ public class AttackMoveLockTests
 
         Charging.SetValue(mage, true);
         yield return null;
-        Assert.AreEqual(Lock.RootOnGround, mover.AttackLock, "차지 중인데 제자리 잠금이 아니다");
+        Assert.AreEqual(Lock.Root, mover.AttackLock, "차지 중인데 제자리 잠금이 아니다(2026-11-22 — 공중에서도 좌우 고정)");
         Assert.AreEqual(mage.chargeMoveSlow, mover.SpeedMultiplier, 1e-4f, "공중 차지 감속(원본 0.5)은 그대로");
 
         Charging.SetValue(mage, false);
         FirePose.SetValue(mage, 0.1f); // 방금 쐈다
         yield return null;
-        Assert.AreEqual(Lock.RootOnGround, mover.AttackLock, "발사 자세 동안은 아직 제자리");
+        Assert.AreEqual(Lock.Root, mover.AttackLock, "발사 자세 동안은 아직 제자리");
         yield return new WaitForSeconds(0.15f);
         Assert.AreEqual(Lock.None, mover.AttackLock, "발사 자세가 끝났는데 아직 잠겨 있다");
 

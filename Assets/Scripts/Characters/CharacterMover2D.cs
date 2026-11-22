@@ -105,6 +105,8 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         RootOnGround,
         /// <summary>땅에선 좌우 이동·점프 불가, 공중에선 새 좌우 입력만 무시하고 지금 가로 속도·중력 유지(메카닉 레이저).</summary>
         RootOnGroundNoSteerInAir,
+        /// <summary>땅·공중 모두 좌우 이동 0(떨어지는 건 그대로) — 마법사 차지(2026-11-22 사용자 "점프 중 공격 꾹 누르면 안 움직여야").</summary>
+        Root,
     }
 
     /// <summary>
@@ -123,7 +125,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
     public static float ApplyAttackLock(AttackMoveLock lk, bool grounded, float inputVx, float currentVx)
     {
         if (lk == AttackMoveLock.None) return inputVx;
-        if (grounded) return 0f;
+        if (grounded || lk == AttackMoveLock.Root) return 0f;
         return lk == AttackMoveLock.RootOnGroundNoSteerInAir ? currentVx : inputVx;
     }
 
@@ -181,6 +183,7 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         // 붙잡힌 동안은 수평 이동·경계 clamp·접지 갱신도 멈춘다 — 중력도 꺼 둔 상태라(BeginGrab)
         // 보스가 MoveGrabbedTo로 넣는 위치가 다음 프레임까지 그대로 유지된다.
         if (grabbed) return;
+        UpdateOneWayPlatforms();
 
         float h = 0f;
         if (GameInput.Left) h -= 1f;
@@ -370,6 +373,40 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, -dropThroughSpeed);
         grounded = false;
         return true;
+    }
+
+    // ── 한쪽 통과 발판(2026-11-22 사용자 "발판 옆으로 박으면 걸림") ──
+    // 씬의 PlatformEffector2D(윗면 120°)만으로는 원형 몸이 발판 **모서리**에 옆으로 닿을 때 막혔다.
+    // 원본처럼 "떨어지는 중이고 발이 윗면보다 위일 때만 밟는다"를 직접 정한다 — 아니면 그 발판과의 충돌을 끈다.
+    readonly System.Collections.Generic.List<Collider2D> passThrough = new System.Collections.Generic.List<Collider2D>();
+    readonly Collider2D[] nearPlatforms = new Collider2D[16];
+    const float PlatformLandTolerance = 0.06f;
+
+    void UpdateOneWayPlatforms()
+    {
+        if (col == null) return;
+        var b = col.bounds;
+        int n = Physics2D.OverlapBoxNonAlloc(b.center, b.size + new Vector3(0.6f, 0.6f, 0f), 0f, nearPlatforms, groundMask);
+        float feet = b.min.y;
+        bool rising = rb.linearVelocity.y > 0.05f;
+        for (int i = 0; i < n; i++)
+        {
+            var p = nearPlatforms[i];
+            if (p == null || p.GetComponent<PlatformEffector2D>() == null || ignoredPlatforms.Contains(p)) continue;
+            bool solid = !rising && feet >= p.bounds.max.y - PlatformLandTolerance;
+            bool ignored = passThrough.Contains(p);
+            if (solid && ignored) { Physics2D.IgnoreCollision(col, p, false); passThrough.Remove(p); }
+            else if (!solid && !ignored) { Physics2D.IgnoreCollision(col, p, true); passThrough.Add(p); }
+        }
+        // 멀어진 발판은 다시 켠다(다음에 위에서 떨어질 때 밟히게)
+        for (int i = passThrough.Count - 1; i >= 0; i--)
+        {
+            var p = passThrough[i];
+            bool near = false;
+            for (int k = 0; k < n; k++) if (nearPlatforms[k] == p) { near = true; break; }
+            if (p == null) { passThrough.RemoveAt(i); continue; }
+            if (!near) { Physics2D.IgnoreCollision(col, p, false); passThrough.RemoveAt(i); }
+        }
     }
 
     void RestoreDroppedPlatforms()
