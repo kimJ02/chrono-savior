@@ -12,7 +12,7 @@ namespace ChronoSavior.Core
     /// </summary>
     public enum ItemKind { Stat, Special }
 
-    /// <summary>스탯 유물 축(예전 원본 35종). 지금 테스트 유물엔 해당 없음 — 집계 코드 호환용.</summary>
+    /// <summary>능력치 유물이 올리는 스탯(2026-11-22 공용 능력치 유물 14종이 쓴다 — ItemInventory.Add/Mul이 집계).</summary>
     public enum ItemStat { None, Atk, Hp, Gold, Exp, Ms, AtkSpeed, Crit, Mob, Rate, CritDmg, Dmg, Cd, Dr }
 
     /// <summary>유물 주인 — 공용이거나 캐릭터 전용(그 캐릭터일 때만 켜진다).</summary>
@@ -116,6 +116,16 @@ namespace ChronoSavior.Core
 
         static float[] V(params float[] a) => a;
 
+        /// <summary>능력치 유물 — 공용, 랭크마다 <paramref name="per"/>씩 합연산(values = 랭크별 누적값, 화면·테스트용).</summary>
+        static ItemDef S(string id, string nm, ItemGrade g, ItemStat stat, float per, string desc)
+        {
+            int cap = Cap(g);
+            var vals = new float[cap];
+            for (int i = 0; i < cap; i++) vals[i] = per * (i + 1);
+            return new ItemDef { id = id, name = nm, owner = RelicOwner.Common, branch = RelicBranch.Any, grade = g, kind = ItemKind.Stat,
+                                 stat = stat, per = per, multiplicative = false, description = desc, values = new[] { vals } };
+        }
+
         static ItemDef R(string id, string nm, RelicOwner owner, RelicBranch branch, ItemGrade g, string desc, string[] tags, params float[][] values) =>
             new ItemDef { id = id, name = nm, owner = owner, branch = branch, grade = g, description = desc, tags = tags ?? System.Array.Empty<string>(), values = values };
 
@@ -202,9 +212,9 @@ namespace ChronoSavior.Core
             R("paperBirds", "종이새 떼", C, RelicBranch.Any, Ra,
               "처치 10/8/6번마다 종이새 떼가 적을 한데 몰고 폭발(공격력 40/55/70%).", Chain,
               V(10, 8, 6), V(0.40f, 0.55f, 0.70f)),                                   // 처치 간격, 피해 배수
-            R("censer", "향로", C, RelicBranch.Any, N,
-              "성소를 부수면 폭발(공격력 70/85/100%)과 불길 장판(반경 3/4/5m, 1/1.5/2초).", Chain,
-              V(0.70f, 0.85f, 1.00f), V(3f, 4f, 5f), V(1f, 1.5f, 2f)),                // 피해 배수, 반경, 지속
+            // 향로(성소 파괴 시 폭발)는 2026-11-22 성소를 끄면서 발동할 수 없게 돼 같은 id로 공격력 유물로 바꿨다(보유 기록 유지, GPT와 정함)
+            S("censer", "멸망 전의 잔불", N, ItemStat.Atk, 1.5f,
+              "공격력 +1.5/3/4.5."),
             R("timelineReboot", "시간선 재기동", C, RelicBranch.Any, E,
               "쓰러지면 사냥당 1번, 시간이 되감기며 체력 60/75% 회복 + 화면 전체 폭발(공격력 150/200%).", Time,
               V(0.60f, 0.75f), V(1.50f, 2.00f)),                                      // 회복 비율, 피해 배수
@@ -235,6 +245,35 @@ namespace ChronoSavior.Core
             R("spawnRate", "황천의 문", C, RelicBranch.Any, Ra,
               "몬스터가 나오는 빈도 +30/60/100%.", null,
               V(0.30f, 0.60f, 1.00f)),                                                // 웨이브 빈도 증가
+
+            // ── 공용: 능력치(2026-11-22 사용자 "공용 유물을 늘려라, 일반 능력치를 올리는 유물도" — GPT와 정함, 공용 30종) ──
+            // 랭크 = 보유 수, 효과 = 랭크 × 1랭크 값(합연산). PlayerStatCalculator가 items.Add로 이미 읽는다 → 전투력에도 들어간다.
+            S("ruinHeartbeat", "폐허의 맥박", N, ItemStat.Hp, 10f,
+              "최대 체력 +10/20/30."),
+            S("stoppedMinute", "멎은 초침", N, ItemStat.Ms, 0.015f,
+              "이동 속도 +1.5/3/4.5%."),
+            S("lastMarchCog", "마지막 행군의 태엽", N, ItemStat.AtkSpeed, 0.015f,
+              "공격 속도 +1.5/3/4.5%."),
+            S("seventhNightGlimmer", "일곱째 밤의 잔광", N, ItemStat.Crit, 0.005f,
+              "치명타 확률 +0.5/1/1.5%p."),
+            S("moonlessEdge", "달 없는 칼날", N, ItemStat.CritDmg, 0.06f,
+              "치명타 피해 배율 +0.06/0.12/0.18."),
+            S("crackedHourglassSeal", "금 간 시계의 봉인", N, ItemStat.Cd, 0.02f,
+              "스킬 쿨타임 -2/4/6%."),
+            S("ashWall", "잿빛 방벽", N, ItemStat.Dr, 0.01f,
+              "받는 피해 -1/2/3%."),
+            S("sevenDayWhetstone", "칠일의 숫돌", Ra, ItemStat.Atk, 3f,
+              "공격력 +3/6/9."),
+            S("lastWardenHeart", "마지막 수호자의 심장", Ra, ItemStat.Hp, 18f,
+              "최대 체력 +18/36/54."),
+            S("extinctionLens", "멸망을 보는 렌즈", Ra, ItemStat.Crit, 0.01f,
+              "치명타 확률 +1/2/3%p."),
+            S("crackedAegis", "갈라진 아이기스", Ra, ItemStat.Dr, 0.015f,
+              "받는 피해 -1.5/3/4.5%."),
+            S("zeroPointGear", "영점의 기어", E, ItemStat.AtkSpeed, 0.03f,
+              "공격 속도 +3/6%."),
+            S("demonCastleClockwork", "마왕성의 시계태엽", L, ItemStat.Cd, 0.05f,
+              "스킬 쿨타임 -5/10%."),
         };
 
         static Dictionary<string, ItemDef> byId;

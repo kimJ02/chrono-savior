@@ -111,7 +111,8 @@ namespace ChronoSavior.UI
             active.Clear();
             if (visible)
                 foreach (var d in ItemDatabase.All)
-                    if (Relics.Rank(p, d.id) > 0) active.Add(d);
+                    // 능력치 유물(상시 스탯)은 발동이 없어 전투 칸엔 안 둔다 — 유물 화면에서 본다(2026-11-22, 마법사 발동형 6 + 공용 발동형 16 = 22칸)
+                    if (d.kind != ItemKind.Stat && Relics.Rank(p, d.id) > 0) active.Add(d);
 
             int overflow = active.Count > Max ? active.Count - (Max - 1) : 0;
             shownCount = Mathf.Min(active.Count, Max);

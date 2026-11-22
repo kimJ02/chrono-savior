@@ -113,19 +113,12 @@ namespace ChronoSavior.Systems
 
             if (Relics.InRelicDamage) return; // 유물이 낸 처치는 아래 유물을 다시 발동시키지 않는다
 
-            bool shrine = enemy.GetComponent<Shrine>() != null;
             bool elite = enemy.GetComponent<EnemyElite>() != null;
             kills++;
 
             CombatModifiers.GrantGlass(); // 유리 서약 — 처치 시 4초 강화
 
-            // 향로 — 성소를 부수면 폭발 + 불길
-            if (shrine && Relics.Rank("censer") > 0)
-            {
-                float r = Relics.V("censer", 1), life = Relics.V("censer", 2);
-                Echo("censer", m => RelicFx.Circle(pos, r, m, RelicFx.Fire, VfxKeys.MageFireExplosion), Relics.V("censer", 0));
-                RelicPullZone.Spawn(pos, r * 0.6f, life, 0f, Relics.V("censer", 0) * 0.5f, RelicFx.Fire, VfxKeys.MageFireTrailBig, null);
-            }
+            // (향로 — 성소 파괴 시 발동 — 는 2026-11-22 성소를 끄면서 능력치 유물 "멸망 전의 잔불"로 바뀌었다)
 
             // 정예 사냥종 — 엘리트 처치 충격파 + 살아남은 적 취약
             if (elite && Relics.Rank("eliteBell") > 0)

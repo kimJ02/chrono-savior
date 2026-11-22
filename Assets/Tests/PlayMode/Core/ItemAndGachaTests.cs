@@ -25,7 +25,7 @@ public class ItemAndGachaTests
     [Test]
     public void RelicDatabase_Has30_FivePerCharacter_AndGradeSplit()
     {
-        Assert.AreEqual(33, ItemDatabase.All.Length);
+        Assert.AreEqual(46, ItemDatabase.All.Length, "전용 16 + 공용 30(2026-11-22 능력치 유물 13종 추가)");
         var ids = new HashSet<string>();
         var perOwner = new Dictionary<RelicOwner, int>();
         var legendPerOwner = new Dictionary<RelicOwner, int>();
@@ -40,16 +40,34 @@ public class ItemAndGachaTests
             perGrade[d.grade] = perGrade.TryGetValue(d.grade, out var g) ? g + 1 : 1;
             if (d.grade == ItemGrade.Legend) legendPerOwner[d.owner] = legendPerOwner.TryGetValue(d.owner, out var l) ? l + 1 : 1;
         }
-        Assert.AreEqual(17, perOwner[RelicOwner.Common]);
+        Assert.AreEqual(30, perOwner[RelicOwner.Common], "공용 30종(사용자 2026-11-22)");
         foreach (var o in new[] { RelicOwner.Mage, RelicOwner.Gunner, RelicOwner.Blade })
         {
             Assert.AreEqual(o == RelicOwner.Mage ? 6 : 5, perOwner[o], $"{o} 전용 유물 수(마법사는 역행의 시계핵까지 6)");
             Assert.AreEqual(1, legendPerOwner[o], $"{o} 전설 수");
         }
-        Assert.AreEqual(13, perGrade[ItemGrade.Common]);
-        Assert.AreEqual(12, perGrade[ItemGrade.Rare]);
-        Assert.AreEqual(5, perGrade[ItemGrade.Epic]);
-        Assert.AreEqual(3, perGrade[ItemGrade.Legend]);
+        Assert.AreEqual(20, perGrade[ItemGrade.Common]);
+        Assert.AreEqual(16, perGrade[ItemGrade.Rare]);
+        Assert.AreEqual(6, perGrade[ItemGrade.Epic]);
+        Assert.AreEqual(4, perGrade[ItemGrade.Legend]);
+    }
+
+    /// <summary>능력치 유물(2026-11-22) — 보유하면 실제 스탯이 랭크 × 1랭크 값만큼 오른다(상한까지).</summary>
+    [Test]
+    public void StatRelics_RaiseRealStats_ByRank()
+    {
+        var p = ProfileService.Current;
+        float atk0 = PlayerStatCalculator.ComputeAtk(p), hp0 = PlayerStatCalculator.ComputeMaxHp(p);
+        p.items.Add("sevenDayWhetstone"); p.items.Add("sevenDayWhetstone"); // 공격력 +3 × 2
+        p.items.Add("ruinHeartbeat");                                       // 체력 +10
+        float mult = CharacterStats.StatMultiplier(p.character);
+        Assert.AreEqual(atk0 + 6f * mult, PlayerStatCalculator.ComputeAtk(p), 1e-3f, "공격력 유물 2랭크");
+        Assert.AreEqual(Mathf.Round((PlayerStatCalculator.BaseMaxHp + 10f) * mult), PlayerStatCalculator.ComputeMaxHp(p), 1e-3f, "체력 유물 1랭크");
+        for (int i = 0; i < 5; i++) p.items.Add("zeroPointGear"); // 에픽 상한 2
+        Assert.AreEqual(2, p.items.Count("zeroPointGear"), "상한을 넘지 않는다");
+        Assert.AreEqual(2, Relics.Rank("zeroPointGear"), "능력치 유물도 랭크로 보인다(전투 화면 칸)");
+        foreach (var d in ItemDatabase.All)
+            if (d.kind == ItemKind.Stat) Assert.AreEqual(RelicOwner.Common, d.owner, $"{d.id}: 능력치 유물은 공용");
     }
 
     /// <summary>랭크 상한 일반·희귀 3, 영웅·전설 2. 뽑기 확률은 Figma 70/27/2/1%.</summary>
