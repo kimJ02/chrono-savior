@@ -23,7 +23,7 @@ namespace ChronoSavior.Characters
         static bool setArmed;
         static float overloadUntil = -1f;
 
-        public static void ResetForRun() { zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; }
+        public static void ResetForRun() { zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched(); }
 
         // ── 킷·설정이 읽는 값 ──
         public static int TurretBonus => Relics.VI("triangleDischarge", 0);

@@ -21,6 +21,13 @@ namespace ChronoSavior.Systems
     {
         public const float AwakenDelay = 0.2f, AwakenPower = 0.35f;
 
+        /// <summary>
+        /// 가로로 길게 긋는 선 공격(칠일의 모래·연쇄 모래시계 바닥 파동, 콤보 종착역·일곱째 날의 왕관 화면 베기, 연쇄 세트 4 칼날 줄)을 끈다 —
+        /// 2026-11-22 사용자 "횡 범위로 파란·주황 이펙트가 터지는데 없애자" + "받은 VFX 파일을 쓰고, 그림은 검사받고 적용". 이 선은 받은 VFX가 아니라
+        /// LineRenderer로 임의로 그린 것이었다. 받은 VFX에서 그림을 골라 사용자 승인을 받으면 다시 켠다(효과째 끔 — 사용자 선택).
+        /// </summary>
+        public const bool LineEffectsOff = true;
+
         static int kills, chainKills, lastComboStep;
         static readonly Dictionary<string, int> killCounters = new Dictionary<string, int>();
         static readonly HashSet<GameObject> postcardDone = new HashSet<GameObject>();
@@ -80,7 +87,7 @@ namespace ChronoSavior.Systems
             {
                 float slow = Relics.V("sevenSands", 1);
                 if (slow > 0f) CombatModifiers.SlowEnemies(slow);
-                Echo("sevenSands", m => GroundSweep(p, 14f, m, new Color(1f, 0.85f, 0.5f, 0.9f)), Relics.V("sevenSands", 0));
+                if (!LineEffectsOff) Echo("sevenSands", m => GroundSweep(p, 14f, m, new Color(1f, 0.85f, 0.5f, 0.9f)), Relics.V("sevenSands", 0));
             }
         }
 
@@ -176,7 +183,7 @@ namespace ChronoSavior.Systems
             int chainTags = Relics.TagCount("연쇄");
             if (chainTags >= 2 && chainKills % 2 == 0)
                 RelicFx.Circle(pos, 1.6f, 0.5f, RelicFx.Gold, VfxKeys.AssassinLandRing);
-            if (chainTags >= 4)
+            if (chainTags >= 4 && !LineEffectsOff)
             {
                 RelicFx.Line(pos + new Vector2(-5f, 0.2f), pos + new Vector2(5f, 0.2f), 0.5f, 0.3f, RelicFx.Gold, 0.25f);
                 RelicFx.Line(pos + new Vector2(-5f, 0.8f), pos + new Vector2(5f, 0.6f), 0.5f, 0.3f, RelicFx.Gold, 0.25f);
@@ -203,12 +210,12 @@ namespace ChronoSavior.Systems
             }
 
             // 연쇄 모래시계 — 연쇄 n번마다 바닥 충격파
-            if (Relics.Rank("chainHourglass") > 0 && chainKills % Mathf.Max(1, Relics.VI("chainHourglass", 0)) == 0)
+            if (!LineEffectsOff && Relics.Rank("chainHourglass") > 0 && chainKills % Mathf.Max(1, Relics.VI("chainHourglass", 0)) == 0)
                 Echo("chainHourglass", m => GroundSweep(PlayerPos, 7f, m, new Color(1f, 0.85f, 0.5f, 0.9f)), Relics.V("chainHourglass", 1));
 
             // 일곱째 날의 왕관 — 회귀 때 모은 봉인을 하나 써서 화면 베기
             var p = ProfileService.Current;
-            if (p.relicSeals > 0 && Relics.Rank("seventhCrown") > 0)
+            if (!LineEffectsOff && p.relicSeals > 0 && Relics.Rank("seventhCrown") > 0)
             {
                 p.relicSeals--;
                 Echo("seventhCrown", m => ScreenSlash(m, RelicFx.Gold), Relics.V("seventhCrown", 1));
@@ -230,7 +237,7 @@ namespace ChronoSavior.Systems
         /// <summary>사냥 중 매 프레임 — 콤보 종착역(콤보가 n의 배수를 넘을 때마다 화면 베기).</summary>
         public static void Tick()
         {
-            if (Relics.Rank("comboTerminal") <= 0) { lastComboStep = 0; return; }
+            if (LineEffectsOff || Relics.Rank("comboTerminal") <= 0) { lastComboStep = 0; return; }
             int every = Mathf.Max(1, Relics.VI("comboTerminal", 0));
             int step = CombatModifiers.Combo / every;
             if (step > lastComboStep)

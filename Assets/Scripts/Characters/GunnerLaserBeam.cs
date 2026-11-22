@@ -262,6 +262,7 @@ namespace ChronoSavior.Characters
                 {
                     if (!OnBeam(e)) continue;
                     relicHits.Add(e.center);
+                    Relics.MarkLaserTouched(e.collider); // 이제 유물 공격이 이 적을 칠 수 있다(2026-11-22)
                     if (!armedTaken) { armedTaken = true; mult *= GunnerRelics.ConsumeArmedMult(); } // 세트 3 — 맞힌 틱에서만
 
                     float dmg = DamageCalculator.Roll(atk * mult, crit, out _);

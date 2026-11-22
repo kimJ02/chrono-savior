@@ -63,6 +63,7 @@ namespace ChronoSavior.Combat
         {
             target = null;
             if (col == null || !col.CompareTag("Enemy")) return false;
+            if (!Relics.RelicCanHit(col)) return false; // 레이저 갈래 — 레이저가 닿은 적만(2026-11-22)
             var protectable = col.GetComponent<ISpawnProtectable>();
             if (protectable != null && protectable.IsSpawnProtected) return false;
             target = col.GetComponent<IDamageable>();

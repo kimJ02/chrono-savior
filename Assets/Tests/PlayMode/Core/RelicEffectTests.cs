@@ -135,6 +135,25 @@ public class RelicEffectTests
         Assert.AreEqual(1, GunnerRelics.ExtraRelays, "X 한 번에 중계기 1개 더");
     }
 
+    /// <summary>메카닉 레이저 갈래(2026-11-22 사용자 "레이저가 닿기 전에 죽는 적은 없게") — 유물 공격은 레이저가 닿은 적만 고른다.</summary>
+    [UnityTest]
+    public IEnumerator LaserBranch_RelicsHitOnlyLaserTouchedEnemies()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Gunner;
+        p.gunnerBranch = GunnerBranch.Laser;
+        var e = NewEnemy(new Vector3(300f, 0.5f, 0f));
+        yield return new WaitForFixedUpdate();
+        var col = e.GetComponent<Collider2D>();
+        Assert.IsFalse(RelicFx.IsTarget(col, out _), "레이저가 안 닿았는데 유물 대상이 됐다");
+        Relics.MarkLaserTouched(col);
+        Assert.IsTrue(RelicFx.IsTarget(col, out _), "레이저가 닿은 뒤엔 대상");
+
+        p.gunnerBranch = GunnerBranch.Installer;
+        Relics.ClearLaserTouched();
+        Assert.IsTrue(RelicFx.IsTarget(col, out _), "설치 갈래엔 이 제한이 없다");
+    }
+
     /// <summary>메카닉은 시그니처 처치만 공용 처치 유물이 센다(2026-11-22) — 마법사·섬영은 모든 처치.</summary>
     [Test]
     public void CommonKillRelics_CountOnlySignatureKills_ForGunnerAndBlade()

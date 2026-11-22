@@ -53,6 +53,34 @@ namespace ChronoSavior.Core
             return true;
         }
 
+        // ── 레이저가 닿은 적(2026-11-22 사용자 "레이저가 닿기 전에 죽는 적은 없었으면 — 내가 죽인지도 모르겠다") ──
+        // 메카닉 레이저 갈래에선 유물 공격(공용·전용 모두)이 **레이저 광선이 한 번이라도 닿은 적만** 고른다. 드론(X)은 그대로(사용자 선택).
+        static readonly System.Collections.Generic.HashSet<Collider2D> laserTouched = new System.Collections.Generic.HashSet<Collider2D>();
+
+        /// <summary>지금 유물 공격이 "레이저에 닿은 적만"을 골라야 하는가(메카닉 레이저 갈래).</summary>
+        public static bool RequireLaserTouch
+        {
+            get
+            {
+                var p = ProfileService.Current;
+                return p != null && p.character == CharacterId.Gunner && p.gunnerBranch == GunnerBranch.Laser;
+            }
+        }
+
+        /// <summary>레이저 광선이 이 적에 닿았다.</summary>
+        public static void MarkLaserTouched(Collider2D c)
+        {
+            if (c == null) return;
+            if (laserTouched.Count > 512) laserTouched.RemoveWhere(x => x == null); // 죽어 사라진 것 정리
+            laserTouched.Add(c);
+        }
+
+        /// <summary>유물 공격이 이 적을 칠 수 있는가 — 레이저 갈래면 레이저가 닿은 적만.</summary>
+        public static bool RelicCanHit(Collider2D c) => !RequireLaserTouch || (c != null && laserTouched.Contains(c));
+
+        /// <summary>새 사냥 — 닿음 기록을 비운다.</summary>
+        public static void ClearLaserTouched() => laserTouched.Clear();
+
         // ── 발동 알림(2026-11-19 전투 화면 유물 칸이 반짝이게) ──
         static readonly System.Collections.Generic.Dictionary<string, float> lastProc = new System.Collections.Generic.Dictionary<string, float>();
 
