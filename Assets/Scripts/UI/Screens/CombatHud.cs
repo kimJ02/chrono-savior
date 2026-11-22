@@ -9,7 +9,8 @@ using ChronoSavior.World;
 namespace ChronoSavior.UI
 {
     /// <summary>
-    /// 전투 HUD — Figma "스테이지 HUD"(124:3, 640×360). 2026-10-24 사용자 결정대로:
+    /// 전투 HUD — Figma "스테이지 HUD"(124:3, 640×360). **2026-11-22 새 디자인(Drive `HUD.zip`)으로 교체**: 초상화 틀이 없어지고
+    /// 왼쪽 위 판 = 체력 막대 + 골드 막대, 가운데 위 판 = 보스 이름·체력, 오른쪽 아래 미니맵 판. 아래는 그 전 결정(2026-10-24)이며 초상화·빈 칸 부분은 더 안 쓴다:
     /// 초상화 틀의 **빨간 칸 = 플레이어 체력**(숫자 포함), 하늘·어두운 칸은 아직 뜻이 정해지지 않아 **비워 둔다**,
     /// 가운데 숫자 = 남은 초, 오른쪽 위 COMBO, 왼쪽 아래 스킬 칸 3개(Z·X·C), 오른쪽 아래 미니맵(실제 맵을 그린다 — <see cref="CombatMinimapView"/>),
     /// **경험치 = 화면 맨 아래 가로 바**(사용자 "A — Figma 디자인 가져와서": 숨겨진 옛 1920판 "경험치 바" 124:5의 색 그대로).
@@ -93,21 +94,14 @@ namespace ChronoSavior.UI
         protected override bool WantsVisible =>
             GameState.Current == GameScene.Run || GameState.Current == GameScene.Pause || GameState.Current == GameScene.Result;
 
-        // ── Figma 좌표 ──
-        static readonly Vector2 FramePos = new Vector2(4f, 7f);       // 385:2 "Frame 5"
-        const float FrameW = 192f, FrameH = 64f;                       // 166:29 "UI합본 1"
-        // 틀 그림 안의 칸(그림 픽셀): 빨간 체력 칸 x 66~188 · y 3~14, 초상화 흰 창 3~60
-        const int HpX0 = 66, HpW = 123;
-        static readonly Rect HpTextBox = new Rect(66f, 3f, 123f, 12f);
+        // ── 좌표 — 2026-11-22 새 HUD: Drive `HUD.zip` 부품 + 사용자 스크린샷(Figma는 zip 뒤에 갱신이 안 돼 못 씀) ──
+        // 스크린샷(약 0.93배)에서 잰 값이라 ±1도트 어긋날 수 있다 — 게임에서 보고 어긋나면 이 좌표만 고친다.
+        static readonly Rect PlayerBg = new Rect(8f, 4f, 168f, 40f);       // 플레이어 판 — 위 체력 막대, 아래 골드 막대(4 + 16 + 16 + 4)
+        static readonly Vector2 PlayerBarPos = new Vector2(4f, 4f);        // 판 안 체력 막대 그림(160×16)
+        static readonly Rect PlayerFill = new Rect(2f, 2f, 156f, 12f);     // 막대 그림의 빈 안쪽(테두리 2도트) — 빨강이 이 칸을 채운다
+        const float HpW = 156f;
+        static readonly Vector2 GoldBarPos = new Vector2(4f, 20f);         // 판 안 골드 막대 그림(80×16) — 체력 막대 바로 아래
         static readonly Color32 HpRed = new Color32(234, 50, 60, 255);
-        static readonly Color32 BarCyan = new Color32(12, 241, 255, 255);
-        static readonly Color32 BarEmpty = new Color32(57, 31, 33, 255);  // 틀 그림의 어두운 칸 색
-        static readonly Rect PortraitWindow = new Rect(3f, 3f, 58f, 58f);
-        // 초상화(339:4): 64px 캐릭터 그림을 Figma는 2.985배로 잘라 넣었다 → 3배로, 창 가운데에서 Figma와 같은 도트가 오는
-        // 정수 자리(Figma 이미지 왼쪽 위 = 틀 기준 -55.1·-10.1 → -56·-10). 창 왼쪽 위 기준.
-        // 그림은 Figma 초상화 그림 그대로(`Hud/portrait`) — 게임 캐릭터 그림(10/14 팀원)은 그 뒤 Figma에서 바뀐 판과 다르다.
-        static readonly Vector2 PortraitOffset = new Vector2(-59f, -13f);
-        const float PortraitScale = 3f;
 
         // 173:2 "10" — Figma는 이 숫자만 옛 글꼴 "DNF Bit Bit OTF" 24px라 v2보다 글자가 작다. v2로 같은 크기로 보이게 20px
         // (글자 테두리 자리를 Figma 그림과 재서 맞춤). 가운데 정렬이라 상자만 넓혔다.
@@ -116,20 +110,21 @@ namespace ChronoSavior.UI
         static readonly Rect KillsBox = new Rect(220f, 47f, 200f, 12f);  // Figma에 없음(임시)
         static readonly Rect ComboLabel = new Rect(533f, 46f, 99f, 35f); // 181:5 "COMBO" 24px
         static readonly Rect ComboNum = new Rect(533f, 81f, 99f, 23f);   // 181:6 "32" 24px(560·45 상자의 가운데 = 582.5 그대로)
-        const float SlotX = 20f, SlotY = 303f, SlotStep = 40f, SlotSize = 32f; // 181:2~181:4
-        static readonly Rect Minimap = new Rect(504f, 280f, 128f, 64f);  // 166:30 "지도 1"
-        // 보스 체력바 — **상단 가운데, 타이머·보스 이름 바로 아래**(2026-11-10 사용자 A안). Figma(281:8)는 화면 한가운데(39,143) 560폭이라
-        // 플레이 영역을 가로질러 가렸다. 그림은 Figma 막대의 왼쪽 절반 + 오른쪽 절반을 이어 붙인 240폭(`Hud/boss_bar_short` — 테두리 무늬가 있어 늘이면 뭉개진다).
-        // 왼쪽 위 상태창(4~196)과 안 겹치게 x 200부터. 이름은 '토벌' 줄 자리(KillsBox)에 — 보스전엔 토벌 수가 없다.
-        static readonly Rect BossBar = new Rect(200f, 60f, 240f, 16f);
-        static readonly Rect BossFill = new Rect(4f, 4f, 232f, 8f);      // 막대 그림의 빈 안쪽(그림 픽셀)
+        const float SlotX = 29f, SlotY = 303f, SlotStep = 40f, SlotSize = 32f; // 181:2~181:4
+        static readonly Rect Minimap = new Rect(526f, 294f, 100f, 50f);  // 새 HUD 미니맵 판(100×50) — 오른쪽 아래, 스크린샷에서 잰 자리
+        // 보스 판 — 상단 가운데, 타이머 바로 아래(2026-11-22 새 HUD, 스크린샷). 위 줄 = 해골 · 보스 이름 · 해골, 아래 줄 = 체력 막대.
+        // 막대 그림은 안쪽이 비어 있어(테두리 3도트) 빨강·잔상을 그 뒤에 깔고 그림을 얹는다. 처음 나타나면 차오르고 맞으면 잔상이 따라온다(아래 상수).
+        static readonly Rect BossBar = new Rect(116f, 70f, 408f, 40f);
+        static readonly Rect BossBarFrame = new Rect(4f, 20f, 400f, 16f);
+        static readonly Rect BossFill = new Rect(7f, 23f, 394f, 10f);
+        const float BossSkullSize = 16f, BossSkullGap = 4f;
         /// <summary>처음 나타날 때 0에서 차오르는 시간(Codex 상의 — 등장 연출 최소안).</summary>
         public const float BossIntroTime = 0.25f;
         /// <summary>맞은 만큼 연노랑 잔상이 남았다가 줄어드는 시간.</summary>
         public const float BossTrailTime = 0.35f;
         static readonly Color32 BossTrailColor = new Color32(255, 236, 190, 255);
         static readonly Rect PortalBox = new Rect(120f, 286f, 400f, 12f); // Figma에 없음(임시)
-        static readonly Rect BuffBox = new Rect(6f, 73f, 480f, 12f);     // Figma에 없음(임시) — 원본 `#buffs`처럼 상태창 바로 아래
+        static readonly Rect BuffBox = new Rect(8f, 47f, 480f, 12f);     // Figma에 없음(임시) — 원본 `#buffs`처럼 상태창 바로 아래(새 HUD 판 밑 y 44)
         static readonly Color BuffColor = new Color32(0x8e, 0xf0, 0xc8, 0xff); // 원본 `#buffs { color:#8ef0c8 }`(:38)
         static readonly Rect ExpBar = new Rect(0f, 356f, 640f, 4f);      // 124:5 1920×10 → 640판 4px(테두리 1 + 채움 2)
 
@@ -154,8 +149,9 @@ namespace ChronoSavior.UI
         public PreviewState? Preview;
 
         // ── 테스트가 읽는 값 ──
-        public float HpFillAmount => hpFill != null ? hpFill.fillAmount : 0f;
+        public float HpFillAmount => hpFill != null ? ((RectTransform)hpFill.transform).sizeDelta.x / HpW : 0f;
         public string HpLabel => hpText != null ? hpText.text : "";
+        public string GoldLabel => goldText != null ? goldText.text : "";
         public string TimerLabel => timer != null ? timer.text : "";
         public string BuffsLabel => buffs != null ? buffs.text : "";
         public float ExpFillWidth => expFill != null ? ((RectTransform)expFill.transform).sizeDelta.x : 0f;
@@ -164,13 +160,13 @@ namespace ChronoSavior.UI
         public float BossFillWidth => bossFill != null ? ((RectTransform)bossFill.transform).sizeDelta.x : 0f;
         public float BossTrailWidth => bossTrail != null ? ((RectTransform)bossTrail.transform).sizeDelta.x : 0f;
         public RectTransform BossBarRect => bossRoot;
-        public string BossNameLabel => kills != null && RunState.Mode != RunMode.Normal ? kills.text : "";
+        public string BossNameLabel => bossName != null && RunState.Mode != RunMode.Normal ? bossName.text : "";
         public int MinimapLineCount => minimap != null ? minimap.PlatformLineCount : 0;
 
         public struct PreviewState
         {
             public float Hp, MaxHp, ExpRatio, TimeLeft;
-            public int Combo, Kills;
+            public int Combo, Kills, Gold;
             public SkillSlotState Attack, Skill;
             public Vector2 Player;
             public Vector2[] Enemies;
@@ -181,10 +177,11 @@ namespace ChronoSavior.UI
         }
 
         Image hpFill, flash;
-        Text hpText, timer, kills, comboLabel, comboNum, portal, buffs;
+        Text hpText, goldText, timer, kills, comboLabel, comboNum, portal, buffs;
         PxTextGradient timerGradient;
-        Image portrait;
         RectTransform bossRoot;
+        Text bossName;
+        Image bossSkullLeft, bossSkullRight;
         Image bossFill, bossTrail;
         float bossShown, bossTrailRatio, bossIntroT, bossTrailSpeed;
         bool bossWasShown;
@@ -213,6 +210,7 @@ namespace ChronoSavior.UI
             BuildStatusFrame();
             BuildTexts();
             for (int i = 0; i < 3; i++) slots[i] = BuildSlot(i);
+            Px.Image(Content, "MinimapBg", PxArt.Get("Hud/minimap_bg"), Minimap.x, Minimap.y, Minimap.width, Minimap.height);
             minimap = new CombatMinimapView(Content, Minimap);
             BuildBossBar();
             BuildExpBar();
@@ -220,26 +218,15 @@ namespace ChronoSavior.UI
 
         void BuildStatusFrame()
         {
-            var src = PxArt.Get("Hud/status_frame");
-            // 바탕: 빨강·하늘 칸을 어두운 칸 색으로 비운 틀(하늘·어두운 칸은 아직 뜻이 없어 빈칸 — 사용자 10/23)
-            var empty = PxArt.Derive(src, "empty", c => PxArt.Same(c, HpRed) || PxArt.Same(c, BarCyan) ? BarEmpty : c);
-            var frame = Px.Image(Content, "StatusFrame", empty, FramePos.x, FramePos.y, FrameW, FrameH);
+            // 판 → 빨강(막대 뒤) → 막대 그림 → 체력 숫자 → 골드 막대 → 골드 글자. 빨강은 안쪽 칸을 도트 단위로 채운다.
+            var bg = Px.Image(Content, "PlayerBg", PxArt.Get("Hud/player_hp_bg"), PlayerBg.x, PlayerBg.y, PlayerBg.width, PlayerBg.height);
+            hpFill = Px.Fill(bg.transform, "HpFill", (Color)HpRed, PlayerBarPos.x + PlayerFill.x, PlayerBarPos.y + PlayerFill.y, HpW, PlayerFill.height);
+            Px.Image(bg.transform, "HpFrame", PxArt.Get("Hud/player_hp_bar"), PlayerBarPos.x, PlayerBarPos.y, 160f, 16f);
+            hpText = Px.Text(bg.transform, "HpText", "", PlayerBarPos.x, PlayerBarPos.y, 160f, 16f, 8, Color.white).WithOutline(Px.Ink);
 
-            // 체력: 틀 그림에서 빨간 칸만 남긴 그림을 왼쪽부터 채운다(모서리 깎인 모양 그대로)
-            var red = PxArt.Derive(src, "hp", c => PxArt.Same(c, HpRed) ? c : new Color32(0, 0, 0, 0));
-            hpFill = Px.Image(frame.transform, "HpFill", red, 0f, 0f, FrameW, FrameH);
-            hpFill.type = Image.Type.Filled;
-            hpFill.fillMethod = Image.FillMethod.Horizontal;
-            hpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
-
-            var window = Px.Node(frame.transform, "Portrait", PortraitWindow.x, PortraitWindow.y,
-                                 PortraitWindow.width, PortraitWindow.height);
-            window.gameObject.AddComponent<RectMask2D>();
-            portrait = Px.Image(window, "Face", PxArt.Get("Hud/portrait"), PortraitOffset.x, PortraitOffset.y,
-                                64f * PortraitScale, 64f * PortraitScale);
-
-            hpText = Px.Text(frame.transform, "HpText", "", HpTextBox.x, HpTextBox.y, HpTextBox.width, HpTextBox.height,
-                             8, Color.white).WithOutline(Px.Ink);
+            Px.Image(bg.transform, "GoldFrame", PxArt.Get("Hud/gold_bar"), GoldBarPos.x, GoldBarPos.y, 80f, 16f);
+            Px.Text(bg.transform, "GoldLabel", "G", GoldBarPos.x + 4f, GoldBarPos.y, 12f, 16f, 8, Color.white, TextAnchor.MiddleLeft).WithOutline(Px.Ink);
+            goldText = Px.Text(bg.transform, "GoldText", "", GoldBarPos.x + 14f, GoldBarPos.y, 62f, 16f, 8, Color.white, TextAnchor.MiddleRight).WithOutline(Px.Ink);
         }
 
         void BuildTexts()
@@ -295,9 +282,13 @@ namespace ChronoSavior.UI
         void BuildBossBar()
         {
             bossRoot = Px.Node(Content, "BossBar", BossBar.x, BossBar.y, BossBar.width, BossBar.height);
+            Px.Image(bossRoot, "Bg", PxArt.Get("Hud/boss_hp_bg"), 0f, 0f, BossBar.width, BossBar.height);
             bossTrail = Px.Fill(bossRoot, "Trail", (Color)BossTrailColor, BossFill.x, BossFill.y, BossFill.width, BossFill.height);
             bossFill = Px.Fill(bossRoot, "Fill", (Color)HpRed, BossFill.x, BossFill.y, BossFill.width, BossFill.height);
-            Px.Image(bossRoot, "Frame", PxArt.Get("Hud/boss_bar_short"), 0f, 0f, BossBar.width, BossBar.height);
+            Px.Image(bossRoot, "Frame", PxArt.Get("Hud/boss_hp_bar"), BossBarFrame.x, BossBarFrame.y, BossBarFrame.width, BossBarFrame.height);
+            bossName = Px.Text(bossRoot, "Name", "", 0f, 4f, BossBar.width, 16f, 8, Color.white).WithOutline(Px.Ink);
+            bossSkullLeft = Px.Image(bossRoot, "SkullLeft", PxArt.Get("Hud/boss_skull"), 0f, 4f, BossSkullSize, BossSkullSize);
+            bossSkullRight = Px.Image(bossRoot, "SkullRight", PxArt.Get("Hud/boss_skull"), 0f, 4f, BossSkullSize, BossSkullSize);
         }
 
         /// <summary>
@@ -309,6 +300,7 @@ namespace ChronoSavior.UI
             bool show = ratio.HasValue;
             bossRoot.gameObject.SetActive(show);
             if (!show) { bossWasShown = false; return; }
+            PlaceBossSkulls();
             float target = Mathf.Clamp01(ratio.Value);
             float dt = Time.deltaTime;
             if (!bossWasShown) { bossWasShown = true; bossIntroT = 0f; bossShown = 0f; bossTrailRatio = 0f; }
@@ -335,6 +327,14 @@ namespace ChronoSavior.UI
             ((RectTransform)bossTrail.transform).sizeDelta = new Vector2(Mathf.Round(bossTrailRatio * BossFill.width), BossFill.height);
         }
 
+        /// <summary>해골 둘을 이름 글자 양옆에 붙인다 — 이름 길이에 따라 자리가 달라진다.</summary>
+        void PlaceBossSkulls()
+        {
+            float half = Mathf.Ceil(bossName.preferredWidth) / 2f, mid = BossBar.width / 2f;
+            ((RectTransform)bossSkullLeft.transform).anchoredPosition = new Vector2(Mathf.Round(mid - half - BossSkullGap - BossSkullSize), -4f);
+            ((RectTransform)bossSkullRight.transform).anchoredPosition = new Vector2(Mathf.Round(mid + half + BossSkullGap), -4f);
+        }
+
         void BuildExpBar()
         {
             Px.Fill(Content, "ExpBorder", ExpBorder, ExpBar.x, ExpBar.y, ExpBar.width, ExpBar.height);
@@ -351,8 +351,9 @@ namespace ChronoSavior.UI
 
             // 체력 — 칸 폭을 도트 단위로 채운다(반 도트가 안 생기게)
             float ratio = v.MaxHp > 0f ? Mathf.Clamp01(v.Hp / v.MaxHp) : 0f;
-            hpFill.fillAmount = (HpX0 + Mathf.Round(ratio * HpW)) / FrameW;
+            ((RectTransform)hpFill.transform).sizeDelta = new Vector2(Mathf.Round(ratio * HpW), PlayerFill.height);
             hpText.text = $"{Mathf.Ceil(v.Hp)}/{Mathf.Ceil(v.MaxHp)}";
+            goldText.text = v.Gold.ToString("N0");
 
             int t = Mathf.CeilToInt(v.TimeLeft);
             timer.text = t.ToString();
@@ -364,7 +365,8 @@ namespace ChronoSavior.UI
                 timer.SetVerticesDirty();
             }
 
-            kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : RegionConfig.BossNameOf(RunState.Region);
+            kills.text = RunState.Mode == RunMode.Normal ? $"토벌 {v.Kills}/{RunState.RegionKillTarget}" : ""; // 보스전엔 토벌 수가 없다 — 이름은 보스 판 위 줄
+            bossName.text = RegionConfig.BossNameOf(RunState.Region);
             buffs.text = v.Buffs ?? "";
 
             bool combo = v.Combo > 0; // 원본: 0이면 숨김(:1633)
@@ -432,6 +434,7 @@ namespace ChronoSavior.UI
                 TimeLeft = RunState.TimeLeft,
                 Combo = CombatModifiers.Combo,
                 Kills = profile.RegionKills(RunState.Region),
+                Gold = profile.gold,
                 Attack = src != null ? src.AttackSlot : default,
                 Skill = src != null ? src.SkillSlot : default,
                 Player = view != null ? view.PlayerPosition : Vector2.zero,

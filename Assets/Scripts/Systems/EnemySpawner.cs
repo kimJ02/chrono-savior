@@ -49,6 +49,8 @@ public class EnemySpawner : MonoBehaviour
     public int minionWave = 2;
     [Tooltip("보스전에서 동시에 살아 있을 수 있는 잡몹 수. 원본 maxMinions 4.")]
     public int maxMinions = 4;
+    [Tooltip("보스전에서 잡몹을 낳을지. **꺼 둔다(기본)** — 원본은 보스전에도 7초마다 2마리씩(상한 4) 나오지만, 사용자 지시(2026-11-22)로 보스전엔 보스만 둔다.")]
+    public bool spawnMinionsInBoss = false;
 
     [Header("배치 간격")]
     [Tooltip("같은 웨이브 안에서 몹 사이 최소 간격(월드 유닛). 원본 spawnWave()의 52px(X축 전용) ÷100.")]
@@ -239,7 +241,9 @@ public class EnemySpawner : MonoBehaviour
                 waveTimer = minionInterval;
                 // 원본 `if (enemies.filter(e => !e.boss).length < maxMinions) spawnWave(minionWave)`(:4445).
                 // 상한을 웨이브 크기로 넘기는 게 아니라 **문지기**다 — 4마리 미만이면 2마리를 통째로 부른다.
-                if (aliveMonsters.Count < maxMinions) SpawnWaveOf(minionWave, cap);
+                // > **의도적 편차 —** 원본은 보스전에도 잡몹이 나오지만 사용자 지시(2026-11-22 "보스전에 잡몹이 스폰되는데 안 되게")로
+                // 기본은 안 낳는다. 원본대로 돌리려면 `spawnMinionsInBoss`를 켠다(아래 타이머·상한 로직은 그대로 남겨 뒀다).
+                if (spawnMinionsInBoss && aliveMonsters.Count < maxMinions) SpawnWaveOf(minionWave, cap);
             }
             else
             {

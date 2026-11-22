@@ -14,8 +14,9 @@ namespace ChronoSavior.UI
     /// </summary>
     public sealed class CombatMinimapView
     {
-        // 맵 가로(26유닛)를 128px에, 높이는 땅이 58·발판 1층마다 약 11px(Figma 그림의 층 간격 16px에 가깝게 4층이 들어가도록)
-        const float GroundY = 58f, PxPerUnitY = 8f;
+        // 맵 가로(26유닛)를 칸 폭에, 높이는 땅이 칸 높이의 58/64·발판 1층마다 칸 높이의 1/8(128×64 칸에서 땅 58·층 8px — 4층이 들어가도록).
+        // 2026-11-22 새 HUD 미니맵 판이 100×50이라 칸 크기에 비례하게 바꿨다(128×64에선 예전과 같은 값).
+        const float GroundRatio = 58f / 64f, UnitsTall = 8f;
         const float EnemyScanInterval = 0.15f; // 몹 위치는 0.15초마다(매 프레임 읽을 필요 없다)
         static readonly Color LineColor = Px.Ink;
         static readonly Color EnemyColor = Px.Hex(0xea323c);
@@ -23,7 +24,7 @@ namespace ChronoSavior.UI
         static readonly Color PortalColor = Px.Hex(0x0cf1ff);
 
         readonly RectTransform root;
-        readonly float width, height;
+        readonly float width, height, groundY, pxPerUnitY;
         readonly List<Image> platformLines = new List<Image>();
         readonly List<Image> enemyDots = new List<Image>();
         readonly Image playerDot, portalDot;
@@ -38,6 +39,8 @@ namespace ChronoSavior.UI
         {
             width = box.width;
             height = box.height;
+            groundY = Mathf.Round(box.height * GroundRatio);
+            pxPerUnitY = box.height / UnitsTall;
             root = Px.Node(parent, "Minimap", box.x, box.y, box.width, box.height);
             portalDot = Px.Fill(root, "Portal", PortalColor, 0f, 0f, 2f, 3f);
             playerDot = Px.Fill(root, "Player", PlayerColor, 0f, 0f, 2f, 2f);
@@ -53,7 +56,7 @@ namespace ChronoSavior.UI
             Place(playerDot, p.x - 1f, p.y - 2f);
 
             portalDot.enabled = portal.HasValue;
-            if (portal.HasValue) Place(portalDot, MapPoint(portal.Value).x - 1f, GroundY - 3f);
+            if (portal.HasValue) Place(portalDot, MapPoint(portal.Value).x - 1f, groundY - 3f);
 
             if (enemies == null)
             {
@@ -88,7 +91,7 @@ namespace ChronoSavior.UI
         {
             float span = Mathf.Max(0.01f, FieldBounds.MaxX - FieldBounds.MinX);
             float x = (world.x - FieldBounds.MinX) / span * width;
-            float y = GroundY - (world.y - FieldBounds.GroundY) * PxPerUnitY;
+            float y = groundY - (world.y - FieldBounds.GroundY) * pxPerUnitY;
             return new Vector2(Mathf.Round(Mathf.Clamp(x, 0f, width - 1f)), Mathf.Round(Mathf.Clamp(y, 1f, height - 1f)));
         }
 
@@ -99,7 +102,7 @@ namespace ChronoSavior.UI
                 if (l != null) { if (Application.isPlaying) Object.Destroy(l.gameObject); else Object.DestroyImmediate(l.gameObject); }
             platformLines.Clear();
             // 땅 — 맨 아래 한 줄
-            platformLines.Add(Px.Fill(root, "Ground", LineColor, 0f, GroundY, width, 1f));
+            platformLines.Add(Px.Fill(root, "Ground", LineColor, 0f, groundY, width, 1f));
             var table = FieldLayout.Platforms;
             for (int i = 0; i < table.GetLength(0); i++)
             {

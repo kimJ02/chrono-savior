@@ -191,7 +191,7 @@ public class BlobLordBossTests
         Assert.AreEqual(top, impact.Value.y, 1e-3f);
         Assert.AreEqual(1, target.hits);
         yield return new WaitForFixedUpdate();
-        Assert.AreEqual(top + BlobLordBoss.HalfHeight, boss.transform.position.y, 0.05f, "발판 위에 선다");
+        Assert.AreEqual(top + BlobLordBoss.BodyCenterHeight, boss.transform.position.y, 0.05f, "발판 위에 선다(그림 바닥 투명 여백 6도트를 뺀 높이 — 안 빼면 공중에 떠 보인다, 2026-11-22)");
     }
 
     /// <summary>맵 끝에서도 경고·착지가 맵 밖으로 안 나간다(명세 3-4 Clamp). 죽은 플레이어는 더 안 따라간다.</summary>

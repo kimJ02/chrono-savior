@@ -138,13 +138,14 @@ public class PixelUiTests
     }
 
     [UnityTest]
-    public IEnumerator CombatHud_RedCellIsHp_ExpAtBottom_FollowsGameScene()
+    public IEnumerator CombatHud_RedBarIsHp_GoldBarShown_ExpAtBottom_FollowsGameScene()
     {
         var hud = pc.GetComponent<CombatHud>();
-        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, ExpRatio = 0.5f, TimeLeft = 47.2f, Combo = 0 };
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, ExpRatio = 0.5f, TimeLeft = 47.2f, Combo = 0, Gold = 12345 };
         yield return null;
         Assert.IsTrue(hud.IsShown, "사냥 중엔 HUD");
-        Assert.AreEqual((66f + 62f) / 192f, hud.HpFillAmount, 1e-4f, "빨간 칸(틀 그림 x 66~188)을 체력 비율만큼, 도트 단위로");
+        Assert.AreEqual(0.5f, hud.HpFillAmount, 1e-4f, "체력 막대 안쪽 칸(156도트)을 체력 비율만큼, 도트 단위로");
+        Assert.AreEqual("12,345", hud.GoldLabel, "골드 막대(2026-11-22 새 HUD) — 천 단위 쉼표");
         Assert.AreEqual("50/100", hud.HpLabel);
         Assert.AreEqual("48", hud.TimerLabel, "남은 초는 올림(원본 `Math.ceil`)");
         Assert.AreEqual(319f, hud.ExpFillWidth, 1e-4f, "경험치 = 맨 아래 바(안쪽 638도트)의 비율만큼");
@@ -154,7 +155,7 @@ public class PixelUiTests
 
         hud.Preview = new CombatHud.PreviewState { Hp = 0f, MaxHp = 100f, Combo = 12, BossRatio = 0.3f, Buffs = "살기 x3  차지 50%" };
         yield return null;
-        Assert.AreEqual(66f / 192f, hud.HpFillAmount, 1e-4f, "체력 0이면 빨간 칸이 하나도 안 남는다");
+        Assert.AreEqual(0f, hud.HpFillAmount, 1e-4f, "체력 0이면 빨간 칸이 하나도 안 남는다");
         Assert.AreEqual("살기 x3  차지 50%", hud.BuffsLabel, "버프 줄(원본 #buffs)이 상태창 아래에 뜬다");
         Assert.IsTrue(hud.ComboShown);
         Assert.IsTrue(hud.BossBarShown);
@@ -179,20 +180,20 @@ public class PixelUiTests
         Assert.AreEqual("덩어리 지배자", hud.BossNameLabel, "1지역 보스 이름이 바 위에");
         var r = hud.BossBarRect;
         Assert.AreEqual(320f, r.anchoredPosition.x + r.sizeDelta.x / 2f, 0.6f, "가로 가운데");
-        Assert.Less(-r.anchoredPosition.y + r.sizeDelta.y, 90f, "화면 위쪽(640×360 기준 y 90 위)");
-        Assert.GreaterOrEqual(r.anchoredPosition.x, 196f, "왼쪽 위 상태창(4~196)과 안 겹친다");
-        Assert.Less(hud.BossFillWidth, 232f, "첫 프레임은 아직 차오르는 중");
+        Assert.Less(-r.anchoredPosition.y + r.sizeDelta.y, 120f, "화면 위쪽(640×360 기준 y 120 위)");
+        Assert.GreaterOrEqual(-r.anchoredPosition.y, 44f, "왼쪽 위 플레이어 판(y 4~44) 아래라 안 겹친다");
+        Assert.Less(hud.BossFillWidth, 394f, "첫 프레임은 아직 차오르는 중");
 
         yield return new WaitForSeconds(CombatHud.BossIntroTime + 0.1f);
-        Assert.AreEqual(232f, hud.BossFillWidth, 0.6f, "다 찼다");
+        Assert.AreEqual(394f, hud.BossFillWidth, 0.6f, "다 찼다");
 
         hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, BossRatio = 0.5f };
         yield return null;
         yield return null;
-        Assert.AreEqual(116f, hud.BossFillWidth, 0.6f, "빨강은 바로 깎인다");
-        Assert.Greater(hud.BossTrailWidth, 150f, "잔상은 아직 남아 있다");
+        Assert.AreEqual(197f, hud.BossFillWidth, 0.6f, "빨강은 바로 깎인다");
+        Assert.Greater(hud.BossTrailWidth, 255f, "잔상은 아직 남아 있다");
         yield return new WaitForSeconds(CombatHud.BossTrailTime + 0.1f);
-        Assert.AreEqual(116f, hud.BossTrailWidth, 0.6f, "잔상이 따라왔다");
+        Assert.AreEqual(197f, hud.BossTrailWidth, 0.6f, "잔상이 따라왔다");
         RunState.Reset();
     }
 
@@ -285,8 +286,9 @@ public class PixelUiTests
 #endif
         foreach (var path in new[] { "Pause/band", "Common/title_plate", "Common/icon_frame", "Common/window_frame",
                                      "Common/button", "Common/button_small", "Icons/play", "Icons/gear", "Icons/exit",
-                                     "Icons/close", "Hud/status_frame", "Hud/slot_frame", "Hud/icon_attack",
-                                     "Hud/icon_skill", "Hud/icon_jump", "Hud/boss_bar", "Hud/portrait", "Common/cursor" })
+                                     "Icons/close", "Hud/player_hp_bg", "Hud/player_hp_bar", "Hud/gold_bar", "Hud/boss_hp_bg", "Hud/boss_hp_bar",
+                                     "Hud/boss_skull", "Hud/minimap_bg", "Hud/slot_frame", "Hud/icon_attack",
+                                     "Hud/icon_skill", "Hud/icon_jump", "Common/cursor" })
         {
             var s = PxArt.Get(path);
             Assert.IsNotNull(s, path);

@@ -110,6 +110,168 @@ public class UiFigmaUpdateTests
         relic.HideForCapture();
     }
 
+    /// <summary>
+    /// 2026-11-22 드라이브 새 스킬 아이콘 — 살수(집중·칼날폭풍)·엔지니어(레이저·설치기). 30×30 점 필터, 각성창 칸에 1:1.
+    /// 칼날폭풍 3층(벽 타기)만 그림이 없어 층 번호가 보인다 — 그림이 오면 이 예외를 지울 것.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator SkillIcons_BladeAndGunner_DrawnOneToOne()
+    {
+        var names = new System.Collections.Generic.List<string>();
+        for (int t = 1; t <= 5; t++)
+        {
+            names.Add($"blade_focus_{t}");
+            if (t != 3) names.Add($"blade_storm_{t}");
+            names.Add($"gunner_laser_{t}");
+            names.Add($"gunner_installer_{t}");
+        }
+        foreach (var n in names)
+        {
+            var s = PxArt.Get("Skills/" + n);
+            Assert.IsNotNull(s, n);
+            Assert.AreEqual(new Vector2(30f, 30f), s.rect.size, n + ": 원본 30×30");
+            Assert.AreEqual(FilterMode.Point, s.texture.filterMode, n + ": 점 필터");
+            Assert.AreEqual(1, s.texture.mipmapCount, n + ": 밉맵 없음");
+        }
+
+        var awaken = pc.GetComponent<AwakenScreen>();
+        foreach (var (id, prefix, expected) in new[] { (CharacterId.Blade, "blade_", 9), (CharacterId.Gunner, "gunner_", 10) })
+        {
+            ProfileService.Current.character = id;
+            awaken.ShowForCapture();
+            yield return null;
+            int shown = 0;
+            foreach (var img in awaken.Root.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+                if (img.name == "Icon" && img.enabled && img.sprite != null && img.sprite.name.StartsWith(prefix))
+                {
+                    Assert.AreEqual(new Vector2(30f, 30f), img.rectTransform.sizeDelta, img.sprite.name + " — 30×30 칸(1:1)");
+                    shown++;
+                }
+            Assert.AreEqual(expected, shown, id + " 각성창에 보이는 아이콘 수");
+            awaken.HideForCapture();
+        }
+    }
+
+    /// <summary>
+    /// 2026-11-22 각성창 [스탯] 탭 — 위 패널 스탯 바 5줄, 아래 창 강화 목록·상세. 구매 단위(×1/×10/최대)는 원본 `previewGoldUpgrade`·`buyGoldUpgrade` 그대로:
+    /// 1·10은 골드가 모자라도 그 수만큼 셈하고(못 누르게만 한다), 최대는 가진 골드로 살 수 있는 만큼, 산 뒤 값은 지금 값과 같은 식을 거친다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator StatTab_BarsAndUpgradeDetail_FollowOriginalBuyRules()
+    {
+        var prof = ProfileService.Current;
+        prof.character = CharacterId.Mage;
+        prof.level = 12;
+        prof.gold = 0;
+        var awaken = pc.GetComponent<AwakenScreen>();
+        awaken.ShowForCapture();
+        awaken.ShowTabForTest(true);
+        yield return null;
+
+        Assert.AreEqual("LV.12", awaken.StatValueText(0));
+        Assert.AreEqual("100", awaken.StatValueText(1), "최대체력(체력 강화 0)");
+        Assert.AreEqual("10", awaken.StatValueText(2), "공격력(강화 0)");
+        Assert.AreEqual("100%", awaken.StatValueText(3), "이동속도");
+
+        // ×10: 골드 0이어도 "LV.0 → LV.10"을 보이되 못 누른다
+        awaken.PickUpgradeForTest(0, 1);
+        Assert.AreEqual("최대 체력", awaken.DetailNameText);
+        Assert.AreEqual("LV.0", awaken.BeforeLevelText);
+        Assert.AreEqual("LV.10", awaken.AfterLevelText);
+        Assert.IsFalse(awaken.BuyEnabled, "골드가 모자라면 못 누른다");
+
+        // 최대: 골드 0이면 0단계 — 상세는 그대로 LV.0, 못 누른다
+        awaken.PickUpgradeForTest(0, 2);
+        Assert.AreEqual("LV.0", awaken.AfterLevelText);
+        Assert.IsFalse(awaken.BuyEnabled);
+
+        // 골드 50 — 20 + 22 = 42 ≤ 50, 다음 25는 모자라 2단계(원본 previewGoldUpgrade)
+        prof.gold = 50;
+        var pv = GoldUpgradeConfig.Preview(UpgradeStat.Hp, 0, prof.gold, GoldUpgradeConfig.BuyMax);
+        Assert.AreEqual(2, pv.count);
+        Assert.AreEqual(GoldUpgradeConfig.Cost(UpgradeStat.Hp, 0) + GoldUpgradeConfig.Cost(UpgradeStat.Hp, 1), pv.cost);
+        awaken.PickUpgradeForTest(0, 2);
+        Assert.AreEqual("LV.2", awaken.AfterLevelText);
+        Assert.IsTrue(awaken.BuyEnabled);
+
+        // 산 뒤 값은 실제로 산 뒤의 스탯과 같다(미리보기와 어긋나면 안 된다)
+        float predicted = PlayerStatCalculator.StatAtUpgradeLevel(prof, UpgradeStat.Hp, 2);
+        awaken.BuyForTest();
+        Assert.AreEqual(2, prof.GetUpgradeLevel(UpgradeStat.Hp));
+        Assert.AreEqual(50 - pv.cost, prof.gold);
+        Assert.AreEqual(predicted, PlayerStatCalculator.ComputeMaxHp(prof));
+        Assert.AreEqual("150", awaken.StatValueText(1), "체력 2단계 = 100 + 2×25");
+
+        // ×10: 충분한 골드면 정확히 10단계, 합계만큼만 깎인다
+        prof.gold = 5000;
+        long expect = 0;
+        for (int i = 0; i < 10; i++) expect += GoldUpgradeConfig.Cost(UpgradeStat.Atk, 0 + i);
+        awaken.PickUpgradeForTest(1, 1);
+        awaken.BuyForTest();
+        Assert.AreEqual(10, prof.GetUpgradeLevel(UpgradeStat.Atk));
+        Assert.AreEqual(5000 - expect, prof.gold);
+
+        awaken.HideForCapture();
+    }
+
+    /// <summary>강화 목록은 세 줄만 온전히 보이고, 고른 줄이 안 보이면 목록이 밀린다(스크롤 표시 따라감).</summary>
+    [UnityTest]
+    public IEnumerator StatTab_ListScrollsToKeepSelectionVisible()
+    {
+        var awaken = pc.GetComponent<AwakenScreen>();
+        awaken.ShowForCapture();
+        awaken.ShowTabForTest(true);
+        yield return null;
+        var rows = new System.Collections.Generic.List<RectTransform>();
+        foreach (var b in awaken.Root.GetComponentsInChildren<PxButton>(true))
+            if (b.name.StartsWith("Row")) rows.Add((RectTransform)b.transform);
+        Assert.AreEqual(5, rows.Count);
+        Assert.AreEqual(0f, rows[0].anchoredPosition.y, "처음엔 맨 위 줄이 목록 맨 위");
+        awaken.PickUpgradeForTest(4, 0); // 마지막 강화(치명타)를 고르면
+        Assert.AreEqual(-56f, rows[4].anchoredPosition.y, "목록이 밀려 마지막 줄이 세 번째 자리(2×28)에 온다");
+
+        // 마우스 휠로 위아래를 오간다 — 아래로 밀려도 되돌아올 수 있어야 한다(사용자 2026-11-22). 고른 줄은 그대로.
+        awaken.ScrollListForTest(true);
+        awaken.ScrollListForTest(true);
+        awaken.ScrollListForTest(true);
+        Assert.AreEqual(0, awaken.ListTop, "휠을 위로 굴리면 맨 위까지 돌아온다(더 안 내려간다)");
+        awaken.ScrollListForTest(false);
+        awaken.ScrollListForTest(false);
+        awaken.ScrollListForTest(false);
+        Assert.AreEqual(2, awaken.ListTop, "아래로 굴려도 끝(5줄 − 3줄)에서 멈춘다");
+        awaken.PickUpgradeForTest(0, 0); // 맨 위 줄을 고르면(키보드·클릭) 다시 보이게 올라간다
+        Assert.AreEqual(0, awaken.ListTop);
+        awaken.HideForCapture();
+    }
+
+    /// <summary>
+    /// 2026-11-22 유물 소환창 — 6줄×5열 = 30칸 한 쪽(35종이라 두 쪽), 오른쪽 보유 시간의 파편·보유 유물 수, 확률 판(원본 값 55/30/12/3), [1]·[10].
+    /// 아직 없는 유물은 어두운 칸 + 자물쇠.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock()
+    {
+        var prof = ProfileService.Current;
+        prof.shards = 1234;
+        var relic = pc.GetComponent<RelicScreen>();
+        relic.ShowForCapture();
+        yield return null;
+
+        Assert.AreEqual(30, relic.VisibleSlotCount, "첫 쪽은 30칸");
+        Assert.AreEqual($"보유 유물 수: 0/{ChronoSavior.Core.ItemDatabase.All.Length}", relic.OwnedCountText);
+        Assert.AreEqual("보유 시간의 파편: 1,234", relic.ShardText);
+        relic.PageForTest(1);
+        Assert.AreEqual(ChronoSavior.Core.ItemDatabase.All.Length - 30, relic.VisibleSlotCount, "둘째 쪽은 남은 유물만");
+
+        int slots = 0;
+        foreach (var b in relic.Root.GetComponentsInChildren<PxButton>(true))
+            if (b.name.StartsWith("Slot")) { slots++; Assert.IsTrue(b.Art.sprite.name.StartsWith("slot_off"), "처음엔 전부 없는 유물 — 어두운 칸"); }
+        Assert.AreEqual(30, slots);
+        foreach (var t in relic.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+            if (t.name == "RateValue0") Assert.AreEqual("55%", t.text, "노말 확률은 원본 가중치 55/100");
+        relic.HideForCapture();
+    }
+
     PxButton Find(PxScreen s, string name)
     {
         foreach (var b in s.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == name) return b;
