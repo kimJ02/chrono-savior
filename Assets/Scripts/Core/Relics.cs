@@ -43,13 +43,13 @@ namespace ChronoSavior.Core
         }
 
         /// <summary>
-        /// 이 처치가 공용 처치 유물을 셀 수 있는가 — 마법사는 늘(재미가 이미 맞다, 사용자), 메카닉·섬영은 시그니처 처치만.
+        /// 이 처치가 공용 처치 유물을 셀 수 있는가(2026-11-22 2차) — 마법사·섬영은 늘(섬영은 Z 회전베기가 주력, 사용자),
+        /// 메카닉은 시그니처만(레이저 = 광선·드론 탄, 설치 = 설치기·장판). 설치 갈래 Z 총알 처치는 안 센다.
         /// </summary>
         public static bool KillCountsForCommon(PlayerProfile p)
         {
             if (p == null) return true;
             if (p.character == CharacterId.Gunner && p.gunnerBranch != GunnerBranch.None) return InSignatureDamage;
-            if (p.character == CharacterId.Blade && p.bladeBranch != BladeBranch.None) return InSignatureDamage;
             return true;
         }
 

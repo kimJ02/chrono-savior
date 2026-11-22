@@ -482,9 +482,11 @@ namespace ChronoSavior.Characters
             var hits = Physics2D.OverlapCircleAll(transform.position, radius, enemyMask);
             float totalDealt = 0f;
             bool anyHit = false;
-            // 시그니처(2026-11-22): 칼날폭풍 유지 틱(lifesteal=false)과 집중 중 회전베기만 — 공용 처치 유물이 이 처치만 센다
+            // 유물(2026-11-22 2차 — 섬영 유물은 전부 Z 회전베기에): Z = lifesteal, 칼날폭풍 유지 베기 = !lifesteal
             bool storm = !lifesteal;
-            using var signature = new Relics.SignatureScope(storm || focusT > 0f);
+            bool focusing = focusT > 0f;
+            bool stormBranch = ProfileService.Current.bladeBranch == BladeBranch.Storm;
+            int hitCount = 0;
 
             foreach (var col in hits)
             {
@@ -510,7 +512,13 @@ namespace ChronoSavior.Characters
                 // 흡혈은 **실제로 준 피해**의 합으로(원본 `totalDmg += dealDamage(...)` :2493 — 대상 배수·반올림 뒤)
                 totalDealt += target.TakeDamageWithKnockback(dmg, gameObject, dirSign, SpinKnockback);
                 anyHit = true;
-                if (storm && target.IsDead) BladeRelics.OnStormKill(transform.position, RelicFacing); // 폭풍 칼집 — 칼날폭풍 처치만(2026-11-22)
+                hitCount++;
+                if (lifesteal && !target.IsDead) BladeRelics.PullOnSpin(col, transform.position); // 잔영 칼끝 — 회전베기 당김
+                if (target.IsDead)
+                {
+                    if (stormBranch) BladeRelics.OnStormKill(col.bounds.center, RelicFacing);          // 폭풍 칼집 — 폭풍 갈래 Z·칼날폭풍 처치
+                    if (lifesteal && focusing) BladeRelics.OnFocusKill(col.bounds.center, RelicFacing); // 잔영 추격 — 집중 중 Z 처치
+                }
             }
 
             // bladeLifesteal(:2498~2508) — 이번 회전베기로 입힌 피해 "합계"의 15%를 한 번에 회복한다
@@ -520,8 +528,11 @@ namespace ChronoSavior.Characters
             {
                 float heal = Mathf.Round(totalDealt * LifestealRatio);
                 if (heal > 0f) playerHealth.Heal(heal);
-                if (focusT > 0f) BladeRelics.OnFocusLifesteal(transform, RelicFacing); // 집중의 심장 — 집중 중 흡혈만(2026-11-22)
+                if (focusing) BladeRelics.OnFocusLifesteal(transform, RelicFacing); // 집중의 심장 — 집중 중 흡혈만(2026-11-22)
             }
+            // 세트 3·5, 질주 찢개(집중 중 Z n번 → 궤적 바로 찢기), 무한 검무(폭풍 갈래 Z 적중 → 검령)
+            if (BladeRelics.OnSpinHits(transform.position, RelicFacing, hitCount, lifesteal, focusing, stormBranch, trailPts.Count > 1))
+                RipTrailBy(true);
         }
 
         /// <summary>
@@ -588,7 +599,7 @@ namespace ChronoSavior.Characters
             // 2026-11-10 사용자 지시 — 3·4·5층에 지속시간 +1초(사운드는 여기서 안 올린다 — 바로 다음에 도는
             // UpdateFocus의 On/Off 전이 감지가 같은 프레임에 알아서 켠다, 재사용 즉시 중단 케이스도 그쪽에서 끈다).
             focusT = FocusDur + (tier >= 3 ? FocusDurTier3Bonus : 0f);
-            focusCd = FocusCd * BladeRelics.SkillCdMult; // 잔영 칼끝(2026-11-22)
+            focusCd = FocusCd;
             // bladeTrailLife()(:2537) — 3층 "짙은 잔영"부터 지속시간이 늘어난다. 원본처럼 캐스팅
             // 순간의 티어로 한 번만 계산해 담아 둔다(지속시간은 focus와 별개로 그냥 줄어드는 타이머라
             // 매 틱 재계산할 대상이 아니다 — 매 틱 재계산하는 건 아래 피해·반경 쪽).
@@ -637,12 +648,8 @@ namespace ChronoSavior.Characters
             {
                 SfxEvents.RaiseAssassinFocusActive(focusingNow);
                 // 유물(2026-11-22): 켜지면 세트 5가 처치를 세기 시작, 꺼지면 질주 찢개·세트 5가 궤적을 바로 찢는다
-                if (focusingNow) BladeRelics.OnSkillStart();
-                else
-                {
-                    BladeRelics.OnFocusEnd();
-                    if (BladeRelics.RipOnFocusEnd && trailPts.Count > 1) RipTrail();
-                }
+                if (focusingNow) BladeRelics.OnSkillStart();          // 세트 5 — 적중을 모으기 시작(2026-11-22)
+                else BladeRelics.OnFocusEnd(transform.position, RelicFacing);
             }
             focusSoundOn = focusingNow;
             if (focusingNow) focusT -= dt;
@@ -675,11 +682,10 @@ namespace ChronoSavior.Characters
             // (trailT처럼 캐스팅 순간에 고정하는 게 아니다 — 위 TryFocusStart 주석 참고).
             int currentTier = ProfileService.Current.bladeTier;
             bool focusing = focusT > 0f;
-            float radius = (TrailRadius * (currentTier >= 3 ? FocusT3RadiusMult : 1f) + BladeRelics.TrailRadiusBonus) * BladeRelics.TrailRadiusMult(focusing); // 집중의 심장·세트 3
+            float radius = TrailRadius * (currentTier >= 3 ? FocusT3RadiusMult : 1f);
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
-            float dmg = atk * TrailDmgMult * (currentTier >= 3 ? FocusT3DmgMult : 1f) * BladeRelics.TrailDamageMult(focusing);
+            float dmg = atk * TrailDmgMult * (currentTier >= 3 ? FocusT3DmgMult : 1f);
             trailHitBuffer.Clear();
-            using var signature = Relics.Signature(); // 집중 시그니처(2026-11-22)
             foreach (var pt in trailPts)
             {
                 foreach (var c in Physics2D.OverlapCircleAll(pt, radius, enemyMask))
@@ -694,7 +700,7 @@ namespace ChronoSavior.Characters
 
                     float rolled = DamageCalculator.Roll(dmg, 0f, out _); // 원본 noCrit(:2564)
                     target.TakeTickDamage(rolled); // 원본 kb:0 + noHitstop(:2564)
-                    if (target.IsDead) BladeRelics.OnTrailKill(c.bounds.center, RelicFacing); // 잔영 추격(2026-11-22)
+                    if (focusing && target.IsDead) BladeRelics.OnFocusKill(c.bounds.center, RelicFacing); // 잔영 추격(2026-11-22)
                 }
             }
         }
@@ -706,17 +712,18 @@ namespace ChronoSavior.Characters
         /// `F.ripDmg * bladeDmgMult()`로 <see cref="CurrentSpeedRatio"/> 기준 속도 피해 배수가 그대로
         /// 곱해진다(원본과 동일하게 crit 적용 — trail 틱 피해와 달리 `noCrit`이 없다, :2582).
         /// </summary>
-        void RipTrail()
+        void RipTrail() => RipTrailBy(false);
+
+        /// <param name="byRelic">질주 찢개(2026-11-22)가 부른 찢기 — 층과 상관없이 피해, 유물 배수(피해 ×0.8/1·반경 ×1/1.15).</param>
+        void RipTrailBy(bool byRelic)
         {
             int tier = ProfileService.Current.bladeTier;
-            // 4층부터 파열 피해(원본). 질주 찢개·세트 5가 있으면 층과 상관없이(2026-11-22)
-            if ((tier >= 4 || BladeRelics.RipOnFocusEnd) && trailPts.Count > 0)
+            if ((tier >= 4 || byRelic) && trailPts.Count > 0)
             {
                 var profile = ProfileService.Current;
-                float baseRadius = TrailRadius * (tier >= 3 ? FocusT3RadiusMult : 1f) + BladeRelics.TrailRadiusBonus; // bladeTrailR()
-                float ripRadius = baseRadius * FocusT4RipRadiusMult * BladeRelics.RipRadiusMult; // ripR (:2576) × 질주 찢개
-                float dmgMult = FocusT4RipDmgMult * SpeedDamageMultiplier(CurrentSpeedRatio()) * BladeRelics.RipDamageMult; // F.ripDmg*bladeDmgMult() (:2582) × 질주 찢개·세트 5
-                using var signature = Relics.Signature(); // 집중 시그니처(2026-11-22)
+                float baseRadius = TrailRadius * (tier >= 3 ? FocusT3RadiusMult : 1f); // bladeTrailR()
+                float ripRadius = baseRadius * FocusT4RipRadiusMult * (byRelic ? BladeRelics.RelicRipRadiusMult : 1f); // ripR (:2576)
+                float dmgMult = FocusT4RipDmgMult * SpeedDamageMultiplier(CurrentSpeedRatio()) * (byRelic ? BladeRelics.RelicRipDamageMult : 1f); // F.ripDmg*bladeDmgMult() (:2582)
                 float baseDamage = PlayerStatCalculator.ComputeAtk(profile) * dmgMult;
                 float critChance = PlayerStatCalculator.ComputeCritChance(profile);
 
@@ -738,7 +745,7 @@ namespace ChronoSavior.Characters
                         if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
                         target.TakeDamageWithKnockback(dmg, gameObject, dirSign, FocusT4RipKnockback);
                         TrailRipHit?.Invoke(c.bounds.center);
-                        if (target.IsDead) BladeRelics.OnTrailKill(c.bounds.center, RelicFacing); // 잔영 추격(2026-11-22)
+                        if (focusT > 0f && target.IsDead) BladeRelics.OnFocusKill(c.bounds.center, RelicFacing); // 잔영 추격 — 집중 중(2026-11-22)
                     }
                 }
                 TrailRipped?.Invoke(trailPts.ToArray()); // 그림(섬광·스플래터) — 비우기 전 점을 복사해서
@@ -811,7 +818,7 @@ namespace ChronoSavior.Characters
             stormT = 0f;
             stormHitT = 0f;
             stormTick = 0;
-            stormCd = StormCd * BladeRelics.SkillCdMult; // 잔영 칼끝(2026-11-22)
+            stormCd = StormCd;
             stormGrab.Clear(); // 원본 `p.stormGrab = []`(:2626).
             SfxEvents.RaiseAssassinSpinAttack(); // 2026-11-10 사운드 — 칼날폭풍(아직 음원 없음, 나중에 채우면 바로 남)
             storming = true;
@@ -957,7 +964,6 @@ namespace ChronoSavior.Characters
                             offsetX = Random.Range(StormGrabOffsetXMin, StormGrabOffsetXMax),
                             offsetY = Random.Range(StormGrabOffsetYMin, StormGrabOffsetYMax),
                         });
-                        BladeRelics.OnGrab(); // 무한 검무 검령(2026-11-19 유물)
                     }
                 }
 
@@ -984,7 +990,7 @@ namespace ChronoSavior.Characters
             if (stormHitT >= StormTickInterval)
             {
                 stormHitT -= StormTickInterval;
-                float dmgMult = StormDmgMult * SpeedDamageMultiplier(stormSpeedRatio) * BladeRelics.StormSpinMult; // × 세트 3(2026-11-22)
+                float dmgMult = StormDmgMult * SpeedDamageMultiplier(stormSpeedRatio);
                 SpinHit(dmgMult, spinRadius * StormSpinRadiusMult, true, false);
                 StormSpun?.Invoke(pos, stormTick++);
             }
@@ -1019,9 +1025,8 @@ namespace ChronoSavior.Characters
             float critChance = PlayerStatCalculator.ComputeCritChance(profile);
             Vector3 center = transform.position + new Vector3(0f, StormLandYOffset, 0f);
             StormLanded?.Invoke(transform.position);
-            using var signature = Relics.Signature(); // 칼날폭풍 시그니처(2026-11-22)
 
-            foreach (var c in Physics2D.OverlapCircleAll(center, StormLandRadius * BladeRelics.StormLandRadiusMult, enemyMask)) // × 세트 3
+            foreach (var c in Physics2D.OverlapCircleAll(center, StormLandRadius, enemyMask))
             {
                 if (c == null || !c.CompareTag("Enemy")) continue;
                 var protectable = c.GetComponent<ISpawnProtectable>();
@@ -1107,7 +1112,7 @@ namespace ChronoSavior.Characters
                     float dmg = DamageCalculator.Roll(baseDamage, critChance, out _);
                     float dirSign = Mathf.Sign(f.col.transform.position.x - transform.position.x);
                     if (Mathf.Approximately(dirSign, 0f)) dirSign = mover != null ? mover.Facing : 1f;
-                    using (Relics.Signature()) target.TakeDamageWithKnockback(dmg, gameObject, dirSign, StormFallKnockback); // 칼날폭풍 시그니처
+                    target.TakeDamageWithKnockback(dmg, gameObject, dirSign, StormFallKnockback);
                     if (target.IsDead) BladeRelics.OnStormKill(f.col.bounds.center, RelicFacing); // 폭풍 칼집(2026-11-22)
 
                     stormFalling.RemoveAt(i);

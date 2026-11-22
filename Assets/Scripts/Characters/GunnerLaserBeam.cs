@@ -86,7 +86,7 @@ namespace ChronoSavior.Characters
             Vector2 o = kit.FeetPosition
                         + new Vector2(facing * GunnerSpecConfig.BeamOriginForward, GunnerSpecConfig.BeamOriginHeight);
             Vector2 d = new Vector2(facing, 0f);
-            float range = GunnerSpecConfig.BeamRange(tier) + GunnerRelics.BeamRangeBonus; // 프리즘 구경(2026-11-22)
+            float range = GunnerSpecConfig.BeamRange(tier);
             bool curved = false;
             Vector2 control = default, end = default;
 
@@ -153,7 +153,7 @@ namespace ChronoSavior.Characters
             prevControl = control;
             prevEnd = end;
 
-            float width = (GunnerSpecConfig.BeamWidth(tier) + GunnerRelics.BeamWidthBonus) * GunnerRelics.BeamWidthMult; // 프리즘 구경·세트 5 과부하
+            float width = GunnerSpecConfig.BeamWidth(tier) * GunnerRelics.BeamWidthMult; // 세트 5 과부하(2026-11-22)
             if (curved)
             {
                 float endLen = Vector2.Distance(end, o);
@@ -248,8 +248,8 @@ namespace ChronoSavior.Characters
             var profile = ProfileService.Current;
             float atk = PlayerStatCalculator.ComputeAtk(profile);
             float crit = PlayerStatCalculator.ComputeCritChance(profile);
-            // 프리즘 구경(틱 피해 +), 세트 3(다음 틱 ×2)·세트 5(과부하 ×1.5) — 2026-11-22 재설계
-            float mult = (GunnerSpecConfig.BeamDamageMult(tier) + GunnerRelics.BeamDamageBonus) * GunnerRelics.OverloadDamageMult;
+            // 세트 3(맞힌 틱 ×2)·세트 5(과부하 ×1.5) — 2026-11-22
+            float mult = GunnerSpecConfig.BeamDamageMult(tier) * GunnerRelics.OverloadDamageMult;
             bool armedTaken = false;
 
             float reach = Curved
@@ -268,9 +268,9 @@ namespace ChronoSavior.Characters
                     e.damageable.TakeTickDamage(dmg);
                     if (vfx != null) vfx.Spark(e.collider, e.center, Direction); // 맞은 자리에 작은 충격(그림만, 적마다 0.25초에 한 번)
                     kit.AddStack(1);
-                    if (e.damageable.IsDead) GunnerRelics.OnBeamKill(e.center); // 자율 포좌 — 광선 처치만
+                    GunnerRelics.OnZHit();                                          // 잔탄 포켓 — 광선도 Z(적마다)
+                    if (e.damageable.IsDead) GunnerRelics.OnBeamKill(e.center);   // 프리즘 구경 — 광선 처치만
                 }
-            if (relicHits.Count > 0) GunnerRelics.OnZHit(kit, relicHits[0]); // 잔탄 포켓(광선도 Z)
         }
 
         readonly System.Collections.Generic.List<Vector2> relicHits = new System.Collections.Generic.List<Vector2>();

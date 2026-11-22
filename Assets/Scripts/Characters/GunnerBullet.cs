@@ -187,9 +187,12 @@ namespace ChronoSavior.Characters
             // 넉백 방향은 **지금** 진행 방향(유도탄은 휘면서 바뀐다) — 원본 `kbDir: Math.sign(w.vx)`.
             if (rb != null && Mathf.Abs(rb.linearVelocity.x) > 1e-4f)
                 knockbackDirSign = rb.linearVelocity.x > 0f ? 1f : -1f;
-            target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
-            // 유물(2026-11-19) — Z 총알 적중(잔탄 포켓), 드론 탄 처치(자율 포좌)
-            if (stackOwner != null) GunnerRelics.OnZHit(stackOwner, other.bounds.center); // 잔탄 포켓(2026-11-22 — 피해 대신 충전·부품)
+            // 드론 탄은 레이저 갈래 시그니처(X) — 공용 처치 유물이 이 처치를 센다(2026-11-22). Z 총알은 아니다.
+            bool droneShot = hitArtKey == VfxKeys.MechanicDroneHit;
+            if (droneShot) dmg *= GunnerRelics.ConsumeArmedMult() * GunnerRelics.OverloadDamageMult; // 드론 탄도 시그니처 — 세트 3·5
+            using (new Relics.SignatureScope(droneShot))
+                target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
+            if (stackOwner != null) GunnerRelics.OnZHit(); // 잔탄 포켓 — Z 총알 적중(2026-11-22)
 
             // 원본 `if (w.stackOnHit) addGunnerStack(w.stackOnHit)`(:3722) — 갈래가 없으면 AddStack이 무시한다.
             if (stackOnHit > 0 && stackOwner != null) stackOwner.AddStack(stackOnHit);

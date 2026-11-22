@@ -212,6 +212,7 @@ namespace ChronoSavior.Characters
             var flash = VfxPlayer.Spawn(VfxKeys.MechanicDroneMuzzle, pos + dir * MuzzleForward, DotScale.Value, MuzzleFps, MuzzleSortingOrder);
             if (flash != null) flash.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
 
+            GunnerRelics.OnDroneShot(pos, dir); // 자율 포좌 — n발마다 부채꼴 추가 탄(2026-11-22)
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
             GunnerBullet.Spawn(owner != null ? owner.BulletPrefab : null, pos, dir * GunnerSpecConfig.DroneBulletSpeed(Tier), atk * DamageMult,
                 GunnerSpecConfig.DroneBulletPierce(Tier), GunnerSpecConfig.DroneBulletLife,
