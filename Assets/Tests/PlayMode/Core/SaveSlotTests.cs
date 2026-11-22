@@ -98,6 +98,26 @@ public class SaveSlotTests
         Assert.IsTrue(SaveService.SelectSlot(3));
         Assert.AreEqual(5, ProfileService.Current.mageTier, "깨진 슬롯은 시나리오 처음 상태로 되살아나야 한다");
     }
+
+    /// <summary>직업 테스트 세팅(2026-11-22) — 여섯 빌드 모두 끝 층(5)까지, 유물 전부 각성, 슬롯 1~3과 다른 번호.</summary>
+    [Test]
+    public void ClassTest_ReachesFinalTier_ForEveryBuild()
+    {
+        Assert.Greater(SavePresets.ClassTestSlot, SaveService.SlotCount, "테스트 슬롯이 1~3을 덮으면 안 된다");
+        for (int b = 0; b < 2; b++)
+        {
+            var m = SavePresets.BuildClassTest(CharacterId.Mage, b);
+            Assert.AreEqual(5, m.mageTier, $"마법사 갈래 {b}");
+            Assert.AreEqual(b == 0 ? MageBranch.Explosion : MageBranch.Gravity, m.mageBranch);
+            var g = SavePresets.BuildClassTest(CharacterId.Gunner, b);
+            Assert.AreEqual(5, g.gunnerTier, $"메카닉 갈래 {b}");
+            Assert.AreEqual(CharacterId.Gunner, g.character);
+            var s = SavePresets.BuildClassTest(CharacterId.Blade, b);
+            Assert.AreEqual(5, s.bladeTier, $"섬영 갈래 {b}");
+            foreach (var d in ItemDatabase.All)
+                Assert.AreEqual(ItemDatabase.Cap(d.grade), s.items.Count(d.id), $"{d.id} 각성 아님");
+        }
+    }
 }
 
 }

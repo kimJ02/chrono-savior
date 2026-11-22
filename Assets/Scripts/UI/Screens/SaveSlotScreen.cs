@@ -79,7 +79,35 @@ namespace ChronoSavior.UI
                 AddNav(Px.TextButton(Content, "Reset" + slot, PxArt.Get("Common/button"), BtnX2, y + 24f, BtnW, BtnH,
                                      "초기화", 13, Color.white, () => AskReset(slot)));
             }
+#if UNITY_EDITOR
+            // 에디터 전용 직업 테스트(2026-11-22 사용자) — 최종 빌드 + 유물 전부 각성으로 바로 들어간다. 슬롯 1~3은 안 건드린다(slot_9).
+            var tests = new (string label, CharacterId who, int branch)[]
+            {
+                ("법사 폭발", CharacterId.Mage, 0), ("법사 중력", CharacterId.Mage, 1),
+                ("메카 레이저", CharacterId.Gunner, 0), ("메카 설치", CharacterId.Gunner, 1),
+                ("섬영 집중", CharacterId.Blade, 0), ("섬영 폭풍", CharacterId.Blade, 1),
+            };
+            Px.Text(Content, "TestLabel", "직업 테스트(에디터)", 4f, 336f, 60f, 20f, 8, Gold).WithOutline(Px.Ink);
+            for (int k = 0; k < tests.Length; k++)
+            {
+                var t = tests[k];
+                var b = Px.TextButton(Content, "ClassTest" + k, PxArt.Sliced("Common/button", 4), 66f + k * 86f, 336f, 82f, 20f,
+                                      t.label, 9, Color.white, () => EnterClassTest(t.who, t.branch));
+                b.Art.type = Image.Type.Sliced;
+            }
+#endif
         }
+
+#if UNITY_EDITOR
+        void EnterClassTest(CharacterId who, int branch)
+        {
+            var p = SavePresets.BuildClassTest(who, branch);
+            try { System.IO.File.WriteAllText(SaveService.SlotPath(SavePresets.ClassTestSlot), JsonUtility.ToJson(p, true)); }
+            catch (System.Exception e) { CommonPopup.Alert("직업 테스트", "세이브를 쓰지 못했다: " + e.Message); return; }
+            Close();
+            Flow?.EnterSlot(SavePresets.ClassTestSlot, CommonPopup.AlertIfTransitionFails("직업 테스트"));
+        }
+#endif
 
         protected override void OnShown() => SelectNav(0);
 

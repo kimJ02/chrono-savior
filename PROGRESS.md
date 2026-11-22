@@ -302,6 +302,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-22 (153)** — **[사용자 세션] 직업 테스트 세팅(에디터 전용)** — 사용자가 직업마다 "최종 빌드 + 유물" 플레이 후 부족한 점을 알려 주기로(그 뒤 전용 유물 6/6/6 맞춤).
+  - 세이브 슬롯 창 아래 "직업 테스트(에디터)" 줄에 버튼 6개(법사 폭발·중력, 메카 레이저·설치, 섬영 집중·폭풍). 누르면 `SavePresets.BuildClassTest`
+    (레벨 30, 그 갈래 5층, 강화 15씩, 유물 전부 각성, 챕터 1~2 정복, 몬스터 배율 2)를 **slot_9.json**에 써서 바로 로비로 — 슬롯 1~3은 안 건드린다. 빌드엔 없다(#if UNITY_EDITOR).
+  - 테스트 `SaveSlotTests.ClassTest_ReachesFinalTier_ForEveryBuild`.
+
 - **2026-11-22 (152)** — **[사용자 세션] 공용 유물 30종 + 유물 문제 점검(GPT와)** — dotnet 컴파일 확인, Unity 배치 테스트는 아직.
   - 공용 능력치 유물 13종 추가 + 향로를 같은 id(`censer`)로 능력치 유물 "멸망 전의 잔불"(공격력)로 전환(성소를 꺼 발동 불가였다) → 공용 30종, 전체 46종(N20/R16/E6/L4).
     능력치 유물 = `ItemKind.Stat`(`ItemDatabase.S`) — `ItemInventory.Add`·`PlayerStatCalculator`가 이미 읽어 실제 스탯·`CombatPower`에 들어간다.

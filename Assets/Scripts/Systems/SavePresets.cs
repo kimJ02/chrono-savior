@@ -62,6 +62,39 @@ namespace ChronoSavior.Systems
             return p;
         }
 
+        /// <summary>직업 테스트 전용 슬롯 번호 — 슬롯 1~3(교수님 시나리오)을 덮지 않게 따로 쓴다(slot_9.json).</summary>
+        public const int ClassTestSlot = 9;
+
+        /// <summary>
+        /// 직업별 최종 빌드 + 유물 전부 각성(2026-11-22 사용자 "각 직업마다 최종 빌드 + 유물 버전 플레이 테스트") — 슬롯 3과 같은 조건
+        /// (레벨 25, 강화 15씩, 챕터 1~2 정복, 몬스터 배율 2)에 그 캐릭터·갈래를 끝까지 찍는다.
+        /// </summary>
+        public static PlayerProfile BuildClassTest(CharacterId who, int branch)
+        {
+            var p = new PlayerProfile();
+            p.character = who;
+            p.level = 30; // 어느 갈래든 끝 층까지 찍을 SP가 넉넉하게
+            for (int i = 0; i < 10; i++)
+            {
+                bool ok = who switch
+                {
+                    CharacterId.Mage => p.TryLearnMageTier(branch == 0 ? MageBranch.Explosion : MageBranch.Gravity),
+                    CharacterId.Gunner => p.TryLearnGunnerTier(branch == 0 ? GunnerBranch.Laser : GunnerBranch.Installer),
+                    CharacterId.Blade => p.TryLearnBladeTier(branch == 0 ? BladeBranch.Focus : BladeBranch.Storm),
+                    _ => false,
+                };
+                if (!ok) break;
+            }
+            SetUpgrades(p, 15);
+            p.gold = 50000;
+            p.shards = 200;
+            foreach (var d in ItemDatabase.All)
+                while (p.items.Count(d.id) < ItemDatabase.Cap(d.grade)) p.items.Add(d.id);
+            Conquer(p, 2);
+            p.spawnScale = 2f;
+            return p;
+        }
+
         static void SetUpgrades(PlayerProfile p, int n)
         {
             p.upgrades.atk = p.upgrades.hp = p.upgrades.ms = p.upgrades.atkSpeed = p.upgrades.crit = n;
