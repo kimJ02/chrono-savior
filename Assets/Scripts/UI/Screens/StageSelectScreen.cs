@@ -381,11 +381,17 @@ namespace ChronoSavior.UI
         readonly System.Collections.Generic.Dictionary<int, Sprite> portraitCache = new System.Collections.Generic.Dictionary<int, Sprite>();
         readonly System.Collections.Generic.List<Sprite> createdPortraits = new System.Collections.Generic.List<Sprite>();
 
-        /// <summary>그 챕터 보스 그림에서 위쪽 가운데 32×32(얼굴)를 잘라 낸 것 — 1:1로 찍어 도트를 지킨다. 그림이 없으면 목록의 예전 보스 그림.</summary>
+        // 보스 얼굴 32×32를 자를 자리 — 그림(80×64) 왼쪽 위 기준 픽셀(2026-11-20 사용자 "1보스 얼굴 가운데로").
+        // 두꺼비(덩어리 지배자): 두 눈(x 17~44, y 19~27)이 가운데 오게. 부서진 여신: 머리·후광이 가운데 오게.
+        static readonly Vector2Int BlobFace = new Vector2Int(14, 8);
+        static readonly Vector2Int GoddessFace = new Vector2Int(24, 0);
+
+        /// <summary>그 챕터 보스 그림에서 얼굴 32×32를 잘라 낸 것 — 1:1로 찍어 도트를 지킨다. 그림이 없으면 목록의 예전 보스 그림.</summary>
         Sprite BossPortraitOf(int chapter)
         {
             if (portraitCache.TryGetValue(chapter, out var cached)) return cached;
             Sprite src = null;
+            Vector2Int? face = null;
             var prefab = catalog != null ? catalog.BossPrefabFor(chapter) : null;
             if (prefab != null)
             {
@@ -393,8 +399,8 @@ namespace ChronoSavior.UI
                 SpriteFlipbook fb = null;
                 var goddess = prefab.GetComponent<ChronoSavior.Enemies.BrokenGoddessBoss>();
                 var blob = prefab.GetComponent<ChronoSavior.Enemies.BlobLordBoss>();
-                if (goddess != null) fb = goddess.IdleArt;
-                else if (blob != null) fb = blob.BounceArt;
+                if (goddess != null) { fb = goddess.IdleArt; face = GoddessFace; }
+                else if (blob != null) { fb = blob.BounceArt; face = BlobFace; }
                 if (fb != null && fb.frames != null && fb.frames.Length > 0) src = fb.frames[0];
             }
             Sprite result = catalog != null ? catalog.boss : null;
@@ -404,6 +410,13 @@ namespace ChronoSavior.UI
                 const float S = 32f;
                 float w = Mathf.Min(S, r.width), h = Mathf.Min(S, r.height);
                 float x = Mathf.Round(r.x + (r.width - w) / 2f), y = Mathf.Round(r.y + r.height - h - Mathf.Max(0f, (r.height - h) * 0.25f));
+                if (face.HasValue && src.texture.width >= S && src.texture.height >= S)
+                {
+                    // 얼굴 자리(그림 왼쪽 위 기준) — 텍스처 좌표(아래가 0)로 바꾼다
+                    w = h = S;
+                    x = Mathf.Clamp(face.Value.x, 0, src.texture.width - (int)S);
+                    y = Mathf.Clamp(src.texture.height - face.Value.y - (int)S, 0, src.texture.height - (int)S);
+                }
                 result = Sprite.Create(src.texture, new Rect(x, y, w, h), new Vector2(0.5f, 0.5f), src.pixelsPerUnit);
                 result.name = src.name + "_portrait";
                 createdPortraits.Add(result);
