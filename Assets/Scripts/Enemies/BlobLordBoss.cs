@@ -52,6 +52,14 @@ namespace ChronoSavior.Enemies
         public const float HitRadius = 0.78f;
         /// <summary>몸 중심이 서 있는 표면보다 위에 있는 높이(그림 세로 절반).</summary>
         public static float HalfHeight => VisualSize.y / 2f;
+        /// <summary>
+        /// 그림 캔버스(80×64) 맨 아래 투명 여백 6도트 — 서 있는 그림(대기·피격·투척·사망)의 슬라임 몸은 캔버스 바닥에서 6도트 위에서 끝난다.
+        /// 몸 중심을 표면 + <see cref="HalfHeight"/>에 두면 그 여백만큼(0.15유닛) **공중에 떠 보였다**(2026-11-22 사용자 "1보스가 공중에 떠 있는 것 같다").
+        /// </summary>
+        public const float FootPaddingDots = 6f, CanvasDots = 64f;
+        public static float FootPadding => VisualSize.y * FootPaddingDots / CanvasDots;
+        /// <summary>몸 중심이 서 있는 표면보다 위에 있는 높이 — 그림 세로 절반에서 바닥 여백을 뺀 값(발이 표면에 닿는다).</summary>
+        public static float BodyCenterHeight => HalfHeight - FootPadding;
 
         // ── 패턴 1 추적 점프 강하(명세 3-3, 범위 중 값은 Codex 상의로 확정) ──
         public const float JumpPrep = 0.6f;          // 준비 0.5~0.7
@@ -143,7 +151,7 @@ namespace ChronoSavior.Enemies
         // 정지 감지
         float anchorX, anchorSince;
         bool hasAnchor;
-        // 서 있는 표면(몸 중심 Y = 이것 + HalfHeight)
+        // 서 있는 표면(몸 중심 Y = 이것 + BodyCenterHeight)
         float standSurfaceY = float.NaN;
         Vector3 baseScale;
         bool baseScaleKnown;
@@ -215,7 +223,7 @@ namespace ChronoSavior.Enemies
             // 스포너가 크기를 맞춘 뒤 — 발을 서 있는 표면에 붙인다.
             Vector3 p = transform.position;
             standSurfaceY = FieldLayout.SurfaceBelow(p.x, p.y);
-            transform.position = new Vector3(p.x, standSurfaceY + HalfHeight, p.z);
+            transform.position = new Vector3(p.x, standSurfaceY + BodyCenterHeight, p.z);
         }
 
         // 그림은 그리기 직전에(2026-11-17 — 예전엔 물리 틱인 GetHorizontalSpeed 안에서 바꿨다). 죽은 뒤엔 사망 연출(DeathSequence)이 그린다.
@@ -433,10 +441,10 @@ namespace ChronoSavior.Enemies
                 case State.JumpFall:
                 {
                     float t = Mathf.Clamp01(stateT / JumpFall);
-                    return Mathf.Lerp(apexY, markerSurfaceY + HalfHeight, t * t);
+                    return Mathf.Lerp(apexY, markerSurfaceY + BodyCenterHeight, t * t);
                 }
                 default:
-                    return (float.IsNaN(standSurfaceY) ? FieldBoundsGround() : standSurfaceY) + HalfHeight;
+                    return (float.IsNaN(standSurfaceY) ? FieldBoundsGround() : standSurfaceY) + BodyCenterHeight;
             }
         }
 

@@ -21,15 +21,43 @@ namespace ChronoSavior.Core
 
         // 원본 statAtk/statMaxHp는 완성된 스탯 전체에 캐릭터 배수를 곱한다(`charStatMult()`, :1284~1285).
         // ms/as/crit(:1286~1288)엔 곱하지 않는다 — 원본 그대로이니 "일관성"을 이유로 바꾸지 말 것.
-        public static float ComputeAtk(PlayerProfile p) =>
-            (BaseAtk + p.upgrades.atk * 3f + p.items.Add(ItemStat.Atk)) * CharacterStats.StatMultiplier(p.character)
-            * CombatModifiers.RelicAtkMultiplier; // 유리 서약(2026-11-19 유물) — 사냥 중 잠깐만
+        // 유리 서약(2026-11-19 유물)은 사냥 중 잠깐만 — 강화 미리보기(StatAtUpgradeLevel)엔 안 붙는다
+        public static float ComputeAtk(PlayerProfile p) => AtkAt(p, p.upgrades.atk) * CombatModifiers.RelicAtkMultiplier;
 
-        public static float ComputeMaxHp(PlayerProfile p) =>
-            Mathf.Round((BaseMaxHp + p.upgrades.hp * 25f + p.items.Add(ItemStat.Hp)) * CharacterStats.StatMultiplier(p.character));
+        public static float ComputeMaxHp(PlayerProfile p) => MaxHpAt(p, p.upgrades.hp);
 
-        public static float ComputeMoveSpeedMultiplier(PlayerProfile p) =>
-            1f + p.upgrades.ms * 0.04f + p.items.Add(ItemStat.Ms);
+        public static float ComputeMoveSpeedMultiplier(PlayerProfile p) => MoveSpeedAt(p, p.upgrades.ms);
+
+        // 아래 *At은 "그 강화 단계였다면" 값이다 — 각성창 스탯 탭의 강화 미리보기(현재 → 산 뒤)가 쓴다.
+        // 지금 값(Compute*)도 같은 식을 거치므로 미리보기가 실제와 어긋나지 않는다.
+        static float AtkAt(PlayerProfile p, int level) =>
+            (BaseAtk + level * 3f + p.items.Add(ItemStat.Atk)) * CharacterStats.StatMultiplier(p.character);
+
+        static float MaxHpAt(PlayerProfile p, int level) =>
+            Mathf.Round((BaseMaxHp + level * 25f + p.items.Add(ItemStat.Hp)) * CharacterStats.StatMultiplier(p.character));
+
+        static float MoveSpeedAt(PlayerProfile p, int level) =>
+            1f + level * 0.04f + p.items.Add(ItemStat.Ms);
+
+        static float AttackSpeedAt(PlayerProfile p, int level) =>
+            (1f + level * 0.04f + p.items.Add(ItemStat.AtkSpeed)) * CombatModifiers.AttackSpeedMultiplier;
+
+        static float CritAt(PlayerProfile p, int level) =>
+            BaseCritChance + level * 0.02f + p.items.Add(ItemStat.Crit);
+
+        /// <summary>
+        /// 그 강화(<paramref name="stat"/>)가 <paramref name="level"/>단계일 때의 스탯 값(다른 강화는 지금 그대로) —
+        /// 체력·공격력은 수치, 이동·공속은 배수(1.0 = 100%), 치명타는 확률(0.1 = 10%).
+        /// </summary>
+        public static float StatAtUpgradeLevel(PlayerProfile p, UpgradeStat stat, int level) => stat switch
+        {
+            UpgradeStat.Hp => MaxHpAt(p, level),
+            UpgradeStat.Atk => AtkAt(p, level),
+            UpgradeStat.Ms => MoveSpeedAt(p, level),
+            UpgradeStat.AtkSpeed => AttackSpeedAt(p, level),
+            UpgradeStat.Crit => CritAt(p, level),
+            _ => 0f,
+        };
 
         /// <summary>
         /// 원본 `statAs()`(project_test.html:1287):
@@ -39,11 +67,9 @@ namespace ChronoSavior.Core
         /// 이미 `statAs`를 쓰는 모든 공격(마법사·메카닉, 앞으로 섬영·드루이드)이 자동으로 받는다.
         /// 아이템 항(`itemAdd('as')`)까지 들어 있다. `killRage`(처치 시 일시 공속)는 런 한정 버프라 아직 없다.
         /// </summary>
-        public static float ComputeAttackSpeedMultiplier(PlayerProfile p) =>
-            (1f + p.upgrades.atkSpeed * 0.04f + p.items.Add(ItemStat.AtkSpeed)) * CombatModifiers.AttackSpeedMultiplier;
+        public static float ComputeAttackSpeedMultiplier(PlayerProfile p) => AttackSpeedAt(p, p.upgrades.atkSpeed);
 
-        public static float ComputeCritChance(PlayerProfile p) =>
-            BaseCritChance + p.upgrades.crit * 0.02f + p.items.Add(ItemStat.Crit);
+        public static float ComputeCritChance(PlayerProfile p) => CritAt(p, p.upgrades.crit);
 
         /// <summary>원본 `critMultOf() = CONFIG.player.critMult + itemAdd('critDmg')`(project_test.html:1289).</summary>
         public static float ComputeCritMultiplier(PlayerProfile p) =>

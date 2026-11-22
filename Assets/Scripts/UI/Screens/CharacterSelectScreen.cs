@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using ChronoSavior.Core;
 using ChronoSavior.Systems;
@@ -7,12 +9,16 @@ using ChronoSavior.Systems;
 namespace ChronoSavior.UI
 {
     /// <summary>
-    /// 캐릭터 선택 — Figma "캐릭터 선택창"(4:2)은 **뼈대(와이어프레임)만** 있어서, 뼈대 배치(설명 창 · 1계열/2계열 · 캐릭터 카드 4장 ·
-    /// 뒤로가기/선택하기)를 Figma 공용 부품(창 틀·아이콘 칸·버튼)으로 640판에 옮겼다(사용자 "다 넣을거야"). 카드 아이콘은 Figma 새 도트
-    /// (모자 = 마법사, 스패너 = 메카닉, 쌍검 = 섬영, 망치 = 4번째 — 아직 없는 캐릭터라 잠김). 고르는 동작은 예전 로비 "캐릭터 선택" 탭과 같다
-    /// — 레벨·경험치·SP는 캐릭터마다 따로. 로비에서 연다.
+    /// 캐릭터 선택 — Figma "캐릭터 선택창"(4:2)의 **오른쪽 위 구역**(640×360 완성 판, 2026-11-22)을 그대로 옮겼다.
+    /// 화면 전체가 **직업별 일러스트 배경**(캐릭터를 고르면 바뀐다)이고 그 위에 왼쪽 위 직업 아이콘·이름, 계열 칸 2개, 아래 직업 선택칸 4개,
+    /// 오른쪽 아래 "선택" 버튼이 얹힌다. 계열 칸에 마우스를 올리면 설명 창(Figma "스킬 설명")이 뜨고, 글은 예전과 같은 `SpecTexts` 1티어 설명이다.
+    /// 그림은 디자이너가 드라이브에 올린 "캐릭터 선택창.zip" 그대로(`Resources/Art/Figma/UI/CharacterSelect/`).
+    /// 칸 순서는 코드 순서(마법사·메카닉·살수·히어로)다 — Figma는 히어로가 3번째지만 사용자가 코드 순서로 두라고 했다(2026-11-22).
+    /// 히어로는 아직 없는 캐릭터라 잠겨 있다(Id = null).
+    /// 닫기는 ESC뿐이다(Figma에 "뒤로가기" 버튼이 없다). 레벨·SP·한 줄 설명은 새 판에 자리가 없어서 뺐다(사용자 "없어도 됨").
+    /// 고르는 동작은 예전과 같다 — 레벨·경험치·SP는 캐릭터마다 따로. 로비에서 연다.
     /// **고르기 = 세이브의 `PlayerProfile.character`를 바꾸고 저장**이다(2026-11-05 2a). 전투의 플레이어(`Characters/PlayerRig`)가 그 값을 따라간다 —
-    /// 화면은 월드를 찾지 않는다(예전엔 씬에서 PlayerRig를 찾아 직접 바꿨다). 카드 표(`Entries`)에서 고를 수 있는 캐릭터(<see cref="Selectable"/>)는
+    /// 화면은 월드를 찾지 않는다. 카드 표(`Entries`)에서 고를 수 있는 캐릭터(<see cref="Selectable"/>)는
     /// 전투 씬 Player에 키트가 있어야 한다 — 씬 검증(`Editor/SceneSetupValidator`)이 확인한다(없는 캐릭터를 가리키면 PlayerRig가 프로필을 되돌린다).
     /// </summary>
     public class CharacterSelectScreen : PxScreen
@@ -27,21 +33,37 @@ namespace ChronoSavior.UI
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
 
-        static readonly Color Bg = Px.Hex(0x414141);
         static readonly Color Gold = Px.Hex(0xfac70e);
-        static readonly Rect InfoFrame = new Rect(24f, 24f, 240f, 272f);
-        const float CardY = 240f, CardSize = 64f; // 아래 "선택하기" 버튼과 안 겹치게
-        static readonly float[] CardX = { 300f, 376f, 452f, 528f };
-        static readonly Rect BackBox = new Rect(24f, 316f, 96f, 32f);
-        static readonly Rect SelectBox = new Rect(520f, 316f, 96f, 32f);
 
-        struct Entry { public CharacterId? Id; public string Name, Icon, Hint; }
+        // ── Figma 좌표(640×360 판 기준 — 배경 일러스트 왼쪽 위가 0,0) ──
+        const string Art = "CharacterSelect/";
+        static readonly Vector2 ClassFramePos = new Vector2(40f, 51f);   // 64×64 마름모 틀
+        static readonly Vector2 ClassIconPos = new Vector2(56f, 67f);    // 32×32 직업 아이콘
+        static readonly Vector2 NamePos = new Vector2(114f, 55f);        // 직업 이름(20)
+        static readonly float[] TypeX = { 40f, 173f };                   // 계열 칸 둘(64×64), 아이콘은 칸 안 (12,12) 40×40
+        const float TypeY = 148f, TypeFrame = 64f, TypeIcon = 40f, TypeIconInset = 12f;
+        const float TypeTextDx = 60f, TypeTextW = 64f, TypeTextH = 41f;  // 계열 이름 — 칸 오른쪽 2줄(14)
+        const float TypeHoverW = 124f;                                   // 칸 + 이름까지 마우스 올림 자리
+        const float SlotY = 263f, SlotSize = 80f, SlotIconX = 24f, SlotIconY = 13f, SlotIcon = 32f;
+        static readonly float[] SlotX = { 64f, 164f, 264f, 364f };       // 직업 선택칸 4개
+        const float SlotLabelY = 320f, SlotLabelH = 20f;                 // 칸 아래쪽 띠 안의 이름(14)
+        static readonly Rect SelectBox = new Rect(485f, 302f, 96f, 32f);
+        // 설명 창(256×192) — Figma엔 견본만 있어 자리가 없다. 계열 칸·선택칸을 안 가리는 빈 자리에 둔다.
+        static readonly Rect TipBox = new Rect(250f, 60f, 256f, 192f);
+
+        struct Entry
+        {
+            public CharacterId? Id;
+            public string Name, Bg, Cls, Icon1, Icon2;
+        }
+
         static readonly Entry[] Entries =
         {
-            new Entry { Id = CharacterId.Mage, Name = "마법사", Icon = "Icons/weapon_hat", Hint = "Z 차지 마법탄 · X 전문화 스킬. 멀리서 터뜨리는 마법." },
-            new Entry { Id = CharacterId.Gunner, Name = "메카닉", Icon = "Icons/weapon_spanner", Hint = "Z 에너지 탄(레이저 빌드는 광선) · X 전문화 스킬. 드론·설치기." },
-            new Entry { Id = CharacterId.Blade, Name = "살수", Icon = "Icons/weapon_blades", Hint = "관성 이동 — 달릴수록 빨라지고 강해진다. 방향키를 누르는 동안 피격 무적." },
-            new Entry { Id = null, Name = "???", Icon = "Icons/weapon_hammer", Hint = "아직 준비 중인 캐릭터." },
+            new Entry { Id = CharacterId.Mage, Name = "마법사", Bg = "bg_mage", Cls = "class_mage", Icon1 = "type_flame", Icon2 = "type_gravity" },
+            new Entry { Id = CharacterId.Gunner, Name = "메카닉", Bg = "bg_mechanic", Cls = "class_mechanic", Icon1 = "type_laser", Icon2 = "type_relay" },
+            // 살수의 집중 빌드 = 질주 아이콘, 칼날폭풍 빌드 = 칼날 아이콘(Figma 이름만 보고 짝지음 — 틀리면 알려 주세요)
+            new Entry { Id = CharacterId.Blade, Name = "살수", Bg = "bg_blade", Cls = "class_blade", Icon1 = "type_dash", Icon2 = "type_blade" },
+            new Entry { Id = null, Name = "히어로", Bg = "bg_hero", Cls = "class_hero", Icon1 = null, Icon2 = null },
         };
 
         /// <summary>카드에서 고를 수 있는 캐릭터 — 씬 검증이 전투 씬 Player의 키트와 맞춰 본다.</summary>
@@ -54,8 +76,15 @@ namespace ChronoSavior.UI
             }
         }
 
-        Text nameText, levelText, hintText, branch1, branch1Desc, branch2, branch2Desc;
-        readonly Text[] cardNames = new Text[4];
+        Image bg, classIcon, tipIcon;
+        GameObject tip;
+        Text nameText, soonText, tipName, tipDesc;
+        readonly Image[] typeIcons = new Image[2];
+        readonly Text[] typeNames = new Text[2];
+        readonly GameObject[][] typeParts = new GameObject[2][];
+        readonly Text[] slotNames = new Text[4];
+        int shownCard;
+        int hoveredType = -1;
 
         protected override void Awake()
         {
@@ -72,43 +101,54 @@ namespace ChronoSavior.UI
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Background", Bg);
-            var mask = Px.Node(Content, "ArtMask", 290f, 0f, 350f, 268f);
-            mask.gameObject.AddComponent<RectMask2D>();
-            Px.Image(mask, "Art", PxArt.Get("Hud/portrait"), 15f, -18f, 320f, 320f); // 64px 그림 5배
+            Px.FullFill(Back, "Background", Px.Ink);
+            bg = Px.Image(Content, "Bg", PxArt.Get(Art + Entries[0].Bg), 0f, 0f, PixelCanvas.Width, PixelCanvas.Height);
 
-            Px.Image(Content, "Info", PxArt.Get("Stage/frame_info"), InfoFrame.x, InfoFrame.y, InfoFrame.width, InfoFrame.height);
-            nameText = Px.Text(Content, "Name", "", 36f, 34f, 216f, 26f, 20, Color.white, TextAnchor.MiddleLeft);
-            levelText = Px.Text(Content, "Level", "", 36f, 62f, 216f, 14f, 10, Gold, TextAnchor.MiddleLeft);
-            hintText = Px.Text(Content, "Hint", "", 36f, 82f, 216f, 50f, 10, Color.white, TextAnchor.UpperLeft);
-            hintText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Px.Fill(Content, "Divider", Px.Ink, 36f, 140f, 216f, 1f);
-            Px.Text(Content, "Label1", "1계열", 36f, 148f, 60f, 14f, 10, Color.white, TextAnchor.MiddleLeft);
-            branch1 = Px.Text(Content, "Branch1", "", 90f, 148f, 162f, 14f, 12, Gold, TextAnchor.MiddleLeft);
-            branch1Desc = Px.Text(Content, "Branch1Desc", "", 36f, 166f, 216f, 50f, 8, Color.white, TextAnchor.UpperLeft);
-            branch1Desc.horizontalOverflow = HorizontalWrapMode.Wrap;
-            Px.Text(Content, "Label2", "2계열", 36f, 220f, 60f, 14f, 10, Color.white, TextAnchor.MiddleLeft);
-            branch2 = Px.Text(Content, "Branch2", "", 90f, 220f, 162f, 14f, 12, Gold, TextAnchor.MiddleLeft);
-            branch2Desc = Px.Text(Content, "Branch2Desc", "", 36f, 238f, 216f, 50f, 8, Color.white, TextAnchor.UpperLeft);
-            branch2Desc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            // 왼쪽 위 — 고른 직업 아이콘 + 이름
+            Px.Image(Content, "ClassFrame", PxArt.Get(Art + "class_frame"), ClassFramePos.x, ClassFramePos.y, 64f, 64f);
+            classIcon = Px.Image(Content, "ClassIcon", PxArt.Get(Art + Entries[0].Cls), ClassIconPos.x, ClassIconPos.y, 32f, 32f);
+            nameText = Px.Text(Content, "Name", "", NamePos.x, NamePos.y, 220f, 28f, 20, Color.white, TextAnchor.MiddleLeft);
+            soonText = Px.Text(Content, "Soon", "준비 중", NamePos.x, NamePos.y + 30f, 120f, 14f, 10, Gold, TextAnchor.MiddleLeft);
 
+            // 계열 칸 둘 — 마우스를 올리면 설명 창
+            for (int k = 0; k < 2; k++)
+            {
+                int kk = k;
+                float x = TypeX[k];
+                var frame = Px.Image(Content, "TypeFrame" + k, PxArt.Get(Art + "type_frame"), x, TypeY, TypeFrame, TypeFrame);
+                typeIcons[k] = Px.Image(Content, "TypeIcon" + k, PxArt.Get(Art + Entries[0].Icon1), x + TypeIconInset, TypeY + TypeIconInset,
+                                        TypeIcon, TypeIcon);
+                typeNames[k] = Px.Text(Content, "TypeName" + k, "", x + TypeTextDx, TypeY, TypeTextW, TypeTextH, 14, Color.white);
+                var hover = Px.Fill(Content, "TypeHover" + k, new Color(0f, 0f, 0f, 0f), x, TypeY, TypeHoverW, TypeFrame);
+                hover.raycastTarget = true;
+                var area = hover.gameObject.AddComponent<HoverArea>();
+                area.Enter = () => hoveredType = kk;
+                area.Exit = () => { if (hoveredType == kk) hoveredType = -1; };
+                typeParts[k] = new[] { frame.gameObject, typeIcons[k].gameObject, typeNames[k].gameObject, hover.gameObject };
+            }
+
+            // 아래 — 직업 선택칸 4개(처음 누르면 보기, 한 번 더(또는 Enter·선택 버튼) 고르기)
             for (int i = 0; i < Entries.Length; i++)
             {
                 int k = i;
-                var b = Px.IconButton(Content, "Card" + i, PxArt.Get("Common/icon_frame"), PxArt.Get(Entries[i].Icon),
-                                      CardX[i], CardY, CardSize, CardSize, 16f, 16f, 32f, 32f,
-                                      () => { if (shownCard == k) Pick(k); else shownCard = k; }); // 처음 누르면 보기, 한 번 더(또는 Enter) 고르기
-                cardNames[i] = Px.Text(Content, "CardName" + i, Entries[i].Name, CardX[i] - 8f, CardY + CardSize + 1f, CardSize + 16f, 10f,
-                                       8, Color.white);
+                var b = Px.IconButton(Content, "Slot" + i, PxArt.Get(Art + "slot"), PxArt.Get(Art + Entries[i].Cls), SlotX[i], SlotY,
+                                      SlotSize, SlotSize, SlotIconX, SlotIconY, SlotIcon, SlotIcon,
+                                      () => { if (shownCard == k) Pick(k); else shownCard = k; });
+                slotNames[i] = Px.Text(Content, "SlotName" + i, Entries[i].Name, SlotX[i], SlotLabelY, SlotSize, SlotLabelH, 14, Color.white);
                 AddNav(b);
             }
-            AddNav(Px.TextButton(Content, "Back", PxArt.Get("Common/button"), BackBox.x, BackBox.y, BackBox.width, BackBox.height,
-                                 "뒤로가기", 13, Color.white, Close));
-            AddNav(Px.TextButton(Content, "Select", PxArt.Get("Common/button"), SelectBox.x, SelectBox.y, SelectBox.width,
-                                 SelectBox.height, "선택하기", 13, Color.white, () => Pick(Mathf.Clamp(shownCard, 0, 3))));
-        }
+            AddNav(Px.TextButton(Content, "Select", PxArt.Get(Art + "select_button"), SelectBox.x, SelectBox.y, SelectBox.width,
+                                 SelectBox.height, "선택", 20, Color.white, () => Pick(Mathf.Clamp(shownCard, 0, Entries.Length - 1))));
 
-        int shownCard;
+            // 계열 설명 창 — 맨 위에 그린다
+            var tipImg = Px.Image(Content, "Tooltip", PxArt.Get(Art + "tooltip"), TipBox.x, TipBox.y, TipBox.width, TipBox.height);
+            tip = tipImg.gameObject;
+            tipIcon = Px.Image(tipImg.transform, "Icon", PxArt.Get(Art + Entries[0].Icon1), 25f, 28f, 40f, 40f);
+            tipName = Px.Text(tipImg.transform, "Name", "", 102f, 28f, 142f, 18f, 14, Gold, TextAnchor.MiddleLeft);
+            tipDesc = Px.Text(tipImg.transform, "Desc", "", 102f, 52f, 142f, 128f, 10, Color.white, TextAnchor.UpperLeft);
+            tipDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
+            tip.SetActive(false);
+        }
 
         protected override int DefaultNav
         {
@@ -122,6 +162,8 @@ namespace ChronoSavior.UI
 
         protected override void OnEscape() => Close();
 
+        protected override void OnHidden() => hoveredType = -1;
+
         protected override void OnNavChanged(int index)
         {
             if (index < Entries.Length) shownCard = index;
@@ -131,27 +173,40 @@ namespace ChronoSavior.UI
         {
             var p = ProfileService.Current;
             var e = Entries[shownCard];
-            nameText.text = e.Name;
-            hintText.text = e.Hint;
             bool available = e.Id.HasValue;
-            if (e.Id.HasValue)
-            {
-                var cp = p.ProgressOf(e.Id.Value);
-                levelText.text = $"Lv.{cp.level} · SP {cp.level - 1 - cp.spUsed}" + (p.character == e.Id ? "   (지금 캐릭터)" : "");
-            }
-            else levelText.text = "준비 중";
+
+            bg.sprite = PxArt.Get(Art + e.Bg);
+            classIcon.sprite = PxArt.Get(Art + e.Cls);
+            nameText.text = e.Name;
+            soonText.gameObject.SetActive(!available);
 
             var (n1, d1, n2, d2) = BranchesOf(e.Id);
-            branch1.text = n1; branch1Desc.text = d1;
-            branch2.text = n2; branch2Desc.text = d2;
+            string[] names = { n1, n2 }, descs = { d1, d2 };
+            string[] icons = { e.Icon1, e.Icon2 };
+            for (int k = 0; k < 2; k++)
+            {
+                foreach (var part in typeParts[k]) part.SetActive(available);
+                if (!available) continue;
+                typeIcons[k].sprite = PxArt.Get(Art + icons[k]);
+                typeNames[k].text = names[k].Replace(' ', '\n'); // "폭발 계열" → 두 줄
+            }
+
+            bool showTip = available && hoveredType >= 0;
+            tip.SetActive(showTip);
+            if (showTip)
+            {
+                tipIcon.sprite = PxArt.Get(Art + icons[hoveredType]);
+                tipName.text = names[hoveredType];
+                tipDesc.text = descs[hoveredType];
+            }
 
             for (int i = 0; i < Entries.Length; i++)
             {
                 bool ok = Entries[i].Id.HasValue;
-                Nav[i].Interactable = ok || i == shownCard; // 잠긴 카드도 골라 볼 수는 있게
-                cardNames[i].color = p.character == Entries[i].Id ? Gold : ok ? Color.white : new Color(1f, 1f, 1f, 0.45f);
+                Nav[i].Interactable = ok || i == shownCard; // 잠긴 칸도 골라 볼 수는 있게
+                slotNames[i].color = p.character == Entries[i].Id ? Gold : ok ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             }
-            Nav[Entries.Length + 1].Interactable = available;
+            Nav[Entries.Length].Interactable = available;
         }
 
         static (string, string, string, string) BranchesOf(CharacterId? id) => id switch
@@ -170,6 +225,15 @@ namespace ChronoSavior.UI
             ProfileService.Current.SetSelectedCharacter(e.Id.Value); // 플레이어(전투 씬)는 다음 프레임에 이 값을 따라간다
             SaveService.Save();
             Close();
+        }
+
+        /// <summary>계열 칸 위에 마우스가 올라온 걸 화면에 알린다(<see cref="PxButton"/>은 키보드 선택용이라 따로 둔다).</summary>
+        sealed class HoverArea : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
+        {
+            public Action Enter, Exit;
+            public void OnPointerEnter(PointerEventData e) => Enter?.Invoke();
+            public void OnPointerExit(PointerEventData e) => Exit?.Invoke();
+            void OnDisable() => Exit?.Invoke();
         }
     }
 }

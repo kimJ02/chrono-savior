@@ -109,6 +109,8 @@ namespace ChronoSavior.Core
         public static bool MenuRightDown => Input.GetKeyDown(KeyCode.RightArrow);
         public static bool MenuUpDown => Input.GetKeyDown(KeyCode.UpArrow);
         public static bool MenuDownDown => Input.GetKeyDown(KeyCode.DownArrow);
+        /// <summary>마우스 휠 — 이번 프레임 굴린 양(위로 굴리면 +). 메뉴 목록 스크롤용.</summary>
+        public static float MenuScroll => Input.mouseScrollDelta.y;
         /// <summary>고른 버튼 누르기 — Enter·Space·Z.</summary>
         public static bool MenuConfirmDown =>
             Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter) ||

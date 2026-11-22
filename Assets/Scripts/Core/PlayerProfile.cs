@@ -526,6 +526,18 @@ namespace ChronoSavior.Core
             return true;
         }
 
+        /// <summary>
+        /// 구매 단위(`qty` — 1·10·<see cref="GoldUpgradeConfig.BuyMax"/>)만큼 사 본다. 사지 못하는 순간(골드 부족)에 멈추고 산 단계 수를 준다
+        /// (원본 `buyGoldUpgrade(k, qty)`, project_test.html:7042 — "최대"는 한 번에 1만 단계까지).
+        /// </summary>
+        public int TryBuyUpgrades(UpgradeStat stat, int qty)
+        {
+            int limit = GoldUpgradeConfig.BatchLimit(qty);
+            int bought = 0;
+            while (bought < limit && TryBuyUpgrade(stat)) bought++;
+            return bought;
+        }
+
         void SetUpgradeLevel(UpgradeStat stat, int newLevel)
         {
             switch (stat)

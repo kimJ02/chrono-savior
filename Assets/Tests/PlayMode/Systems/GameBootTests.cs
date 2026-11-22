@@ -544,7 +544,7 @@ public class GameBootTests
             Object.Destroy(spawned.gameObject);
         }
 
-        // 1지역은 지역 전용 보스(덩어리 지배자, 2026-11-10), 그 밖은 원본 공통 보스 — 둘 다 프리팹에서 선다.
+        // 1지역은 덩어리 지배자(2026-11-10), 2지역은 부서진 여신상(2026-11-18), 전용이 없는 지역(3~)은 원본 공통 보스 — 모두 프리팹에서 선다.
         var spawnBoss = typeof(EnemySpawner).GetMethod("SpawnBoss", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
         spawnBoss.Invoke(spawner, null);
         var blob = Object.FindFirstObjectByType<ChronoSavior.Enemies.BlobLordBoss>();
@@ -553,8 +553,14 @@ public class GameBootTests
         Object.Destroy(blob.gameObject);
         RunState.Begin(2, RunMode.Normal);
         spawnBoss.Invoke(spawner, null);
+        var goddess = Object.FindFirstObjectByType<ChronoSavior.Enemies.BrokenGoddessBoss>();
+        Assert.IsNotNull(goddess, "2지역 보스 프리팹에서 부서진 여신상이 선다");
+        Assert.IsTrue(goddess.GetComponent<ChronoSavior.Enemies.EnemyHealth>().isBoss);
+        Object.Destroy(goddess.gameObject);
+        RunState.Begin(3, RunMode.Normal);
+        spawnBoss.Invoke(spawner, null);
         var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
-        Assert.IsNotNull(boss, "2지역은 공통 보스 프리팹에서 보스가 선다");
+        Assert.IsNotNull(boss, "3지역은 공통 보스 프리팹에서 보스가 선다");
         Assert.IsTrue(boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>().isBoss);
         typeof(EnemySpawner).GetMethod("SpawnShrine", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).Invoke(spawner, null);
         var shrine = Object.FindFirstObjectByType<ChronoSavior.Enemies.Shrine>();
@@ -581,13 +587,13 @@ public class GameBootTests
         typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
         var blob = Object.FindFirstObjectByType<ChronoSavior.Enemies.BlobLordBoss>();
         var blobHealth = blob.GetComponent<ChronoSavior.Enemies.EnemyHealth>();
-        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions) * ChapterConfig.BossHpMult), blobHealth.MaxHp, 0.01f);
+        Assert.AreEqual(JsMath.Round(ChronoSavior.Enemies.Boss.HpForRegion(region) * RegressionConfig.WallEnemyHp(region, regressions) * ChapterConfig.BossHpMult), blobHealth.MaxHp, 0.01f); // SetupBoss가 원본처럼 반올림한다(`Math.round`, :4159). 챕터 보스는 한 단계 위(ChapterConfig.BossHpMult)
         Assert.AreEqual(ChronoSavior.Enemies.Boss.LevelForRegion(region), blobHealth.Level);
         AssertSize(blob.gameObject, ChronoSavior.Enemies.BlobLordBoss.VisualSize, ChronoSavior.Enemies.BlobLordBoss.HitRadius);
         Object.Destroy(blob.gameObject);
 
-        // 그 밖의 지역은 원본 공통 보스
-        RunState.Begin(region = 2, RunMode.Normal);
+        // 전용 보스가 없는 지역(3~)은 원본 공통 보스 — 2지역은 부서진 여신상이라 공통 보스 수치를 못 쓴다
+        RunState.Begin(region = 3, RunMode.Normal);
         typeof(EnemySpawner).GetMethod("SpawnBoss", flags).Invoke(spawner, null);
         var boss = Object.FindFirstObjectByType<ChronoSavior.Enemies.Boss>();
         var bossHealth = boss.GetComponent<ChronoSavior.Enemies.EnemyHealth>();

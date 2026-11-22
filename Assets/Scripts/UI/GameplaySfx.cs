@@ -121,7 +121,9 @@ namespace ChronoSavior.UI
                 // Druid(4번째 슬롯)는 이번 학기 작업 대상이 아니라 아직 전용 점프음이 없다.
             }
         }
-        void OnPlayerDamaged() => Play("player_attacked");
+        // 2026-11-22 피드백 — 몬스터 피격음과 플레이어 피격음을 서로 바꿨다: 플레이어가 맞으면 예전 몬스터 소리(`enemy_hit`),
+        // 몬스터가 맞으면 예전 플레이어 소리(`player_attacked`, `HitSound`의 씬 연결 클립). 파일 이름은 옛 용도 그대로다.
+        void OnPlayerDamaged() => Play("enemy_hit");
         void OnPlayerDied() => Play("maybe_can_use_player_dead");
         void OnBossRoomEntered() => Play("enter_bossroom");
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -48,6 +49,53 @@ public class EnemySpawnAndMoveTests
             Random.state = randomBefore;
             FieldLayout.SetBossArena(arenaBefore);
         }
+    }
+
+    /// <summary>
+    /// 2026-11-22 사용자 "보스전에 잡몹이 스폰되는데 안 되게" — 보스전(`RunMode.Boss`)에선 웨이브 시간이 와도 잡몹을 안 낳는다.
+    /// 원본대로(7초마다 2마리, 상한 4) 돌리는 `spawnMinionsInBoss`를 켜면 다시 나온다 — 꺼진 게 "고장"이 아니라 "스위치"임을 같이 확인한다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator BossFight_SpawnsNoMinions_UnlessTheSwitchIsOn()
+    {
+        var prefab = new GameObject("TestMonsterPrefab");
+        prefab.tag = "Enemy";
+        prefab.AddComponent<CircleCollider2D>().radius = 0.3f;
+        var spawnerGO = new GameObject("TestSpawner");
+        var spawner = spawnerGO.AddComponent<EnemySpawner>();
+        spawner.monsterPrefab = prefab;
+        spawner.eliteChanceOverride = 0f;
+
+        var timer = typeof(EnemySpawner).GetField("waveTimer", BindingFlags.NonPublic | BindingFlags.Instance);
+        var aliveField = typeof(EnemySpawner).GetField("aliveMonsters", BindingFlags.NonPublic | BindingFlags.Instance);
+        Assert.IsNotNull(timer);
+        Assert.IsNotNull(aliveField);
+        var alive = (System.Collections.IList)aliveField.GetValue(spawner);
+
+        RunState.Begin(1, RunMode.Boss);
+        try
+        {
+            Assert.IsFalse(spawner.spawnMinionsInBoss, "기본은 보스전 잡몹 없음");
+            timer.SetValue(spawner, 0f);
+            yield return null;
+            yield return null;
+            Assert.AreEqual(0, alive.Count, "보스전에선 웨이브 시간이 와도 잡몹을 안 낳는다");
+
+            spawner.spawnMinionsInBoss = true;
+            timer.SetValue(spawner, 0f);
+            yield return null;
+            yield return null;
+            Assert.Greater(alive.Count, 0, "스위치를 켜면 원본대로 잡몹이 나온다");
+        }
+        finally
+        {
+            foreach (Transform t in new System.Collections.Generic.List<Transform>(alive.Cast<Transform>()))
+                if (t != null) Object.Destroy(t.gameObject);
+            RunState.Reset();
+            Object.Destroy(prefab);
+            Object.Destroy(spawnerGO);
+        }
+        yield return null;
     }
 
     /// <summary>

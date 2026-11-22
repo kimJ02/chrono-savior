@@ -35,5 +35,33 @@ namespace ChronoSavior.Core
         /// <summary>원본 `upCost(k) = floor(base × mult^lv)`, lv=구매 전 현재 단계(project_test.html:1268).</summary>
         public static int Cost(UpgradeStat stat, int currentLevel) =>
             Mathf.FloorToInt(CostBase(stat) * Mathf.Pow(CostMult(stat), currentLevel));
+
+        /// <summary>구매 단위 "최대"(원본 `upgradeBuyQty === 'max'`).</summary>
+        public const int BuyMax = -1;
+        /// <summary>원본 `buyGoldUpgrade`·`previewGoldUpgrade`가 "최대"일 때 한 번에 사는 상한(project_test.html:7045·1271).</summary>
+        public const int MaxBuyBatch = 10000;
+
+        /// <summary>구매 단위가 몇 번 사는 일인지 — 1·10은 그 수, <see cref="BuyMax"/>는 <see cref="MaxBuyBatch"/>.</summary>
+        public static int BatchLimit(int qty) => qty == BuyMax ? MaxBuyBatch : Mathf.Max(1, qty);
+
+        /// <summary>
+        /// 원본 `previewGoldUpgrade(k, qty)`(project_test.html:1269) — 지금 단계에서 `qty`단계를 살 때 몇 단계(count)에 얼마(cost).
+        /// 1·10은 돈이 모자라도 그 수만큼 셈하고(버튼을 못 누르게 하는 건 화면), "최대"는 가진 골드로 살 수 있는 만큼만 센다.
+        /// </summary>
+        public static (int count, long cost) Preview(UpgradeStat stat, int currentLevel, long gold, int qty)
+        {
+            int limit = BatchLimit(qty);
+            int count = 0;
+            long costSum = 0;
+            int lv = currentLevel;
+            while (count < limit)
+            {
+                int cost = Cost(stat, lv);
+                if (cost <= 0) break; // 단계가 아주 높아 비용이 int를 넘으면 더 세지 않는다
+                if (qty == BuyMax && costSum + cost > gold) break;
+                costSum += cost; lv++; count++;
+            }
+            return (count, costSum);
+        }
     }
 }
