@@ -272,6 +272,21 @@ public class UiFigmaUpdateTests
         relic.HideForCapture();
     }
 
+    /// <summary>2026-11-22 회귀 결과창 — 새 프로필: 이전 최고 stage 1 → 회귀 후 stage 1, 획득 파편 0, Lv.1, 처치 0. 정복한 지역이 있으면 그 파편이 보인다.</summary>
+    [UnityTest]
+    public IEnumerator Regression_ShowsStageBeforeAfter_Shards_Level_Kills()
+    {
+        var reg = pc.GetComponent<RegressionScreen>();
+        reg.ShowForCapture();
+        yield return null;
+        Assert.AreEqual("stage 1", reg.ValueText(0));
+        Assert.AreEqual("stage 1", reg.ValueText(1), "회귀하면 1지역부터 다시");
+        Assert.AreEqual("0", reg.ValueText(2));
+        Assert.AreEqual("Lv.1", reg.ValueText(3));
+        Assert.AreEqual("0", reg.ValueText(4));
+        reg.HideForCapture();
+    }
+
     PxButton Find(PxScreen s, string name)
     {
         foreach (var b in s.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == name) return b;

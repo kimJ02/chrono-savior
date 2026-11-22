@@ -6,11 +6,12 @@ using ChronoSavior.Systems;
 namespace ChronoSavior.UI
 {
     /// <summary>
-    /// 시간 회귀 — Figma "시간 회귀창"(31:4, 640×360): "회귀 결과" 창에 네 칸(깃발·파편·별·해골 아이콘 + 이름 + 큰 숫자).
-    /// 라벨은 Figma대로 **최고 스테이지 · 획득 가능한 파편 · 최고 레벨 · 총 처치 수**(9/16판은 스테이지가 없어서
-    /// "정복한 지역"·"현재 레벨"로 바꿔 썼다 — 이제 스테이지 선택이 stage 1~9라 Figma 라벨 그대로).
-    ///   - 최고 스테이지 = 열린 가장 높은 지역(stage N) · 최고 레벨 = 캐릭터들 중 가장 높은 레벨.
-    /// 회귀/취소 버튼은 Figma에 없어서 공용 팝업 버튼으로 창 아래쪽에 넣었다. 동작은 예전 회귀창과 같다
+    /// 시간 회귀 — "회귀 결과" 창(드라이브 새 그림 + 사용자 스크린샷 2026-11-22, 창 512×304): 제목판 · 부제 ·
+    /// **큰 막대(이전 최고 스테이지 ⟫ 회귀 후 스테이지)** · **큰 막대(획득한 파편)** · **작은 막대 둘(최고 레벨 · 총 처치 수, 왼쪽 아이콘)** · 아래 버튼 둘(취소 · 회귀).
+    ///   - 이전 최고 스테이지 = 열린 가장 높은 지역(stage N) · 최고 레벨 = 캐릭터들 중 가장 높은 레벨.
+    ///   - 스크린샷 오른쪽 막대는 글자가 "이전 최고 스테이지"로 왼쪽과 같고 값이 stage 9 → stage 11이라 의미를 알 수 없어,
+    ///     **회귀하면 지역 진행이 비워져 stage 1에서 다시 시작한다**는 사실대로 "회귀 후 스테이지 stage 1"을 보인다(사용자 확인 전).
+    /// 버튼 글자는 스크린샷에 없어서 예전대로(취소 / 회귀 (+파편)). 동작은 예전과 같다
     /// (`PlayerProfile.DoRegression`, 정복한 지역이 없으면 회귀 불가). 로비의 "환생" 건물에서 연다.
     /// </summary>
     public class RegressionScreen : PxScreen
@@ -26,26 +27,19 @@ namespace ChronoSavior.UI
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
         protected override int DefaultNav => 1;
 
-        // Figma 좌표(640판)
-        static readonly Rect Frame = new Rect(64f, 36f, 512f, 288f);       // 162:2
-        static readonly Rect TitleBox = new Rect(267f, 49f, 105f, 21f);    // 162:12 24px
-        static readonly Rect SubBox = new Rect(201f, 96f, 237f, 19f);      // 162:15 13px
-        static readonly Rect[] Icons =
-        {
-            new Rect(113f, 115f, 64f, 64f), new Rect(338f, 118f, 64f, 64f),  // 163:16 깃발 · 163:20 시간의 파편
-            new Rect(113f, 202f, 64f, 64f), new Rect(338f, 202f, 64f, 64f),  // 165:22 별 · 164:21 해골
-        };
-        static readonly string[] IconArt = { "Icons/flag", "Icons/shard", "Icons/star", "Icons/skull" };
-        static readonly string[] Labels = { "최고 스테이지", "획득 가능한 파편", "최고 레벨", "총 처치 수" };
-        static readonly Vector2[] LabelPos = { new Vector2(177f, 133f), new Vector2(402f, 133f), new Vector2(177f, 216f), new Vector2(402f, 216f) };
-        static readonly Vector2[] ValuePos = { new Vector2(177f, 144f), new Vector2(402f, 144f), new Vector2(177f, 231f), new Vector2(402f, 231f) };
-        const float LabelH = 15f, ValueH = 35f, TextW = 150f;
-        const int LabelSize = 10, ValueSize = 24;
-        // 버튼(디자인에 없음) — 공용 팝업 버튼 96×32를 창 아래 여백에
-        static readonly Rect CancelBox = new Rect(176f, 284f, 96f, 32f);
-        static readonly Rect OkBox = new Rect(368f, 284f, 96f, 32f);
+        // 스크린샷에서 잰 값(640판 환산, ±1도트) — 창 왼쪽 위(W) 기준 상대 좌표
+        static readonly Vector2 W = new Vector2(64f, 36f);               // 창 512×304(Common/window_tall)
+        static readonly Rect Plate = new Rect(192f, -15f, 128f, 32f);    // 제목판(Common/title_plate)
+        static readonly Rect StageBar = new Rect(54f, 52f, 400f, 48f);   // 정보창 large
+        static readonly Rect ShardBar = new Rect(54f, 110f, 400f, 48f);
+        static readonly Rect LevelBar = new Rect(54f, 167f, 184f, 48f);  // 정보창 small
+        static readonly Rect KillBar = new Rect(270f, 167f, 184f, 48f);
+        static readonly Rect CancelBox = new Rect(95f, 236f, 96f, 32f);  // 회귀창 버튼
+        static readonly Rect OkBox = new Rect(321f, 236f, 96f, 32f);
+        const float LabelH = 14f, ValueH = 24f;
 
-        readonly Text[] values = new Text[4];
+        // values: 0 이전 최고 스테이지 · 1 회귀 후 스테이지 · 2 획득한 파편 · 3 최고 레벨 · 4 총 처치 수
+        readonly Text[] values = new Text[5];
         PxButton ok;
         Text okLabel;
 
@@ -61,29 +55,55 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
+        /// <summary>막대 안(막대 왼쪽 위 기준) 가운데 (cx, cy)에 글자 한 줄.</summary>
+        Text Line(Rect bar, string name, string text, float cx, float cy, float w, float h, int size)
+        {
+            return Px.Text(Content, name, text, W.x + bar.x + cx - w / 2f, W.y + bar.y + cy - h / 2f, w, h, size, Color.white);
+        }
+
         protected override void Build()
         {
             if (instance == null) instance = this;
             Px.FullFill(Back, "Backdrop", new Color(Px.Backdrop.r, Px.Backdrop.g, Px.Backdrop.b, Px.BackdropAlpha));
-            Px.Image(Content, "Frame", PxArt.Get("Regression/frame"), Frame.x, Frame.y, Frame.width, Frame.height).raycastTarget = true;
-            Px.Text(Content, "Title", "회귀 결과", TitleBox.x - 40f, TitleBox.y, TitleBox.width + 80f, TitleBox.height, 24, Color.white);
-            Px.Text(Content, "Subtitle", "시간을 되감아 더 강한 회차로 넘어 갑니다", SubBox.x - 40f, SubBox.y,
-                    SubBox.width + 80f, SubBox.height, 13, Color.white);
-            for (int i = 0; i < 4; i++)
-            {
-                var r = Icons[i];
-                Px.Image(Content, "Icon" + i, PxArt.Get(IconArt[i]), r.x, r.y, r.width, r.height);
-                Px.Text(Content, "Label" + i, Labels[i], LabelPos[i].x, LabelPos[i].y, TextW, LabelH, LabelSize, Color.white,
-                        TextAnchor.MiddleLeft);
-                values[i] = Px.Text(Content, "Value" + i, "", ValuePos[i].x, ValuePos[i].y, TextW, ValueH, ValueSize, Color.white,
-                                    TextAnchor.MiddleLeft);
-            }
-            AddNav(Px.TextButton(Content, "Cancel", PxArt.Get("Common/button"), CancelBox.x, CancelBox.y, CancelBox.width,
+            Px.Image(Content, "Frame", PxArt.Get("Common/window_tall"), W.x, W.y, 512f, 304f).raycastTarget = true;
+            Px.Image(Content, "TitlePlate", PxArt.Get("Common/title_plate"), W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height);
+            Px.Text(Content, "Title", "회귀 결과", W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height, 24, Color.white);
+            Px.Text(Content, "Subtitle", "시간을 되감아 더 강한 회차로 넘어 갑니다", W.x, W.y + 22f, 512f, 20f, 13, Color.white);
+
+            // 큰 막대 — 이전 최고 스테이지 ⟫ 회귀 후 스테이지
+            Px.Image(Content, "StageBar", PxArt.Get("Regression/info_large"), W.x + StageBar.x, W.y + StageBar.y, StageBar.width, StageBar.height);
+            Line(StageBar, "LabelFrom", "이전 최고 스테이지", 82f, 8f, 160f, LabelH, 11);
+            values[0] = Line(StageBar, "ValueFrom", "", 82f, 33f, 160f, ValueH, 20);
+            Line(StageBar, "Arrow", ">>>", 200f, 24f, 60f, 24f, 20);
+            Line(StageBar, "LabelTo", "회귀 후 스테이지", 320f, 8f, 160f, LabelH, 11);
+            values[1] = Line(StageBar, "ValueTo", "", 320f, 33f, 160f, ValueH, 20);
+
+            // 큰 막대 — 획득한 파편
+            Px.Image(Content, "ShardBar", PxArt.Get("Regression/info_large"), W.x + ShardBar.x, W.y + ShardBar.y, ShardBar.width, ShardBar.height);
+            Line(ShardBar, "LabelShard", "획득한 파편", 200f, 9f, 160f, LabelH, 11);
+            values[2] = Line(ShardBar, "ValueShard", "", 200f, 31f, 200f, ValueH, 20);
+
+            // 작은 막대 둘 — 왼쪽 아이콘(32×32 1:1), 위 이름, 아래 값
+            SmallBar(LevelBar, "Level", "Icons/star", "최고 레벨", 3);
+            SmallBar(KillBar, "Kill", "Icons/skull", "총 처치 수", 4);
+
+            AddNav(Px.TextButton(Content, "Cancel", PxArt.Get("Regression/button"), W.x + CancelBox.x, W.y + CancelBox.y, CancelBox.width,
                                  CancelBox.height, "취소", 13, Color.white, Close));
-            ok = AddNav(Px.TextButton(Content, "Ok", PxArt.Get("Common/button"), OkBox.x, OkBox.y, OkBox.width,
+            ok = AddNav(Px.TextButton(Content, "Ok", PxArt.Get("Regression/button"), W.x + OkBox.x, W.y + OkBox.y, OkBox.width,
                                       OkBox.height, "회귀", 13, Color.white, Regress));
             okLabel = ok.Inner.GetComponentInChildren<Text>();
         }
+
+        void SmallBar(Rect bar, string key, string icon, string label, int valueIndex)
+        {
+            Px.Image(Content, key + "Bar", PxArt.Get("Regression/info_small"), W.x + bar.x, W.y + bar.y, bar.width, bar.height);
+            Px.Image(Content, key + "Icon", PxArt.Get(icon), W.x + bar.x + 6f, W.y + bar.y + 8f, 32f, 32f);
+            Line(bar, key + "Label", label, 108f, 9f, 130f, LabelH + 2f, 13);
+            values[valueIndex] = Line(bar, key + "Value", "", 112f, 31f, 130f, ValueH, 20);
+        }
+
+        /// <summary>테스트용 — 값 글자(0 이전 최고 스테이지 · 1 회귀 후 스테이지 · 2 획득한 파편 · 3 최고 레벨 · 4 총 처치 수).</summary>
+        public string ValueText(int i) => values[i].text;
 
         protected override void OnEscape() => Close();
 
@@ -92,9 +112,10 @@ namespace ChronoSavior.UI
             var p = ProfileService.Current;
             int gain = p.ShardPreview();
             values[0].text = $"stage {HighestStage(p)}";
-            values[1].text = gain.ToString("N0");
-            values[2].text = $"Lv.{HighestLevel(p)}";
-            values[3].text = p.stats.totalKills.ToString("N0");
+            values[1].text = "stage 1"; // 회귀하면 지역 진행이 비워져 1지역부터 다시
+            values[2].text = gain.ToString("N0");
+            values[3].text = $"Lv.{HighestLevel(p)}";
+            values[4].text = p.stats.totalKills.ToString("N0");
             // 2026-11-10 정정 — 던전에 못 들어가게 됐으면(멸망까지 0일) 정복한 지역이 없어도(파편 0)
             // 회귀를 열어준다. 안 그러면 "날짜 다 떨어졌는데 보스도 못 깼다"에서 아무것도 못 하는 소프트락.
             bool stuck = !p.CanEnterStage;

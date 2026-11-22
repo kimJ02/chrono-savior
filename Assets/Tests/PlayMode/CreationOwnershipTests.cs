@@ -80,6 +80,7 @@ public class CreationOwnershipTests
         ["UI/Pixel/PxButton.cs"]           = (Kind.UiBuild, "버튼 눌림 표현용 CanvasGroup"),
         ["UI/Pixel/PixelCanvas.cs"]        = (Kind.UiBuild, "Create는 씬 없는 테스트·캡처 전용(게임은 00_Persistent에 판이 놓임), 화면 컴포넌트 목록 붙이기, 테스트용 EventSystem"),
         ["UI/Screens/AchievementsScreen.cs"] = (Kind.UiBuild, "업적 칸 버튼"),
+        ["UI/Screens/AwakenScreen.cs"]     = (Kind.UiBuild, "스탯 탭 강화 목록 가림막(RectMask2D) — 네 번째 줄이 반쯤 잘려 보이는 스크롤 목록(2026-11-22 새 그림)"),
         ["UI/Screens/CharacterSelectScreen.cs"] = (Kind.UiBuild, "계열 칸 마우스 올림 자리(HoverArea)"),
         ["UI/Screens/CombatHud.cs"]        = (Kind.UiBuild, "미니맵 가림막·글자 그라데이션"),
         ["UI/Screens/StageSelectScreen.cs"] = (Kind.UiBuild, "스테이지 칸 버튼"),
