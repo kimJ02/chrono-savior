@@ -56,8 +56,10 @@ namespace ChronoSavior.UI
         static readonly Rect BossBar = new Rect(32f, 303f, 576f, 48f);              // 592:125 boss_stage
         static readonly Rect Plate = new Rect(32f, 303f, 110f, 48f);                // 539:70 chapter
         static readonly Rect BossPlate = new Rect(32f, 303f, 110f, 48f);            // 592:81(띠와 같이 옮김)
-        static readonly Rect ArrowL = new Rect(52f, 319f, 16f, 16f), ArrowR = new Rect(122f, 319f, 16f, 16f);         // 539:75·539:74
-        static readonly Rect BossArrowL = new Rect(36f, 319f, 16f, 16f), BossArrowR = new Rect(138f, 319f, 16f, 16f); // 590:71·590:72(띠와 같이 옮김)
+        // 챕터 판 화살표 — 판 그림(110×48, 테두리 2·107)의 좌우 장식 가운데에 대칭으로: 그림 안 화살표가 한쪽으로 치우쳐 있어(5~12 / 뒤집으면 3~10)
+        // 판 +8·+85에 두면 보이는 가운데가 15·94로 판 가운데(54.5) 기준 대칭(2026-11-22 사용자 "양쪽 화살표가 왜 이렇게 달렸냐", 판 그림 기준)
+        static readonly Rect ArrowL = new Rect(40f, 319f, 16f, 16f), ArrowR = new Rect(117f, 319f, 16f, 16f);
+        static readonly Rect BossArrowL = new Rect(40f, 319f, 16f, 16f), BossArrowR = new Rect(117f, 319f, 16f, 16f); // 위와 같은 자리
         static readonly float[] FrameX = { 159f, 247f, 335f, 423f, 511f };          // 539:55~539:59 80×36
         const float FrameY = 305f, FrameW = 80f, FrameH = 36f;
         static readonly Rect Line = new Rect(199f, 339f, 352f, 4f);                 // 539:62
