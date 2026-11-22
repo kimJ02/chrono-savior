@@ -192,8 +192,10 @@ namespace ChronoSavior.Characters
             r += GunnerSpecConfig.LinkHitWidth(tier) + GunnerTargets.QueryMargin;
 
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
+            float sig = GunnerRelics.OverloadDamageMult; // 세트 5 과부하 ×1.5(2026-11-22) — 세트 3 ×2는 처음 맞힐 때 아래서
             bool hit = false;
             relicHits.Clear();
+            using var signature = Relics.Signature(); // 설치 시그니처 — 이 처치만 공용 처치 유물이 센다
             foreach (var e in GunnerTargets.Query(c, r))
             {
                 float linkW = GunnerSpecConfig.LinkHitWidth(tier) + e.width * GunnerSpecConfig.LinkEnemyWidthFactor;
@@ -203,15 +205,16 @@ namespace ChronoSavior.Characters
                 bool insideField = closedField && PointInPolygon(e.center, pts);
                 if (!onLink && !insideField) continue;
 
+                if (!hit) sig *= GunnerRelics.ConsumeArmedMult(); // 세트 3 — 맞힌 틱에서만
                 hit = true;
-                float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3);
+                float mult = GunnerSpecConfig.FieldDamageMult(tier, onLink, insideField && pts.Count >= 3) * sig;
                 float dmg = DamageCalculator.Roll(atk * mult, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                       // 원본 kb:0 + noHitstop
                 relicHits.Add(e.collider);
                 // 그림만 — 맞은 적 자리 전기 + 때린 곳(가장 가까운 연결선, 안쪽이면 도형 변)에서 그 적까지 아크(적마다 0.25초에 한 번, 2026-11-10)
                 if (GunnerZap.Ready(e.collider)) GunnerZap.At(e.collider, e.center, NearestOnEdges(e.center, onLink ? segs : null, pts), e.width * 0.5f);
             }
-            GunnerRelics.OnFieldTick(relicHits, pts); // 유물(2026-11-19) — 삼각 방전·교차 전류
+            GunnerRelics.OnFieldTick(relicHits, pts); // 공성 연결망(2026-11-22)
             return hit;
         }
 

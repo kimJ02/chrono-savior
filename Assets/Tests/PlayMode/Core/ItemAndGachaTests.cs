@@ -25,7 +25,7 @@ public class ItemAndGachaTests
     [Test]
     public void RelicDatabase_Has30_FivePerCharacter_AndGradeSplit()
     {
-        Assert.AreEqual(46, ItemDatabase.All.Length, "전용 16 + 공용 30(2026-11-22 능력치 유물 13종 추가)");
+        Assert.AreEqual(48, ItemDatabase.All.Length, "전용 18(6/6/6) + 공용 30(2026-11-22)");
         var ids = new HashSet<string>();
         var perOwner = new Dictionary<RelicOwner, int>();
         var legendPerOwner = new Dictionary<RelicOwner, int>();
@@ -43,13 +43,13 @@ public class ItemAndGachaTests
         Assert.AreEqual(30, perOwner[RelicOwner.Common], "공용 30종(사용자 2026-11-22)");
         foreach (var o in new[] { RelicOwner.Mage, RelicOwner.Gunner, RelicOwner.Blade })
         {
-            Assert.AreEqual(o == RelicOwner.Mage ? 6 : 5, perOwner[o], $"{o} 전용 유물 수(마법사는 역행의 시계핵까지 6)");
-            Assert.AreEqual(1, legendPerOwner[o], $"{o} 전설 수");
+            Assert.AreEqual(6, perOwner[o], $"{o} 전용 유물 수(2026-11-22 — 6/6/6)");
+            Assert.GreaterOrEqual(legendPerOwner[o], 1, $"{o} 전설 수");
         }
         Assert.AreEqual(20, perGrade[ItemGrade.Common]);
         Assert.AreEqual(16, perGrade[ItemGrade.Rare]);
         Assert.AreEqual(6, perGrade[ItemGrade.Epic]);
-        Assert.AreEqual(4, perGrade[ItemGrade.Legend]);
+        Assert.AreEqual(6, perGrade[ItemGrade.Legend], "메카닉 공성 연결망·섬영 잔영 추격 전설 추가");
     }
 
     /// <summary>능력치 유물(2026-11-22) — 보유하면 실제 스탯이 랭크 × 1랭크 값만큼 오른다(상한까지).</summary>

@@ -112,6 +112,8 @@ namespace ChronoSavior.Systems
             }
 
             if (Relics.InRelicDamage) return; // 유물이 낸 처치는 아래 유물을 다시 발동시키지 않는다
+            // 메카닉·섬영은 시그니처(레이저·설치·집중·칼날폭풍)로 잡은 것만 센다 — Z가 공용 유물로 화면을 먼저 정리하지 않게(2026-11-22, GPT와 정함)
+            if (!Relics.KillCountsForCommon(ProfileService.Current)) return;
 
             bool elite = enemy.GetComponent<EnemyElite>() != null;
             kills++;
@@ -167,6 +169,7 @@ namespace ChronoSavior.Systems
         public static void OnChainKill(Vector2 pos)
         {
             if (Relics.InRelicDamage) return;
+            if (!Relics.KillCountsForCommon(ProfileService.Current)) return; // 위와 같다 — 시그니처 연쇄만
             chainKills++;
 
             // 연쇄 세트 2 — 연쇄 처치 두 번에 한 번 작은 충격파(50%). 4 — 연쇄 처치마다 바닥을 가르는 칼날 2줄(30%)

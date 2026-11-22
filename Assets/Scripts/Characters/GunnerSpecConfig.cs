@@ -129,7 +129,7 @@ namespace ChronoSavior.Characters
 
         // ---- 설치기 (placeGunnerTurret :2349, updateZones turret :3858) ----
         /// <summary>원본 `gunnerTurretMax()` — 1~3층 3개, 4층 4개, 5층 5개(0층 0).</summary>
-        public static int TurretMax(int tier) => tier <= 0 ? 0 : tier >= 5 ? 5 : tier >= 4 ? 4 : 3;
+        public static int TurretMax(int tier) => tier <= 0 ? 0 : (tier >= 5 ? 5 : tier >= 4 ? 4 : 3) + GunnerRelics.TurretBonus; // + 삼각 방전(2026-11-22)
         public const float TurretPlaceForward = 0.34f;   // 원본 x = p.x + facing*34
         public const float TurretEdgeMargin = 0.36f;     // 원본 clamp(x, 36, mapW - 36)
         /// <summary>5층은 사실상 영구(원본 9999초).</summary>
@@ -144,19 +144,19 @@ namespace ChronoSavior.Characters
         // ---- 설치기 링크 · 내부 장판 (mechanicLinkMax :1327, mechanicFieldPoints :1392, updateZones :3766) ----
         /// <summary>원본 `300 + tier*70 + (tier >= 4 ? 90 : 0) + (tier >= 5 ? 120 : 0)` px ÷100.</summary>
         public static float LinkMax(int tier) =>
-            tier <= 0 ? 0f : (300f + tier * 70f + (tier >= 4 ? 90f : 0f) + (tier >= 5 ? 120f : 0f)) / 100f;
+            tier <= 0 ? 0f : (300f + tier * 70f + (tier >= 4 ? 90f : 0f) + (tier >= 5 ? 120f : 0f)) / 100f * GunnerRelics.LinkMaxMult; // × 교차 전류
         /// <summary>장판 꼭짓점 높이 — 원본 `z.y - 24`.</summary>
         public const float FieldPointHeight = 0.24f;
         /// <summary>앞 세 꼭짓점의 삼각형 넓이가 이보다 작으면(거의 일직선) 가운데 점을 들어 올린다. 원본 800px² ÷10000.</summary>
         public const float FieldFlatTriangleArea = 0.08f;
         /// <summary>들어 올리는 높이 — 원본 `min(pts[0].y, pts[2].y) - 120`.</summary>
         public const float FieldLiftHeight = 1.20f;
-        public static float FieldTick(int tier) => tier >= 5 ? 0.28f : 0.38f;
+        public static float FieldTick(int tier) => (tier >= 5 ? 0.28f : 0.38f) * GunnerRelics.FieldTickMult; // × 교차 전류·세트 5 과부하
         /// <summary>링크 판정 폭 — 원본 `30 + tier*3` px ÷100에 적 폭 × 0.25를 더한다.</summary>
-        public static float LinkHitWidth(int tier) => (30f + tier * 3f) / 100f;
+        public static float LinkHitWidth(int tier) => (30f + tier * 3f) / 100f + GunnerRelics.LinkWidthBonus; // + 교차 전류
         public const float LinkEnemyWidthFactor = 0.25f;
         /// <summary>원본 `0.22 + tier*0.05 + (링크 위 0.08) + (내부 0.06)`.</summary>
         public static float FieldDamageMult(int tier, bool onLink, bool insideField) =>
-            0.22f + tier * 0.05f + (onLink ? 0.08f : 0f) + (insideField ? 0.06f : 0f);
+            0.22f + tier * 0.05f + (onLink ? 0.08f : 0f) + (insideField ? 0.06f : 0f) + GunnerRelics.FieldDamageBonus; // + 교차 전류
     }
 }

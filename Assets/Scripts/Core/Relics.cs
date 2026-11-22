@@ -25,6 +25,34 @@ namespace ChronoSavior.Core
             public void Dispose() => InRelicDamage = prev;
         }
 
+        // ── 시그니처 피해(2026-11-22 사용자 "레이저로 쓸어버려야 재미가 있다" — GPT와 정함) ──
+        // 메카닉(레이저 광선·설치 장·설치기)·섬영(집중 궤적·파열·칼날폭풍) 시그니처가 피해를 주는 동안 켠다.
+        // 메카닉·섬영은 이게 켜진 처치만 공용 처치 유물(등불·별똥·종언의 종 등) 카운트에 든다 — Z·드론·유물로 화면이 먼저 정리되지 않게.
+
+        /// <summary>지금 시그니처 공격이 피해를 주는 중.</summary>
+        public static bool InSignatureDamage { get; private set; }
+
+        /// <summary>시그니처 피해를 주는 동안 감싼다. <c>using (Relics.Signature()) { … }</c></summary>
+        public static SignatureScope Signature() => new SignatureScope(true);
+
+        public readonly struct SignatureScope : System.IDisposable
+        {
+            readonly bool prev;
+            public SignatureScope(bool on) { prev = InSignatureDamage; InSignatureDamage = on; }
+            public void Dispose() => InSignatureDamage = prev;
+        }
+
+        /// <summary>
+        /// 이 처치가 공용 처치 유물을 셀 수 있는가 — 마법사는 늘(재미가 이미 맞다, 사용자), 메카닉·섬영은 시그니처 처치만.
+        /// </summary>
+        public static bool KillCountsForCommon(PlayerProfile p)
+        {
+            if (p == null) return true;
+            if (p.character == CharacterId.Gunner && p.gunnerBranch != GunnerBranch.None) return InSignatureDamage;
+            if (p.character == CharacterId.Blade && p.bladeBranch != BladeBranch.None) return InSignatureDamage;
+            return true;
+        }
+
         // ── 발동 알림(2026-11-19 전투 화면 유물 칸이 반짝이게) ──
         static readonly System.Collections.Generic.Dictionary<string, float> lastProc = new System.Collections.Generic.Dictionary<string, float>();
 

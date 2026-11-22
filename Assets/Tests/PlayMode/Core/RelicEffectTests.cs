@@ -113,50 +113,66 @@ public class RelicEffectTests
         Assert.AreEqual(neighbour.MaxHp, neighbour.CurrentHp, "중력 갈래인데 폭발 갈래 유물이 켜졌다");
     }
 
+    /// <summary>메카닉 재설계(2026-11-22) — 레이저·설치 유물은 시그니처 수치를 키운다(갈래가 맞을 때만).</summary>
     [Test]
-    public void SpareRounds_FiresEveryNthZHit_NotFromRelicDamage()
+    public void GunnerRelics_GrowSignatureNumbers_OnlyOnTheirBranch()
     {
         var p = ProfileService.Current;
         p.character = CharacterId.Gunner;
-        p.items.Add("spareRounds"); // 1랭크 = 5번마다
+        p.gunnerBranch = GunnerBranch.Laser;
+        float range0 = GunnerSpecConfig.BeamRange(5);
+        p.items.Add("prismBore"); p.items.Add("prismBore"); p.items.Add("prismBore");
+        Assert.AreEqual(1.2f, GunnerRelics.BeamRangeBonus, 1e-4f, "프리즘 구경 3랭크 사거리");
+        Assert.AreEqual(0.22f, GunnerRelics.BeamWidthBonus, 1e-4f);
+        Assert.AreEqual(0, GunnerRelics.TurretBonus, "레이저 갈래에 설치 유물이 켜지면 안 된다");
 
-        for (int i = 0; i < 4; i++) GunnerRelics.OnZHit(Vector2.zero, Vector2.right);
-        Assert.AreEqual(0, CountProjectiles(), "5번 전에 나갔다");
-        GunnerRelics.OnZHit(Vector2.zero, Vector2.right);
-        Assert.AreEqual(1, CountProjectiles(), "5번째 적중에 유도탄이 안 나갔다");
-
-        using (Relics.Damaging())
-            for (int i = 0; i < 10; i++) GunnerRelics.OnZHit(Vector2.zero, Vector2.right);
-        Assert.AreEqual(1, CountProjectiles(), "유물 피해가 유물을 다시 발동시켰다");
+        p.gunnerBranch = GunnerBranch.Installer;
+        p.items.Add("triangleDischarge"); p.items.Add("triangleDischarge");
+        Assert.AreEqual(0f, GunnerRelics.BeamRangeBonus, "설치 갈래에 레이저 유물이 켜졌다");
+        Assert.AreEqual(5 + 2, GunnerSpecConfig.TurretMax(5), "삼각 방전 2랭크 — 설치 한도 +2");
+        float link0 = GunnerSpecConfig.LinkMax(5);
+        p.items.Add("crossCurrent");
+        Assert.AreEqual(link0 * 1.25f, GunnerSpecConfig.LinkMax(5), 1e-3f, "교차 전류 1랭크 — 연결 거리 +25%");
+        Assert.Less(GunnerSpecConfig.FieldTick(5), 0.28f, "장판 틱이 빨라진다");
+        Assert.Greater(range0, 0f);
     }
 
+    /// <summary>메카닉·섬영은 시그니처 처치만 공용 처치 유물이 센다(2026-11-22) — 마법사는 그대로.</summary>
     [Test]
-    public void AfterEdge_EveryNthSpin_AndNeedsBlade()
+    public void CommonKillRelics_CountOnlySignatureKills_ForGunnerAndBlade()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Mage;
+        Assert.IsTrue(Relics.KillCountsForCommon(p), "마법사는 모든 처치");
+        p.character = CharacterId.Gunner; p.gunnerBranch = GunnerBranch.Laser;
+        Assert.IsFalse(Relics.KillCountsForCommon(p), "메카닉 Z 처치는 안 센다");
+        using (Relics.Signature()) Assert.IsTrue(Relics.KillCountsForCommon(p), "레이저 처치는 센다");
+        p.character = CharacterId.Blade; p.bladeBranch = BladeBranch.Storm;
+        Assert.IsFalse(Relics.KillCountsForCommon(p));
+    }
+
+    /// <summary>섬영 재설계(2026-11-22) — 쿨감·궤적 강화는 섬영·그 갈래에서만, 폭풍 칼집은 칼날폭풍 처치만 센다.</summary>
+    [Test]
+    public void BladeRelics_GrowSignature_AndStormSheathCountsStormKills()
     {
         var p = ProfileService.Current;
         p.character = CharacterId.Mage;
         p.items.Add("afterEdge");
-        for (int i = 0; i < 10; i++) BladeRelics.OnSpin(Vector2.zero, 1);
-        Assert.AreEqual(0, CountProjectiles(), "섬영 전용이 마법사에게 켜졌다");
-
+        Assert.AreEqual(1f, BladeRelics.SkillCdMult, 1e-4f, "섬영 전용이 마법사에게 켜졌다");
         p.character = CharacterId.Blade;
-        BladeRelics.ResetForRun();
-        for (int i = 0; i < 5; i++) BladeRelics.OnSpin(Vector2.zero, 1);
-        Assert.AreEqual(1, CountProjectiles(), "회전 베기 5번째에 칼날이 안 나갔다");
-    }
+        Assert.AreEqual(0.9f, BladeRelics.SkillCdMult, 1e-4f, "잔영 칼끝 1랭크 — X 쿨 -10%");
 
-    [Test]
-    public void StormSheath_ThreeChargesFireFan()
-    {
-        var p = ProfileService.Current;
-        p.character = CharacterId.Blade;
+        p.bladeBranch = BladeBranch.Focus;
+        p.items.Add("focusHeart");
+        Assert.AreEqual(1.15f, BladeRelics.TrailDamageMult(false), 1e-4f, "집중의 심장 1랭크 — 궤적 ×1.15");
+        p.items.Add("stormSheath");
+        Assert.AreEqual(0, Relics.Rank("stormSheath"), "집중 갈래에 폭풍 유물이 켜졌다");
+
         p.bladeBranch = BladeBranch.Storm;
-        p.items.Add("stormSheath"); // 5처치 = 1충전, 3충전이면 칼날 3발
-
-        for (int i = 0; i < 14; i++) BladeRelics.OnSpinKill(Vector2.zero, 1);
-        Assert.AreEqual(0, CountProjectiles(), "3충전 전에 나갔다");
-        BladeRelics.OnSpinKill(Vector2.zero, 1);
-        Assert.AreEqual(3, CountProjectiles(), "15처치(3충전)에 칼날 3발이 아니다");
+        for (int i = 0; i < 3; i++) BladeRelics.OnStormKill(Vector2.zero, 1);
+        Assert.AreEqual(0, CountProjectiles(), "4마리 전에 나갔다");
+        BladeRelics.OnStormKill(Vector2.zero, 1);
+        Assert.AreEqual(3, CountProjectiles(), "4번째 칼날폭풍 처치에 초승달 3발");
     }
 
     [UnityTest]

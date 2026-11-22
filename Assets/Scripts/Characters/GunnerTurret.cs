@@ -139,10 +139,14 @@ namespace ChronoSavior.Characters
         {
             float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
             Vector2 c = DamageCenter;
+            using var signature = Relics.Signature(); // 설치기 공격도 설치 시그니처(2026-11-22)
+            float sig = GunnerRelics.OverloadDamageMult; // 세트 5 과부하
+            bool armedTaken = false;
             foreach (var e in GunnerTargets.Query(c, Range + GunnerTargets.QueryMargin))
             {
                 if (Vector2.Distance(e.center, c) >= Range + e.width / 2f) continue;
-                float dmg = DamageCalculator.Roll(atk * DamageMult, 0f, out _); // 원본 noCrit
+                if (!armedTaken) { armedTaken = true; sig *= GunnerRelics.ConsumeArmedMult(); } // 세트 3 — 맞힌 틱에서만
+                float dmg = DamageCalculator.Roll(atk * DamageMult * sig, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                            // 원본 kb:0 + noHitstop
                 // 그림만 — 적 자리 전기 + 중계기 머리에서 그 적까지 아크(적마다 0.25초에 한 번, 2026-11-10)
                 GunnerZap.At(e.collider, e.center, (Vector2)transform.position + new Vector2(0f, RelayHeadHeight), e.width * 0.5f);

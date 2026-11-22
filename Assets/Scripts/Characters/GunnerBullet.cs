@@ -189,8 +189,7 @@ namespace ChronoSavior.Characters
                 knockbackDirSign = rb.linearVelocity.x > 0f ? 1f : -1f;
             target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
             // 유물(2026-11-19) — Z 총알 적중(잔탄 포켓), 드론 탄 처치(자율 포좌)
-            if (stackOwner != null) GunnerRelics.OnZHit(stackOwner.transform.position, other.bounds.center);
-            else if (hitArtKey == VfxKeys.MechanicDroneHit && target.IsDead) GunnerRelics.OnDroneKill(other.bounds.center);
+            if (stackOwner != null) GunnerRelics.OnZHit(stackOwner, other.bounds.center); // 잔탄 포켓(2026-11-22 — 피해 대신 충전·부품)
 
             // 원본 `if (w.stackOnHit) addGunnerStack(w.stackOnHit)`(:3722) — 갈래가 없으면 AddStack이 무시한다.
             if (stackOnHit > 0 && stackOwner != null) stackOwner.AddStack(stackOnHit);
