@@ -199,6 +199,10 @@ public class PixelUiTests
     [UnityTest]
     public IEnumerator Title_ShowsOnTitle_LoadNeedsSave_PopupConfirmRunsCallback()
     {
+        // 실제 마우스가 에디터 Game 창의 메뉴 칸 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다(`PxButton.OnHover`) —
+        // 처음 고른 칸을 보는 이 검사엔 사람 손이 섞이면 안 되므로 포인터 이벤트를 끈다(2026-11-22 "처음엔 새 원정 Expected 0 But was 2").
+        var es = UnityEngine.EventSystems.EventSystem.current;
+        if (es != null) es.enabled = false;
         GameState.Set(GameScene.Title);
         var title = pc.GetComponent<TitleMenu>();
         yield return null;
