@@ -95,13 +95,14 @@ public class BlobLordBossTests
 
     // ───────────────────────── 연결 ─────────────────────────
 
-    /// <summary>1지역은 덩어리 지배자, 다른 지역은 원본 공통 보스(사용자 2026-11-10 "1지역 보스만"). 공통 보스 체력 곡선(1지역 800)은 그대로.</summary>
+    /// <summary>1지역은 덩어리 지배자, 2지역은 부서진 여신상(2026-11-18), 전용이 없는 지역(3~)은 원본 공통 보스. 공통 보스 체력 곡선(1지역 800)은 그대로.</summary>
     [Test]
     public void Catalog_Region1UsesBlobLord_OthersKeepCommonBoss()
     {
         var cat = UnityEditor.AssetDatabase.LoadAssetAtPath<MonsterCatalog>(CatalogPath);
         Assert.IsNotNull(cat.BossPrefabFor(1).GetComponent<BlobLordBoss>());
-        Assert.IsNotNull(cat.BossPrefabFor(2).GetComponent<Boss>());
+        Assert.IsNotNull(cat.BossPrefabFor(2).GetComponent<BrokenGoddessBoss>(), "2지역 전용 보스 = 부서진 여신상");
+        Assert.IsNotNull(cat.BossPrefabFor(3).GetComponent<Boss>(), "전용 보스가 없는 지역은 공통 보스");
         Assert.IsTrue(cat.BossPrefabFor(1).GetComponent<EnemyHealth>().isBoss, "보스 표시(체력바·처치 연출·보상 분기)");
 
         var go = Object.Instantiate(cat.BossPrefabFor(1));

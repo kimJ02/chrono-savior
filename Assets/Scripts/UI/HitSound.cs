@@ -18,7 +18,7 @@ namespace ChronoSavior.UI
         public const float MinGap = 0.12f;
         const float BaseVolume = 0.7f;
 
-        [Tooltip("타격 소리(Kenney footstep_carpet_002) — Assets/Resources/Audio/Sfx/enemy_hit")]
+        [Tooltip("몬스터 피격 소리 — Assets/Resources/Audio/Sfx/player_attacked(2026-11-22 피드백으로 플레이어 피격음과 맞바꿨다. 예전엔 Kenney footstep_carpet_002 = enemy_hit, 지금은 플레이어 피격에 쓴다)")]
         [SerializeField] AudioClip clip;
 
         /// <summary>씬 구성 검증과 테스트가 읽고 넣는다.</summary>

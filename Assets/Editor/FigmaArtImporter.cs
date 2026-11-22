@@ -18,11 +18,11 @@ namespace ChronoSavior.Editor
         /// <summary>Figma UI 그림(640×360 화면 부품) — 2026-10-24.</summary>
         public const string UiFolder = Folder + "UI/";
 
-        /// <summary>도트가 아닌 큰 그림(타이틀 배경·로고 1672×941, 스킬 아이콘 314px) — 화면 크기에 맞춰 부드럽게 줄여 그린다.</summary>
+        /// <summary>도트가 아닌 큰 그림(타이틀 배경·로고 1672×941) — 화면 크기에 맞춰 부드럽게 줄여 그린다. 스킬 아이콘은 30×30 도트라 여기서 뺐다(2026-11-18).</summary>
         public static bool IsIllustration(string path) =>
-            path.StartsWith(UiFolder + "Title/") || path.StartsWith(UiFolder + "Skills/");
+            path.StartsWith(UiFolder + "Title/");
 
-        public override uint GetVersion() => 7; // 7: 땅·발판 타일 PPU 64 → 128
+        public override uint GetVersion() => 8; // 8: Skills/ 도트 아이콘 — 일러스트 취급 해제(2026-11-18, 머지 때 되돌아간 걸 복구). 7: 땅·발판 타일 PPU 64 → 128
 
         void OnPreprocessTexture()
         {

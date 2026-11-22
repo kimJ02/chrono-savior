@@ -20,10 +20,14 @@ public class DotScaleTests
         return a;
     }
 
-    /// <summary>그림 높이(유닛)가 그 그림을 도트 배율로 그린 높이인가.</summary>
-    static void AssertDot(string what, Sprite sprite, float worldHeight)
+    /// <summary>캐릭터 그림은 도트 1 — 2026-11-18 사용자 "배경·포탈만 도트 2, 나머지는 1"(그림 높이 0.75 → 0.375). 몹·이펙트는 아직 <see cref="DotScale.Value"/>.</summary>
+    const float CharacterDot = 1f;
+
+    /// <summary>그림 높이(유닛)가 그 그림을 도트 배율로 그린 높이인가(<paramref name="dot"/>을 안 주면 화면 기본 배율).</summary>
+    static void AssertDot(string what, Sprite sprite, float worldHeight, float dot = -1f)
     {
-        Assert.AreEqual(DotScale.Units(sprite.rect.height), worldHeight, 1e-3f, $"{what}: 도트 배율 {DotScale.Value}이 아니다");
+        float d = dot < 0f ? DotScale.Value : dot;
+        Assert.AreEqual(sprite.rect.height * d / DotScale.GridPixelsPerUnit, worldHeight, 1e-3f, $"{what}: 도트 배율 {d}이 아니다");
     }
 
     [Test]
@@ -31,7 +35,9 @@ public class DotScaleTests
     {
         var art = Load<CharacterArtSet>("Assets/Data/Characters/CharacterArtSet.asset");
         foreach (CharacterId id in System.Enum.GetValues(typeof(CharacterId)))
-            if (art.SpriteOf(id) != null) AssertDot("캐릭터 " + id, art.SpriteOf(id), art.HeightOf(id));
+            if (art.SpriteOf(id) != null)
+                // 애니메이션 그림이 있는 정식 캐릭터(마법사·메카닉·살수)는 도트 1, 임시 그림(드루이드 — 기획에서 빠짐)은 화면 기본 배율 그대로
+                AssertDot("캐릭터 " + id, art.SpriteOf(id), art.HeightOf(id), art.AnimSetOf(id) != null ? CharacterDot : -1f);
     }
 
     [Test]

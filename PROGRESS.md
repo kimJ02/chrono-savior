@@ -302,6 +302,36 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-22 (142)** — **[나] PlayMode 실패 7건 정리**(사용자 캡처 두 번 — 1차 7건, 고친 뒤 3건).
+  - **`UiFigmaUpdateTests.NewDotIcons_DrawnOneToOne`** — `Editor/FigmaArtImporter`가 머지 중 main 쪽 수정(Skills/ 30×30 도트 아이콘은 일러스트가 아니다)을 잃고 `IsIllustration`에 `Skills/`가 되돌아가 있었다(밉맵·쌍선형 필터). `Title/`만 일러스트로 복구, `GetVersion` 8. → 통과 확인.
+  - **`DotScaleTests.Characters_AreDrawnAtDotScale`** — (137)에서 캐릭터를 도트 1(높이 0.375)로 줄였는데 테스트가 도트 2를 기대했다. `CharacterDot = 1` 추가, **애니메이션 묶음이 있는 정식 캐릭터(마법사·메카닉·살수)만 도트 1**, 임시 그림(드루이드 — 기획에서 빠짐, 높이 1)은 화면 기본 배율 그대로(1차 수정이 드루이드까지 도트 1로 보아 아직 1건 남았었다). `docs/pixel-standard.md` §0("도트는 하나, 배율 2")은 아직 안 고쳤다 — 팀장 결정 후.
+  - **`BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss`·`GameBootTests.Spawner_BuildsEachKindFromItsPrefab`·`BossAndShrine_GetTheirStatsAndSizes`** — (135)에서 2지역 보스를 부서진 여신상으로 등록해 "2지역 = 공통 보스"가 더는 맞지 않는다. 공통 보스 검사는 **3지역**으로 옮기고, 2지역은 `BrokenGoddessBoss`가 서는지 검사. 앞의 둘은 통과, `BossAndShrine`은 아직 실패 — **실패 메시지가 필요하다**(소스만으론 못 정함).
+  - **`GravityWellZoneTests.Pull_SkipsCrowdControlImmune...`** — 중력장 면역 코드는 맞았고 **테스트 위치가 틀렸다**: 보스를 x = -1에 뒀는데 필드는 `FieldBounds.MinX = 0`부터라 `EnemyMove`가 보스를 경계 안(≈0.22~0.29)으로 끌어다 놓았다(면역 검사와 무관, 값이 매번 달랐던 이유). 우물 (4,1) · 일반 몹 (5,1) · 보스 (3,1)로 옮겼다.
+  - **`BossAndShrine_GetTheirStatsAndSizes`(3차)** — `Expected 10354.4005 / But was 10354`: `EnemySetup.SetupBoss`가 보스 체력을 원본처럼 반올림(`Math.round`, :4159)하는데 테스트는 반올림 안 한 값을 기대했다. 두 곳(1지역 덩어리 지배자·3지역 공통 보스) 기대값을 `JsMath.Round(...)`로. 성소·공격력은 이미 반올림 기대였다.
+  - **`GravityWellZoneTests.Pull_...`(2차)** — 위치를 고친 뒤엔 반대로 일반 몹이 "안 끌린다"(Expected not equal 5.0 / But was 5.0): 끌어당김은 `Update`가 Rigidbody2D 위치를 바꾸고 Transform은 **다음 물리 스텝**에 따라오는데, 프레임이 0.01초대로 빠르면 6프레임 안에 물리 스텝이 한 번도 안 돈다. 일반 몹이 움직일 때까지(최대 0.5초) 기다린 뒤 `WaitForFixedUpdate` 5번 더 거치게 했다. 타이밍 의존 테스트였다.
+  - **`BladeCombatTests.SpinAttack_...`** — 2차 실행엔 통과, 3차에 또 실패 → **타이밍·순서에 따라 나오는 불안정한 실패**(1차 메시지: 4유닛 밖 적이 9 피해 = 회전베기 한 번 분). 이번 변경과 무관한 곳에서 나는 피해로 보이나 범인은 못 찾았다 — 단독 실행 결과가 필요하다.
+  - ⚠️ **이 PROGRESS.md가 같은 세션에서 두 번 되돌려졌다**(내가 쓴 항목이 사라지고 그 앞 버전으로) — IDE에 열려 있던 낡은 PROGRESS.md가 저장되며 덮어쓴 것으로 의심된다. 그래서 이 항목은 다시 적었다. **IDE에서 PROGRESS.md 탭을 닫거나 디스크에서 다시 불러온 뒤** 작업할 것.
+  - 이 세션은 컴파일·실행을 못 했다 — 사용자가 전체 PlayMode를 다시 돌려 확인.
+
+- **2026-11-22 (141)** — **[나] 캐릭터 선택 화면을 Figma 새 디자인으로 교체 — 오른쪽 위 구역만**(사용자 "오른쪽 위 만 적용하면되는데", `iconfram 3`은 제외).
+  - 그림은 디자이너가 드라이브 `capstone Pigeon/UI/캐릭터 선택창.zip`에 올린 것 그대로 19장 → `Resources/Art/Figma/UI/CharacterSelect/`(배경 4·직업 아이콘 4·직업 틀·계열 틀·직업 선택칸·선택 버튼·설명 창·계열 아이콘 6). Figma 주소가 이 세션 네트워크에서 막혀서 드라이브로 받았다.
+  - `UI/Screens/CharacterSelectScreen` 새로 씀: 배경은 **고른 직업의 일러스트**(칸을 고르면 바뀜), 왼쪽 위 직업 아이콘·이름, 계열 칸 2개(마우스 올리면 설명 창 — 글은 예전과 같은 `SpecTexts` 1티어), 아래 직업 선택칸 4개 + 이름, 오른쪽 아래 "선택" 버튼. 좌표는 Figma 합성 판(640×360) 기준.
+  - 사용자 결정(2026-11-22): 칸 순서 = **코드 순서**(마법사·메카닉·살수·히어로 — Figma는 히어로가 3번째), 닫기 = **ESC만**(뒤로가기 버튼 삭제), **레벨·SP·한 줄 설명 삭제**, 4번째 칸 이름은 "???" → **"히어로"**(Figma 이름, 아직 없는 캐릭터라 잠김·"준비 중" 표시).
+  - > **의도적 편차 —** 원본(`project_test.html`)엔 없는 팀 UI 개편이라 원본 대조 대상 아님. 설명 창 자리(250,60)는 Figma에 견본뿐이라 내가 정했다(계열 칸·선택칸을 안 가리는 빈 자리). 살수 계열 아이콘은 집중 빌드 = 질주, 칼날폭풍 빌드 = 칼날로 이름만 보고 짝지음 — 틀리면 `Entries`의 `Icon1/Icon2`만 바꾸면 된다.
+  - `CreationOwnershipTests` 이유 문구만 갱신(가림막 → HoverArea 마우스 올림 자리).
+  - 이 세션은 에디터 접근이 없어 컴파일·재생을 못 봤다. Unity에서 그림이 들어오면 `CaptureUiPreview`(캐릭터선택 캡처)나 로비 > 캐릭터 선택으로 Figma 화면과 비교하고, 전체 PlayMode 테스트(특히 `CreationOwnershipTests`·씬 구성 검증)를 돌릴 것. 새 PNG의 `.meta`는 Unity가 만들어 주니 함께 커밋.
+
+- **2026-11-22 (140)** — **[나] 씬 구성 검증이 2지역 보스(`Enemy_BrokenGoddess`)를 `BlobLordBoss`로만 찾던 오탐 수정**(사용자 캡처 "2지역 전용 보스 프리팹의 BlobLordBoss: 있어야 한다").
+  - `Editor/SceneSetupValidator`: 보스 컴포넌트 목록에 `BrokenGoddessBoss` 추가, 지역 보스 프리팹이 여신상이면 `BrokenGoddessBoss`(+`warningPrefab` 연결)를 검사. 사용자가 다시 돌려 "문제 없음" 확인.
+  - (이 항목은 앞서 한 번 적었는데 PROGRESS.md가 되돌려져 사라져서 다시 적는다.)
+
+- **2026-11-22 (139)** — **[나] 몬스터 피격음 ↔ 플레이어 피격음 맞바꿈 — 팀 피드백**("몬스터 피격음이랑 플레이어 피격음이 바뀌면 좋겠다").
+  - `UI/GameplaySfx.OnPlayerDamaged`: `player_attacked` → **`enemy_hit`**(플레이어가 맞으면 예전 몬스터 소리). `Resources.Load` 키라 확장자(.ogg)는 필요 없다.
+  - `Scenes/00_Persistent.unity` `HitSound.clip`: `enemy_hit.ogg`(guid 72405fa9…) → **`player_attacked.mp3`**(guid 5f48ffaf…) — 한 줄(몬스터가 맞으면 예전 플레이어 소리). `UI/HitSound` 툴팁 갱신.
+  - **파일 이름은 옛 용도 그대로다**(`enemy_hit.ogg`=지금 플레이어 피격, `player_attacked.mp3`=지금 몬스터 피격) — 파일 형식이 달라(ogg↔mp3) 내용을 맞바꿀 수 없고, 이름을 바꾸면 guid·참조가 흔들려서 연결만 맞바꿨다. 헷갈리면 이름을 정리하는 후속 작업을 따로.
+  - 영향: 몬스터 피격은 `HitSound`(음량 0.7·음높이 0.92~1.08·최소 간격 0.12초), 플레이어 피격은 `GameplaySfx`(음량 0.8·음높이 고정). 새 몬스터 소리(`player_attacked.mp3` 35KB)가 길어서 연타에서 겹쳐 들릴 수 있다 — 플레이로 확인.
+  - 이 세션은 에디터 접근이 없어 컴파일·재생을 못 봤다. 씬 한 줄을 텍스트로 고쳤으니 `00_Persistent`가 정상 로드되고 `ChronoSavior/씬 구성 검증`(HitSound 클립 있음)이 통과하는지 확인할 것.
+
 - **2026-11-18 (137)** — **[나] 캐릭터 그림 축소 + 땅·발판 타일 도트 1 — 사용자 직접 요청**("캐릭터 배율좀 줄이고싶은데" → "배경이랑 포탈만 2로 하고 나머지는 다 1로", 범위는 "땅·발판 타일만 1"로 확정).
   - **캐릭터**: `Assets/Data/Characters/CharacterArtSet.asset` `heights` 마법사·메카닉·섬영 0.75 → 0.375(그림 32×48px·PPU128 원본 크기 = 도트 1). 판정(`EntitySizeConfig.PlayerHeight` 0.5)은 그대로, 드루이드(1.0)는 기획 제외라 안 건드림. 발 기준점은 사용자가 `캐릭터 애니메이션 연결` 메뉴로 이미 맞췄다.
   - **타일**: `Resources/Art/Figma/Stage1/ground_top·ground_dirt·platform_tile.png.meta` `spritePixelsToUnits` 64 → 128(도트 2 → 1). 땅 타일 0.5→0.25유닛, 발판 타일 0.25→0.125유닛. `World/StageVisuals.GroundRows` 3 → 6(땅 깊이 1.5유닛 유지 — 안 늘리면 카메라 아래쪽에 빈 틈이 보인다). 배경·포탈은 그대로 도트 2(`StageArt_Forest.backgroundScale`·`portalScale` = 2).

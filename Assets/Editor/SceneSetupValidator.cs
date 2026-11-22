@@ -287,7 +287,7 @@ namespace ChronoSavior.Editor
             var behaviours = new[] { typeof(ChronoSavior.Enemies.EnemyFlyerMotion), typeof(ChronoSavior.Enemies.EnemyChargerMotion),
                                      typeof(ChronoSavior.Enemies.EnemyShooterMotion), typeof(ChronoSavior.Enemies.EnemySplitOnDeath),
                                      typeof(ChronoSavior.Enemies.Boss), typeof(ChronoSavior.Enemies.Shrine),
-                                     typeof(ChronoSavior.Enemies.BlobLordBoss) };
+                                     typeof(ChronoSavior.Enemies.BlobLordBoss), typeof(ChronoSavior.Enemies.BrokenGoddessBoss) };
             void Check(GameObject prefab, string what, System.Type expected)
             {
                 if (prefab == null) { problems.Add($"{what} 프리팹이 비어 있다"); return; }
@@ -329,8 +329,17 @@ namespace ChronoSavior.Editor
                 if (rb == null) continue;
                 string what = $"{rb.region}지역 전용 보스";
                 if (rb.region < 1 || rb.region > ChronoSavior.Core.RegionConfig.Count) problems.Add($"{what}: 지역 번호가 범위 밖이다");
-                Check(rb.prefab, what, typeof(ChronoSavior.Enemies.BlobLordBoss));
+                // 지역마다 보스 종류가 다르다 — 1지역 덩어리 지배자(BlobLordBoss), 2지역 부서진 여신상(BrokenGoddessBoss). 2026-11-22 이 검사가
+                // 모든 지역 보스를 BlobLordBoss로만 봐서 여신상 프리팹이 "BlobLordBoss가 있어야 한다"로 걸렸다.
+                bool isGoddess = rb.prefab != null && rb.prefab.GetComponent<ChronoSavior.Enemies.BrokenGoddessBoss>() != null;
+                Check(rb.prefab, what, isGoddess ? typeof(ChronoSavior.Enemies.BrokenGoddessBoss) : typeof(ChronoSavior.Enemies.BlobLordBoss));
                 if (rb.prefab == null) continue;
+                if (isGoddess)
+                {
+                    var gso = new SerializedObject(rb.prefab.GetComponent<ChronoSavior.Enemies.BrokenGoddessBoss>());
+                    var warn = gso.FindProperty("warningPrefab");
+                    if (warn == null || warn.objectReferenceValue == null) problems.Add($"{what} 프리팹 BrokenGoddessBoss.warningPrefab이 비어 있다");
+                }
                 if (rb.prefab.GetComponent<ChronoSavior.Enemies.EnemyHealth>() is { isBoss: false }) problems.Add($"{what} 프리팹의 EnemyHealth.isBoss가 꺼져 있다");
                 if (rb.prefab.TryGetComponent(out ChronoSavior.Enemies.BlobLordBoss blob))
                 {
