@@ -586,6 +586,65 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 메카닉 "광선 연쇄" 미리보기(2026-11-23 사용자 — 그림은 검사받고 적용): 실제 전투 화면에 적 3마리, 1→2→3으로 튀는 모습을 1/30초마다 찍는다.
+        /// 본 레이저와 같은 머티리얼·셰이더(GunnerChainBeamVfx). -captureOut 폴더에 chain_00.png… 로 저장.
+        /// </summary>
+        public static void RunChainBeam()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var kit = player.GetComponent<ChronoSavior.Characters.GunnerAttack>();
+
+            // 적 3마리 — 1지역 쥐 그림(실제 몹 그림)
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var grunt = catalog.Find(EnemyType.Grunt);
+            var skin = grunt.SkinFor(1);
+            Sprite art = skin != null && skin.move != null && skin.move.frames.Length > 0 ? skin.move.frames[0] : grunt.sprite;
+            var made = new System.Collections.Generic.List<GameObject>();
+            var spots = new[] { new Vector2(5.0f, feet + 0.25f), new Vector2(7.4f, feet + 1.35f), new Vector2(9.6f, feet + 0.25f) };
+            foreach (var p in spots)
+            {
+                var e = new GameObject("PreviewEnemy", typeof(SpriteRenderer));
+                e.transform.position = p;
+                e.transform.localScale = Vector3.one * DotScale.Value;
+                var sr = e.GetComponent<SpriteRenderer>();
+                sr.sprite = art;
+                made.Add(e);
+            }
+            float halfW = art != null ? DotScale.Units(art.rect.width) * 0.3f : 0.3f;
+            Vector2 Edge(Vector2 from, Vector2 to) => from + (to - from).normalized * halfW;
+
+            var mat = kit.BeamMaterial;
+            var hop1 = ChronoSavior.Characters.GunnerChainBeamVfx.Play(mat, Edge(spots[0], spots[1]), Edge(spots[1], spots[0]), 0f, 1f);
+            var hop2 = ChronoSavior.Characters.GunnerChainBeamVfx.Play(mat, Edge(spots[1], spots[2]), Edge(spots[2], spots[1]), hop1.ArriveTime + 0.04f, -1f);
+            made.Add(hop1.gameObject); made.Add(hop2.gameObject);
+            float total = hop2.ArriveTime + hop2.Duration - hop2.ExtendTime + 0.05f;
+            int frame = 0;
+            for (float t = 0f; t <= total; t += 1f / 30f, frame++)
+            {
+                hop1.Evaluate(t);
+                hop2.Evaluate(t);
+                Render(pc, cam, outDir, $"chain_{frame:00}", 1920, 1080, 3f);
+            }
+            foreach (var p2 in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) Object.DestroyImmediate(p2.gameObject);
+            foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            Debug.Log("[CaptureUiPreview] 광선 연쇄 미리보기 저장: " + outDir + " (" + frame + "장)");
+            EditorApplication.Exit(0);
+        }
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);
