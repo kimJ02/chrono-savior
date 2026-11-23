@@ -25,7 +25,17 @@ namespace ChronoSavior.Characters
             WindowRowsId = Shader.PropertyToID("_WindowRows"), TileWorldId = Shader.PropertyToID("_TileWorld"),
             BeamLengthId = Shader.PropertyToID("_BeamLength"), FadeLengthId = Shader.PropertyToID("_FadeLength");
 
+        /// <summary>
+        /// 다음 적에 닿을 때 그림(받은 VFX 키)·재생 속도·자리(적 가운데/닿은 자리)·빔 방향으로 돌릴지 — 2026-11-23 사용자 "맞은 효과가 별로" →
+        /// 후보를 캡처해 고르는 중(<c>CaptureUiPreview.RunChainBeamHits</c>). 고르면 상수로 굳힌다.
+        /// </summary>
+        public static string HitKey = VfxKeys.MechanicHitSpark;
+        public static float HitFps = EdgeFps;
+        public static bool HitAtCenter, HitRotate = true;
+
         LineRenderer line;
+        Vector2? targetCenter;
+        VfxPlayer hit;
         Material mat;
         Sprite[] startF, loopF, endF;
         Vector2 a, b, control;
@@ -44,7 +54,7 @@ namespace ChronoSavior.Characters
         /// from(앞 적 몸 가장자리)에서 to(다음 적 몸 가장자리)로 한 번 튄다. <paramref name="delay"/>초 뒤에 시작. 머티리얼이 없으면 null.
         /// <paramref name="bendSign"/>: 휘는 쪽(+1·-1) — 연쇄마다 번갈아 주면 지그재그로 읽힌다.
         /// </summary>
-        public static GunnerChainBeamVfx Play(Material material, Vector2 from, Vector2 to, float delay = 0f, float bendSign = 1f)
+        public static GunnerChainBeamVfx Play(Material material, Vector2 from, Vector2 to, float delay = 0f, float bendSign = 1f, Vector2? targetCenter = null)
         {
             if (material == null) return null;
             var go = new GameObject("GunnerChainBeam");
@@ -67,6 +77,7 @@ namespace ChronoSavior.Characters
             Vector2 n = d.sqrMagnitude > 1e-6f ? new Vector2(-d.y, d.x).normalized : Vector2.up;
             v.control = (from + to) * 0.5f + n * DotScale.Units(BendDots) * Mathf.Sign(bendSign == 0f ? 1f : bendSign);
             v.delay = Mathf.Max(0f, delay);
+            v.targetCenter = targetCenter;
             v.mat.SetFloat(SrcRowsId, SourceRows);
             v.mat.SetFloat(BodyRowsId, BodyRows);
             v.mat.SetFloat(WindowRowsId, WindowRows);
@@ -86,6 +97,7 @@ namespace ChronoSavior.Characters
         public void Evaluate(float time)
         {
             float t = time - delay;
+            if (!Application.isPlaying && hit != null) hit.SetTimeForCapture(t - ExtendTime); // 편집 화면 캡처 — 적중 그림도 시간을 따라간다
             if (t < 0f || t >= Duration || loopF == null || loopF.Length == 0) { line.enabled = false; return; }
 
             float head, tail;
@@ -143,8 +155,10 @@ namespace ChronoSavior.Characters
         {
             sparked = true;
             Vector2 dir = b - control;
-            var p = VfxPlayer.Spawn(VfxKeys.MechanicHitSpark, b, DotScale.Value, EdgeFps, SortingOrder + 1);
-            if (p != null && dir.sqrMagnitude > 1e-6f) p.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            Vector2 at = HitAtCenter && targetCenter.HasValue ? targetCenter.Value : b;
+            hit = VfxPlayer.Spawn(HitKey, at, DotScale.Value, HitFps, SortingOrder + 1);
+            if (hit != null && HitRotate && dir.sqrMagnitude > 1e-6f) hit.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
+            if (hit != null && !Application.isPlaying) hit.SetTimeForCapture(0f);
         }
 
         void OnDestroy()

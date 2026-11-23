@@ -645,6 +645,94 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 광선 연쇄 "맞은 효과" 후보 4개(2026-11-23 사용자 "레이저 맞은 햄스터 효과가 별로") — 받은 메카닉 VFX만, 적 피격 깜빡임(SpriteFlash)까지.
+        /// -captureOut 폴더 아래 후보마다 하위 폴더에 1/30초 장면.
+        /// </summary>
+        public static void RunChainBeamHits()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var kit = player.GetComponent<ChronoSavior.Characters.GunnerAttack>();
+            var flashMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteFlash.mat");
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var grunt = catalog.Find(EnemyType.Grunt);
+            var skin = grunt.SkinFor(1);
+            Sprite art = skin != null && skin.move != null && skin.move.frames.Length > 0 ? skin.move.frames[0] : grunt.sprite;
+            var spots = new[] { new Vector2(5.0f, feet + 0.25f), new Vector2(7.4f, feet + 1.35f), new Vector2(9.6f, feet + 0.25f) };
+            float halfW = art != null ? DotScale.Units(art.rect.width) * 0.3f : 0.3f;
+            Vector2 Edge(Vector2 from, Vector2 to) => from + (to - from).normalized * halfW;
+            Vector2 Center(Vector2 p) => p + new Vector2(0f, art != null ? DotScale.Units(art.rect.height) * 0.5f - DotScale.Units(art.pivot.y) : 0f);
+
+            var variants = new (string name, string key, float fps, bool center, bool rotate)[]
+            {
+                ("A_지금_작은충격", ChronoSavior.Combat.VfxKeys.MechanicHitSpark, 30f, false, true),
+                ("B_파란불꽃_흩어짐", ChronoSavior.Combat.VfxKeys.MechanicDroneHit, 30f, false, false),
+                ("C_보라전기_고리", ChronoSavior.Combat.VfxKeys.MechanicZap, 20f, true, false),
+                ("D_하얀번개_찌릿", ChronoSavior.Combat.VfxKeys.MechanicRelayAura, 30f, true, false),
+            };
+            foreach (var v in variants)
+            {
+                ChronoSavior.Characters.GunnerChainBeamVfx.HitKey = v.key;
+                ChronoSavior.Characters.GunnerChainBeamVfx.HitFps = v.fps;
+                ChronoSavior.Characters.GunnerChainBeamVfx.HitAtCenter = v.center;
+                ChronoSavior.Characters.GunnerChainBeamVfx.HitRotate = v.rotate;
+                string dir = Path.Combine(outDir, v.name);
+                Directory.CreateDirectory(dir);
+                var made = new System.Collections.Generic.List<GameObject>();
+                var flashes = new SpriteRenderer[spots.Length];
+                for (int i = 0; i < spots.Length; i++)
+                {
+                    var e = new GameObject("PreviewEnemy", typeof(SpriteRenderer));
+                    e.transform.position = spots[i];
+                    e.transform.localScale = Vector3.one * DotScale.Value;
+                    e.GetComponent<SpriteRenderer>().sprite = art;
+                    var f = new GameObject("Flash", typeof(SpriteRenderer));
+                    f.transform.SetParent(e.transform, false);
+                    var fsr = f.GetComponent<SpriteRenderer>();
+                    fsr.sprite = art;
+                    fsr.sharedMaterial = flashMat;
+                    fsr.sortingOrder = 1;
+                    fsr.color = new Color(1f, 1f, 1f, 0f);
+                    flashes[i] = fsr;
+                    made.Add(e);
+                }
+                var mat = kit.BeamMaterial;
+                var hop1 = ChronoSavior.Characters.GunnerChainBeamVfx.Play(mat, Edge(spots[0], spots[1]), Edge(spots[1], spots[0]), 0f, 1f, Center(spots[1]));
+                var hop2 = ChronoSavior.Characters.GunnerChainBeamVfx.Play(mat, Edge(spots[1], spots[2]), Edge(spots[2], spots[1]), hop1.ArriveTime + 0.04f, -1f, Center(spots[2]));
+                made.Add(hop1.gameObject); made.Add(hop2.gameObject);
+                float total = hop2.ArriveTime + 0.6f;
+                int frame = 0;
+                for (float t = 0f; t <= total; t += 1f / 30f, frame++)
+                {
+                    hop1.Evaluate(t);
+                    hop2.Evaluate(t);
+                    // 피격 깜빡임 — 게임과 같게 맞은 순간 1에서 초당 6씩 줄고, 흰색을 0.75 세기로 덧그린다(EnemyHealth)
+                    float f1 = t >= hop1.ArriveTime ? Mathf.Max(0f, 1f - (t - hop1.ArriveTime) * 6f) : 0f;
+                    float f2 = t >= hop2.ArriveTime ? Mathf.Max(0f, 1f - (t - hop2.ArriveTime) * 6f) : 0f;
+                    flashes[1].color = new Color(1f, 1f, 1f, f1 * 0.75f);
+                    flashes[2].color = new Color(1f, 1f, 1f, f2 * 0.75f);
+                    Render(pc, cam, dir, $"hit_{frame:00}", 1920, 1080, 3f);
+                }
+                foreach (var p2 in Object.FindObjectsByType<ChronoSavior.Combat.VfxPlayer>(FindObjectsSortMode.None)) Object.DestroyImmediate(p2.gameObject);
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            }
+            Debug.Log("[CaptureUiPreview] 맞은 효과 후보 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);

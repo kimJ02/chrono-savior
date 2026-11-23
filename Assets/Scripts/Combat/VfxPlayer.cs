@@ -104,6 +104,20 @@ namespace ChronoSavior.Combat
             Show(i, CurrentFade());
         }
 
+        /// <summary>
+        /// 편집 화면 캡처용 — 시간을 직접 옮겨 그 순간 그림을 보인다(편집 화면에선 Update가 안 돌아 첫 장에 멈춰 있었다, 2026-11-23).
+        /// 다 끝난 시각이면 숨긴다(지우지 않는다).
+        /// </summary>
+        public void SetTimeForCapture(float time)
+        {
+            if (frames == null || frames.Length == 0 || sr == null) return;
+            t = Mathf.Max(0f, time);
+            int i = Mathf.FloorToInt(t * fps);
+            if (!loop && i >= frames.Length) { sr.enabled = false; return; }
+            sr.enabled = true;
+            Show(loop ? i % frames.Length : i, CurrentFade());
+        }
+
         /// <summary>한 번 재생이 끝나 갈 때의 투명도(fadeOut) — 반복 재생은 1.</summary>
         float CurrentFade() => !loop && fadeOut > 0f ? Mathf.Clamp01((Duration - t) / fadeOut) : 1f;
 
