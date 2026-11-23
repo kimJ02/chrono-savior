@@ -68,7 +68,12 @@ namespace ChronoSavior.Editor
             ColorOnly = new[] { "Backdrop", "RowTemplate" }, // 막 · 견본 줄(투명 판)
         };
 
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements };
+        static readonly ViewSpec Stage = new ViewSpec
+        {
+            Label = "스테이지 선택", AssetPath = StageSelectScreenView.AssetPath, Build = StageSelectScreenView.CreateFromCode,
+            ColorOnly = new[] { "Letterbox", "Mob0", "Mob1", "Mob2", "Portrait" }, // 검은 여백 · 몬스터/보스 그림 칸(실행 중 채움)
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -90,6 +95,8 @@ namespace ChronoSavior.Editor
 
         [MenuItem("ChronoSavior/UI 프리팹/업적 창 만들기")]
         public static void BuildAchievementsFromMenu() => BuildFromMenu(Achievements);
+        [MenuItem("ChronoSavior/UI 프리팹/스테이지 선택 만들기")]
+        public static void BuildStageFromMenu() => BuildFromMenu(Stage);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

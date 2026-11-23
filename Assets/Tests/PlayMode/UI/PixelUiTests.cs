@@ -292,6 +292,76 @@ public class PixelUiTests
         return null;
     }
 
+    /// <summary>
+    /// 프리팹 UI 8호(2026-11-23) — 스테이지 선택 모양은 프리팹(`Resources/UI/Views/StageSelectScreenView`)에서 오고,
+    /// ▼ 표시는 마우스를 올린 챕터 리본을 따라간다(리본 자리 + 뷰의 markerOffset — 프리팹에서 리본을 옮겨도 따라가야 한다).
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/스테이지 선택 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator StageSelect_LayoutFromViewPrefab_MarkerFollowsRibbon()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스 올림이 섞이지 않게(위 업적 테스트와 같은 이유)
+        Assert.IsNotNull(Resources.Load<StageSelectScreenView>(StageSelectScreenView.ResourcePath),
+                         "스테이지 선택 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/스테이지 선택 만들기");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<StageSelectScreen>();
+        StageSelectScreen.Open();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(screen.IsShown, "로비에서 열면 보인다");
+            Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = screen.Root.GetComponentsInChildren<StageSelectScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(ChapterConfig.ChapterCount, v.ribbons.Length, "챕터 수만큼 리본");
+            Assert.AreEqual(ChapterConfig.StagesPerChapter, v.frames.Length, "스테이지 수만큼 칸");
+
+            Assert.AreEqual(v.MarkerPositionFor(1), v.marker.anchoredPosition, "처음엔 지금 챕터(1) 리본 위에 ▼");
+            v.ribbons[1].button.OnHover?.Invoke();
+            yield return null;
+            Assert.AreEqual(v.MarkerPositionFor(2), v.marker.anchoredPosition, "2챕터 리본에 마우스를 올리면 ▼가 그리로");
+            Assert.AreNotEqual(v.MarkerPositionFor(1), v.MarkerPositionFor(2), "리본마다 ▼ 자리가 다르다");
+        }
+        finally { StageSelectScreen.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹으로 옮겨도 버튼 동작·키보드 순서가 예전 그대로 — ◀ · 1~5 · ▶ · 원정 / 보스 ◀ · 보스 · ▶ · 원정(0~7 / 8~11).
+    /// ▶는 보스 쪽(빨간 판)으로, 보스 쪽 ◀는 다시 일반 쪽으로, 스테이지 칸은 고르기만 한다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator StageSelect_ButtonsKeepOrderAndPages()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<StageSelectScreen>();
+        StageSelectScreen.Open();
+        yield return null;
+        try
+        {
+            var v = screen.Root.GetComponentInChildren<StageSelectScreenView>(true);
+            Assert.AreEqual(1, screen.NavIndex, "새 기록은 1-1 칸부터");
+            Assert.IsTrue(v.normalRoot.gameObject.activeSelf && !v.bossRoot.gameObject.activeSelf, "처음엔 일반 쪽");
+
+            v.frames[2].button.Click();
+            yield return null;
+            Assert.AreEqual(3, screen.NavIndex, "3번 칸을 누르면 그 칸이 골라진다");
+            Assert.IsTrue(StageSelectScreen.IsOpen, "칸을 눌러도 출발하지 않는다");
+
+            v.arrowR.button.Click();
+            yield return null;
+            Assert.IsTrue(v.bossRoot.gameObject.activeSelf && !v.normalRoot.gameObject.activeSelf, "▶ → 1챕터 보스 쪽");
+            Assert.AreEqual(9, screen.NavIndex, "보스 쪽에선 보스 칸이 골라진다");
+
+            v.bossArrowL.button.Click();
+            yield return null;
+            Assert.IsTrue(v.normalRoot.gameObject.activeSelf, "보스 쪽 ◀ → 다시 일반 쪽");
+            Assert.AreEqual(3, screen.NavIndex, "고른 스테이지(1-3)가 그대로");
+        }
+        finally { StageSelectScreen.Close(); }
+    }
+
     [UnityTest]
     public IEnumerator Settings_TakesEscapeFirst_SoPauseIsNotResumed()
     {

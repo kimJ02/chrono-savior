@@ -183,6 +183,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
+- **[2026-11-23, 사용자] 스테이지 선택의 스테이지 칸 고르기·들어가기 방식이 원래부터 어색하다 — 나중에 고친다**(프리팹 8호 전부터 있던 동작, 이번엔 안 바꿈).
+  스테이지 칸에 마우스를 올리면 그 칸이 바로 "고른 스테이지"가 되어 숫자가 노랗게 바뀌고(`OnNavChanged`가 `stage`를 바꿈), 키보드로 칸을 지정한 뒤 확인 → "원정 떠나기"로 넘어가 한 번 더 눌러야 들어간다(`PickStage`).
+  어떻게 바꿀지(마우스 올림 = 미리보기만? 확인 한 번에 출발?)는 사용자가 정한다.
 - **[2026-11-23 발견, `main` 150 병합에서 넘어옴] PlayMode 실패 4건 — 코드 수치가 바뀌었는데 테스트 기대값이 옛 값.** 프리팹 UI 브랜치와 무관(그 브랜치에선 안 고침).
   테스트를 새 값에 맞출지, 코드를 되돌릴지는 수치를 바꾼 사람이 정할 것:
   · `UiFigmaUpdateTests.Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock` — 노말 확률 기대 "55%", 실제 "70%"(`Core/ItemDatabase.Weight` Common=70)
@@ -309,6 +312,18 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (158)** — **[사용자 세션] 프리팹 UI 8호: 스테이지 선택(`StageSelectScreen`) — `feature/ui-prefab-stage`**(1~7호와 같은 방식).
+  - 모양(배경·지도·챕터 리본 5개·▼·일반 쪽 `Normal` 전부·보스 쪽 `Boss` 전부, 리본 글자·고른 칸·잠긴 칸·진행 점 색, ▼ 자리 보정 `markerOffset`(24,-19))은 프리팹 `Resources/UI/Views/StageSelectScreenView`.
+    무엇을 보여 줄지(챕터·스테이지 글자, 몬스터·보스 그림, 진행도, 잠김 문구), 일반/보스 쪽 켜기, 버튼 동작, 키보드 순서(◀ · 1~5 · ▶ · 원정 / 보스 ◀ · 보스 · ▶ · 원정)는 그대로 코드(`StageSelectScreen`).
+  - ▼는 이제 **프리팹의 리본 자리 + `markerOffset`**에서 계산한다(예전엔 코드의 좌표 표) — 에디터에서 리본을 옮기면 ▼도 따라간다. 진행도 막대는 **채움 칸 폭**을 도트 단위로 나눠 채운다(예전엔 200 고정 — 크기를 안 바꾸면 같다).
+  - 리본의 마우스 내림 알림(`RelicCellHover`)은 그 클래스가 `RelicHudStrip.cs` 안에 있어 프리팹에 저장할 수 없으므로 **실행 중에 붙인다**(그래서 `CreationOwnershipTests`에 `StageSelectScreen.cs`가 이유를 바꿔 남는다).
+  - 공개 API(`Open`·`Close`·`IsOpen`·`Catalog`·`NextPlay`·`MonstersOf`·`TryEnter` 두 개)와 테스트가 리플렉션으로 읽는 비공개 필드(`mobs`·`frames`·`stage`·`bossPortrait`·`Step`)는 이름·타입 그대로.
+  - 파일별: `UI/Screens/StageSelectScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, Figma 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/StageSelectScreenView.cs`(모양, `ButtonRef.Wire`·`MarkerPositionFor`·`SetProgress`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/스테이지 선택 만들기`, 그림 없는 칸 `Letterbox`·`Mob0~2`·`Portrait`) · 테스트 `PixelUiTests`(+2: 프리팹에서 모양·▼가 마우스 올린 리본을 따라감 / 버튼·키보드 순서·▶ 보스 쪽·◀ 되돌아옴, 둘 다 포인터 이벤트 끔) · `CreationOwnershipTests`(`StageSelectScreen.cs` 이유 갱신 + `StageSelectScreenView.cs`) · `OriginalFidelityTests`(`MarkerPositionFor`).
+  - ⚠️ 리본(`Chapter1~5`)과 `Marker`는 판(Board)의 직접 자식·왼쪽 위 기준으로 둘 것(▼ 계산이 같은 부모의 anchoredPosition을 쓴다). `Normal`/`Boss`는 이름 그대로(코드가 켜고 끈다). 몬스터·보스 그림 칸은 그림 없이 두는 게 정상(실행 중 채움).
+  - 프리팹(`Assets/Resources/UI/Views/StageSelectScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **628 통과 / 3 실패 / 2 건너뜀**(건너뜀 2 = 성능 측정 `Slot3_*`) — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요"). 손 검증: 로비 "던전" 화면 동작 확인.
+    마우스 올리면 숫자가 노래지는 것·키보드로 칸 지정 후 들어가는 방식은 원래부터 어색한 동작이라 나중에 고치기로(위 "확인 필요").
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (157)** — **[사용자 세션] 프리팹 UI 7호: 업적 창(`AchievementsScreen`) — 첫 목록형 — `feature/ui-prefab-achievements`**.
   - **목록형 방식(이후 목록 화면들의 기준)**: 창 프리팹 `Resources/UI/Views/AchievementsScreenView` 안에 목록 자리 `List`와 **견본 줄 `List/RowTemplate`(꺼 둔 채, `AchievementRowView`)**을 둔다. 실행하면 견본을 **업적 수만큼 복제**해(`BuildRows`) `List` 왼쪽 위부터 격자(열 수·칸 크기는 프리팹 칸)로 놓는다.
     견본 하나를 고치면 모든 줄이 바뀌고, 업적이 늘어도 프리팹을 안 고쳐도 된다. 줄을 따로 프리팹 파일로 빼지 않은 건 창 하나 안에서 같이 보고 고치기 쉬워서(필요해지면 나눈다).

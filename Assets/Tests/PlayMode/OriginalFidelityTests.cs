@@ -389,6 +389,7 @@ public class OriginalFidelityTests
             ("SetProgress",                "RunResultScreenView.cs"),  // RunResultScreen.Refresh(안 부르면 진행 막대가 비어 있다)
             ("BuildRows",                  "AchievementsScreenView.cs"), // AchievementsScreen.Build(안 부르면 업적 줄이 하나도 없다)
             ("TooltipAnchor",              "AchievementsScreenView.cs"), // AchievementsScreen.OnNavChanged(안 부르면 설명 상자가 안 뜬다)
+            ("MarkerPositionFor",          "StageSelectScreenView.cs"), // StageSelectScreen.Refresh(안 부르면 ▼가 챕터 리본을 안 따라간다)
         };
 
         var scriptFiles = Directory.GetFiles(
