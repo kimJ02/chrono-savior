@@ -174,7 +174,7 @@ namespace ChronoSavior.Combat
                 z.art = VfxPlayer.Spawn(loopKey, pos, DotScale.Value, 15f, RelicFx.SortingOrder, loop: true);
                 if (z.art != null) z.art.transform.SetParent(go.transform, true);
             }
-            RangeRing.Show(pos, radius, color, life);
+            // 범위 고리는 그리지 않는다(2026-11-23 사용자 "원 테두리 나오는거 다 없애")
             return z;
         }
 

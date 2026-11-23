@@ -300,7 +300,7 @@ namespace ChronoSavior.Characters
                     GrantInvuln(ReviveInvuln);
                     Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
                     float m = Relics.V("timelineReboot", 1);
-                    RelicFx.Circle(at, 14f, m, RelicFx.Light, VfxKeys.MageCollapseCritical, 3f);
+                    RelicFx.Circle(at, 14f, m, RelicFx.Light, RelicFx.MageOnly(VfxKeys.MageCollapseCritical), 3f);
                     if (Relics.Awakened("timelineReboot")) RelicFx.After(0.2f, () => RelicFx.Circle(at, 14f, m * 0.35f, RelicFx.Gold));
                     HitFeel.Shake(16f, 0.5f);
                     return;

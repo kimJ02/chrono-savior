@@ -772,12 +772,14 @@ namespace ChronoSavior.Editor
             Vector2 Edge(Vector2 from, Vector2 to) => from + (to - from).normalized * halfW;
             Vector2 Bez(Vector2 a0, Vector2 c0, Vector2 b0, float u) => (1f - u) * (1f - u) * a0 + 2f * (1f - u) * u * c0 + u * u * b0;
 
-            // (이름, 표식 키, 표식 크기(그림 px), 표식 fps, 폭발 키, 폭발 fps, 건너뛸 장 수, 미리 시작할 장 수(그림이 닿는 장을 피해 순간에 맞춘다), 발밑 기준, 그림 가운데~바닥 px)
-            var variants = new (string name, string mark, float markPx, float markFps, string boom, float boomFps, int skip, int preRoll, bool atFeet, float bottomPx)[]
+            // (이름, 표식 키, 표식 크기(그림 px), 표식 fps, 폭발 키(없으면 null), 폭발 fps, 건너뛸 장 수, 미리 시작할 장 수(그림이 닿는 장을 피해 순간에 맞춘다), 발밑 기준, 그림 가운데~바닥 px,
+            //  하늘에서 레이저가 내리꽂힘, 그 레이저가 닿을 때 하얀 번개(승인 D))
+            // 2차(2026-11-23 사용자 "전기 기둥 구리다, 빛이나 전기 효과처럼"): 레이저 낙하·전기 폭발
+            var variants = new (string name, string mark, float markPx, float markFps, string boom, float boomFps, int skip, int preRoll, bool atFeet, float bottomPx, bool skyBeam, bool skySpark)[]
             {
-                ("A_폭탄표식_충격파", "mechanic/bomb_small", 16f, 12f, "mechanic/burst", 18f, 2, 0, false, 0f),
-                ("B_에너지구슬_전기기둥", "mechanic/pellet", 16f, 10f, "mechanic/warp", 24f, 0, 4, true, 58f),
-                ("C_릴레이머리_번개폭발", "mechanic/relay_head", 24f, 15f, "mechanic/aura_large", 24f, 0, 0, false, 0f),
+                ("A_하늘레이저_하얀번개", "mechanic/pellet", 16f, 10f, null, 0f, 0, 0, false, 0f, true, true),
+                ("B_전기폭발", "mechanic/pellet", 16f, 10f, "mechanic/letter_lburst", 24f, 0, 1, false, 0f, false, false),
+                ("C_하늘레이저_전기폭발", "mechanic/pellet", 16f, 10f, "mechanic/letter_lburst", 24f, 0, 1, false, 0f, true, false),
             };
             const float KillAt = 0.6f, Fuse = 1f, Rush = 0.3f, Stagger = 0.06f, Dt = 1f / 30f;
             const int Tier = 5;
@@ -785,8 +787,6 @@ namespace ChronoSavior.Editor
             var tField = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetField("t", bf);
             var impactTField = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetField("impactT", bf);
             var applyM = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetMethod("Apply", bf);
-            string oldHitKey = ChronoSavior.Characters.GunnerChainBeamVfx.HitKey;
-            ChronoSavior.Characters.GunnerChainBeamVfx.HitKey = "none/none"; // 배달 광선은 닿을 때 따로 번쩍이지 않는다 — 표식이 그 자리에 붙는다
             foreach (var v in variants)
             {
                 string dir = Path.Combine(outDir, v.name);
@@ -838,12 +838,25 @@ namespace ChronoSavior.Editor
                     int j = letterTargets[k];
                     Vector2 from = Edge(tc, Center(spots[j]));
                     Vector2 to = Edge(Center(spots[j]), tc);
-                    hops[k] = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, from, to, KillAt, k % 2 == 0 ? 1f : -1f, Center(spots[j]));
+                    hops[k] = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, from, to, KillAt, k % 2 == 0 ? 1f : -1f, Center(spots[j]), hitSpark: false); // 배달 광선은 번쩍임 없이 — 표식이 붙는다
                     made.Add(hops[k].gameObject);
                 }
                 float arrive = hops[0].ArriveTime;
                 var marks = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
                 var booms = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
+                // 하늘 레이저 — 피해 순간에 적 머리에 닿게, 그만큼 먼저 화면 위에서 뻗기 시작한다
+                var sky = new ChronoSavior.Characters.GunnerChainBeamVfx[letterTargets.Length];
+                if (v.skyBeam)
+                    for (int k = 0; k < letterTargets.Length; k++)
+                    {
+                        int j = letterTargets[k];
+                        Vector2 headTop = Above(spots[j], 0f);
+                        var probe = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, headTop + Vector2.up * 3.4f, headTop, 0f, 1f, Center(spots[j]), v.skySpark);
+                        float lead = probe.ArriveTime;
+                        Object.DestroyImmediate(probe.gameObject);
+                        sky[k] = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, headTop + Vector2.up * 3.4f, headTop, arrive + Fuse + Stagger * k - lead, 1f, Center(spots[j]), v.skySpark);
+                        made.Add(sky[k].gameObject);
+                    }
                 float total = arrive + Fuse + Stagger * (letterTargets.Length - 1) + 0.8f;
                 int frame = 0;
                 for (float t = 0f; t <= total; t += Dt, frame++)
@@ -860,6 +873,7 @@ namespace ChronoSavior.Editor
                     bodies[0].SetActive(t < KillAt);
                     flashes[0].color = new Color(1f, 1f, 1f, (t % 0.13f) < 0.05f ? 0.75f : 0f);
                     foreach (var h in hops) h.Evaluate(t);
+                    foreach (var h in sky) if (h != null) h.Evaluate(t);
 
                     for (int k = 0; k < letterTargets.Length; k++)
                     {
@@ -876,7 +890,7 @@ namespace ChronoSavior.Editor
 
                         float hitAt = arrive + Fuse + Stagger * k;        // 피해 순간
                         float bt = t - hitAt + v.preRoll / v.boomFps;     // 그림 시간(그림이 닿는 장이 피해 순간에 오게)
-                        if (bt >= 0f && booms[k] == null)
+                        if (v.boom != null && bt >= 0f && booms[k] == null)
                         {
                             Vector2 at = v.atFeet ? Feet(spots[j]) + new Vector2(0f, DotScale.Units(v.bottomPx)) : Center(spots[j]);
                             booms[k] = ChronoSavior.Combat.VfxPlayer.Spawn(v.boom, at, DotScale.Value, v.boomFps, 4);
@@ -890,7 +904,6 @@ namespace ChronoSavior.Editor
                 }
                 foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
             }
-            ChronoSavior.Characters.GunnerChainBeamVfx.HitKey = oldHitKey;
             Debug.Log("[CaptureUiPreview] 편지 후보 저장: " + outDir);
             EditorApplication.Exit(0);
         }

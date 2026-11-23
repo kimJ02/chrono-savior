@@ -88,11 +88,20 @@ namespace ChronoSavior.Combat
         }
 
         /// <summary>
-        /// 원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림, 범위 고리는 <paramref name="showRing"/>일 때
-        /// (부르는 쪽이 제 그림을 따로 띄우면 끈다 — 2026-11-23 사용자: 직접 그린 고리 대신 받은 VFX만).
+        /// 마법사 그림(보라 붕괴·중력 폭발 등)은 마법사일 때만 — 다른 캐릭터에겐 왜 나오는지 모를 그림이라 뺀다(2026-11-23 사용자). 아니면 null(그림 없음).
+        /// </summary>
+        public static string MageOnly(string key)
+        {
+            var p = ProfileService.Current;
+            return p != null && p.character == CharacterId.Mage ? key : null;
+        }
+
+        /// <summary>
+        /// 원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림. 범위 고리는 기본으로 안 그린다
+        /// (2026-11-23 사용자 "원 테두리 나오는거 다 없애" — 직접 그린 고리 대신 받은 VFX만).
         /// </summary>
         public static int Circle(Vector2 pos, float radius, float atkMult, Color ring, string vfxKey = null,
-                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null, bool showRing = true)
+                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null, bool showRing = false)
         {
             int n = 0;
             var cols = QueryCircle(pos, radius);

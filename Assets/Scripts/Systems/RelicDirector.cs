@@ -149,7 +149,7 @@ namespace ChronoSavior.Systems
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 9f, 1.8f) ?? pos;
                 Echo("moonMeteor", m => RelicProjectile.Spawn(at + new Vector2(-1.5f, 7f), new Vector2(0.22f, -1f), 11f, 2.5f, m,
-                    RelicProjectile.Mode.Falling, VfxKeys.MageBasicProjectileLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, VfxKeys.MageGravityExplosion), // 블랙홀과 헷갈리지 않게 파란 탄 그림
+                    RelicProjectile.Mode.Falling, VfxKeys.MageBasicProjectileLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, RelicFx.MageOnly(VfxKeys.MageGravityExplosion)), // 블랙홀과 헷갈리지 않게 파란 탄 그림
                     Relics.V("moonMeteor", 1));
             }
 
@@ -165,7 +165,7 @@ namespace ChronoSavior.Systems
             if (Every("doomBell"))
             {
                 Vector2 at = PlayerPos + Vector2.up * 0.5f;
-                Echo("doomBell", m => RelicFx.Circle(at, 14f, m, new Color(1f, 0.4f, 0.3f, 0.9f), VfxKeys.MageCollapseCritical, 2.5f), Relics.V("doomBell", 1));
+                Echo("doomBell", m => RelicFx.Circle(at, 14f, m, new Color(1f, 0.4f, 0.3f, 0.9f), RelicFx.MageOnly(VfxKeys.MageCollapseCritical), 2.5f), Relics.V("doomBell", 1));
                 HitFeel.Shake(14f, 0.4f);
             }
         }
