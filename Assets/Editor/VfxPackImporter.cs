@@ -43,12 +43,15 @@ namespace ChronoSavior.Editor
             public float BandMin, BandMax, BandTo = -1f;
             /// <summary>시트일 때: 이 색(불투명 바탕)을 투명으로 뺀다(null이면 그대로).</summary>
             public Color32? Matte;
+            /// <summary>다 읽은 뒤 프레임 전체에 거는 가공(null이면 그대로) — 예: 전기 기둥의 물결 번개 지우기.</summary>
+            public System.Func<List<byte[]>, List<byte[]>> Post;
         }
 
         static Source Frames(string key, string pack, string folder) => new Source { Key = key, Pack = pack, Path = folder };
         static Source Sheet(string key, string pack, string sheet, int cell, int row, int frames) =>
             new Source { Key = key, Pack = pack, Path = sheet, Cell = cell, Row = row, Frames = frames };
         static Source Recolored(Source src, float hueShiftDegrees) { src.HueShift = hueShiftDegrees; return src; }
+        static Source Processed(Source src, System.Func<List<byte[]>, List<byte[]>> post) { src.Post = post; return src; }
         static Source BandRecolored(Source src, float minDeg, float maxDeg, float toDeg) { src.BandMin = minDeg; src.BandMax = maxDeg; src.BandTo = toDeg; return src; }
         static Source Matted(Source src, Color32 background) { src.Matte = background; return src; }
 
@@ -110,7 +113,8 @@ namespace ChronoSavior.Editor
             yield return Frames(VfxKeys.OrbComet, Projectiles, "PNG/pj4_energy_blast_B_small_violet");
             yield return Recolored(Frames(VfxKeys.OrbPickup, Gigapack, "PNG/Magic Bursts/round_sparkle_burst_001/round_sparkle_burst_001_small_blue"), 60f);
             // 편지(공용 유물) 메카닉 레이저 폭발 — 전기 기둥(2026-11-23 사용자 후보 B). 128px 그대로(도트 배율 2 — 크기는 그림을 고르는 것으로)
-            yield return Frames(VfxKeys.MechanicWarp, Gigapack, "PNG/Sci-fi/scifi_warp_003/scifi_warp_003_large_blue");
+            // 2026-11-24 사용자 "지금 느낌은 좋은데 번개 모양이 싫다" → (가) 6장째부터의 물결 번개만 지운다(물보라·고리·기둥은 그대로, 새로 그린 픽셀 없음)
+            yield return Processed(Frames(VfxKeys.MechanicWarp, Gigapack, "PNG/Sci-fi/scifi_warp_003/scifi_warp_003_large_blue"), StripWarpWaves);
             // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로
             // 레이저 적중 — 작고 짧은 파란 충격(2026-11-09 사용자 "맞았을 때 효과가 이게 뭐야" — 예전엔 빔 끝 물보라를 적마다 틱마다 띄워 겹쳤다)
             yield return Frames(VfxKeys.MechanicHitSpark, Gigapack, "PNG/Impacts/directional_impact_001/directional_impact_001_small_blue");
@@ -183,6 +187,7 @@ namespace ChronoSavior.Editor
                     var frames = src.IsSheet ? SliceSheet(zip, src, problems) : ReadFrames(zip, src, problems);
                     if (frames != null && src.HueShift != 0f) frames = frames.Select(f => ShiftHue(f, src.HueShift)).ToList();
                     if (frames != null && src.BandTo >= 0f) frames = frames.Select(f => ReplaceHueBand(f, src.BandMin, src.BandMax, src.BandTo)).ToList();
+                    if (frames != null && src.Post != null) frames = src.Post(frames);
                     if (frames != null && frames.Count > 0) ready.Add((src.Key, frames));
                 }
             }
@@ -279,6 +284,83 @@ namespace ChronoSavior.Editor
                 return cells;
             }
             finally { Object.DestroyImmediate(sheet); }
+        }
+
+        /// <summary>
+        /// 전기 기둥(scifi_warp_003 large, 128px 12장)에서 5번 장(0부터)부터 나오는 물결 번개를 지운다 — 2026-11-24 사용자 (가)안, GPT와 정함.
+        /// 물결 번개와 물보라가 같은 팔레트라 색으로는 못 나눠, 4배 확대 격자를 보고 **장마다 남길 영역**(기둥·물보라 타원·진파랑 고리)을 정했다.
+        /// 그 밖은 지우고, 4픽셀 미만 조각을 정리하고, 9번 장부터는 사라져 가는 고리 하나(가장 큰 덩어리)만 남긴다. 좌표는 위에서 아래(그림 기준).
+        /// </summary>
+        public static List<byte[]> StripWarpWaves(List<byte[]> frames)
+        {
+            var dark = new Color32(39, 171, 250, 255);
+            bool Ell(int x, int y, float cx, float cy, float rx, float ry) => ((x - cx) / rx) * ((x - cx) / rx) + ((y - cy) / ry) * ((y - cy) / ry) <= 1f;
+            bool Keep(int i, int x, int y, Color32 c)
+            {
+                if (i <= 4) return true;
+                bool isDark = c.r == dark.r && c.g == dark.g && c.b == dark.b;
+                if (isDark && (i <= 8 || (Mathf.Abs(x - 64) <= 40 && y >= 60))) return true; // 진파랑 고리 — 9장부턴 물결에도 섞여 고리 근처만
+                if (i == 5 || i == 6)
+                    return (y >= 56 && y <= 118 && Mathf.Abs(x - 64) <= Mathf.Max(2f, (y - 56) * 0.28f)) || Ell(x, y, 64, 108, 50, 12);
+                if (i == 7) return Ell(x, y, 64, 106, 44, 14);
+                if (i == 8) return Ell(x, y, 64, 110, 46, 16);
+                return Ell(x, y, 64, 112, 40, 10);
+            }
+            var result = new List<byte[]>();
+            for (int i = 0; i < frames.Count; i++)
+            {
+                if (i <= 4) { result.Add(frames[i]); continue; }
+                var tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                try
+                {
+                    tex.LoadImage(frames[i]);
+                    int w = tex.width, h = tex.height;
+                    var px = tex.GetPixels32();
+                    int Idx(int x, int y) => (h - 1 - y) * w + x; // 텍스처는 아래가 0 — 그림 좌표(위가 0)로
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                        {
+                            var c = px[Idx(x, y)];
+                            if (c.a > 0 && !Keep(i, x, y, c)) px[Idx(x, y)] = new Color32(0, 0, 0, 0);
+                        }
+                    // 8방향 연결 성분 — 4픽셀 미만(진파랑만으로 된 점은 남김) 지우기, 9장부터는 가장 큰 것만
+                    var comps = new List<List<int>>();
+                    var seen = new bool[w * h];
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                        {
+                            if (px[Idx(x, y)].a == 0 || seen[Idx(x, y)]) continue;
+                            var comp = new List<int>();
+                            var st = new Stack<(int, int)>();
+                            st.Push((x, y)); seen[Idx(x, y)] = true;
+                            while (st.Count > 0)
+                            {
+                                var (a, b) = st.Pop(); comp.Add(Idx(a, b));
+                                for (int dx = -1; dx <= 1; dx++)
+                                    for (int dy = -1; dy <= 1; dy++)
+                                    {
+                                        int u = a + dx, v = b + dy;
+                                        if (u < 0 || v < 0 || u >= w || v >= h || seen[Idx(u, v)] || px[Idx(u, v)].a == 0) continue;
+                                        seen[Idx(u, v)] = true; st.Push((u, v));
+                                    }
+                            }
+                            comps.Add(comp);
+                        }
+                    foreach (var comp in comps)
+                        if (comp.Count < 4 && !comp.All(k => px[k].r == dark.r && px[k].g == dark.g && px[k].b == dark.b))
+                            foreach (var k in comp) px[k] = new Color32(0, 0, 0, 0);
+                    if (i >= 9)
+                    {
+                        var live = comps.Where(cp => px[cp[0]].a > 0).OrderByDescending(cp => cp.Count).ToList();
+                        foreach (var comp in live.Skip(1)) foreach (var k in comp) px[k] = new Color32(0, 0, 0, 0);
+                    }
+                    tex.SetPixels32(px);
+                    tex.Apply();
+                    result.Add(tex.EncodeToPNG());
+                }
+                finally { Object.DestroyImmediate(tex); }
+            }
+            return result;
         }
 
         /// <summary>PNG 한 장의 색상(hue)을 돌린다 — 밝기(V)·채도(S)·투명도는 그대로(흰색·회색은 그대로 남는다).</summary>

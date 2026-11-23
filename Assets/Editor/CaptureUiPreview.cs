@@ -775,11 +775,14 @@ namespace ChronoSavior.Editor
             // (이름, 표식 키, 표식 크기(그림 px), 표식 fps, 폭발 키(없으면 null), 폭발 fps, 건너뛸 장 수, 미리 시작할 장 수(그림이 닿는 장을 피해 순간에 맞춘다), 발밑 기준, 그림 가운데~바닥 px,
             //  하늘에서 레이저가 내리꽂힘, 그 레이저가 닿을 때 하얀 번개(승인 D))
             // 2차(2026-11-23 사용자 "전기 기둥 구리다, 빛이나 전기 효과처럼"): 레이저 낙하·전기 폭발
-            var variants = new (string name, string mark, float markPx, float markFps, string boom, float boomFps, int skip, int preRoll, bool atFeet, float bottomPx, bool skyBeam, bool skySpark)[]
+            // 3차(2026-11-23 사용자 — 전기 기둥(B)으로 되돌린 뒤 "이거 모양좀 어떻게 할 수 없나" = 6번째 장부터의 물결 번개):
+            //  frames = 쓸 장(null이면 전부), fade = 끝에 사라지는 시간, hitKey = 닿는 순간 적 가운데 함께 띄울 그림
+            var variants = new (string name, string mark, float markPx, float markFps, string boom, float boomFps, int skip, int preRoll, bool atFeet, float bottomPx, bool skyBeam, bool skySpark,
+                                int[] frames, float fade, string hitKey)[]
             {
-                ("A_하늘레이저_하얀번개", "mechanic/pellet", 16f, 10f, null, 0f, 0, 0, false, 0f, true, true),
-                ("B_전기폭발", "mechanic/pellet", 16f, 10f, "mechanic/letter_lburst", 24f, 0, 1, false, 0f, false, false),
-                ("C_하늘레이저_전기폭발", "mechanic/pellet", 16f, 10f, "mechanic/letter_lburst", 24f, 0, 1, false, 0f, true, false),
+                ("A_지금_전기기둥", "mechanic/pellet", 16f, 10f, "mechanic/warp", 24f, 0, 4, true, 58f, false, false, null, 0f, null),
+                ("가_물결번개지움", "mechanic/pellet", 16f, 10f, "mechanic/warp_ga", 24f, 0, 4, true, 58f, false, false, null, 0f, null),
+                ("나_뾰족번개합성", "mechanic/pellet", 16f, 10f, "mechanic/warp_na", 24f, 0, 4, true, 58f, false, false, null, 0f, null),
             };
             const float KillAt = 0.6f, Fuse = 1f, Rush = 0.3f, Stagger = 0.06f, Dt = 1f / 30f;
             const int Tier = 5;
@@ -844,6 +847,7 @@ namespace ChronoSavior.Editor
                 float arrive = hops[0].ArriveTime;
                 var marks = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
                 var booms = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
+                var hitFx = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
                 // 하늘 레이저 — 피해 순간에 적 머리에 닿게, 그만큼 먼저 화면 위에서 뻗기 시작한다
                 var sky = new ChronoSavior.Characters.GunnerChainBeamVfx[letterTargets.Length];
                 if (v.skyBeam)
@@ -895,9 +899,21 @@ namespace ChronoSavior.Editor
                             Vector2 at = v.atFeet ? Feet(spots[j]) + new Vector2(0f, DotScale.Units(v.bottomPx)) : Center(spots[j]);
                             booms[k] = ChronoSavior.Combat.VfxPlayer.Spawn(v.boom, at, DotScale.Value, v.boomFps, 4);
                             if (booms[k] != null) made.Add(booms[k].gameObject);
+                            if (booms[k] != null && v.frames != null)
+                            {
+                                var all = ChronoSavior.Combat.VfxFrames.Get(v.boom);
+                                var sub = new Sprite[v.frames.Length];
+                                for (int q = 0; q < sub.Length; q++) sub[q] = all[v.frames[q]];
+                                booms[k].Play(sub, v.boomFps, false, v.fade, Color.white);
+                            }
                         }
                         if (booms[k] != null) booms[k].SetTimeForCapture(Mathf.Max(0f, bt) + v.skip / v.boomFps);
                         float sinceHit = t - hitAt;
+                        if (v.hitKey != null && sinceHit >= 0f)
+                        {
+                            if (hitFx[k] == null) { hitFx[k] = ChronoSavior.Combat.VfxPlayer.Spawn(v.hitKey, Center(spots[j]), DotScale.Value, 30f, 5); if (hitFx[k] != null) made.Add(hitFx[k].gameObject); }
+                            if (hitFx[k] != null) hitFx[k].SetTimeForCapture(sinceHit);
+                        }
                         flashes[j].color = new Color(1f, 1f, 1f, sinceHit >= 0f ? Mathf.Max(0f, 1f - sinceHit * 6f) * 0.75f : 0f);
                     }
                     Render(pc, cam, dir, $"f_{frame:00}", 1920, 1080, 3f);
