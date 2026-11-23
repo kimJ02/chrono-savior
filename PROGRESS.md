@@ -312,6 +312,20 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (159)** — **[사용자 세션] 프리팹 UI 9호: 캐릭터 선택(`CharacterSelectScreen`) — `feature/ui-prefab-character`**(1~8호와 같은 방식).
+  - 모양(먹색 바탕·직업 일러스트 배경·왼쪽 위 틀/아이콘/이름/"준비 중"·계열 칸 둘·선택칸 넷과 이름·"선택" 버튼·계열 설명 창, 금색·잠긴 이름 불투명도)은 프리팹 `Resources/UI/Views/CharacterSelectScreenView`.
+    캐릭터 표(이름·그림 키·계열)·고른 캐릭터에 따라 배경/아이콘/이름/계열/설명 바꾸기·버튼 동작·키보드 순서(선택칸 1~4 → 선택)·고르기(세이브 저장)는 그대로 코드(`CharacterSelectScreen`).
+  - 계열 칸은 이제 묶음 `Type0`·`Type1`(틀·아이콘·이름·마우스 올림 자리 `Hover`) — 묶음을 옮기면 안쪽이 같이 움직이고, 없는 캐릭터(히어로)를 볼 땐 묶음째 숨긴다(예전엔 네 조각을 따로 숨김 — 보이는 결과는 같다).
+  - 선택칸의 아이콘·이름은 처음 모양에 박히고 실행 중엔 안 바꾼다(예전과 같다). 처음 모양은 캐릭터 표를 `CharacterSelectScreen.CardCount`·`CardLook`으로 읽어 짓는다(표가 한 곳에만 있게).
+  - 계열 칸의 마우스 올림 알림(`HoverArea`)은 화면 안쪽 클래스라 프리팹에 저장할 수 없어 **실행 중에 붙인다**(`CreationOwnershipTests`에 `CharacterSelectScreen.cs` 이유 갱신).
+  - 공개 API(`Open`·`Close`·`IsOpen`·`Selectable`)와 테스트가 리플렉션으로 부르는 `Pick`은 그대로.
+  - 파일별: `UI/Screens/CharacterSelectScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`·`CardCount`·`CardLook`, 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/CharacterSelectScreenView.cs`(모양, `ButtonRef.Wire`·`TypeRef`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/캐릭터 선택 만들기`, 그림 없는 칸 `Background`·`Hover`) · 테스트 `CharacterSelectTests`(+2: 프리팹·선택칸 순서·계열 칸 마우스 올림 설명 창 / 한 번 누르면 보기만·잠긴 히어로 칸은 마우스로 안 눌림·선택 버튼이 고르고 닫음, 둘 다 포인터 이벤트 끔) · `CreationOwnershipTests` · `OriginalFidelityTests`(`CardLook`).
+  - ⚠️ `Type0`·`Type1` 안의 `Hover`는 이름 그대로(마우스 올림 자리). `Tooltip`은 판(Board)의 마지막 자식으로 둬야 다른 칸 위에 그려진다. 선택칸 순서를 바꾸지 말 것(코드의 캐릭터 표 순서와 짝).
+  - 프리팹(`Assets/Resources/UI/Views/CharacterSelectScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **630 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "캐릭터" 화면 동작 확인.
+    사용자 관찰(예전부터 같은 동작, 이번엔 안 바꿈): 마우스로 선택칸을 누르면 바로 그 캐릭터로 바뀐다 — 마우스를 올리는 순간 그 칸이 "보는 칸"이 되므로(`OnNavChanged`) 첫 클릭이 곧 고르기다.
+    방향키로 움직이면 고른 칸 음영만 바뀌고, 노란 이름은 **지금 캐릭터** 표시라 고정이다. 바꿀지는 사용자가 정한다(아래 "확인 필요"의 스테이지 칸 항목과 같은 묶음으로 다룰 수 있음).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (158)** — **[사용자 세션] 프리팹 UI 8호: 스테이지 선택(`StageSelectScreen`) — `feature/ui-prefab-stage`**(1~7호와 같은 방식).
   - 모양(배경·지도·챕터 리본 5개·▼·일반 쪽 `Normal` 전부·보스 쪽 `Boss` 전부, 리본 글자·고른 칸·잠긴 칸·진행 점 색, ▼ 자리 보정 `markerOffset`(24,-19))은 프리팹 `Resources/UI/Views/StageSelectScreenView`.
     무엇을 보여 줄지(챕터·스테이지 글자, 몬스터·보스 그림, 진행도, 잠김 문구), 일반/보스 쪽 켜기, 버튼 동작, 키보드 순서(◀ · 1~5 · ▶ · 원정 / 보스 ◀ · 보스 · ▶ · 원정)는 그대로 코드(`StageSelectScreen`).

@@ -390,6 +390,7 @@ public class OriginalFidelityTests
             ("BuildRows",                  "AchievementsScreenView.cs"), // AchievementsScreen.Build(안 부르면 업적 줄이 하나도 없다)
             ("TooltipAnchor",              "AchievementsScreenView.cs"), // AchievementsScreen.OnNavChanged(안 부르면 설명 상자가 안 뜬다)
             ("MarkerPositionFor",          "StageSelectScreenView.cs"), // StageSelectScreen.Refresh(안 부르면 ▼가 챕터 리본을 안 따라간다)
+            ("CardLook",                   "CharacterSelectScreen.cs"), // CharacterSelectScreenView.CreateFromCode(안 부르면 선택칸 이름·그림이 빈 채로 지어진다)
         };
 
         var scriptFiles = Directory.GetFiles(

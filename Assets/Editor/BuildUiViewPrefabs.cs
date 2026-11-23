@@ -73,7 +73,12 @@ namespace ChronoSavior.Editor
             Label = "스테이지 선택", AssetPath = StageSelectScreenView.AssetPath, Build = StageSelectScreenView.CreateFromCode,
             ColorOnly = new[] { "Letterbox", "Mob0", "Mob1", "Mob2", "Portrait" }, // 검은 여백 · 몬스터/보스 그림 칸(실행 중 채움)
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage };
+        static readonly ViewSpec Character = new ViewSpec
+        {
+            Label = "캐릭터 선택", AssetPath = CharacterSelectScreenView.AssetPath, Build = CharacterSelectScreenView.CreateFromCode,
+            ColorOnly = new[] { "Background", "Hover" }, // 먹색 바탕 · 계열 칸 마우스 올림 자리(투명)
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -97,6 +102,8 @@ namespace ChronoSavior.Editor
         public static void BuildAchievementsFromMenu() => BuildFromMenu(Achievements);
         [MenuItem("ChronoSavior/UI 프리팹/스테이지 선택 만들기")]
         public static void BuildStageFromMenu() => BuildFromMenu(Stage);
+        [MenuItem("ChronoSavior/UI 프리팹/캐릭터 선택 만들기")]
+        public static void BuildCharacterFromMenu() => BuildFromMenu(Character);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()
