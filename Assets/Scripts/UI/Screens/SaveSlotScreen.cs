@@ -27,20 +27,14 @@ namespace ChronoSavior.UI
         protected override NavLayout Layout => NavLayout.Grid;
         protected override int NavColumns => 2;
 
-        // 640판 좌표(GPT 배치안 — 설정 창과 같은 512×304 테두리)
-        static readonly Rect Frame = new Rect(65f, 29f, 512f, 304f);
-        static readonly Rect Plate = new Rect(250f, 7f, 128f, 32f);
-        static readonly Rect TitleBox = new Rect(262f, 4f, 103f, 37f);
-        static readonly Rect CloseBox = new Rect(534f, 17f, 40f, 40f);
-        const float CardX = 81f, CardW = 480f, CardH = 80f, TextX = 92f, BtnX1 = 352f, BtnX2 = 456f, BtnW = 96f, BtnH = 32f;
-        static readonly float[] CardY = { 52f, 144f, 236f };
-        static readonly Color CardFill = new Color(0f, 0f, 0f, 0.35f);
-        static readonly Color Gold = Px.Hex(0xfac70e);
-        static readonly Color Sub = new Color(0.82f, 0.84f, 0.9f);
-
+        // 모양(좌표·색)은 프리팹 SaveSlotScreenView에 있다(2026-11-23 프리팹 UI 13호). 여기엔 글자 내용·동작만.
+        SaveSlotScreenView view;
         readonly Text[] titles = new Text[SaveService.SlotCount];
         readonly Text[] lines = new Text[SaveService.SlotCount];
         readonly Text[] times = new Text[SaveService.SlotCount];
+
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
         protected override void Awake()
         {
@@ -54,30 +48,35 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="SaveSlotScreenView"/>, `Resources/UI/Views/SaveSlotScreenView`)이 원본이다(2026-11-23 프리팹 UI 13호).
+        /// 여기선 칸마다 글자를 받아 오고, 버튼 동작과 키보드 순서(1번 이어하기 → 1번 초기화 → 2번 …)를 잇는다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Dim", new Color(0f, 0f, 0f, 0.55f));
-            Px.Image(Content, "Frame", PxArt.Get("Settings/window"), Frame.x, Frame.y, Frame.width, Frame.height).raycastTarget = true;
-            Px.Image(Content, "TitlePlate", PxArt.Get("Common/title_plate"), Plate.x, Plate.y, Plate.width, Plate.height);
-            Px.Text(Content, "Title", "세이브 슬롯", TitleBox.x, TitleBox.y, TitleBox.width, TitleBox.height, 16, Color.white);
-            Px.IconButton(Content, "Close", PxArt.Get("Common/close_frame"), PxArt.Get("Icons/close_x"),
-                          CloseBox.x, CloseBox.y, CloseBox.width, CloseBox.height, 0f, 0f, CloseBox.width, CloseBox.height, Close);
+            view = LoadView<SaveSlotScreenView>(SaveSlotScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[SaveSlotScreen] 화면 프리팹(Resources/" + SaveSlotScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/세이브 슬롯 만들기", this);
+                view = SaveSlotScreenView.CreateFromCode(Root);
+            }
+            if (view.slots.Length != SaveService.SlotCount)
+                Debug.LogError($"[SaveSlotScreen] 화면 프리팹 슬롯 칸 수가 다르다({view.slots.Length}) — {SaveService.SlotCount}이어야 한다", view);
 
-            for (int i = 0; i < SaveService.SlotCount; i++)
+            view.close.Wire(Close);
+            for (int i = 0; i < SaveService.SlotCount && i < view.slots.Length; i++)
             {
                 int slot = i + 1;
-                float y = CardY[i];
-                Px.Fill(Content, "Card" + slot, CardFill, CardX, y, CardW, CardH);
-                titles[i] = Px.Text(Content, "SlotTitle" + slot, "", TextX, y + 6f, 250f, 16f, 13, Gold, TextAnchor.MiddleLeft);
-                lines[i] = Px.Text(Content, "SlotInfo" + slot, "", TextX, y + 24f, 252f, 36f, 10, Color.white, TextAnchor.UpperLeft);
-                lines[i].horizontalOverflow = HorizontalWrapMode.Wrap;
-                lines[i].lineSpacing = 1.15f;
-                times[i] = Px.Text(Content, "SlotTime" + slot, "", TextX, y + 62f, 252f, 14f, 10, Sub, TextAnchor.MiddleLeft);
-                AddNav(Px.TextButton(Content, "Continue" + slot, PxArt.Get("Common/button"), BtnX1, y + 24f, BtnW, BtnH,
-                                     "이어하기", 13, Color.white, () => Continue(slot)));
-                AddNav(Px.TextButton(Content, "Reset" + slot, PxArt.Get("Common/button"), BtnX2, y + 24f, BtnW, BtnH,
-                                     "초기화", 13, Color.white, () => AskReset(slot)));
+                var s = view.slots[i];
+                titles[i] = s.title;
+                lines[i] = s.info;
+                times[i] = s.time;
+                AddNav(s.continueButton.Wire(() => Continue(slot)));
+                AddNav(s.resetButton.Wire(() => AskReset(slot)));
             }
         }
 
@@ -105,7 +104,7 @@ namespace ChronoSavior.UI
             {
                 CharacterId.Mage => "마법사",
                 CharacterId.Gunner => "메카닉",
-                CharacterId.Blade => "섬영",
+                CharacterId.Blade => "살수", // 화면 이름 = 살수(예전 섬영, 2026-11-07) — 2026-11-23 사용자 확인으로 맞춤
                 _ => p.character.ToString(),
             };
             string skill = p.character switch

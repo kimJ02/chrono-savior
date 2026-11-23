@@ -88,6 +88,7 @@ public class CreationOwnershipTests
         ["UI/Screens/AchievementsScreenView.cs"] = (Kind.UiBuild, "업적 줄을 견본(List/RowTemplate)에서 업적 수만큼 복제(BuildRows) + 처음 모양 짓기(CreateFromCode, 에디터 메뉴·프리팹 없을 때 대체) — 2026-11-23 프리팹 UI 7호, 예전 AchievementsScreen.cs"),
         ["UI/Screens/AwakenScreenView.cs"] = (Kind.UiBuild, "각성창 모양 컴포넌트·스탯 탭 강화 목록 가림막(RectMask2D, 네 번째 줄이 반쯤 잘려 보이는 스크롤 목록)·SP +1 9-슬라이스 복원 표시 붙이기(CreateFromCode) — 프리팹을 처음 만드는 에디터 메뉴와, 프리팹이 없을 때의 대체 전용(2026-11-23 프리팹 UI 12호, 예전 AwakenScreen.cs)"),
         ["UI/Screens/CharacterSelectScreen.cs"] = (Kind.UiBuild, "계열 칸 마우스 올림 알림(HoverArea) 붙이기 — 화면 안쪽 클래스라 프리팹에 저장할 수 없다(2026-11-23 프리팹 UI 9호, 모양은 CharacterSelectScreenView)"),
+        ["UI/Screens/SaveSlotScreenView.cs"] = (Kind.UiBuild, "세이브 슬롯 창 모양 컴포넌트 붙이기(CreateFromCode) — 프리팹을 처음 만드는 에디터 메뉴와, 프리팹이 없을 때의 대체 전용(2026-11-23 프리팹 UI 13호)"),
         ["UI/Screens/RelicScreenView.cs"] = (Kind.UiBuild, "유물 칸을 견본(Slots/Template)에서 한 쪽 칸 수만큼 복제(BuildSlots) + 처음 모양 짓기(CreateFromCode — 견본 칸 모양 컴포넌트·9-슬라이스/흰 그림 복원 표시 붙이기, 에디터 메뉴·프리팹 없을 때 대체) — 2026-11-23 프리팹 UI 11호, 예전 RelicScreen.cs"),
         ["UI/Screens/LobbyHudView.cs"] = (Kind.UiBuild, "미니맵 건물 칸·건물 글씨를 견본에서 건물 수만큼 복제(Clone) + 처음 모양 짓기(CreateFromCode, 에디터 메뉴·프리팹 없을 때 대체) — 2026-11-23 프리팹 UI 10호, 예전 LobbyHud.cs"),
         ["UI/Screens/CharacterSelectScreenView.cs"] = (Kind.UiBuild, "캐릭터 선택 모양 컴포넌트 붙이기(CreateFromCode) — 프리팹을 처음 만드는 에디터 메뉴와, 프리팹이 없을 때의 대체 전용(2026-11-23 프리팹 UI 9호, 예전 CharacterSelectScreen.cs)"),

@@ -95,7 +95,12 @@ namespace ChronoSavior.Editor
             // 바탕 · 큰 아이콘/칸 아이콘(실행 중 채움) · 배움 점 · 스크롤 나눔선 둘·표시 — 전부 색만 칠한 칸
             ColorOnly = new[] { "Background", "BigIcon", "Icon", "Learned", "Divider", "Divider2", "Thumb" },
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic, Awaken };
+        static readonly ViewSpec SaveSlot = new ViewSpec
+        {
+            Label = "세이브 슬롯", AssetPath = SaveSlotScreenView.AssetPath, Build = SaveSlotScreenView.CreateFromCode,
+            ColorOnly = new[] { "Dim", "Card" }, // 어두운 막 · 슬롯 칸 바탕(반투명)
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic, Awaken, SaveSlot };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -127,6 +132,8 @@ namespace ChronoSavior.Editor
         public static void BuildRelicFromMenu() => BuildFromMenu(Relic);
         [MenuItem("ChronoSavior/UI 프리팹/각성창 만들기")]
         public static void BuildAwakenFromMenu() => BuildFromMenu(Awaken);
+        [MenuItem("ChronoSavior/UI 프리팹/세이브 슬롯 만들기")]
+        public static void BuildSaveSlotFromMenu() => BuildFromMenu(SaveSlot);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

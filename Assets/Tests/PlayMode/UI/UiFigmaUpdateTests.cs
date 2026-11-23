@@ -418,6 +418,59 @@ public class UiFigmaUpdateTests
         finally { AwakenScreen.Close(); }
     }
 
+    /// <summary>
+    /// 프리팹 UI 13호(2026-11-23) — 세이브 슬롯 창 모양은 프리팹(`Resources/UI/Views/SaveSlotScreenView`)에서 오고, 슬롯 칸은 세이브 슬롯 수만큼(3).
+    /// 글자(슬롯 번호·시나리오 이름)는 코드가 채운다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/세이브 슬롯 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator SaveSlot_LayoutFromViewPrefab_ThreeSlots()
+    {
+        Assert.IsNotNull(Resources.Load<SaveSlotScreenView>(SaveSlotScreenView.ResourcePath), "세이브 슬롯 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/세이브 슬롯 만들기");
+        var screen = pc.GetComponent<SaveSlotScreen>();
+        SaveSlotScreen.Open(); // 타이틀에서 열린다(SetUp이 타이틀)
+        yield return null;
+        try
+        {
+            Assert.IsTrue(screen.IsShown, "타이틀에서 열면 보인다");
+            Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = screen.Root.GetComponentsInChildren<SaveSlotScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(SaveService.SlotCount, v.slots.Length, "슬롯 칸 = 세이브 슬롯 수");
+            for (int i = 0; i < v.slots.Length; i++)
+                StringAssert.StartsWith($"슬롯 {i + 1} · {SavePresets.Name(i + 1)}", v.slots[i].title.text, "제목은 코드가 채운다");
+            Assert.AreEqual(0, screen.NavIndex, "처음엔 1번 이어하기");
+        }
+        finally { SaveSlotScreen.Close(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — [초기화]는 확인 팝업을 띄우고(바로 지우지 않는다), 닫기 버튼이 창을 닫는다.</summary>
+    [UnityTest]
+    public IEnumerator SaveSlot_ResetAsksFirst_CloseCloses()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        var screen = pc.GetComponent<SaveSlotScreen>();
+        SaveSlotScreen.Open();
+        yield return null;
+        try
+        {
+            var v = screen.Root.GetComponentInChildren<SaveSlotScreenView>(true);
+            v.slots[1].resetButton.button.Click();
+            yield return null;
+            Assert.IsTrue(CommonPopup.IsOpen, "[초기화] → 확인 팝업(바로 지우지 않는다)");
+            PxButton cancel = null;
+            foreach (var b in pc.GetComponent<CommonPopup>().Root.GetComponentsInChildren<PxButton>(true)) if (b.name == "Cancel") cancel = b;
+            Assert.IsNotNull(cancel);
+            cancel.Click(); // 취소 — 아무것도 안 지운다
+            yield return null;
+            Assert.IsFalse(CommonPopup.IsOpen);
+
+            v.close.button.Click();
+            Assert.IsFalse(SaveSlotScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { SaveSlotScreen.Close(); }
+    }
+
     /// <summary>2026-11-22 회귀 결과창 — 새 프로필: 이전 최고 stage 1 → 회귀 후 stage 1, 획득 파편 0, Lv.1, 처치 0. 정복한 지역이 있으면 그 파편이 보인다.</summary>
     [UnityTest]
     public IEnumerator Regression_ShowsStageBeforeAfter_Shards_Level_Kills()

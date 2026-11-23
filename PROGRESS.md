@@ -183,6 +183,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
+- **[2026-11-23, 사용자 확인] 화면에 보이는 캐릭터 이름은 "살수"(예전 "섬영")** — 세이브 슬롯 요약은 로그 (163)에서 고쳤다. 아직 "섬영"으로 보이는 곳 둘: 유물 설명 상자 "섬영 전용"(`Core/ItemDatabase.OwnerName`), 업적 설명 "섬영 빌드 5층 완성"(`Core/Achievements` blade5). 에디터 툴팁 `CharacterArtSet`도 "섬영". 작은 글자 수정이라 `main` 후속 커밋으로 고치면 된다(코드 주석·테스트 메시지의 "섬영"은 개발용이라 그대로).
 - **[2026-11-23, 사용자] 스테이지 선택의 스테이지 칸 고르기·들어가기 방식이 원래부터 어색하다 — 나중에 고친다**(프리팹 8호 전부터 있던 동작, 이번엔 안 바꿈).
   스테이지 칸에 마우스를 올리면 그 칸이 바로 "고른 스테이지"가 되어 숫자가 노랗게 바뀌고(`OnNavChanged`가 `stage`를 바꿈), 키보드로 칸을 지정한 뒤 확인 → "원정 떠나기"로 넘어가 한 번 더 눌러야 들어간다(`PickStage`).
   어떻게 바꿀지(마우스 올림 = 미리보기만? 확인 한 번에 출발?)는 사용자가 정한다.
@@ -312,6 +313,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (163)** — **[사용자 세션] 프리팹 UI 13호: 세이브 슬롯 창(`SaveSlotScreen`) — `feature/ui-prefab-saveslot`**(1~12호와 같은 방식).
+  - 모양(어두운 막·창 테두리·제목판·닫기, 슬롯 칸 셋 — 묶음 `Slot1~3` 안에 칸 바탕 `Card`·`Title`·`Info`·`Time`·`Continue`·`Reset`)은 프리팹 `Resources/UI/Views/SaveSlotScreenView`.
+    칸마다 시나리오 이름·진행 요약·마지막 저장 시각 글자, [이어하기]/[초기화]/닫기 동작, 키보드 순서(1번 이어하기 → 1번 초기화 → 2번 …, 2열 격자)는 그대로 코드(`SaveSlotScreen`).
+  - 슬롯 칸은 이제 묶음 하나(`Slot1`…) — 묶음을 옮기면 칸 전체가 같이 움직인다. 칸 안 이름이 짧아졌다(예전 `SlotTitle1`·`Continue1` → `Slot1/Title`·`Slot1/Continue`, 이 이름을 읽는 코드·테스트는 없었다).
+  - 슬롯 요약의 캐릭터 이름 "섬영" → **"살수"**(`SaveSlotScreen.Summary`, 2026-11-23 사용자 확인: "살수가 맞는 이름"). 화면에 보이는 "섬영"이 두 곳 더 남아 있다 — 유물 설명 상자의 "섬영 전용"(`Core/ItemDatabase.OwnerName`)·업적 설명 "섬영 빌드 5층 완성"(`Core/Achievements`). 이번 브랜치 범위(세이브 슬롯 창) 밖이라 안 고쳤다 → "확인 필요".
+  - ⚠️ 원래부터 있던 것(이번엔 안 바꿈): 요약은 보이는 동안 매 프레임 세이브 파일을 읽는다(`Refresh` → `SaveService.Peek`).
+  - 파일별: `UI/Screens/SaveSlotScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/SaveSlotScreenView.cs`(모양, `ButtonRef.Wire`·`SlotRef`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/세이브 슬롯 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·슬롯 칸 3·제목 / [초기화]는 확인 팝업·닫기) · `CreationOwnershipTests`(`SaveSlotScreenView.cs`).
+  - 프리팹(`Assets/Resources/UI/Views/SaveSlotScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **638 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (162)** — **[사용자 세션] 프리팹 UI 12호: 각성창(`AwakenScreen`) — `feature/ui-prefab-awaken`**(1~11호와 같은 방식).
   - 모양(바탕·전신 그림·위 패널, 위 패널 두 얼굴 `SkillDetail`(큰 아이콘·설명·상태·SP·배우기·에디터 전용 SP +1)/`StatDetail`(스탯 5줄), [각성]·[스탯] 탭, 아래 창, 아래 창 두 얼굴 `Tree`(스킬 칸 2줄×5)/`Upgrades`(강화 목록 5줄+가림막·스크롤 나눔선·표시·강화 상세·구매 단위 셋·강화하기), 닫기, 금색·흐린 색)은 프리팹 `Resources/UI/Views/AwakenScreenView`.
     캐릭터별 스킬트리 데이터·칸 틀 그림(배움/열림/막힘)·아이콘·설명·상태·스탯 값·강화 목록/상세·고른 줄/구매 단위 그림·탭 전환·키보드 순서(탭마다 다시 짬)·배우기/구매/SP +1 동작은 그대로 코드(`AwakenScreen`).
