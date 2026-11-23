@@ -397,6 +397,7 @@ public class OriginalFidelityTests
             ("BuildSlots",                 "RelicScreenView.cs"),  // RelicScreen.Build(안 부르면 유물 칸이 하나도 없다)
             ("RelicScreenView.RectOf",     "RelicScreenView.cs"),  // RelicScreen.RefreshTip(안 부르면 [1]·[10] 설명 상자 자리가 틀린다 — 이름이 흔해 클래스까지)
             ("PxArt.White",                "PxArt.cs"),            // RelicScreenView·PxWhiteArt(안 부르면 등급 ◆가 흰 그림이 아니라 원본 커서색)
+            ("SetScroll",                  "AwakenScreenView.cs"), // AwakenScreen.RefreshUpgrades(안 부르면 강화 목록 스크롤 표시가 안 움직인다)
         };
 
         var scriptFiles = Directory.GetFiles(

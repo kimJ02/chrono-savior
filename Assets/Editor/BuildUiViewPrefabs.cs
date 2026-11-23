@@ -89,7 +89,13 @@ namespace ChronoSavior.Editor
             Label = "유물 소환", AssetPath = RelicScreenView.AssetPath, Build = RelicScreenView.CreateFromCode,
             ColorOnly = new[] { "Background", "RateLine0", "RateLine1", "RateLine2" }, // 바탕 · 확률 줄 사이 가는 선
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic };
+        static readonly ViewSpec Awaken = new ViewSpec
+        {
+            Label = "각성창", AssetPath = AwakenScreenView.AssetPath, Build = AwakenScreenView.CreateFromCode,
+            // 바탕 · 큰 아이콘/칸 아이콘(실행 중 채움) · 배움 점 · 스크롤 나눔선 둘·표시 — 전부 색만 칠한 칸
+            ColorOnly = new[] { "Background", "BigIcon", "Icon", "Learned", "Divider", "Divider2", "Thumb" },
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic, Awaken };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -119,6 +125,8 @@ namespace ChronoSavior.Editor
         public static void BuildLobbyHudFromMenu() => BuildFromMenu(LobbyHud);
         [MenuItem("ChronoSavior/UI 프리팹/유물 소환 만들기")]
         public static void BuildRelicFromMenu() => BuildFromMenu(Relic);
+        [MenuItem("ChronoSavior/UI 프리팹/각성창 만들기")]
+        public static void BuildAwakenFromMenu() => BuildFromMenu(Awaken);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

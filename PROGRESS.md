@@ -312,6 +312,17 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (162)** — **[사용자 세션] 프리팹 UI 12호: 각성창(`AwakenScreen`) — `feature/ui-prefab-awaken`**(1~11호와 같은 방식).
+  - 모양(바탕·전신 그림·위 패널, 위 패널 두 얼굴 `SkillDetail`(큰 아이콘·설명·상태·SP·배우기·에디터 전용 SP +1)/`StatDetail`(스탯 5줄), [각성]·[스탯] 탭, 아래 창, 아래 창 두 얼굴 `Tree`(스킬 칸 2줄×5)/`Upgrades`(강화 목록 5줄+가림막·스크롤 나눔선·표시·강화 상세·구매 단위 셋·강화하기), 닫기, 금색·흐린 색)은 프리팹 `Resources/UI/Views/AwakenScreenView`.
+    캐릭터별 스킬트리 데이터·칸 틀 그림(배움/열림/막힘)·아이콘·설명·상태·스탯 값·강화 목록/상세·고른 줄/구매 단위 그림·탭 전환·키보드 순서(탭마다 다시 짬)·배우기/구매/SP +1 동작은 그대로 코드(`AwakenScreen`).
+  - 강화 목록 줄 간격(`rowStep` 28)·보이는 줄 수(`rowsVisible` 3)·스크롤 표시 범위(`scrollTrackY` 230·`scrollTrackHeight` 108)는 프리팹 값 — 목록 줄 세로 자리와 스크롤 표시 세로 자리는 코드가 이 값으로 정한다(`SetScroll`, 가로·크기는 프리팹 그대로).
+  - 에디터 전용 "SP +1"은 9-슬라이스라 `PxSlicedArt`로 복원, 프리팹엔 늘 있고 빌드한 게임에선 화면 코드가 끈다(11호 테스트 버튼과 같다).
+  - 테스트가 읽는 공개 API(`NodeFrameName`·`ShowTabForTest`·`StatValueText`·`PickUpgradeForTest`·`BuyForTest`·`BuyEnabled`·`BuyText`·`DetailNameText`·`Before/AfterLevelText`·`ClickNodeForTest`·`ScrollListForTest`·`ListTop`)와 칸 이름(`Node{줄}{층}`·`Icon`·`Row0~4`)은 그대로.
+  - 파일별: `UI/Screens/AwakenScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/AwakenScreenView.cs`(모양, `ButtonRef.Wire/Label`·`NodeRef`·`UpgradeRowRef`·`SetScroll`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/각성창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·칸 수·SP +1 그림 / 탭 버튼·스크롤 표시·닫기) · `CreationOwnershipTests`(생성 담당 `AwakenScreen.cs` → `AwakenScreenView.cs`, 가림막 포함) · `OriginalFidelityTests`(`SetScroll`).
+  - ⚠️ 스킬 칸 순서(`nodes` = 줄 × 5 + 층 − 1)·강화 줄 순서(체력·공격력·이동속도·공격속도·치명타)·스탯 줄 순서(레벨·최대체력·공격력·이동속도·공격속도)는 코드와 짝. `SkillDetail`/`StatDetail`/`Tree`/`Upgrades` 이름·묶음 그대로(코드가 켜고 끈다). 강화 줄은 `Upgrades/List`(가림막) 안에.
+  - 프리팹(`Assets/Resources/UI/Views/AwakenScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **636 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "훈련소" 화면 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (161)** — **[사용자 세션] 프리팹 UI 11호: 유물 소환(`RelicScreen`) — 목록형 — `feature/ui-prefab-relic`**(견본 복제는 7호 업적 창, 실행 중 그림 복원은 10호 `PxSlicedArt`와 같은 방식).
   - 모양(바탕·큰 창·제목판·닫기·칸 격자(`Slots` + 견본 칸 `Template`, 열 수 5·간격 37)·쪽 넘김·파편/유물 수 막대·확률 판 4줄·[1]·[10]·에디터 전용 "유물 전부 각성")은 프리팹 `Resources/UI/Views/RelicScreenView`.
     한 쪽 칸 수(30)·칸마다 유물/개수/자물쇠/밝은·어두운 칸·쪽 번호·파편/유물 수·**확률 판의 등급 이름·색·값(데이터 `ItemDatabase`)**·버튼 동작·키보드 격자(칸 0~29 → [1] → [10], 열 수는 프리팹)·설명 상자·소환은 그대로 코드(`RelicScreen`).

@@ -359,6 +359,65 @@ public class UiFigmaUpdateTests
         finally { RelicScreen.Close(); }
     }
 
+    /// <summary>
+    /// 프리팹 UI 12호(2026-11-23) — 각성창 모양은 프리팹(`Resources/UI/Views/AwakenScreenView`)에서 온다. 스킬 칸 10개·강화 줄 5개·스탯 5줄이 그대로 있고,
+    /// 에디터 전용 "SP +1"의 9-슬라이스 그림(실행 중 만든 그림)이 다시 만들어져 흰 네모가 아니다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/각성창 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Awaken_LayoutFromViewPrefab_PartsKept()
+    {
+        Assert.IsNotNull(Resources.Load<AwakenScreenView>(AwakenScreenView.ResourcePath), "각성창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/각성창 만들기");
+        var awaken = pc.GetComponent<AwakenScreen>();
+        awaken.ShowForCapture();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(awaken.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = awaken.Root.GetComponentsInChildren<AwakenScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(10, v.nodes.Length, "스킬 칸 2줄 × 5층");
+            Assert.AreEqual(5, v.upgradeRows.Length, "강화 줄 5개");
+            Assert.AreEqual(5, v.statValues.Length, "스탯 5줄");
+            Assert.IsNotNull(v.testSp.button.Art.sprite, "SP +1 그림이 비었다(흰 네모)");
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, v.testSp.button.Art.type, "SP +1은 9-슬라이스");
+            Assert.IsTrue(v.tree.gameObject.activeSelf && v.skillDetail.gameObject.activeSelf, "처음엔 [각성] 탭");
+            Assert.IsFalse(v.upgrades.gameObject.activeSelf || v.statDetail.gameObject.activeSelf);
+        }
+        finally { awaken.HideForCapture(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 탭 버튼이 두 얼굴을 바꾸고, 강화 목록을 끝까지 밀면 스크롤 표시가 맨 아래로, 닫기가 창을 닫는다.</summary>
+    [UnityTest]
+    public IEnumerator Awaken_TabButtons_ScrollThumb_Close()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        GameState.Set(GameScene.Lobby);
+        var awaken = pc.GetComponent<AwakenScreen>();
+        AwakenScreen.Open();
+        yield return null;
+        try
+        {
+            var v = awaken.Root.GetComponentInChildren<AwakenScreenView>(true);
+            v.tabStat.button.Click();
+            yield return null;
+            Assert.IsTrue(v.upgrades.gameObject.activeSelf && v.statDetail.gameObject.activeSelf, "[스탯] 버튼 → 강화 목록·스탯 5줄");
+            Assert.IsFalse(v.tree.gameObject.activeSelf || v.skillDetail.gameObject.activeSelf);
+            Assert.AreEqual(-v.scrollTrackY, v.thumb.anchoredPosition.y, 0.01f, "처음엔 스크롤 표시가 맨 위");
+
+            awaken.PickUpgradeForTest(4, 0); // 마지막 줄 → 목록이 끝까지 밀린다
+            Assert.AreEqual(-(v.scrollTrackY + v.scrollTrackHeight - v.thumb.sizeDelta.y), v.thumb.anchoredPosition.y, 0.01f, "끝까지 밀면 스크롤 표시가 맨 아래");
+
+            v.tabAwaken.button.Click();
+            yield return null;
+            Assert.IsTrue(v.tree.gameObject.activeSelf && v.skillDetail.gameObject.activeSelf, "[각성] 버튼 → 스킬 칸·스킬 상세");
+
+            v.close.button.Click();
+            Assert.IsFalse(AwakenScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { AwakenScreen.Close(); }
+    }
+
     /// <summary>2026-11-22 회귀 결과창 — 새 프로필: 이전 최고 stage 1 → 회귀 후 stage 1, 획득 파편 0, Lv.1, 처치 0. 정복한 지역이 있으면 그 파편이 보인다.</summary>
     [UnityTest]
     public IEnumerator Regression_ShowsStageBeforeAfter_Shards_Level_Kills()
