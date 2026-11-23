@@ -375,37 +375,40 @@ public class CharacterMover2D : MonoBehaviour, Core.IRunResettable, Core.IGrabba
         return true;
     }
 
-    // ── 한쪽 통과 발판(2026-11-22 사용자 "발판 옆으로 박으면 걸림") ──
-    // 씬의 PlatformEffector2D(윗면 120°)만으로는 원형 몸이 발판 **모서리**에 옆으로 닿을 때 막혔다.
-    // 원본처럼 "떨어지는 중이고 발이 윗면보다 위일 때만 밟는다"를 직접 정한다 — 아니면 그 발판과의 충돌을 끈다.
+    // ── 한쪽 통과 발판 옆면(2026-11-22 사용자 "발판 옆으로 박으면 걸림") ──
+    // 씬의 PlatformEffector2D(윗면 120°)만으로는 원형 몸이 발판 **모서리·옆면**에 닿을 때 막혔다. 실제로 닿은 접촉의 방향을 보고,
+    // 위에서 밟는 접촉(법선이 위)이 아니면 그 발판과의 충돌을 잠깐 끄고, 몸이 그 발판에서 떨어지면 다시 켠다.
+    // (2026-11-23 — 처음엔 발판 높이로 미리 정했는데 실제 발판에서 착지를 깨뜨려 접촉 방향 방식으로 바꿨다.)
     readonly System.Collections.Generic.List<Collider2D> passThrough = new System.Collections.Generic.List<Collider2D>();
-    readonly Collider2D[] nearPlatforms = new Collider2D[16];
-    const float PlatformLandTolerance = 0.06f;
+    const float FloorNormalY = 0.5f;   // 법선 y가 이보다 작으면 옆·아래 접촉
+    const float ReenableGap = 0.04f;   // 이만큼 떨어지면 다시 켠다
+
+    void OnCollisionEnter2D(Collision2D c) => CheckSideContact(c);
+    void OnCollisionStay2D(Collision2D c) => CheckSideContact(c);
+
+    void CheckSideContact(Collision2D c)
+    {
+        var other = c.collider;
+        if (other == null || col == null || other.GetComponent<PlatformEffector2D>() == null || passThrough.Contains(other)) return;
+        for (int i = 0; i < c.contactCount; i++)
+            if (c.GetContact(i).normal.y >= FloorNormalY) return; // 위에서 밟는 접촉이 하나라도 있으면 그대로(착지)
+        Physics2D.IgnoreCollision(col, other, true);
+        passThrough.Add(other);
+    }
 
     void UpdateOneWayPlatforms()
     {
-        if (col == null) return;
-        var b = col.bounds;
-        int n = Physics2D.OverlapBoxNonAlloc(b.center, b.size + new Vector3(0.6f, 0.6f, 0f), 0f, nearPlatforms, groundMask);
-        float feet = b.min.y;
-        bool rising = rb.linearVelocity.y > 0.05f;
-        for (int i = 0; i < n; i++)
-        {
-            var p = nearPlatforms[i];
-            if (p == null || p.GetComponent<PlatformEffector2D>() == null || ignoredPlatforms.Contains(p)) continue;
-            bool solid = !rising && feet >= p.bounds.max.y - PlatformLandTolerance;
-            bool ignored = passThrough.Contains(p);
-            if (solid && ignored) { Physics2D.IgnoreCollision(col, p, false); passThrough.Remove(p); }
-            else if (!solid && !ignored) { Physics2D.IgnoreCollision(col, p, true); passThrough.Add(p); }
-        }
-        // 멀어진 발판은 다시 켠다(다음에 위에서 떨어질 때 밟히게)
         for (int i = passThrough.Count - 1; i >= 0; i--)
         {
             var p = passThrough[i];
-            bool near = false;
-            for (int k = 0; k < n; k++) if (nearPlatforms[k] == p) { near = true; break; }
             if (p == null) { passThrough.RemoveAt(i); continue; }
-            if (!near) { Physics2D.IgnoreCollision(col, p, false); passThrough.RemoveAt(i); }
+            if (ignoredPlatforms.Contains(p)) continue; // 아래키 통과 중인 것은 그쪽이 되돌린다
+            var d = col.Distance(p);
+            if (!d.isValid || d.distance > ReenableGap)
+            {
+                Physics2D.IgnoreCollision(col, p, false);
+                passThrough.RemoveAt(i);
+            }
         }
     }
 

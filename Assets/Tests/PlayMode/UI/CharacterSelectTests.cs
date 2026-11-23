@@ -68,7 +68,7 @@ public class CharacterSelectTests
         // 2026-11-22 — 고르면 "이번 회차에서는 바꿀 수 없다" 확인창이 먼저 뜬다
         Assert.IsTrue(CommonPopup.IsOpen, "고르면 경고 확인창이 뜬다");
         Assert.AreEqual(CharacterId.Mage, ProfileService.Current.character, "확인 전엔 안 바뀐다");
-        System.Linq.Enumerable.First(pc.GetComponentsInChildren<PxButton>(true), btn => btn.name == "Ok").Click();
+        System.Linq.Enumerable.First(pc.GetComponent<CommonPopup>().Root.GetComponentsInChildren<PxButton>(true), btn => btn.name == "Ok").Click(); // 공용 팝업의 확인
         Assert.AreEqual(CharacterId.Gunner, ProfileService.Current.character, "고르면 세이브의 캐릭터 값이 바뀐다");
         Assert.IsFalse(CharacterSelectScreen.IsOpen, "고르면 창이 닫힌다");
         Assert.IsTrue(File.Exists(SaveService.SavePath), "고르면 저장한다");

@@ -26,12 +26,12 @@ namespace ChronoSavior.Characters
             BeamLengthId = Shader.PropertyToID("_BeamLength"), FadeLengthId = Shader.PropertyToID("_FadeLength");
 
         /// <summary>
-        /// 다음 적에 닿을 때 그림(받은 VFX 키)·재생 속도·자리(적 가운데/닿은 자리)·빔 방향으로 돌릴지 — 2026-11-23 사용자 "맞은 효과가 별로" →
-        /// 후보를 캡처해 고르는 중(<c>CaptureUiPreview.RunChainBeamHits</c>). 고르면 상수로 굳힌다.
+        /// 다음 적에 닿을 때 그림 — 2026-11-23 사용자가 후보 4개(실제 화면 캡처, <c>CaptureUiPreview.RunChainBeamHits</c>) 중 **D "하얀 번개 찌릿"**
+        /// (팩 relay_aura, 맞은 적 가운데, 돌리지 않음, 30fps)을 골랐다. 캡처 비교용으로 바꿀 수 있게 static으로 둔다(게임 코드는 안 바꾼다).
         /// </summary>
-        public static string HitKey = VfxKeys.MechanicHitSpark;
+        public static string HitKey = VfxKeys.MechanicRelayAura;
         public static float HitFps = EdgeFps;
-        public static bool HitAtCenter, HitRotate = true;
+        public static bool HitAtCenter = true, HitRotate = false;
 
         LineRenderer line;
         Vector2? targetCenter;

@@ -268,7 +268,7 @@ public class UiFigmaUpdateTests
             if (b.name.StartsWith("Slot")) { slots++; Assert.IsTrue(b.Art.sprite.name.StartsWith("slot_off"), "처음엔 전부 없는 유물 — 어두운 칸"); }
         Assert.AreEqual(30, slots);
         foreach (var t in relic.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true))
-            if (t.name == "RateValue0") Assert.AreEqual("55%", t.text, "노말 확률은 원본 가중치 55/100");
+            if (t.name == "RateValue0") Assert.AreEqual($"{ItemDatabase.Weight(ItemGrade.Common)}%", t.text, "노말 확률은 지금 뽑기 가중치(2026-11-23 병합 — 유물 브랜치는 Figma 70/27/2/1)");
         relic.HideForCapture();
     }
 

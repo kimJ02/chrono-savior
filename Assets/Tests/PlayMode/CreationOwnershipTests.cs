@@ -65,6 +65,7 @@ public class CreationOwnershipTests
         ["Characters/PlayerAfterimages.cs"] = (Kind.VisualEffect, "잔상 그림 풀"),
         ["Characters/MageChargeVfx.cs"]    = (Kind.VisualEffect, "차지 손 오브(차지율 11등분)·오브 일렁임(9번째부터 시간 루프)·완충 깜빡임 그림 자식 — 전부 캐릭터 아트, 외주 키 재생기 아님(2026-11-16 '차지 오라'는 사용자 요청으로 뺐다)"),
         ["Characters/GunnerBeamVfx.cs"]    = (Kind.VisualEffect, "레이저 빔 그림(선 하나·총구·끝 그림) — 그림만, 판정은 GunnerLaserBeam(2026-11-09 떼어 냄)"),
+        ["Characters/GunnerChainBeamVfx.cs"] = (Kind.VisualEffect, "레이저 광선 연쇄 한 번 튀기 그림(본 레이저와 같은 셰이더의 선 하나) — 그림만, 피해는 GunnerRelics(2026-11-23 사용자 승인)"),
         ["Characters/GunnerZapArc.cs"]     = (Kind.VisualEffect, "설치기 적중 분기 아크(LineRenderer 둘) — 그림만, GunnerZap이 풀로 돌려 쓴다(2026-11-10)"),
         ["Characters/GunnerFieldVfx.cs"]   = (Kind.VisualEffect, "설치기 링크선(레이저 그림 타일)·내부 장판 칠하기(메시)·흰 점 — 그림만, 2026-11-08 GunnerAttack에서 떼어 냄"),
         ["Characters/BladeVfx.cs"]         = (Kind.VisualEffect, "살수 집중 B(배경 어둡게·하트비트·잔상·속도선·궤적 점·파열 흰 잔상)·칼날폭풍(회전베기·잔상 사슬·착지 충격파·파편 프리팹) — 그림만(2026-11-08, 2026-11-10 다시)"),

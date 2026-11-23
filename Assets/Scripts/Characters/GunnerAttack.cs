@@ -187,6 +187,7 @@ namespace ChronoSavior.Characters
         public void ResetForRun()
         {
             GunnerRelics.ResetForRun(); // 유물 발동 집계(2026-11-19)
+            GunnerRelics.ChainMaterial = beamMaterial; // 광선 연쇄 그림 — 본 레이저와 같은 머티리얼(2026-11-23)
             OnSelected();
             Stacks = Branch == GunnerBranch.Installer ? 1 : 0;
             PartHits = 0;

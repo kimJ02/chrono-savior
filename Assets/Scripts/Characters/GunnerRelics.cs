@@ -25,6 +25,9 @@ namespace ChronoSavior.Characters
 
         public static void ResetForRun() { zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched(); }
 
+        /// <summary>광선 연쇄 그림의 머티리얼(본 레이저와 같은 것 — 메카닉 키트가 런 시작 때 넣는다). 없으면 그림 없이 바로 맞힌다(테스트).</summary>
+        public static Material ChainMaterial;
+
         // ── 킷·설정이 읽는 값 ──
         public static int TurretBonus => Relics.VI("triangleDischarge", 0);
         /// <summary>X 한 번에 더 놓는 중계기 수(삼각 방전).</summary>
@@ -62,7 +65,11 @@ namespace ChronoSavior.Characters
                 float mult = Relics.V("spareRounds", 2);
                 spareCharges = 0;
                 Vector2 o = at + Vector2.up * 0.6f;
-                for (int i = 0; i < n; i++) RelicFx.After(0.1f * i, () => ChainFrom(o, targets, mult, false));
+                for (int i = 0; i < n; i++)
+                {
+                    if (installer) RelicFx.After(0.1f * i, () => ChainFrom(o, targets, mult, false));
+                    else RelicFx.After(0.12f * i, () => LaserChain(o, targets, mult)); // 레이저 갈래 — 광선 연쇄(2026-11-23)
+                }
             }
 
             // 교차 전류 — 설치하는 순간 그 자리에서 방출
@@ -101,8 +108,39 @@ namespace ChronoSavior.Characters
             bool gold = Relics.Awakened("prismBore");
             int n = Relics.VI("prismBore", 1);
             float mult = Relics.V("prismBore", 2);
-            ChainFrom(at, n, mult, gold);
-            if (gold) { var p = at; RelicFx.After(0.2f, () => ChainFrom(p, n, mult * 0.35f, true)); }
+            LaserChain(at, n, mult * (gold ? 1.35f : 1f)); // 각성 — 위력 +35%(광선이 두 번 튀면 어지러워 메아리 대신)
+        }
+
+        /// <summary>
+        /// 레이저 광선 연쇄(2026-11-23 사용자 승인 그림) — at에서 가장 가까운 적으로, 거기서 다음 적으로 **한 마리씩 차례로** 튄다(최대 n번, 한 번 튄 적은 다시 안 감).
+        /// 그림은 <see cref="GunnerChainBeamVfx"/>(본 레이저와 같은 셰이더·그림, 닿으면 하얀 번개), 피해는 광선이 **닿는 순간**. 레이저 갈래라 레이저가 닿은 적만 고른다(<see cref="RelicFx.IsTarget"/>).
+        /// </summary>
+        static void LaserChain(Vector2 at, int n, float mult, Collider2D exclude = null)
+        {
+            var visited = new List<Collider2D>();
+            if (exclude != null) visited.Add(exclude);
+            Collider2D cur = null;
+            Vector2 from = at;
+            float start = 0f, bend = 1f;
+            for (int i = 0; i < n; i++)
+            {
+                var next = RelicFx.NearestOne(cur != null ? RelicFx.Center(cur) : from, 4.5f, visited);
+                if (next == null) break;
+                Vector2 center = RelicFx.Center(next);
+                if (cur != null) from = cur.ClosestPoint(center);           // 앞 적 몸 가장자리에서
+                Vector2 to = next.ClosestPoint(from);                         // 다음 적 몸 가장자리까지
+                if ((to - from).sqrMagnitude < 1e-4f) to = center;
+                var fx = GunnerChainBeamVfx.Play(ChainMaterial, from, to, start, bend, center);
+                float arrive = fx != null ? fx.ArriveTime : 0f;
+                var target = next;
+                float dir = Mathf.Sign(center.x - from.x);
+                if (arrive <= 0.001f) RelicFx.Hit(target, mult, dir, 0.5f);
+                else RelicFx.After(arrive, () => { if (target != null) RelicFx.Hit(target, mult, dir, 0.5f); });
+                visited.Add(next);
+                cur = next;
+                start = arrive + 0.04f; // 앞 광선이 닿고 0.04초 뒤 다음 적으로
+                bend = -bend;           // 지그재그로 읽히게 번갈아 휜다
+            }
         }
 
         /// <summary>드론이 한 발 쐈다 — 자율 포좌: n발마다 부채꼴 추가 탄.</summary>
