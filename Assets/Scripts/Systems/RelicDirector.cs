@@ -157,7 +157,7 @@ namespace ChronoSavior.Systems
             if (Every("paperBirds"))
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 8f, 2f) ?? pos;
-                Echo("paperBirds", m => RelicPullZone.Spawn(at, 2.4f, 0.8f, 9f, m, new Color(1f, 1f, 0.9f, 0.9f), VfxKeys.AssassinHeartbeat, VfxKeys.AssassinBurstSpark),
+                Echo("paperBirds", m => RelicPullZone.Spawn(at, 2.4f, 0.8f, 9f, m, new Color(1f, 1f, 0.9f, 0.9f), null /* 심장 박동 그림은 뺐다(2026-11-23 사용자) */, VfxKeys.AssassinBurstSpark),
                      Relics.V("paperBirds", 1));
             }
 

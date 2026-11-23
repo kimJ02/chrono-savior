@@ -124,8 +124,10 @@ namespace ChronoSavior.Characters
             float start = 0f, bend = 1f;
             for (int i = 0; i < n; i++)
             {
-                var next = RelicFx.NearestOne(cur != null ? RelicFx.Center(cur) : from, 4.5f, visited);
+                Collider2D next;
+                using (Relics.AsLaser()) next = RelicFx.NearestOne(cur != null ? RelicFx.Center(cur) : from, 4.5f, visited); // 가장 가까운 적(레이저 자신이 튄다)
                 if (next == null) break;
+                Relics.MarkLaserTouched(next);
                 Vector2 center = RelicFx.Center(next);
                 if (cur != null) from = cur.ClosestPoint(center);           // 앞 적 몸 가장자리에서
                 Vector2 to = next.ClosestPoint(from);                         // 다음 적 몸 가장자리까지
@@ -134,8 +136,8 @@ namespace ChronoSavior.Characters
                 float arrive = fx != null ? fx.ArriveTime : 0f;
                 var target = next;
                 float dir = Mathf.Sign(center.x - from.x);
-                if (arrive <= 0.001f) RelicFx.Hit(target, mult, dir, 0.5f);
-                else RelicFx.After(arrive, () => { if (target != null) RelicFx.Hit(target, mult, dir, 0.5f); });
+                if (arrive <= 0.001f) { using (Relics.AsLaser()) RelicFx.Hit(target, mult, dir, 0.5f); }
+                else RelicFx.After(arrive, () => { if (target != null) using (Relics.AsLaser()) RelicFx.Hit(target, mult, dir, 0.5f); });
                 visited.Add(next);
                 cur = next;
                 start = arrive + 0.04f; // 앞 광선이 닿고 0.04초 뒤 다음 적으로

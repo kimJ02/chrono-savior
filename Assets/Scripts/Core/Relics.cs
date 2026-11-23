@@ -75,8 +75,23 @@ namespace ChronoSavior.Core
             laserTouched.Add(c);
         }
 
-        /// <summary>유물 공격이 이 적을 칠 수 있는가 — 레이저 갈래면 레이저가 닿은 적만.</summary>
-        public static bool RelicCanHit(Collider2D c) => !RequireLaserTouch || (c != null && laserTouched.Contains(c));
+        /// <summary>유물 공격이 이 적을 칠 수 있는가 — 레이저 갈래면 레이저가 닿은 적만(레이저 자신으로 치는 동안은 누구나).</summary>
+        public static bool RelicCanHit(Collider2D c) => laserSelf > 0 || !RequireLaserTouch || (c != null && laserTouched.Contains(c));
+
+        static int laserSelf;
+
+        /// <summary>
+        /// 레이저 자신이 튀는 동안(광선 연쇄) — "레이저가 닿은 적만" 제한을 풀고 가장 가까운 적으로 간다(2026-11-23 사용자: 연쇄가 근처 적이 아니라
+        /// 엉뚱한 쪽으로 갔다 — 레이저가 안 닿은 가까운 적을 건너뛰고 예전에 닿은 먼 적을 골랐다). 닿은 적은 레이저가 닿은 것으로 친다.
+        /// </summary>
+        public static LaserSelfScope AsLaser() => new LaserSelfScope(true);
+
+        public readonly struct LaserSelfScope : System.IDisposable
+        {
+            readonly bool on;
+            public LaserSelfScope(bool enable) { on = enable; if (on) laserSelf++; }
+            public void Dispose() { if (on) laserSelf--; }
+        }
 
         /// <summary>새 사냥 — 닿음 기록을 비운다.</summary>
         public static void ClearLaserTouched() => laserTouched.Clear();
