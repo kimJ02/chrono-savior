@@ -66,6 +66,14 @@ namespace ChronoSavior.Combat
         public const string MechanicZap = "mechanic/zap";
         /// <summary>중계기 머리에 붙는 전기 오라 — 기가팩 lightning_aura_002 파랑(I-B).</summary>
         public const string MechanicRelayAura = "mechanic/relay_aura";
+
+        // ── 경험치 구슬(2026-11-23 사용자 후보 B) ──
+        /// <summary>떠 있을 때 — 빙글 도는 보라 에너지 조각(Projectiles Pack 4 energy_pellet small 보라, 16px).</summary>
+        public const string OrbIdle = "orb/pellet";
+        /// <summary>끌려올 때 — 혜성 모양(energy_blast_B small 보라, 머리가 오른쪽), 날아오는 쪽으로 돌린다.</summary>
+        public const string OrbComet = "orb/comet";
+        /// <summary>먹을 때 플레이어 자리 반짝임(기가팩 round_sparkle_burst_001 small 파랑을 보라로 +60도).</summary>
+        public const string OrbPickup = "orb/pickup";
         /// <summary>편지(공용 유물) 메카닉 레이저 폭발 — 위에서 에너지가 떨어져 바닥에서 전기 기둥이 솟는다(기가팩 scifi_warp_003 large 파랑, 2026-11-23 사용자 후보 B).</summary>
         public const string MechanicWarp = "mechanic/warp";
 
@@ -102,7 +110,7 @@ namespace ChronoSavior.Combat
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
-                    MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura, MechanicWarp,
+                    MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura, MechanicWarp, OrbIdle, OrbComet, OrbPickup,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat,
                     AssassinCrescent, AssassinBolt1, AssassinBolt2, AssassinBurstSpark, AssassinLandRing, AssassinLandBurst, AssassinLandDust, AssassinRipHit,
                 };

@@ -908,6 +908,127 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 경험치 구슬 그림 후보(2026-11-23 사용자 "그냥 보라색 원인데 어떻게 고치면 좋을지 — gif로 보여줘"). 게임 코드는 안 바꾸고 여기서만 재현한다.
+        /// 떨어져 둥실(원본 sin(t·3)·0.08) → 플레이어가 다가와 1.5 안 → 6.4/s로 끌려옴 → 0.44 안에서 획득. 후보: A 지금(보라 원) / B 에너지 구슬(작은) / C 에너지 구슬(큰).
+        /// B·C는 끌려올 때 혜성 모양(날아오는 쪽으로 꼬리), 먹을 때 플레이어 자리 반짝임. 도트 배율 2 하나.
+        /// </summary>
+        public static void RunExpOrbCandidates()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var orbPrefab = AssetDatabase.LoadAssetAtPath<ChronoSavior.Systems.ExpOrb>("Assets/Prefabs/Combat/ExpOrb.prefab");
+            Vector3 playerStart = player.transform.position;
+
+            var variants = new (string name, string idle, string comet, string pickup)[]
+            {
+                ("A_지금_보라원", null, null, null),
+                ("B_에너지구슬_작은", "orb/pellet", "orb/comet", "orb/pickup"),
+                ("C_에너지구슬_큰", "orb/pellet_large", "orb/comet", "orb/pickup"),
+            };
+            const float Dt = 1f / 30f, WalkFrom = 0.5f, WalkTo = 0.9f, WalkDist = 0.6f;
+            foreach (var v in variants)
+            {
+                string dir = Path.Combine(outDir, v.name);
+                Directory.CreateDirectory(dir);
+                player.transform.position = playerStart;
+                var made = new System.Collections.Generic.List<GameObject>();
+                float baseY = feet + ChronoSavior.Systems.ExpOrb.DropHeight + 0.1f;
+                Vector2 orbPos = new Vector2(playerStart.x + 2.0f, baseY);
+
+                // 구슬 그림
+                GameObject orbGo;
+                SpriteRenderer orbSr = null;
+                Sprite[] idleF = v.idle != null ? ChronoSavior.Combat.VfxFrames.Get(v.idle) : null, cometF = v.comet != null ? ChronoSavior.Combat.VfxFrames.Get(v.comet) : null,
+                         pickF = v.pickup != null ? ChronoSavior.Combat.VfxFrames.Get(v.pickup) : null;
+                if (v.idle == null)
+                {
+                    var orb = ChronoSavior.Systems.ExpOrb.Spawn(orbPrefab, new Vector3(orbPos.x, feet, 0f), null);
+                    orbGo = orb.gameObject;
+                }
+                else
+                {
+                    orbGo = new GameObject("PreviewOrb", typeof(SpriteRenderer));
+                    orbSr = orbGo.GetComponent<SpriteRenderer>();
+                    orbSr.sortingOrder = 4;
+                    orbGo.transform.localScale = Vector3.one * DotScale.Value;
+                }
+                made.Add(orbGo);
+                SpriteRenderer pickSr = null;
+                if (pickF != null && pickF.Length > 0)
+                {
+                    var pg = new GameObject("PreviewPickup", typeof(SpriteRenderer));
+                    pickSr = pg.GetComponent<SpriteRenderer>();
+                    pickSr.sortingOrder = 5;
+                    pg.transform.localScale = Vector3.one * DotScale.Value;
+                    pickSr.enabled = false;
+                    made.Add(pg);
+                }
+
+                bool pulled = false, taken = false;
+                float takenAt = 0f, t = 0f;
+                for (int frame = 0; frame < 66; frame++, t += Dt)
+                {
+                    // 플레이어가 구슬 쪽으로 조금 걸어간다
+                    float walk = Mathf.Clamp01((t - WalkFrom) / (WalkTo - WalkFrom));
+                    player.transform.position = playerStart + new Vector3(walk * WalkDist, 0f, 0f);
+                    Vector2 target = (Vector2)player.transform.position + Vector2.up * ChronoSavior.Systems.ExpOrb.PlayerCenterOffset;
+                    Vector2 vel = Vector2.zero;
+                    if (!taken)
+                    {
+                        float d = Vector2.Distance(target, orbPos);
+                        if (d < ChronoSavior.Systems.ExpOrb.CollectRange) { taken = true; takenAt = t; }
+                        else if (pulled || d < ChronoSavior.Systems.ExpOrb.MagnetRange)
+                        {
+                            pulled = true;
+                            vel = (target - orbPos).normalized * ChronoSavior.Systems.ExpOrb.MagnetSpeed;
+                            orbPos += vel * Dt;
+                        }
+                    }
+                    Vector2 shown = pulled ? orbPos : new Vector2(orbPos.x, baseY + Mathf.Sin(t * 3f) * 0.08f);
+                    orbGo.SetActive(!taken);
+                    orbGo.transform.position = shown;
+                    if (orbSr != null && !taken)
+                    {
+                        if (pulled && cometF != null && cometF.Length > 0)
+                        {
+                            orbSr.sprite = cometF[Mathf.FloorToInt(t * 15f) % cometF.Length];
+                            float ang = Mathf.Atan2(vel.y, vel.x) * Mathf.Rad2Deg;
+                            orbGo.transform.rotation = Quaternion.Euler(0f, 0f, ang); // 그림 머리가 오른쪽 — 날아오는 쪽으로
+                        }
+                        else
+                        {
+                            orbSr.sprite = idleF[Mathf.FloorToInt(t * 15f) % idleF.Length];
+                            orbGo.transform.rotation = Quaternion.identity;
+                        }
+                    }
+                    if (pickSr != null)
+                    {
+                        int pi = taken ? Mathf.FloorToInt((t - takenAt) * 24f) : -1;
+                        pickSr.enabled = taken && pi < pickF.Length;
+                        if (pickSr.enabled) { pickSr.sprite = pickF[pi]; pickSr.transform.position = target; }
+                    }
+                    Render(pc, cam, dir, $"f_{frame:00}", 1920, 1080, 3f);
+                }
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            }
+            player.transform.position = playerStart;
+            Debug.Log("[CaptureUiPreview] 경험치 구슬 후보 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);

@@ -302,6 +302,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (165)** — **[사용자 세션] 경험치 구슬 그림(사용자 후보 B)** — 보라 원 → 받은 팩 그림: 떠 있을 땐 빙글 도는 보라 에너지 조각(`orb/pellet`, energy_pellet small 보라 16px),
+  끌려올 땐 혜성(`orb/comet`, energy_blast_B small 보라)을 날아오는 쪽으로, 먹으면 플레이어 자리 보라 반짝임(`orb/pickup`, round_sparkle_burst small 파랑 +60도). 도트 배율 2.
+  그림이 없으면(가져오기 전) 예전 보라 원. 후보 캡처 도구 `CaptureUiPreview.RunExpOrbCandidates`(A 지금/B 작은/C 큰).
+  - 다른 폴더(clone)는 메뉴 `ChronoSavior/VFX 팩 가져오기` 한 번(이 작업 폴더엔 풀어 둠). 테스트 `ExpOrbTests.Orb_UsesPelletArt_OrOriginalPurpleCircle` 등 23/23 통과.
+
 - **2026-11-23 (164)** — **[사용자 세션] 플레이어와 x가 겹치면 몬스터가 도리도리하던 것 고침** — `EnemyMove`: 플레이어와 x 차이가 `FacingDeadZoneX`(0.1) 안이면 방향을 그대로 두고 제자리에 선다(기본 보행만, 종류 전용 이동은 그대로).
   원인: 매 프레임 `sign(dx)`로 돌아, 한 걸음에 플레이어를 지나치면 다음 프레임에 반대로 돌았다. **의도적 편차**(원본도 sign(dx)) — 코드 주석에 콜아웃.
   - 테스트 `EnemySpawnAndMoveTests.EnemyMove_OverlappingPlayerX_DoesNotJitter`. 전체 629 중 624 통과 — 실패 3 = 보스 수치 2(원래 실패) + `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange`.

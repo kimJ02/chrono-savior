@@ -1,5 +1,6 @@
 using UnityEngine;
 using ChronoSavior.Core;
+using ChronoSavior.Combat;
 
 namespace ChronoSavior.Systems
 {
@@ -45,6 +46,15 @@ namespace ChronoSavior.Systems
         float baseY;
         Transform player;
 
+        /// <summary>
+        /// 그림(2026-11-23 사용자 후보 B — 실제 화면 캡처 `CaptureUiPreview.RunExpOrbCandidates`에서 고름): 떠 있을 땐 빙글 도는 보라 에너지 조각,
+        /// 끌려올 땐 혜성 모양을 날아오는 쪽으로, 먹으면 플레이어 자리에 보라 반짝임. 도트 배율 2. 그림이 없으면(가져오기 전) 예전 보라 원.
+        /// </summary>
+        const float ArtFps = 15f, PickupFps = 24f;
+        const int PickupSortingOrder = 4;
+        Sprite[] idleF, cometF;
+        bool hasArt;
+
         // 구성은 프리팹(Assets/Prefabs/Combat/ExpOrb)에 있다(2026-11-06 생성 책임 2-3) — 그림 자식·RunTransient. 지금 그림은 임시 흰 원이라 **원본 보라 `#c9a2ff`를 색으로 칠한다**(2026-11-06 사용자 결정 — 예전엔 흰색으로 보였다). 보라가 칠해진 최종 그림이 오면 색을 흰색으로.
         [SerializeField] SpriteRenderer visualRenderer;
 
@@ -61,9 +71,21 @@ namespace ChronoSavior.Systems
             var orb = Instantiate(prefab, new Vector3(deathPosition.x, y, 0f), Quaternion.identity); // RunTransient — 로비로 나가면 사라진다
             orb.name = prefab.name;
             // 그림마다 픽셀 크기가 다르니 **지름을 기준으로** 스케일을 맞춘다 — 프리팹의 그림을 갈아끼워도 구슬 크기(원본 지름)가 그대로다.
-            var sprite = orb.visualRenderer.sprite;
-            float h = sprite != null ? sprite.bounds.size.y : 1f;
-            orb.visualRenderer.transform.localScale = Vector3.one * (h > 0.0001f ? Diameter / h : Diameter);
+            orb.idleF = VfxFrames.Get(VfxKeys.OrbIdle);
+            orb.cometF = VfxFrames.Get(VfxKeys.OrbComet);
+            orb.hasArt = orb.idleF.Length > 0;
+            if (orb.hasArt)
+            {
+                orb.visualRenderer.sprite = orb.idleF[0];
+                orb.visualRenderer.color = Color.white; // 그림이 이미 보라 — 임시 원에 칠하던 색을 지운다
+                orb.visualRenderer.transform.localScale = Vector3.one * DotScale.ScaleFor(orb.idleF[0]);
+            }
+            else
+            {
+                var sprite = orb.visualRenderer.sprite;
+                float h = sprite != null ? sprite.bounds.size.y : 1f;
+                orb.visualRenderer.transform.localScale = Vector3.one * (h > 0.0001f ? Diameter / h : Diameter);
+            }
             orb.baseY = y;
             orb.player = player;
             return orb;
@@ -79,7 +101,8 @@ namespace ChronoSavior.Systems
             Vector2 here = transform.position;
             float d = Vector2.Distance(target, here);
 
-            if (d < MagnetRange && d > 0.01f)
+            bool pulled = d < MagnetRange && d > 0.01f;
+            if (pulled)
             {
                 // 원본은 거리에 무관한 **일정 속도**로 끌어당긴다(가속이 아니다).
                 Vector2 next = here + (target - here) / d * (MagnetSpeed * Time.deltaTime);
@@ -94,7 +117,24 @@ namespace ChronoSavior.Systems
                     0f);
             }
 
+            if (hasArt) ShowArt(pulled, target - here);
             if (d < CollectRange) Collect();
+        }
+
+        /// <summary>떠 있을 땐 도는 조각, 끌려올 땐 혜성(머리가 오른쪽인 그림 — 날아오는 쪽으로 돌린다).</summary>
+        void ShowArt(bool pulled, Vector2 toPlayer)
+        {
+            var vt = visualRenderer.transform;
+            if (pulled && cometF.Length > 0 && toPlayer.sqrMagnitude > 1e-6f)
+            {
+                visualRenderer.sprite = cometF[Mathf.FloorToInt(age * ArtFps) % cometF.Length];
+                vt.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg);
+            }
+            else
+            {
+                visualRenderer.sprite = idleF[Mathf.FloorToInt(age * ArtFps) % idleF.Length];
+                vt.rotation = Quaternion.identity;
+            }
         }
 
         /// <summary>원본 `:4465`~`:4478` — 경험치를 주고 사라진다.</summary>
@@ -112,6 +152,11 @@ namespace ChronoSavior.Systems
 
             profile.AddExp(exp);
             RunState.RegisterReward(0, exp); // 결과 화면 집계
+            if (hasArt)
+            {
+                Vector2 at = player != null ? (Vector2)player.position + Vector2.up * PlayerCenterOffset : (Vector2)transform.position;
+                VfxPlayer.Spawn(VfxKeys.OrbPickup, at, DotScale.Value, PickupFps, PickupSortingOrder); // 먹었다 — 보라 반짝임
+            }
             Destroy(gameObject);
         }
     }

@@ -44,15 +44,23 @@ public class ExpOrbTests
     }
 
     /// <summary>
-    /// 구슬은 원본 색 보라 `#c9a2ff`로 보인다(원본 colors '#c9a2ff', 2026-11-06 사용자 결정 — 예전엔 임시 흰 원이 그대로 흰색이었다).
-    /// 세운 구슬의 그림 색을 본다(프리팹 색이 그대로 나오는지).
+    /// 구슬 그림(2026-11-23 사용자 후보 B): 받은 보라 에너지 조각 그림이 있으면 그 그림을 색 그대로(흰 틴트)·도트 배율 2로,
+    /// 없으면(가져오기 전) 예전처럼 임시 원에 원본 보라 `#c9a2ff`를 칠한다(2026-11-06 사용자 결정).
     /// </summary>
     [Test]
-    public void Orb_IsOriginalPurple()
+    public void Orb_UsesPelletArt_OrOriginalPurpleCircle()
     {
         var orb = ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, 1f, 0f), null);
         var sr = orb.GetComponentInChildren<SpriteRenderer>();
-        Assert.AreEqual(new Color(0xc9 / 255f, 0xa2 / 255f, 1f, 1f), sr.color);
+        var art = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.OrbIdle);
+        if (art.Length > 0)
+        {
+            Assert.AreEqual(Color.white, sr.color, "그림이 이미 보라 — 색을 칠하지 않는다");
+            Assert.AreSame(art[0], sr.sprite);
+            Assert.AreEqual(DotScale.ScaleFor(art[0]), sr.transform.localScale.x, 1e-4f, "도트 배율 2");
+        }
+        else
+            Assert.AreEqual(new Color(0xc9 / 255f, 0xa2 / 255f, 1f, 1f), sr.color);
         Object.DestroyImmediate(orb.gameObject);
     }
 

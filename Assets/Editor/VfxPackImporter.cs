@@ -105,6 +105,10 @@ namespace ChronoSavior.Editor
             // 설치기 — 전기 아크형(2026-11-10 사용자 I-B): 피해 순간 적 자리 전기(보라 → 파랑), 중계기 머리 전기 오라
             yield return Recolored(Frames(VfxKeys.MechanicZap, Gigapack, "PNG/Lightning/lightning_burst_001/lightning_burst_001_small_violet"), 285f);
             yield return Frames(VfxKeys.MechanicRelayAura, Gigapack, "PNG/Lightning/lightning_aura_002/lightning_aura_002_small_blue");
+            // 경험치 구슬(2026-11-23 사용자 후보 B) — 떠 있을 때·끌려올 때·먹을 때
+            yield return Frames(VfxKeys.OrbIdle, Projectiles, "PNG/pj4_energy_pellet_small_violet");
+            yield return Frames(VfxKeys.OrbComet, Projectiles, "PNG/pj4_energy_blast_B_small_violet");
+            yield return Recolored(Frames(VfxKeys.OrbPickup, Gigapack, "PNG/Magic Bursts/round_sparkle_burst_001/round_sparkle_burst_001_small_blue"), 60f);
             // 편지(공용 유물) 메카닉 레이저 폭발 — 전기 기둥(2026-11-23 사용자 후보 B). 128px 그대로(도트 배율 2 — 크기는 그림을 고르는 것으로)
             yield return Frames(VfxKeys.MechanicWarp, Gigapack, "PNG/Sci-fi/scifi_warp_003/scifi_warp_003_large_blue");
             // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로
