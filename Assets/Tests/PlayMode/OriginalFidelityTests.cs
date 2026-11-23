@@ -394,6 +394,9 @@ public class OriginalFidelityTests
             ("LobbyHudView.Clone",         "LobbyHudView.cs"),     // LobbyHud.Build(안 부르면 미니맵 건물·건물 글씨가 없다 — 이름이 흔해 클래스까지 적는다)
             ("MinimapX",                   "LobbyHudView.cs"),     // LobbyHud.MapX(안 부르면 미니맵 건물·캐릭터 점 자리가 안 맞는다)
             ("SetExp",                     "LobbyHudView.cs"),     // LobbyHud.Refresh(안 부르면 경험치 바가 비어 있다)
+            ("BuildSlots",                 "RelicScreenView.cs"),  // RelicScreen.Build(안 부르면 유물 칸이 하나도 없다)
+            ("RelicScreenView.RectOf",     "RelicScreenView.cs"),  // RelicScreen.RefreshTip(안 부르면 [1]·[10] 설명 상자 자리가 틀린다 — 이름이 흔해 클래스까지)
+            ("PxArt.White",                "PxArt.cs"),            // RelicScreenView·PxWhiteArt(안 부르면 등급 ◆가 흰 그림이 아니라 원본 커서색)
         };
 
         var scriptFiles = Directory.GetFiles(

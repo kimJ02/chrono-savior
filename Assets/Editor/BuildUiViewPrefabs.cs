@@ -84,7 +84,12 @@ namespace ChronoSavior.Editor
             // 반투명 판 둘 · 미니맵 판/땅 선/건물 견본/캐릭터 점 · 경험치 바 셋 — 전부 색만 칠한 칸
             ColorOnly = new[] { "DoomPlate", "InfoPlate", "Plate", "Ground", "BuildingTemplate", "Player", "ExpBorder", "ExpBack", "ExpFill" },
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud };
+        static readonly ViewSpec Relic = new ViewSpec
+        {
+            Label = "유물 소환", AssetPath = RelicScreenView.AssetPath, Build = RelicScreenView.CreateFromCode,
+            ColorOnly = new[] { "Background", "RateLine0", "RateLine1", "RateLine2" }, // 바탕 · 확률 줄 사이 가는 선
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -112,6 +117,8 @@ namespace ChronoSavior.Editor
         public static void BuildCharacterFromMenu() => BuildFromMenu(Character);
         [MenuItem("ChronoSavior/UI 프리팹/로비 HUD 만들기")]
         public static void BuildLobbyHudFromMenu() => BuildFromMenu(LobbyHud);
+        [MenuItem("ChronoSavior/UI 프리팹/유물 소환 만들기")]
+        public static void BuildRelicFromMenu() => BuildFromMenu(Relic);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

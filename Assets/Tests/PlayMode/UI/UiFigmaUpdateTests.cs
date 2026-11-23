@@ -272,6 +272,93 @@ public class UiFigmaUpdateTests
         relic.HideForCapture();
     }
 
+    /// <summary>
+    /// 프리팹 UI 11호(2026-11-23) — 유물 소환 창 모양은 프리팹(`Resources/UI/Views/RelicScreenView`)에서 오고, 칸은 견본(`Slots/Template`, 꺼 둔 채)을
+    /// 30칸으로 복제한다. 실행 중 만든 그림(9-슬라이스 버튼·확률 이름표, 흰 등급 ◆)은 프리팹에 안 남으므로 불러올 때 다시 만들어져야 한다(10호 흰 네모 사고).
+    /// 확률 판의 등급 이름·색·값은 데이터에서 채운다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/유물 소환 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Relic_LayoutFromViewPrefab_SlotsFromTemplate_RuntimeArtRestored()
+    {
+        Assert.IsNotNull(Resources.Load<RelicScreenView>(RelicScreenView.ResourcePath), "유물 소환 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/유물 소환 만들기");
+        var relic = pc.GetComponent<RelicScreen>();
+        relic.ShowForCapture();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(relic.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = relic.Root.GetComponentsInChildren<RelicScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+
+            int clones = 0;
+            foreach (var sl in v.slots.GetComponentsInChildren<RelicSlotView>(true))
+            {
+                if (sl.name == "Template") { Assert.IsFalse(sl.gameObject.activeSelf, "견본 칸은 꺼진 채"); continue; }
+                clones++;
+                Assert.IsNotNull(sl.gem.sprite, sl.name + " 등급 ◆ 그림이 비었다(실행 중 만든 흰 그림 복원 안 됨)");
+                Assert.IsNotNull(sl.gemEdge.sprite, sl.name + " ◆ 테두리 그림이 비었다");
+            }
+            Assert.AreEqual(30, clones, "한 쪽 30칸");
+
+            foreach (var b in new[] { v.prevPage.button, v.nextPage.button })
+            {
+                Assert.IsNotNull(b.Art.sprite, b.name + " 그림이 비었다(흰 네모)");
+                Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, b.Art.type, b.name + "는 9-슬라이스");
+            }
+            foreach (var img in v.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+                if (img.name == "RatePlate") Assert.IsNotNull(img.sprite, "확률 이름표 그림이 비었다(흰 네모)");
+
+            string[] names = { "노말:", "레어:", "에픽:", "레전드:" };
+            for (int g = 0; g < 4; g++)
+            {
+                Assert.AreEqual(names[g], v.rateRows[g].name.text, "등급 이름은 코드가 채운다");
+                Assert.AreEqual(ItemDatabase.GradeColor((ItemGrade)g), v.rateRows[g].gem.color, "등급 ◆ 색");
+                Assert.IsNotNull(v.rateRows[g].gem.sprite, "확률 ◆ 그림");
+                StringAssert.EndsWith("%", v.rateRows[g].value.text);
+            }
+        }
+        finally { relic.HideForCapture(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 쪽 넘김(&lt; &gt;)·칸에 마우스를 올리면 설명 상자·닫기.</summary>
+    [UnityTest]
+    public IEnumerator Relic_PageButtons_SlotTooltip_Close()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        GameState.Set(GameScene.Lobby);
+        var relic = pc.GetComponent<RelicScreen>();
+        RelicScreen.Open();
+        yield return null;
+        try
+        {
+            var v = relic.Root.GetComponentInChildren<RelicScreenView>(true);
+            Assume.That(ItemDatabase.All.Length > 30, "두 쪽이어야 쪽 넘김을 볼 수 있다");
+            Assert.AreEqual("1/2", v.pageText.text);
+            v.nextPage.button.Click();
+            yield return null;
+            Assert.AreEqual("2/2", v.pageText.text, "> → 다음 쪽");
+            v.prevPage.button.Click();
+            yield return null;
+            Assert.AreEqual("1/2", v.pageText.text, "< → 앞 쪽");
+
+            PxButton slot6 = null;
+            foreach (var b in v.slots.GetComponentsInChildren<PxButton>(false)) if (b.name == "Slot6") slot6 = b;
+            Assert.IsNotNull(slot6);
+            slot6.OnHover?.Invoke();
+            yield return null;
+            Assert.AreEqual(6, relic.NavIndex, "칸에 마우스를 올리면 키보드 선택도 그 칸");
+            RectTransform tip = null;
+            foreach (var rt in relic.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Tooltip") tip = rt;
+            Assert.IsNotNull(tip);
+            Assert.IsTrue(tip.gameObject.activeSelf, "칸을 고르면 설명 상자");
+
+            v.close.button.Click();
+            Assert.IsFalse(RelicScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { RelicScreen.Close(); }
+    }
+
     /// <summary>2026-11-22 회귀 결과창 — 새 프로필: 이전 최고 stage 1 → 회귀 후 stage 1, 획득 파편 0, Lv.1, 처치 0. 정복한 지역이 있으면 그 파편이 보인다.</summary>
     [UnityTest]
     public IEnumerator Regression_ShowsStageBeforeAfter_Shards_Level_Kills()

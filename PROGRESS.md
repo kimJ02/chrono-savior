@@ -312,6 +312,19 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (161)** — **[사용자 세션] 프리팹 UI 11호: 유물 소환(`RelicScreen`) — 목록형 — `feature/ui-prefab-relic`**(견본 복제는 7호 업적 창, 실행 중 그림 복원은 10호 `PxSlicedArt`와 같은 방식).
+  - 모양(바탕·큰 창·제목판·닫기·칸 격자(`Slots` + 견본 칸 `Template`, 열 수 5·간격 37)·쪽 넘김·파편/유물 수 막대·확률 판 4줄·[1]·[10]·에디터 전용 "유물 전부 각성")은 프리팹 `Resources/UI/Views/RelicScreenView`.
+    한 쪽 칸 수(30)·칸마다 유물/개수/자물쇠/밝은·어두운 칸·쪽 번호·파편/유물 수·**확률 판의 등급 이름·색·값(데이터 `ItemDatabase`)**·버튼 동작·키보드 격자(칸 0~29 → [1] → [10], 열 수는 프리팹)·설명 상자·소환은 그대로 코드(`RelicScreen`).
+  - 등급 ◆는 커서 그림을 흰색으로 칠한 그림(`PxArt.Derive`)인데 이것도 **실행 중 만든 그림이라 프리팹에 안 남는다**(10호 흰 네모와 같은 문제) — **새** `UI/Pixel/PxWhiteArt.cs`(경로만 남겨 불러올 때 다시 만듦) + `PxArt.White(path)`(같은 "white" 캐시를 쓰는 짧은 길). 쪽 넘김·테스트 버튼·확률 이름표의 9-슬라이스는 `PxSlicedArt`.
+  - 칸 모양은 **새** `UI/Screens/RelicSlotView.cs`(버튼·◆ 테두리·◆·자물쇠·개수, `Wire`가 흰 그림 복원 후 버튼 연결).
+  - 에디터 전용 "유물 전부 각성" 버튼은 프리팹엔 늘 있고, 빌드한 게임에선 화면 코드가 끈다(예전엔 빌드에서 아예 안 지었다 — 보이는 결과는 같다).
+  - 테스트가 읽는 공개 API(`PageForTest`·`VisibleSlotCount`·`OwnedCountText`·`ShardText`·`Open`·`Close`·`IsOpen`)와 칸 이름(`Slot0~29`)·`Lock`·`RateValue0`은 그대로.
+  - 파일별: `UI/Screens/RelicScreen.cs`(Build가 프리팹을 불러 복제·연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로, `NavColumns`는 프리팹 열 수) · **새** `UI/Screens/RelicScreenView.cs`(모양, `BuildSlots`·`SlotRect`·`RectOf`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Screens/RelicSlotView.cs` · **새** `UI/Pixel/PxWhiteArt.cs` · `UI/Pixel/PxArt.cs`(+`White`, 최소 공용 변경) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/유물 소환 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·견본 30칸 복제·실행 중 그림 복원·확률 판 데이터 / 쪽 넘김·칸 설명 상자·닫기) · `CreationOwnershipTests`(`RelicScreenView.cs`) · `OriginalFidelityTests`(`BuildSlots`·`RelicScreenView.RectOf`·`PxArt.White`).
+  - ⚠️ 견본 칸 이름은 `Template`(**"Slot"으로 시작하면 안 됨** — 기존 테스트가 "Slot"으로 시작하는 버튼을 30개로 센다), 꺼 둔 채. `Slots`·버튼은 판(Board)의 직접 자식, 왼쪽 위 기준(설명 상자 자리 계산). 확률 줄 순서 = 노말·레어·에픽·레전드.
+  - ⚠️ 기존 실패 `Relic_Layout_…`(노말 확률 기대 55%, 실제 70%)는 이번 변경과 무관하게 그대로 실패한다("확인 필요" 참고).
+  - 프리팹(`Assets/Resources/UI/Views/RelicScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **634 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "가챠" 화면 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (160)** — **[사용자 세션] 프리팹 UI 10호: 로비 HUD(`LobbyHud`) — `feature/ui-prefab-lobbyhud`**(1~9호와 같은 방식, 견본 복제는 7호 업적 창과 같은 방식).
   - 모양(멸망 판·캐릭터 정보 판·빠른 버튼 셋·미니맵·건물 앞 안내·건물 글씨 견본·경험치 바)은 프리팹 `Resources/UI/Views/LobbyHudView`.
     글자 내용(남은 기간·다음 원정·캐릭터·돈)·경험치 비율·미니맵 건물/캐릭터 점 가로 자리·건물 글씨 자리(매 프레임 월드 따라감)·빠른 버튼 동작은 그대로 코드(`LobbyHud`).
