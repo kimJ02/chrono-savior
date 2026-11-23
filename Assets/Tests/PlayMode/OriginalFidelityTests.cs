@@ -398,6 +398,7 @@ public class OriginalFidelityTests
             ("RelicScreenView.RectOf",     "RelicScreenView.cs"),  // RelicScreen.RefreshTip(안 부르면 [1]·[10] 설명 상자 자리가 틀린다 — 이름이 흔해 클래스까지)
             ("PxArt.White",                "PxArt.cs"),            // RelicScreenView·PxWhiteArt(안 부르면 등급 ◆가 흰 그림이 아니라 원본 커서색)
             ("SetScroll",                  "AwakenScreenView.cs"), // AwakenScreen.RefreshUpgrades(안 부르면 강화 목록 스크롤 표시가 안 움직인다)
+            ("RelicHudStrip.Attach",       "RelicHudStrip.cs"),    // CombatHud.Build(안 부르면 전투 화면에 유물 칸이 없다)
         };
 
         var scriptFiles = Directory.GetFiles(

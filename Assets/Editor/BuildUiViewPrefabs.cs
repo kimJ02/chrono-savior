@@ -100,7 +100,13 @@ namespace ChronoSavior.Editor
             Label = "세이브 슬롯", AssetPath = SaveSlotScreenView.AssetPath, Build = SaveSlotScreenView.CreateFromCode,
             ColorOnly = new[] { "Dim", "Card" }, // 어두운 막 · 슬롯 칸 바탕(반투명)
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic, Awaken, SaveSlot };
+        static readonly ViewSpec CombatHud = new ViewSpec
+        {
+            Label = "전투 HUD", AssetPath = CombatHudView.AssetPath, Build = CombatHudView.CreateFromCode,
+            // 피격 막 · 체력 빨강 · 스킬 칸 흐림/덮개 · 보스 잔상/빨강 · 경험치 바 — 전부 색만 칠한 칸
+            ColorOnly = new[] { "HurtFlash", "HpFill", "Dim0", "Dim1", "Dim2", "Veil0", "Veil1", "Veil2", "Trail", "Fill", "ExpBorder", "ExpBack", "ExpFill" },
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud, Relic, Awaken, SaveSlot, CombatHud };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -134,6 +140,8 @@ namespace ChronoSavior.Editor
         public static void BuildAwakenFromMenu() => BuildFromMenu(Awaken);
         [MenuItem("ChronoSavior/UI 프리팹/세이브 슬롯 만들기")]
         public static void BuildSaveSlotFromMenu() => BuildFromMenu(SaveSlot);
+        [MenuItem("ChronoSavior/UI 프리팹/전투 HUD 만들기")]
+        public static void BuildCombatHudFromMenu() => BuildFromMenu(CombatHud);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

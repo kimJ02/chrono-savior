@@ -498,6 +498,59 @@ public class PixelUiTests
     }
 
     /// <summary>
+    /// 프리팹 UI 14호(2026-11-23) — 전투 HUD 모양은 프리팹(`Resources/UI/Views/CombatHudView`)에서 오고, 개수가 실행 중에 바뀌는 부분
+    /// (유물 칸 22개·미니맵 점/발판 선)은 프리팹의 자리(`RelicStrip`·`Minimap`) 안에 코드가 짓는다(사용자 "틀만 프리팹").
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/전투 HUD 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator CombatHud_LayoutFromViewPrefab_RelicAndMinimapBuiltInSlots()
+    {
+        Assert.IsNotNull(Resources.Load<CombatHudView>(CombatHudView.ResourcePath), "전투 HUD 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/전투 HUD 만들기");
+        var hud = pc.GetComponent<CombatHud>();
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f };
+        yield return null;
+        Assert.IsTrue(hud.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        var views = hud.Root.GetComponentsInChildren<CombatHudView>(true);
+        Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+        var v = views[0];
+
+        int cells = 0;
+        foreach (Transform c in v.relicStrip) if (c.name.StartsWith("Relic")) cells++;
+        Assert.AreEqual(22, cells, "유물 칸 22개(2열 × 11줄)가 프리팹의 RelicStrip 자리 안에");
+        bool player = false, ground = false;
+        foreach (Transform c in v.minimap) { if (c.name == "Player") player = true; if (c.name == "Ground") ground = true; }
+        Assert.IsTrue(player && ground, "미니맵 점·땅 선이 프리팹의 Minimap 자리 안에");
+        Assert.IsFalse(v.popupTemplate.gameObject.activeSelf, "팝업 글씨 견본은 꺼진 채");
+        Assert.AreEqual(3, v.slots.Length, "스킬 칸 Z·X·C");
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 팝업 글씨는 견본에서 복제돼 뜨고, 쿨다운 덮개는 Dim 자리 안에서 아래부터 차오른다.</summary>
+    [UnityTest]
+    public IEnumerator CombatHud_PopupFromTemplate_CooldownVeilInsideDim()
+    {
+        var hud = pc.GetComponent<CombatHud>();
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, Attack = SkillSlotState.Cooldown(1f, 2f) };
+        yield return null;
+        var v = hud.Root.GetComponentInChildren<CombatHudView>(true);
+
+        CombatEvents.RaisePopup(Vector2.zero, "중첩 x3", Color.white);
+        CollectionAssert.Contains(new System.Collections.Generic.List<string>(hud.ActivePopups), "중첩 x3", "팝업 글씨가 뜬다");
+        int shown = 0;
+        foreach (var t in v.board.GetComponentsInChildren<UnityEngine.UI.Text>(false)) if (t.name == "Popup") shown++;
+        Assert.AreEqual(1, shown, "견본을 복제한 팝업 하나");
+        Assert.IsFalse(v.popupTemplate.gameObject.activeSelf, "견본은 그대로 꺼진 채");
+
+        var dim = (RectTransform)v.slots[0].dim[0].transform;
+        var veil = (RectTransform)v.slots[0].veil[0].transform;
+        Assert.IsTrue(v.slots[0].veil[0].enabled, "쿨다운 중이면 덮개");
+        float dimTop = -dim.anchoredPosition.y, dimBottom = dimTop + dim.sizeDelta.y;
+        float veilTop = -veil.anchoredPosition.y, veilBottom = veilTop + veil.sizeDelta.y;
+        Assert.GreaterOrEqual(veilTop, dimTop, "덮개 위 끝은 Dim 자리 안");
+        Assert.AreEqual(dimBottom, veilBottom, 0.01f, "덮개는 아래 끝에 붙어 차오른다");
+        Assert.Less(veil.sizeDelta.y, dim.sizeDelta.y, "절반 쿨다운이면 덮개는 다 안 찼다");
+    }
+
+    /// <summary>
     /// 보스 체력바는 **상단 가운데, 보스 이름 아래**(2026-11-10 사용자 A안 — 예전엔 화면 한가운데를 가로질렀다). 왼쪽 위 상태창과 안 겹친다.
     /// 처음엔 0에서 차오르고, 맞으면 연노랑 잔상이 남았다 따라 줄어든다.
     /// </summary>

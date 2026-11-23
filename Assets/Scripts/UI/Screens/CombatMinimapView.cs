@@ -35,13 +35,16 @@ namespace ChronoSavior.UI
         /// <summary>그린 땅·발판 선 수(테스트가 읽는다).</summary>
         public int PlatformLineCount => platformLines.Count;
 
-        public CombatMinimapView(Transform parent, Rect box)
+        public CombatMinimapView(Transform parent, Rect box) : this(Px.Node(parent, "Minimap", box.x, box.y, box.width, box.height)) { }
+
+        /// <summary>이미 있는 자리(프리팹의 `Minimap`, 2026-11-23 프리팹 UI 14호)에 그린다 — 칸 크기는 그 자리 크기.</summary>
+        public CombatMinimapView(RectTransform root)
         {
-            width = box.width;
-            height = box.height;
-            groundY = Mathf.Round(box.height * GroundRatio);
-            pxPerUnitY = box.height / UnitsTall;
-            root = Px.Node(parent, "Minimap", box.x, box.y, box.width, box.height);
+            this.root = root;
+            width = root.sizeDelta.x;
+            height = root.sizeDelta.y;
+            groundY = Mathf.Round(height * GroundRatio);
+            pxPerUnitY = height / UnitsTall;
             portalDot = Px.Fill(root, "Portal", PortalColor, 0f, 0f, 2f, 3f);
             playerDot = Px.Fill(root, "Player", PlayerColor, 0f, 0f, 2f, 2f);
         }

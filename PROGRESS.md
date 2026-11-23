@@ -313,6 +313,20 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (164)** — **[사용자 세션] 프리팹 UI 14호(마지막): 전투 HUD(`CombatHud`) — `feature/ui-prefab-combathud`**(1~13호와 같은 방식, 범위는 사용자 결정 **"틀만 프리팹"**).
+  - 모양(피격 붉은 막·플레이어 판(체력 빨강·막대·숫자·골드)·남은 초/토벌/버프 줄/COMBO/포탈 안내 글자·스킬 칸 셋(아이콘·흐림 3조각·덮개 3조각·틀·쿨다운/키/스택 글자)·미니맵 판·보스 판(잔상·빨강·막대·이름·해골)·경험치 바·팝업 글씨 견본, 색 6가지)은 프리팹 `Resources/UI/Views/CombatHudView`.
+    값 읽기(전투 창구 `WorldView.Combat`·프로필)·글자·막대 폭·쿨다운 덮개·보스 등장/잔상 연출·해골 자리·팝업 띄우기·버프 줄·가짜 값(`Preview`)은 그대로 코드(`CombatHud`).
+  - **개수가 실행 중에 바뀌는 부분은 코드가 프리팹의 자리 안에 짓는다**(사용자 2026-11-23 선택): 보유 유물 칸(`RelicHudStrip` — 새 `RelicHudStrip.Attach(자리)`)·미니맵 점/발판 선(`CombatMinimapView` — 새 생성자 `CombatMinimapView(자리)`). 자리(`RelicStrip`·`Minimap`)를 옮기면 따라간다. 예전 생성자는 그대로 둠(최소 공용 변경).
+  - 막대 100% 폭 = **처음 프리팹 폭**(체력 `HpFill` 156·보스 `BossBar/Fill` 394·경험치 `ExpBack` 638 — 예전 코드 상수와 같다). 쿨다운 덮개는 같은 번호 `Dim` 자리 안에서 아래부터 차오른다(예전 상수 `SlotInner`와 같은 범위). 해골은 세로·크기는 프리팹, 가로만 이름 길이로.
+  - 팝업 글씨는 견본(`PopupTemplate`, 꺼 둔 채)을 복제(예전엔 `Px.Text`로 새로 지음 — 보이는 결과는 같다).
+  - 조금 달라진 것: 유물 칸 설명 상자가 이제 판의 맨 위(마지막 자식)에 그려진다(예전엔 스킬 칸·보스 판보다 아래) — 겹칠 일은 거의 없고 겹쳐도 설명이 위라 더 낫다.
+  - 테스트가 읽는 공개 API(`HpFillAmount`·`HpLabel`·`GoldLabel`·`TimerLabel`·`BuffsLabel`·`ExpFillWidth`·`ComboShown`·`BossBarShown`·`BossFillWidth`·`BossTrailWidth`·`BossBarRect`·`BossNameLabel`·`MinimapLineCount`·`ActivePopups`·`Preview`·`BuffLine`·`Camera`·`PopupLife/Rise/Size`·`BossIntroTime/TrailTime`)는 그대로. `SkillSlotTests`가 소스에서 찾는 `.PlayerKit`·`.AttackSlot`·`.SkillSlot`·`.BuffText`도 그대로(`Live()`의 지역 변수만 `view` → `world`로 — 필드 `view`(화면 모양)와 헷갈리지 않게).
+  - 파일별: `UI/Screens/CombatHud.cs`(Build가 프리팹을 불러 연결·막대 폭 재기, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/CombatHudView.cs`(모양, `SlotRef`, 예전 좌표는 `CreateFromCode`로) · `UI/Screens/RelicHudStrip.cs`(+`Attach`) · `UI/Screens/CombatMinimapView.cs`(+자리 받는 생성자) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/전투 HUD 만들기`) · 테스트 `PixelUiTests`(+2: 프리팹·유물 칸/미니맵이 자리 안에 / 팝업 견본 복제·쿨다운 덮개가 Dim 안) · `CreationOwnershipTests`(`CombatHud.cs` 이유 갱신 + `CombatHudView.cs`) · `OriginalFidelityTests`(`RelicHudStrip.Attach`).
+  - ⚠️ 이름 그대로 둘 것: `RelicStrip`·`Minimap`(자리)·`PopupTemplate`(꺼 둔 채)·스킬 칸 `Dim0~2`/`Veil0~2`(같은 번호끼리 짝)·`BossBar` 안 `Fill`/`Trail`/`Name`/`SkullLeft`/`SkullRight`. 스킬 칸 순서 = Z·X·C.
+  - 프리팹(`Assets/Resources/UI/Views/CombatHudView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **640 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 사냥 HUD 확인.
+  - **프리팹 UI 전환 14개 화면 전부 끝(1~14호, 로그 (151)~(164))** — 화면 모양은 `Assets/Resources/UI/Views/*View.prefab`, 메뉴 `ChronoSavior/UI 프리팹/…`로 처음 모양을 짓는다. 실행 중 만든 그림은 `PxSlicedArt`(9-슬라이스)·`PxWhiteArt`(흰 그림)로 복원.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (163)** — **[사용자 세션] 프리팹 UI 13호: 세이브 슬롯 창(`SaveSlotScreen`) — `feature/ui-prefab-saveslot`**(1~12호와 같은 방식).
   - 모양(어두운 막·창 테두리·제목판·닫기, 슬롯 칸 셋 — 묶음 `Slot1~3` 안에 칸 바탕 `Card`·`Title`·`Info`·`Time`·`Continue`·`Reset`)은 프리팹 `Resources/UI/Views/SaveSlotScreenView`.
     칸마다 시나리오 이름·진행 요약·마지막 저장 시각 글자, [이어하기]/[초기화]/닫기 동작, 키보드 순서(1번 이어하기 → 1번 초기화 → 2번 …, 2열 격자)는 그대로 코드(`SaveSlotScreen`).
