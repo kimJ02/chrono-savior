@@ -302,6 +302,13 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (161)** — **[사용자 세션] 편지 폭발 = 하늘에서 레이저(사용자 2차 A) + 살수 그림은 섬영만**
+  - 편지(메카닉 레이저): 표식 1초가 끝날 때 **하늘에서 레이저가 내리꽂혀** 머리에 닿는 순간 하얀 번개(승인 D)와 반경 1.3 피해(`GunnerRelics.SkyStrike` — 뻗는 시간 `GunnerChainBeamVfx.ExtendSeconds`만큼 먼저 쏜다). 각성은 한 번 더.
+    그림은 전부 이미 승인된 레이저 그림. 전기 기둥(`VfxKeys.MechanicWarp`)·가져오기 항목은 뺐다. 반려·미선택 후보 그림 폴더(git 밖)도 정리.
+  - "5,6도 일단 빼" → 살수 착지 고리(`assassin/land_ring`: 연쇄 세트 2·플레이어 펄스·문턱의 시계·정예 사냥종)·살수 반짝임(`assassin/burst_spark`: 등불·유리 서약·종이새 끝)은 **섬영일 때만**(`RelicFx.BladeOnly`).
+    → 메카닉에선 이 유물들이 지금 그림 없이 피해만 준다. 하나씩 메카닉 그림 후보로 채울 것.
+  - 검사: RelicEffectTests·CreationOwnershipTests·OriginalFidelityTests 25/25 통과.
+
 - **2026-11-23 (160)** — **[사용자 세션] 플레이 피드백: 유물 범위 고리 전부 끔 + 마법사 그림은 마법사만**
   - "원 테두리 나오는거 다 없애" → `RelicFx.Circle` 범위 고리 기본 꺼짐(`showRing` 기본 false), `RelicPullZone`도 고리 안 그림. (마법사 스킬·보스의 판정 고리는 그대로 — 유물만)
   - "왜 나오는지 모르겠으니 빼" → 종언의 종·시간선 재기동의 보라 붕괴(`mage/collapse_critical`), 월하의 별똥 착탄의 분홍 중력 폭발(`mage/gravity_explosion`)은 **마법사일 때만**(`RelicFx.MageOnly`).

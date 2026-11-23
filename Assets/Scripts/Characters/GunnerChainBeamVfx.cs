@@ -45,6 +45,8 @@ namespace ChronoSavior.Characters
 
         /// <summary>뻗는 시간·사라지는 시간·전체 길이(초).</summary>
         public float ExtendTime => Mathf.Max(0.05f, (startF?.Length ?? 0) / EdgeFps);
+        /// <summary>만들기 전에 아는 뻗는 시간(초) — 피해 순간에 닿게 미리 쏠 때(편지 하늘 레이저).</summary>
+        public static float ExtendSeconds => Mathf.Max(0.05f, VfxFrames.Get(VfxKeys.MechanicLaser("center", "start")).Length / EdgeFps);
         public float EndTime => Mathf.Max(0.05f, (endF?.Length ?? 0) / EdgeFps);
         public float Duration => ExtendTime + HoldTime + EndTime;
         /// <summary>앞 적에서 뻗기 시작해 다음 적에 닿기까지(초) — 다음 튀기를 이 뒤에 건다.</summary>

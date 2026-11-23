@@ -247,7 +247,7 @@ namespace ChronoSavior.Characters
             {
                 timeShieldReady = false;
                 SetHitInvuln(1f);
-                RelicFx.Circle((Vector2)transform.position + Vector2.up * 0.4f, 3f, 0.8f, RelicFx.Light, VfxKeys.AssassinLandRing);
+                RelicFx.Circle((Vector2)transform.position + Vector2.up * 0.4f, 3f, 0.8f, RelicFx.Light, RelicFx.BladeOnly(VfxKeys.AssassinLandRing));
                 return;
             }
 
@@ -261,7 +261,7 @@ namespace ChronoSavior.Characters
                 Relics.Proc("glassOath");
                 float m = Relics.V("glassOath", 2);
                 Vector2 at = transform.position;
-                RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), VfxKeys.AssassinBurstSpark);
+                RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), RelicFx.BladeOnly(VfxKeys.AssassinBurstSpark));
                 if (Relics.Awakened("glassOath")) RelicFx.After(0.2f, () => RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m * 0.35f, RelicFx.Gold));
             }
             int applied = Mathf.Max(1, Mathf.RoundToInt(amount * dr * UnityEngine.Random.Range(0.9f, 1.1f)));

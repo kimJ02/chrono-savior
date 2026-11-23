@@ -66,8 +66,6 @@ namespace ChronoSavior.Combat
         public const string MechanicZap = "mechanic/zap";
         /// <summary>중계기 머리에 붙는 전기 오라 — 기가팩 lightning_aura_002 파랑(I-B).</summary>
         public const string MechanicRelayAura = "mechanic/relay_aura";
-        /// <summary>편지(공용 유물) 메카닉 레이저 폭발 — 위에서 에너지가 떨어져 바닥에서 전기 기둥이 솟는다(기가팩 scifi_warp_003 large 파랑, 2026-11-23 사용자 후보 B).</summary>
-        public const string MechanicWarp = "mechanic/warp";
 
         // ── 살수 ──
         public const string AssassinSlash1 = "assassin/slash_1";
@@ -102,7 +100,7 @@ namespace ChronoSavior.Combat
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
                     MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
-                    MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura, MechanicWarp,
+                    MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat,
                     AssassinCrescent, AssassinBolt1, AssassinBolt2, AssassinBurstSpark, AssassinLandRing, AssassinLandBurst, AssassinLandDust, AssassinRipHit,
                 };

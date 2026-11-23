@@ -96,6 +96,13 @@ namespace ChronoSavior.Combat
             return p != null && p.character == CharacterId.Mage ? key : null;
         }
 
+        /// <summary>섬영(살수) 그림(착지 고리·반짝임)은 섬영일 때만 — 메카닉엔 얼음 파편처럼 보여 어울리지 않았다(2026-11-23 사용자 "일단 빼").</summary>
+        public static string BladeOnly(string key)
+        {
+            var p = ProfileService.Current;
+            return p != null && p.character == CharacterId.Blade ? key : null;
+        }
+
         /// <summary>
         /// 원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림. 범위 고리는 기본으로 안 그린다
         /// (2026-11-23 사용자 "원 테두리 나오는거 다 없애" — 직접 그린 고리 대신 받은 VFX만).
