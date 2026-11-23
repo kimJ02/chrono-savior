@@ -309,6 +309,18 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (156)** — **[사용자 세션] 프리팹 UI 6호: 사냥 결과 창(`RunResultScreen`) — `feature/ui-prefab-result`**(1~5호(151~155)와 같은 방식).
+  - 모양(어두운 막·창 틀·띠·제목/스테이지/시간 자리·붕괴 원인 줄·칸 셋·통계 이름표/나눔선/상자·진행 막대(바탕·채움·틀·글자)·진행도 이름표·버튼 둘, 제목 색 두 가지(쓰러짐 붉음·평소 흰색))은 프리팹 `Resources/UI/Views/RunResultScreenView`.
+    글자 내용(끝난 이유에 따라 제목·칸 순서·버튼 글자가 바뀐다)·막대 채움(채움 칸 폭을 정수 도트로)·버튼 동작(다시 입장 = 같은 스테이지, 마을로 = 로비)·←/→ 순서는 코드(`RunResultScreen`). 이름은 예전과 똑같이 둬서(`Title`·`Cause`·`CellLabel0~2`·`StatLabel0~2`·`BarText0`·`Retry`·`Ok`) 기존 테스트 그대로.
+    > 이번엔 창 안 요소를 묶지 않았다(판 기준 좌표 그대로) — 예전 테스트가 찾는 이름·구조를 바꾸지 않으려고. 창째 옮기려면 나중에 따로.
+  - 파일별: `UI/Screens/RunResultScreen.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/RunResultScreenView.cs`(글자·막대·버튼 참조, 색 칸, `WireResultButton`·`SetProgress`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/결과 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 버튼 순서) · `CreationOwnershipTests`·`OriginalFidelityTests`(`RunResultScreenView`·`WireResultButton`·`SetProgress`).
+  - 프리팹(`Assets/Resources/UI/Views/RunResultScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **624 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 사냥을 끝내 띄운 결과 창의 모양·글자·진행 막대·←/→·Enter/Z·마우스, 프리팹 편집 반영 확인(사용자 "다 됨").
+  - **모양 변경(사용자, 2026-11-23, 프리팹에서 직접)**: 진행 막대 묶음을 옮겼다 — 막대(`BarBack0`·`BarFrame0`·`BarText0`) (340,223)→(353,248), 채움 `BarFill0` (339,223)→(352,248), 이름표(`ProgressPlate`·`ProgressLabel`) (335,203)→(352,220)(판 왼쪽 위 기준, y는 아래로).
+    드래그로 생긴 소수 좌표를 정수로 맞췄다 — **프리팹 좌표·크기는 정수로**(도트가 흐려지지 않게). 코드의 `CreateFromCode` 좌표는 처음 모양 그대로(프리팹이 원본).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
 - **2026-11-23 (155)** — **[사용자 세션] 프리팹 UI 5호: 설정 창(`SettingsWindow`) — `feature/ui-prefab-settings`**(1~4호(151~154)와 같은 방식).
   - 모양(어두운 막·창 틀·제목판·X·설정 줄 다섯·◀▶·음량 막대 셋(바탕·채움·손잡이·누르기 칸 `PxSlider`)·숫자칸·나눔선·적용, 줄 이름 색 두 가지)은 프리팹 `Resources/UI/Views/SettingsWindowView`.
     줄마다 `Row0`~`Row4`(480×32) 아래 줄 왼쪽 위 기준으로 놓아 **줄 하나를 통째로 옮길 수 있다**(예전엔 판 기준 좌표 — 화면상 위치는 같다). 음량 손잡이는 같은 줄 막대 바탕(`VolumeBack`)의 자리·폭을 읽어 놓으므로 막대를 옮겨도 따라간다.

@@ -385,6 +385,8 @@ public class OriginalFidelityTests
             ("PlaceCursor",                "TitleMenuView.cs"),    // TitleMenu.OnNavChanged(안 부르면 ◆가 안 따라온다)
             ("WireRegressionButton",       "RegressionScreenView.cs"), // RegressionScreen.Build(안 부르면 회귀·취소가 눌려도 아무 일도 안 한다)
             ("WireSettings",               "SettingsWindowView.cs"),   // SettingsWindow.Build(안 부르면 X·적용·◀▶·음량 막대가 아무 일도 안 한다)
+            ("WireResultButton",           "RunResultScreenView.cs"),  // RunResultScreen.Build(안 부르면 다시 입장·마을로가 아무 일도 안 한다)
+            ("SetProgress",                "RunResultScreenView.cs"),  // RunResultScreen.Refresh(안 부르면 진행 막대가 비어 있다)
         };
 
         var scriptFiles = Directory.GetFiles(

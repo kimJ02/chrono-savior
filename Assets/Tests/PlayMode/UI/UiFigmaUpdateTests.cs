@@ -577,6 +577,46 @@ public class UiFigmaUpdateTests
         result.HideForCapture();
     }
 
+    /// <summary>
+    /// 프리팹 UI 6호(2026-11-23) — 결과 창 모양은 프리팹(`Resources/UI/Views/RunResultScreenView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/결과 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Result_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<RunResultScreenView>(RunResultScreenView.ResourcePath),
+                         "결과 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/결과 창 만들기");
+        var result = pc.GetComponent<RunResultScreen>();
+        result.PreviewReason = RunEndReason.Timeout;
+        result.ShowForCapture();
+        yield return null;
+        Assert.IsTrue(result.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, result.Root.GetComponentsInChildren<RunResultScreenView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(2, result.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 둘(다시 입장·마을로)뿐 — 두 벌로 생기지 않는다");
+        result.HideForCapture();
+    }
+
+    /// <summary>
+    /// 결과 창 버튼 순서가 예전과 같다(프리팹이든 대체 코드 모양이든) — 키보드 순서 다시 입장(0) → 마을로(1), 처음엔 마을로를 고른다.
+    /// 버튼을 실제로 누르진 않는다(테스트 판엔 흐름이 없고, 다시 입장은 날짜를 쓴다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Result_ButtonsKeepOrder()
+    {
+        var result = pc.GetComponent<RunResultScreen>();
+        result.PreviewReason = RunEndReason.Timeout;
+        GameState.Set(GameScene.Result);
+        yield return null;
+        Assert.IsTrue(result.IsShown, "결과 화면에서 보인다");
+        Assert.AreEqual(1, result.NavIndex, "처음엔 마을로");
+        Find(result, "Retry").OnHover?.Invoke();
+        Assert.AreEqual(0, result.NavIndex, "다시 입장 = 0번");
+        Find(result, "Ok").OnHover?.Invoke();
+        Assert.AreEqual(1, result.NavIndex, "마을로 = 1번");
+        result.PreviewReason = null;
+    }
+
     static UnityEngine.UI.Text Label(PxScreen s, string name)
     {
         foreach (var t in s.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true)) if (t.name == name) return t;

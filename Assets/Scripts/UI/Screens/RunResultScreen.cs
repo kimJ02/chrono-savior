@@ -14,91 +14,38 @@ namespace ChronoSavior.UI
     /// "원정 진행도" 막대 = 토벌 진행(n/목표) 한 줄만(2026-11-18 사용자 — 시간 동조율·멸망까지 막대는 뺐다. 레벨·남은 날은 다른 화면에서 본다).
     /// 쓰러졌을 때(시간선 붕괴)도 같은 틀 — 제목이 붉고 칸 순서·버튼 글자만 다르다.
     /// "다시 입장"·"재동기화" = 같은 스테이지에 다시 들어간다(멸망 하루 — 스테이지 선택과 같은 규칙). "마을로"·"성문으로" = 로비.
+    ///
+    /// **모양은 프리팹이 원본이다(2026-11-23 프리팹 UI 6호)** — 위치·크기·그림·글꼴·색은 <see cref="RunResultScreenView"/> 프리팹에서 고친다.
     /// </summary>
     public class RunResultScreen : PxScreen
     {
         protected override bool WantsVisible => GameState.Current == GameScene.Result;
         protected override int DefaultNav => 1;
 
-        // Figma 좌표(640×360 판 그대로)
-        static readonly Rect Frame = new Rect(64f, 28f, 512f, 304f);      // 588:16 "결과백그라운드 1"
-        static readonly Rect Banner = new Rect(72f, 36f, 496f, 46f);      // 588:13 "결과배너 1"
-        static readonly Rect TitleBox = new Rect(89f, 37f, 260f, 29f);    // 448:48 "원정기록"
-        static readonly Rect SubBox = new Rect(89f, 64f, 260f, 16f);      // 448:49 "stage 1-2"
-        static readonly Rect TimeBox = new Rect(360f, 36f, 196f, 46f);    // Figma엔 없음 — 띠 오른쪽
-        static readonly Rect CauseBox = new Rect(80f, 86f, 480f, 18f);    // Figma엔 없음 — 띠와 칸 사이(쓰러졌을 때만)
-        static readonly float[] BoxX = { 108f, 256f, 404f };              // 447:23·25·24 "경과창 프레임"
-        const float BoxY = 108f, BoxW = 128f, BoxH = 56f, BoxLine = 27f;  // 칸 안 가로줄 y(그림에서 잰 값)
-        static readonly Rect StatsPlate = new Rect(108f, 180f, 64f, 20f); // 447:26 이름표
-        static readonly Rect StatsLine = new Rect(172f, 188f, 360f, 4f);  // 590:42 "나눔선 1"
-        static readonly Rect StatsBox = new Rect(108f, 226f, 192f, 64f);  // 447:30
-        static readonly float[] StatRowY = { 3f, 22f, 41f };              // 통계 상자 안 세 칸 위(그림의 가로줄 21·40 사이)
-        const float StatRowH = 18f;
-        static readonly Rect ProgressPlate = new Rect(335f, 203f, 64f, 20f); // 590:43 이름표 "원정 진행도"
-        const float BarX = 340f, BarW = 180f, BarH = 16f;
-        static readonly float[] BarY = { 223f };                // 590:47 · 590:46 · 448:37 막대 세 줄(이름표·버튼과 안 겹치게 조금 내림)
-        static readonly Rect RetryBox = new Rect(341f, 278f, 96f, 32f);   // 590:50 "버튼 1"
-        static readonly Rect OkBox = new Rect(447f, 278f, 96f, 32f);      // 448:47
-        static readonly Color Dead = Px.Hex(0xff6a5a);
+        RunResultScreenView view;
 
-        Text title, sub, time, cause, retryLabel, okLabel;
-        readonly Text[] boxLabels = new Text[3];
-        readonly Text[] boxValues = new Text[3];
-        readonly Text[] statLabels = new Text[3];
-        readonly Text[] statValues = new Text[3];
-        readonly Image[] barFills = new Image[1];
-        const float BarFillPx = 182f; // 채움 그림 폭(칸)
-        readonly Text[] barTexts = new Text[1];
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="RunResultScreenView"/>, `Resources/UI/Views/RunResultScreenView`)이 원본이다(2026-11-23 프리팹 UI 6호).
+        /// 여기선 버튼 둘에 동작과 키보드 순서(다시 입장 → 마을로)만 연결한다. 글자·막대는 <see cref="Refresh"/>가 채운다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
-            Px.FullFill(Back, "Backdrop", new Color(Px.Backdrop.r, Px.Backdrop.g, Px.Backdrop.b, Px.BackdropAlpha));
-            Px.Image(Content, "Frame", PxArt.Get("Common/window_tall"), Frame.x, Frame.y, Frame.width, Frame.height).raycastTarget = true;
-            Px.Image(Content, "Banner", PxArt.Get("Result/banner"), Banner.x, Banner.y, Banner.width, Banner.height);
-            title = Px.Text(Content, "Title", "", TitleBox.x, TitleBox.y, TitleBox.width, TitleBox.height, 20, Color.white, TextAnchor.MiddleLeft);
-            sub = Px.Text(Content, "Sub", "", SubBox.x, SubBox.y, SubBox.width, SubBox.height, 10, Color.white, TextAnchor.MiddleLeft);
-            time = Px.Text(Content, "Time", "", TimeBox.x, TimeBox.y, TimeBox.width, TimeBox.height, 12, Color.white, TextAnchor.MiddleRight);
-            cause = Px.Text(Content, "Cause", "", CauseBox.x, CauseBox.y, CauseBox.width, CauseBox.height, 10, Dead);
-            for (int i = 0; i < 3; i++)
+            view = LoadView<RunResultScreenView>(RunResultScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
             {
-                Px.Image(Content, "Cell" + i, PxArt.Get("Result/reward_box"), BoxX[i], BoxY, BoxW, BoxH);
-                boxLabels[i] = Px.Text(Content, "CellLabel" + i, "", BoxX[i], BoxY + 3f, BoxW, BoxLine - 3f, 10, Color.white);
-                boxValues[i] = Px.Text(Content, "CellValue" + i, "", BoxX[i], BoxY + BoxLine + 1f, BoxW, BoxH - BoxLine - 4f, 13, Color.white);
+                Debug.LogWarning("[RunResultScreen] 화면 프리팹(Resources/" + RunResultScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/결과 창 만들기", this);
+                view = RunResultScreenView.CreateFromCode(Root);
             }
-
-            Px.Image(Content, "StatsPlate", PxArt.Get("Result/name_plate"), StatsPlate.x, StatsPlate.y, StatsPlate.width, StatsPlate.height);
-            Px.Text(Content, "StatsLabel", "원정 통계", StatsPlate.x, StatsPlate.y, StatsPlate.width, StatsPlate.height, 10, Color.white);
-            Px.Image(Content, "StatsLine", PxArt.Get("Result/divider"), StatsLine.x, StatsLine.y, StatsLine.width, StatsLine.height);
-            Px.Image(Content, "StatsBox", PxArt.Get("Result/stats_box"), StatsBox.x, StatsBox.y, StatsBox.width, StatsBox.height);
-            for (int i = 0; i < 3; i++)
-            {
-                float y = StatsBox.y + StatRowY[i];
-                statLabels[i] = Px.Text(Content, "StatLabel" + i, "", StatsBox.x + 7f, y, 90f, StatRowH, 10, Color.white, TextAnchor.MiddleLeft);
-                statValues[i] = Px.Text(Content, "StatValue" + i, "", StatsBox.x + 92f, y, 92f, StatRowH, 10, Color.white, TextAnchor.MiddleRight);
-            }
-
-            // 막대 하나 — 바탕 → 채움(진한 하늘, Figma 색) → 틀 → 글자
-            var fill = PxArt.Get("Result/bar_fill");
-            Sprite[] fills = { fill };
-            for (int i = 0; i < 1; i++)
-            {
-                float y = BarY[i];
-                Px.Image(Content, "BarBack" + i, PxArt.Get("Result/bar_back"), BarX, y, BarW, BarH);
-                barFills[i] = Px.Image(Content, "BarFill" + i, fills[i], BarX - 1f, y, BarFillPx, BarH); // 채움 그림은 182칸
-                barFills[i].type = Image.Type.Filled;
-                barFills[i].fillMethod = Image.FillMethod.Horizontal;
-                Px.Image(Content, "BarFrame" + i, PxArt.Get("Result/bar_frame"), BarX, y, BarW, BarH);
-                barTexts[i] = Px.Text(Content, "BarText" + i, "", BarX, y, BarW, BarH, 10, Color.white).WithOutline(Px.Ink);
-            }
-            Px.Image(Content, "ProgressPlate", PxArt.Get("Result/name_plate"), ProgressPlate.x, ProgressPlate.y, ProgressPlate.width, ProgressPlate.height);
-            Px.Text(Content, "ProgressLabel", "원정 진행도", ProgressPlate.x, ProgressPlate.y, ProgressPlate.width, ProgressPlate.height, 10, Color.white);
-
-            var retry = AddNav(Px.TextButton(Content, "Retry", PxArt.Get("Result/button"), RetryBox.x, RetryBox.y, RetryBox.width,
-                                             RetryBox.height, "다시 입장", 12, Color.white, Retry));
-            var ok = AddNav(Px.TextButton(Content, "Ok", PxArt.Get("Result/button"), OkBox.x, OkBox.y, OkBox.width, OkBox.height,
-                                          "마을로", 12, Color.white, ToLobby));
-            retryLabel = retry.Inner.GetComponentInChildren<Text>();
-            okLabel = ok.Inner.GetComponentInChildren<Text>();
+            if (view.BoxCount != 3 || view.StatCount != 3 || view.ButtonCount != 2)
+                Debug.LogError($"[RunResultScreen] 화면 프리팹 칸 수가 다르다(칸 {view.BoxCount}·통계 {view.StatCount}·버튼 {view.ButtonCount}) — 칸 3·통계 3·버튼 2여야 한다", view);
+            AddNav(view.WireResultButton(RunResultScreenView.Slot.Retry, Retry));
+            AddNav(view.WireResultButton(RunResultScreenView.Slot.Ok, ToLobby));
         }
 
         /// <summary>캡처·테스트용 — 실제 끝난 이유 대신.</summary>
@@ -120,36 +67,36 @@ namespace ChronoSavior.UI
             var p = ProfileService.Current;
             int s = RunState.Region;
 
-            title.text = dead ? "시간선 붕괴" : "원정 기록";
-            title.color = dead ? Dead : Color.white;
+            view.Title.text = dead ? "시간선 붕괴" : "원정 기록";
+            view.Title.color = dead ? view.DeadColor : view.TitleColor;
             // 2026-11-20 — 챕터 번호만 나오던 것("stage 2 실패")을 스테이지까지("stage 2-4 실패")
             string sl = ChapterConfig.StageLabel(s, RunState.Stage);
-            sub.text = dead ? $"stage {sl} 실패" : reason == RunEndReason.BossDead ? $"stage {sl} 돌파" : $"stage {sl} 원정 종료";
-            time.text = dead ? $"잔존 시간 {Clock(RunState.TimeLeft)}" : $"기록 시간 {Clock(RunState.Elapsed)}";
+            view.Sub.text = dead ? $"stage {sl} 실패" : reason == RunEndReason.BossDead ? $"stage {sl} 돌파" : $"stage {sl} 원정 종료";
+            view.TimeText.text = dead ? $"잔존 시간 {Clock(RunState.TimeLeft)}" : $"기록 시간 {Clock(RunState.Elapsed)}";
 
             string[] labels = dead ? new[] { "처치 수", "획득 전리품", "획득 경험치" } : new[] { "전리품", "경험치", "처치 수" };
             string kills = $"{RunState.Kills:N0}", gold = $"+{RunState.GoldEarned:N0} G", exp = $"+{RunState.ExpEarned:N0}";
             string[] values = dead ? new[] { kills, gold, exp } : new[] { gold, exp, kills };
-            for (int i = 0; i < 3; i++) { boxLabels[i].text = labels[i]; boxValues[i].text = values[i]; }
+            for (int i = 0; i < view.BoxCount; i++) { view.BoxLabel(i).text = labels[i]; view.BoxValue(i).text = values[i]; }
 
-            cause.enabled = dead;
-            if (dead) cause.text = $"붕괴 원인: {CauseOf(RunState.DeathSource)}의 공격에 시간선이 무너졌다 — 재화는 그대로 남는다";
+            view.Cause.enabled = dead;
+            if (dead) view.Cause.text = $"붕괴 원인: {CauseOf(RunState.DeathSource)}의 공격에 시간선이 무너졌다 — 재화는 그대로 남는다";
 
             string[] statNames = { "준 피해량", "최대 콤보", "받은 피해" };
             string[] statVals = { $"{RunState.DamageDealt:N0}", $"{RunState.MaxCombo:N0}", $"{RunState.DamageTaken:N0}" };
-            for (int i = 0; i < 3; i++) { statLabels[i].text = statNames[i]; statValues[i].text = statVals[i]; }
+            for (int i = 0; i < view.StatCount; i++) { view.StatLabel(i).text = statNames[i]; view.StatValue(i).text = statVals[i]; }
 
             // 2026-11-19 챕터 구조 — 그 스테이지 누적 처치(보스 스테이지는 격파 여부)
             int target = ChapterConfig.StageKillTarget;
             bool bossStage = RunState.Stage == ChapterConfig.BossStage;
             int stageKills = bossStage ? (p.IsBossCleared(s) ? target : 0) : Mathf.Min(p.StageKills(s, RunState.Stage), target);
-            // 채움 그림 182칸을 정수 칸으로 — 100마리 기준이면 1마리 = 1.82칸이라 끝이 반 도트에 걸렸다(2026-11-20)
-            barFills[0].fillAmount = Mathf.Round(stageKills / (float)target * BarFillPx) / BarFillPx;
-            barTexts[0].text = bossStage ? (p.IsBossCleared(s) ? $"{ChapterConfig.StageLabel(s, RunState.Stage)} 격파" : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 도전 중")
-                             : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 토벌 {stageKills}/{target}";
+            // 채움 끝을 정수 칸으로 — 100마리 기준이면 1마리 = 1.82칸이라 끝이 반 도트에 걸렸다(2026-11-20)
+            view.SetProgress(stageKills / (float)target);
+            view.BarText.text = bossStage ? (p.IsBossCleared(s) ? $"{ChapterConfig.StageLabel(s, RunState.Stage)} 격파" : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 도전 중")
+                              : $"{ChapterConfig.StageLabel(s, RunState.Stage)} 토벌 {stageKills}/{target}";
 
-            retryLabel.text = dead ? "재동기화" : "다시 입장";
-            okLabel.text = dead ? "성문으로" : "마을로";
+            view.ButtonLabel(RunResultScreenView.Slot.Retry).text = dead ? "재동기화" : "다시 입장";
+            view.ButtonLabel(RunResultScreenView.Slot.Ok).text = dead ? "성문으로" : "마을로";
         }
 
         static string Clock(float seconds)
