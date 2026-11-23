@@ -105,6 +105,8 @@ namespace ChronoSavior.Editor
             // 설치기 — 전기 아크형(2026-11-10 사용자 I-B): 피해 순간 적 자리 전기(보라 → 파랑), 중계기 머리 전기 오라
             yield return Recolored(Frames(VfxKeys.MechanicZap, Gigapack, "PNG/Lightning/lightning_burst_001/lightning_burst_001_small_violet"), 285f);
             yield return Frames(VfxKeys.MechanicRelayAura, Gigapack, "PNG/Lightning/lightning_aura_002/lightning_aura_002_small_blue");
+            // 편지(공용 유물) 메카닉 레이저 폭발 — 전기 기둥(2026-11-23 사용자 후보 B). 128px 그대로(도트 배율 2 — 크기는 그림을 고르는 것으로)
+            yield return Frames(VfxKeys.MechanicWarp, Gigapack, "PNG/Sci-fi/scifi_warp_003/scifi_warp_003_large_blue");
             // 레이저 차징 — 맞을 적이 없을 때 총구에(2026-11-09 사용자). 노랑 차지를 레이저 파랑으로
             // 레이저 적중 — 작고 짧은 파란 충격(2026-11-09 사용자 "맞았을 때 효과가 이게 뭐야" — 예전엔 빔 끝 물보라를 적마다 틱마다 띄워 겹쳤다)
             yield return Frames(VfxKeys.MechanicHitSpark, Gigapack, "PNG/Impacts/directional_impact_001/directional_impact_001_small_blue");
