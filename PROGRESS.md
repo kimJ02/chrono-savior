@@ -188,7 +188,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   · `UiFigmaUpdateTests.Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock` — 노말 확률 기대 "55%", 실제 "70%"(`Core/ItemDatabase.Weight` Common=70)
   · `BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss` — 기대 800, 실제 932
   · `BossAndShrine_GetTheirStatsAndSizes` — 기대 85, 실제 91
-  · `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange` — "반경 밖의 적이 맞았다(오탐)", 기대 38, 실제 29
+  · `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange` — "반경 밖의 적이 맞았다(오탐)", 기대 38, 실제 29 — **11-23 재실행에선 통과: 결과가 그때그때 다른(불안정한) 테스트로 보인다**
 
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
   조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
@@ -308,6 +308,17 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-23 (152)** — **[사용자 세션] 프리팹 UI 2호: 공용 팝업(`CommonPopup`) — `feature/ui-prefab-popup`**(일시정지 시범(151)과 같은 방식, 사용자 "다음 화면 CommonPopup").
+  - 모양(반투명 막·창 틀·X·제목/내용 자리·버튼 셋)은 프리팹 `Resources/UI/Views/CommonPopupView`, 글자 채우기·묻기/알림에 따른 버튼 켜고 끄기·콜백 한 번만·X/ESC·키보드 순서(취소 → 큰 확인 → 확인, X는 순서 밖)는 코드(`CommonPopup`). 공개 API(`Confirm`·`Alert`·`AlertIfTransitionFails`)와 테스트 창구(`CancelShown`·`WideShown`·`OkShown`·`DismissForTest`) 그대로.
+  - 파일별: `UI/Screens/CommonPopup.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/CommonPopupView.cs`(글자 자리·버튼·버튼 글자 참조, `WirePopupButton`, Figma 좌표는 `CreateFromCode`로 옮김) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/공용 팝업 만들기` 추가, 화면 목록으로 정리 — 배치 `RunBatch`는 없는 것만 만든다) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 글자·키보드 순서) · `CreationOwnershipTests`·`OriginalFidelityTests`(`CommonPopupView`·`WirePopupButton` 등록).
+  - ⚠️ 버튼 오브젝트 이름(`Close`·`Cancel`·`OkWide`·`Ok`)과 글자 이름(`Title`·`Body`)은 프리팹에서 바꾸지 말 것 — 기존 테스트가 이름으로 찾는다.
+  - 프리팹(`Assets/Resources/UI/Views/CommonPopupView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **616 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 묻기 팝업(세이브 슬롯 창 [초기화] → "슬롯 초기화")의 모양·←/→·Enter/Z·마우스·X/ESC 취소, 프리팹 편집 반영 확인.
+    알림 팝업(가운데 큰 확인)은 손으로 띄울 계기가 마땅치 않아(잠긴 챕터는 버튼 위에 "안 열림"이 먼저 뜬다) 기존 테스트 `Popup_Alert_OneWideButton_XAlsoConfirms` 통과로 갈음.
+    참고: 타이틀 "새 원정"은 11-19부터 세이브 슬롯 창을 연다(팝업 아님 — `TitleMenu` 맨 위 설명 주석의 "한 번 더 묻고"는 옛 내용).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 
 - **2026-11-22 (151)** — **[사용자 세션] 프리팹 UI 시범 1호: 일시정지 화면 — `feature/ui-prefab-pause`**(사용자 "UI 전체를 한 번에 말고, 기존 기능을 유지하며 점진적으로 Prefab 기반으로. 최종 목표는 UI 위치·크기·이미지·텍스트를 Unity Editor에서 직접 고치는 구조. 우선 PauseMenu 하나만").
   - 구조: 화면 컴포넌트(main 기준 14개 — SaveSlotScreen 포함)는 그대로 `00_Persistent/PixelUI`에 둔다(씬·`PxScreens.All`·`SceneSetupValidator` 안 바뀜). 화면의 **모양**만 프리팹으로 — `PxScreen.LoadView<T>(path)`가 `Resources/UI/Views/`에서 불러 `Root` 아래에 붙인다. 버튼 동작·키보드 순서·켜고 끄기는 코드(`PauseMenu`)가 연결한다.

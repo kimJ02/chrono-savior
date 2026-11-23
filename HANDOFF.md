@@ -6,7 +6,7 @@
 > **진행 중(2026-11-22~) — 프리팹 UI 점진 전환**: 사용자 결정 — UI를 한 번에 바꾸지 않고 화면 하나씩, 기존 기능을 유지하며
 > "모양은 프리팹(에디터에서 위치·크기·그림·글자를 고침), 동작·데이터 갱신은 코드"로 옮긴다. 화면 컴포넌트는 `00_Persistent/PixelUI`에 그대로,
 > 모양은 `Resources/UI/Views/<화면>View.prefab`을 `PxScreen.LoadView`로 불러 붙인다. 프리팹은 에디터 API(메뉴)로만 만든다 — YAML 손작성 금지.
-> **시범 `PauseMenu` 완료·`main` 병합(2026-11-23, `PROGRESS.md` 로그 (151))** — 다음은 `CommonPopup`(분석 순서: CommonPopup → TitleMenu → RegressionScreen → SettingsWindow → RunResultScreen → … → CombatHud 마지막). 화면 하나씩, 화면마다 브랜치. 안전 규칙은 `CLAUDE.md` "UI 리팩터링 안전 규칙".
+> **시범 `PauseMenu` 완료·`main` 병합(2026-11-23, `PROGRESS.md` 로그 (151))** · **2호 `CommonPopup` 완료(`feature/ui-prefab-popup` → `main`, 로그 (152))** — 그다음 순서(분석 순서: CommonPopup → TitleMenu → RegressionScreen → SettingsWindow → RunResultScreen → … → CombatHud 마지막). 화면 하나씩, 화면마다 브랜치. 안전 규칙은 `CLAUDE.md` "UI 리팩터링 안전 규칙".
 >
 > **진행 중(2026-11-10~)**: 1지역 보스 **덩어리 지배자**(팀원 명세 `덩어리_지배자_스킬_구현_명세서.docx`, 브랜치 `feature/boss-blob-lord`) — 기본 도형 그림으로 구현, 보스 체력바 상단 이동과 함께 2026-11-10 `main` 병합. 확정 수치·결정은 `PROGRESS.md` 로그 (100)과 `Enemies/BlobLordBoss.cs` 머리 주석. 교수님 요청 '최종 스테이지 가정 게임성 판단 스테이지'는 범위 미정(Codex 추천: 9지역 4~6분 슬라이스). 정해지면 이 파일을 그 스프린트 스펙으로 통째로 바꾼다(`CLAUDE.md` 문서 구조).
 >

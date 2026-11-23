@@ -380,6 +380,7 @@ public class OriginalFidelityTests
             // 프리팹 UI 시범(2026-11-22) — 화면 모양 프리팹을 불러 버튼을 연결하는 길
             ("LoadView",                   "PxScreen.cs"),         // PauseMenu.Build
             ("WireButton",                 "PauseMenuView.cs"),    // PauseMenu.Build(안 부르면 버튼이 눌려도 아무 일도 안 한다)
+            ("WirePopupButton",            "CommonPopupView.cs"),  // CommonPopup.Build(안 부르면 팝업 버튼이 눌려도 아무 일도 안 한다)
         };
 
         var scriptFiles = Directory.GetFiles(

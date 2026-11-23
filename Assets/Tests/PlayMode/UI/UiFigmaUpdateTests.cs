@@ -288,6 +288,12 @@ public class UiFigmaUpdateTests
         reg.HideForCapture();
     }
 
+    static string TextOf(PxScreen s, string name)
+    {
+        foreach (var t in s.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true)) if (t.name == name) return t.text;
+        return null;
+    }
+
     PxButton Find(PxScreen s, string name)
     {
         foreach (var b in s.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == name) return b;
@@ -325,6 +331,54 @@ public class UiFigmaUpdateTests
         popup.DismissForTest();
         popup.DismissForTest();
         Assert.AreEqual(1, calls, "알림의 X는 확인과 같다 — 한 번만");
+    }
+
+    /// <summary>
+    /// 프리팹 UI 2호(2026-11-23) — 공용 팝업 모양은 프리팹(`Resources/UI/Views/CommonPopupView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/공용 팝업 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Popup_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<CommonPopupView>(CommonPopupView.ResourcePath),
+                         "공용 팝업 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/공용 팝업 만들기");
+        var popup = pc.GetComponent<CommonPopup>();
+        CommonPopup.Alert("알림", "내용");
+        yield return null;
+        Assert.IsTrue(popup.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, popup.Root.GetComponentsInChildren<CommonPopupView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(4, popup.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 넷(X·취소·큰 확인·확인)뿐 — 두 벌로 생기지 않는다");
+        popup.DismissForTest();
+    }
+
+    /// <summary>
+    /// 공용 팝업의 글자·키보드 순서가 예전과 같다(프리팹이든 대체 코드 모양이든) —
+    /// 제목·내용·버튼 글자는 코드가 채우고, 키보드 순서는 취소(0) → 큰 확인(1) → 확인(2), X는 순서 밖.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Popup_TextsAndNavOrderKept()
+    {
+        var popup = pc.GetComponent<CommonPopup>();
+        bool ok = false;
+        CommonPopup.Confirm("새 원정", "지울까요?", () => ok = true, "시작", "그만");
+        yield return null;
+        Assert.AreEqual(2, popup.NavIndex, "묻기는 처음에 오른쪽 확인을 고른다");
+
+        Assert.AreEqual("새 원정", TextOf(popup, "Title"));
+        Assert.AreEqual("지울까요?", TextOf(popup, "Body"));
+        Assert.AreEqual("시작", Find(popup, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "확인 버튼 글자");
+        Assert.AreEqual("그만", Find(popup, "Cancel").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "취소 버튼 글자");
+
+        Find(popup, "Cancel").OnHover?.Invoke();
+        Assert.AreEqual(0, popup.NavIndex, "취소 = 0번");
+        Find(popup, "OkWide").OnHover?.Invoke();
+        Assert.AreEqual(1, popup.NavIndex, "큰 확인 = 1번");
+        Find(popup, "Close").OnHover?.Invoke();
+        Assert.AreEqual(1, popup.NavIndex, "X는 키보드 순서에 없다 — 선택이 그대로");
+
+        Find(popup, "Ok").Click();
+        Assert.IsTrue(ok, "확인을 누르면 콜백");
     }
 
     [Test]
