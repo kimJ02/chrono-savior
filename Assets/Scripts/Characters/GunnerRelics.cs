@@ -144,7 +144,7 @@ namespace ChronoSavior.Characters
                 else RelicFx.After(arrive, () => { if (target != null) using (Relics.AsLaser()) RelicFx.Hit(target, mult, dir, 0.5f); });
                 visited.Add(next);
                 cur = next;
-                start = arrive + 0.04f; // 앞 광선이 닿고 0.04초 뒤 다음 적으로
+                start = arrive + 0.02f; // 앞 광선이 닿고 0.02초 뒤 다음 적으로(0.04 → 느리다, 2026-11-23 사용자)
                 bend = -bend;           // 지그재그로 읽히게 번갈아 휜다
             }
         }

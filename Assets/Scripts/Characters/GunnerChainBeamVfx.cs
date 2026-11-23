@@ -15,7 +15,8 @@ namespace ChronoSavior.Characters
     /// </summary>
     public class GunnerChainBeamVfx : MonoBehaviour
     {
-        public const float EdgeFps = 30f, LoopFps = 15f, HoldTime = 0.08f;
+        /// <summary>뻗기·거둬들이기 그림 속도 — 30이면 한 번 튀는 데 0.17초라 "튕기는 레이저가 너무 느리다"(2026-11-23 사용자) → 60(0.08초).</summary>
+        public const float EdgeFps = 60f, LoopFps = 15f, HoldTime = 0.08f;
         public const int SourceRows = 16, BodyRows = 8, WindowRows = 12;
         /// <summary>곡선이 휘는 정도(화면 도트) — 직선이면 비스듬할 때 가장자리가 계단처럼 깨져 보였다.</summary>
         public const float BendDots = 3f;
@@ -30,7 +31,7 @@ namespace ChronoSavior.Characters
         /// (팩 relay_aura, 맞은 적 가운데, 돌리지 않음, 30fps)을 골랐다. 캡처 비교용으로 바꿀 수 있게 static으로 둔다(게임 코드는 안 바꾼다).
         /// </summary>
         public static string HitKey = VfxKeys.MechanicRelayAura;
-        public static float HitFps = EdgeFps;
+        public static float HitFps = 30f; // 맞은 그림(하얀 번개)은 승인한 속도 그대로
         public static bool HitAtCenter = true, HitRotate = false;
 
         LineRenderer line;
