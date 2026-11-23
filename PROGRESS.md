@@ -302,6 +302,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (164)** — **[사용자 세션] 플레이어와 x가 겹치면 몬스터가 도리도리하던 것 고침** — `EnemyMove`: 플레이어와 x 차이가 `FacingDeadZoneX`(0.1) 안이면 방향을 그대로 두고 제자리에 선다(기본 보행만, 종류 전용 이동은 그대로).
+  원인: 매 프레임 `sign(dx)`로 돌아, 한 걸음에 플레이어를 지나치면 다음 프레임에 반대로 돌았다. **의도적 편차**(원본도 sign(dx)) — 코드 주석에 콜아웃.
+  - 테스트 `EnemySpawnAndMoveTests.EnemyMove_OverlappingPlayerX_DoesNotJitter`. 전체 629 중 624 통과 — 실패 3 = 보스 수치 2(원래 실패) + `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange`.
+    이 회전베기 테스트는 혼자 돌리면 통과, 앞 테스트(Achievement~AttackMoveLock)와 같이 돌리면 실패 — **4eb2c62 코드로 되돌려도 같이 실패**해 이번 변경과 무관한 순서 의존 문제(확인 필요).
+
 - **2026-11-23 (163)** — **[사용자 세션] 튕기는 레이저 2배 빠르게** — "튕기는 레이저가 너무 느려": `GunnerChainBeamVfx.EdgeFps` 30→60(한 번 뻗는 데 0.17→0.08초, 거둬들이기도), 프리즘 구경 연쇄의 다음 튀기 간격 0.04→0.02초.
   맞은 그림(하얀 번개)은 승인 속도(30fps) 그대로. 편지 배달 광선도 같이 빨라짐. 4번 튀기 끝까지 약 0.8→0.4초.
   - 보류(사용자 "일단 그냥 두고"): 유물 효과가 겹칠 때 — 튕기는 레이저에 맞으면 편지, 처음 맞은 적에서 1번만 튕기기.
