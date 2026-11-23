@@ -28,7 +28,8 @@ public class CreationOwnershipTests
         EnemyAssembly,
         /// <summary>D. 그림만 있는 일회성 효과·효과 풀(판정 없음). 정당한 코드 생성.</summary>
         VisualEffect,
-        /// <summary>E. UI를 코드로 짓기(Figma 좌표 그대로 — 화면마다 프리팹을 두면 좌표가 두 곳이 된다). 정당한 코드 생성.</summary>
+        /// <summary>E. UI를 코드로 짓기(Figma 좌표 그대로). 정당한 코드 생성. 2026-11-22부터 화면 모양을 프리팹으로 옮기는 중(시범 PauseMenu) —
+        /// 옮긴 화면은 프리팹이 원본이고, 코드 모양은 프리팹을 처음 만들 때·프리팹이 없을 때의 대체로만 남는다.</summary>
         UiBuild,
         /// <summary>F. 크기 입력으로 그림을 깔기(땅 타일·발판·배경). 정당한 코드 생성.</summary>
         Procedural,
@@ -80,6 +81,8 @@ public class CreationOwnershipTests
         // E. UI 짓기
         ["UI/Pixel/Px.cs"]                 = (Kind.UiBuild, "UI 노드 공용 생성(Image·Text·외곽선·버튼) — 모든 화면이 여기로 짓는다"),
         ["UI/Pixel/PxButton.cs"]           = (Kind.UiBuild, "버튼 눌림 표현용 CanvasGroup"),
+        ["UI/Pixel/PxScreen.cs"]           = (Kind.UiBuild, "화면 모양 프리팹(Resources/UI/Views)을 불러 Root 아래에 세운다(LoadView) — 2026-11-22 프리팹 UI 시범(PauseMenu)"),
+        ["UI/Screens/PauseMenuView.cs"]    = (Kind.UiBuild, "일시정지 모양 컴포넌트 붙이기(CreateFromCode) — 프리팹을 처음 만드는 에디터 메뉴와, 프리팹이 없을 때의 대체 전용"),
         ["UI/Pixel/PixelCanvas.cs"]        = (Kind.UiBuild, "Create는 씬 없는 테스트·캡처 전용(게임은 00_Persistent에 판이 놓임), 화면 컴포넌트 목록 붙이기, 테스트용 EventSystem"),
         ["UI/Screens/AchievementsScreen.cs"] = (Kind.UiBuild, "업적 칸 버튼"),
         ["UI/Screens/AwakenScreen.cs"]     = (Kind.UiBuild, "스탯 탭 강화 목록 가림막(RectMask2D) — 네 번째 줄이 반쯤 잘려 보이는 스크롤 목록(2026-11-22 새 그림)"),

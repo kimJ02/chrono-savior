@@ -88,6 +88,20 @@ namespace ChronoSavior.UI
             Root.gameObject.SetActive(false);
         }
 
+        /// <summary>
+        /// 화면 모양 프리팹을 `Resources`에서 불러와 <see cref="Root"/> 아래에 붙인다(2026-11-22 프리팹 UI 시범 — 첫 사용 `PauseMenu`).
+        /// 프리팹 루트에 <typeparamref name="T"/>가 있어야 한다. 없으면 null — 부르는 화면이 대체(예전 코드 모양)를 정한다.
+        /// <see cref="Build"/> 안에서만 부른다(화면마다 한 번).
+        /// </summary>
+        protected T LoadView<T>(string resourcePath) where T : Component
+        {
+            var prefab = Resources.Load<T>(resourcePath);
+            if (prefab == null) return null;
+            var view = Instantiate(prefab, Root, false);
+            view.name = prefab.name; // "(Clone)" 없이 — 계층에서 프리팹 이름 그대로 보이게
+            return view;
+        }
+
         void LateUpdate()
         {
             EnsureBuilt();

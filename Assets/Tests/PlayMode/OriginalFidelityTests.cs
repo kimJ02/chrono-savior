@@ -377,6 +377,9 @@ public class OriginalFidelityTests
             ("DotShapes.Rect",             "DotShapes.cs"),        // BrokenGoddessBoss.BeginGrabWarn(이름이 흔해 클래스까지 적는다)
             ("DotShapes.Wedge",            "DotShapes.cs"),        // BrokenGoddessBoss.BeginSweepWarn
             ("TakeDamageIgnoringInvuln",   "IDamageable.cs"),      // BrokenGoddessBoss.FinishGrab이 호출, PlayerHealth.cs가 오버라이드(2026-11-18 무적 무시 버그 수정)
+            // 프리팹 UI 시범(2026-11-22) — 화면 모양 프리팹을 불러 버튼을 연결하는 길
+            ("LoadView",                   "PxScreen.cs"),         // PauseMenu.Build
+            ("WireButton",                 "PauseMenuView.cs"),    // PauseMenu.Build(안 부르면 버튼이 눌려도 아무 일도 안 한다)
         };
 
         var scriptFiles = Directory.GetFiles(

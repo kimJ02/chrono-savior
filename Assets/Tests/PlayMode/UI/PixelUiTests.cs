@@ -107,6 +107,56 @@ public class PixelUiTests
         Assert.IsFalse(pause.IsShown);
     }
 
+    /// <summary>
+    /// 프리팹 UI 시범(2026-11-22) — 일시정지 모양은 프리팹(`Resources/UI/Views/PauseMenuView`)에서 온다.
+    /// 프리팹이 없으면 화면은 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/일시정지 화면 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator PauseMenu_LayoutComesFromViewPrefab()
+    {
+        Assert.IsNotNull(Resources.Load<PauseMenuView>(PauseMenuView.ResourcePath),
+                         "일시정지 화면 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/일시정지 화면 만들기");
+        var pause = pc.GetComponent<PauseMenu>();
+        GameState.Set(GameScene.Pause);
+        yield return null;
+        Assert.IsTrue(pause.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, pause.Root.GetComponentsInChildren<PauseMenuView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(3, pause.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 셋(계속·설정·로비로)뿐 — 두 벌로 생기지 않는다");
+    }
+
+    /// <summary>
+    /// 일시정지 버튼 셋이 예전과 같은 순서·동작으로 연결된다(프리팹이든 대체 코드 모양이든) —
+    /// 마우스를 올리면 그 버튼이 키보드 선택이 되고(<see cref="PxScreen.NavIndex"/>), ⚙는 설정 창을 연다.
+    /// ▶·↩는 `GameFlow`를 부르는데 테스트 판엔 흐름이 없어(<see cref="PixelCanvas.Flow"/> null) 누르기만 해 본다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator PauseMenu_ButtonsKeepOrderAndActions()
+    {
+        var pause = pc.GetComponent<PauseMenu>();
+        GameState.Set(GameScene.Pause);
+        yield return null;
+
+        var buttons = pause.Root.GetComponentsInChildren<PxButton>(true);
+        Assert.AreEqual(3, buttons.Length);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Assert.IsNotNull(buttons[i].Art, $"버튼 {i} 그림이 연결됐다(상태 그림을 만들 수 있게)");
+            Assert.IsNotNull(buttons[i].Inner, $"버튼 {i} 안쪽(눌림 1도트)이 연결됐다");
+            buttons[i].OnHover?.Invoke();
+            Assert.AreEqual(i, pause.NavIndex, $"버튼 {i}에 마우스를 올리면 키보드 선택도 {i}번 — 순서 ▶ ⚙ ↩");
+        }
+
+        Assert.IsFalse(SettingsWindow.IsOpen);
+        buttons[1].Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "⚙는 설정 창을 연다");
+        SettingsWindow.Close();
+
+        Assert.DoesNotThrow(() => buttons[0].Click(), "▶ 계속 — 흐름이 없는 판에서도 터지지 않는다");
+        Assert.DoesNotThrow(() => buttons[2].Click(), "↩ 로비로 — 흐름이 없는 판에서도 터지지 않는다");
+        yield return null;
+    }
+
     [UnityTest]
     public IEnumerator Settings_TakesEscapeFirst_SoPauseIsNotResumed()
     {

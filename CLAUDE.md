@@ -232,6 +232,23 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   - 절차 생성 프리미티브: 의도한 유닛 크기에 맞춘 값. 예) `Circle.png`는 128px 텍스처로 "스케일 1 = 지름 1유닛"을 의도했으므로 PPU = **128**(`Assets/Sprites/Circle.png.meta`).
 - **"전부 100" 같은 일괄 규칙으로 바꾸지 말 것** — Circle.png를 100으로 바꾸면 지름이 1.28유닛이 되어 `CircleCollider2D.radius = 0.5`(=1유닛)와 시각/물리 크기가 어긋난다. 기준은 PPU 숫자가 아니라 **"보이는 크기 == 콜라이더 크기"**다.
 
+## UI 리팩터링 안전 규칙 (2026-11-22 신설)
+
+UI를 코드 생성(`PxScreen.Build()` + Figma 좌표)에서 Scene/Prefab 기반으로 옮기는 작업은 전용 스킬
+`.claude/skills/unity-ui-refactor/SKILL.md`의 절차를 따른다. 아래 규칙은 그 작업뿐 아니라 **모든 UI 작업**에 적용한다.
+
+- **기존 기능을 임의로 삭제하지 않는다.** 화면·버튼·키보드 조작·툴팁을 없애야 하면 먼저 사용자에게 묻는다.
+- **`Assets`의 `.meta` 파일을 임의로 삭제·재생성·직접 편집하지 않는다.** 옮길 때는 에셋과 `.meta`를 같이 `git mv`.
+  의도하지 않은 `.meta` 변화가 `git status`에 보이면 멈추고 보고한다.
+- **씬·프리팹의 참조 관계를 보호한다.** `.unity`/`.prefab` YAML은 손으로 고치지 않고, `MonoBehaviour` 클래스·파일 이름을
+  바꾸지 않으며, 직렬화 필드 이름을 바꿀 땐 `[FormerlySerializedAs]`를 붙인다.
+- **모든 변경 전에 Git 작업 트리와 브랜치 상태를 확인한다**(`git status`, 현재 브랜치, 미병합 브랜치).
+- **별도 작업 브랜치(`feature/ui-refactor-<단위>`)에서 수정한다.** (협업 규칙 3의 "작은 후속 수정은 `main` 직접" 예외는 UI 리팩터링에 쓰지 않는다.)
+- **전체 UI를 한 번에 교체하지 않는다.** 한 번에 화면 하나(또는 공용 부품 하나)씩, 단위마다 검증·커밋.
+- **분석 단계에서는 파일을 수정하지 않는다.** 분석·계획은 보고서로만 내고, 사용자 승인 후 실행한다.
+- **Unity Editor(또는 배치모드)에서 검증하지 못한 항목은 "미검증"으로 보고한다** — 커밋 메시지와 `PROGRESS.md`에도 적는다.
+- 화면을 프리팹으로 옮기면 씬 없이 판을 만드는 경로(`PixelCanvas.Create` → `PxScreens.AddAll`, 테스트·캡처용)도 같이 맞춘다.
+
 ## 지금 프로젝트 상태
 
 - Unity: 2D (URP) 템플릿. `Assets/Scripts/`는 `Core / World / Combat / Characters / Enemies / Systems / UI`

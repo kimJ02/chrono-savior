@@ -183,6 +183,17 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
+- **[2026-11-22, 프리팹 UI 시범] 일시정지 화면 — 남은 손 검증.** 프리팹 생성·컴파일·PlayMode는 끝(2026-11-23, 로그 (151)).
+  남은 것: ① Play → 사냥 중 ESC → ←/→·Enter/Z·마우스로 ▶ 계속·⚙ 설정·↩ 로비로 ② 겉모습이 예전과 같은지(`CaptureUiPreview` "일시정지" 전후)
+  ③ 프리팹에서 버튼 위치·그림을 바꿔 게임에 반영되는지. 통과하면 다음 화면을 고른다(분석 순서: CommonPopup → TitleMenu → RegressionScreen …).
+
+- **[2026-11-23 발견, `main` 150 병합에서 넘어옴] PlayMode 실패 4건 — 코드 수치가 바뀌었는데 테스트 기대값이 옛 값.** 프리팹 UI 브랜치와 무관(그 브랜치에선 안 고침).
+  테스트를 새 값에 맞출지, 코드를 되돌릴지는 수치를 바꾼 사람이 정할 것:
+  · `UiFigmaUpdateTests.Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock` — 노말 확률 기대 "55%", 실제 "70%"(`Core/ItemDatabase.Weight` Common=70)
+  · `BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss` — 기대 800, 실제 932
+  · `BossAndShrine_GetTheirStatsAndSizes` — 기대 85, 실제 91
+  · `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange` — "반경 밖의 적이 맞았다(오탐)", 기대 38, 실제 29
+
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
   조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
   조건부 변경, 나머지 5종은 그대로 도형. `Enemies/`는 팀장 담당 영역이라 동작엔 문제없지만 병합 전
@@ -302,6 +313,14 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-22 (151)** — **[사용자 세션] 프리팹 UI 시범 1호: 일시정지 화면 — `feature/ui-prefab-pause`**(사용자 "UI 전체를 한 번에 말고, 기존 기능을 유지하며 점진적으로 Prefab 기반으로. 최종 목표는 UI 위치·크기·이미지·텍스트를 Unity Editor에서 직접 고치는 구조. 우선 PauseMenu 하나만").
+  - 구조: 화면 컴포넌트(main 기준 14개 — SaveSlotScreen 포함)는 그대로 `00_Persistent/PixelUI`에 둔다(씬·`PxScreens.All`·`SceneSetupValidator` 안 바뀜). 화면의 **모양**만 프리팹으로 — `PxScreen.LoadView<T>(path)`가 `Resources/UI/Views/`에서 불러 `Root` 아래에 붙인다. 버튼 동작·키보드 순서·켜고 끄기는 코드(`PauseMenu`)가 연결한다.
+  - 파일별: `UI/Pixel/PxScreen.cs`(+`LoadView`) · `UI/Screens/PauseMenu.cs`(Build가 프리팹 불러 버튼 연결, 프리팹 없으면 경고 + 예전 코드 모양, `UsesViewPrefab`) · **새** `UI/Screens/PauseMenuView.cs`(모양 컴포넌트 — 버튼 배열·`WireButton`, Figma 좌표는 `CreateFromCode`로 옮김) · **새** `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/일시정지 화면 만들기`, 배치 `ChronoSavior.Editor.BuildUiViewPrefabs.RunBatch` — 에디터 API로 저장, 이미 있으면 안 덮어씀) · 테스트 `PixelUiTests`(+2: 프리팹에서 온다·한 벌뿐 / 버튼 순서·동작) · `CreationOwnershipTests`(PxScreen·PauseMenuView 생성 담당 추가, UiBuild 설명 갱신) · `OriginalFidelityTests`(`LoadView`·`WireButton` 호출 검사).
+  - 프리팹(`Assets/Resources/UI/Views/PauseMenuView.prefab` + 폴더 `.meta`)은 사용자가 에디터 메뉴로 만들었다(2026-11-23, YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **613 통과 / 4 실패 / 2 건너뜀** — 새 테스트 2개(`PauseMenu_LayoutComesFromViewPrefab`·`PauseMenu_ButtonsKeepOrderAndActions`)와 `CreationOwnershipTests`·`OriginalFidelityTests` 통과.
+    실패 4건은 이 브랜치와 무관한 `main`(150 병합, 테스트 미실행) 쪽 — 아래 "확인 필요"에 정리. 건너뜀 2건은 성능 측정(`Perf/SlotPerfProbe` `Slot3_*`).
+    **아직 미검증**: 실제 플레이에서 ESC → ←/→·Enter/Z·마우스로 버튼 셋 동작, 겉모습 전후 비교(캡처), 프리팹을 에디터에서 고쳐 게임에 반영되는지.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양으로 돌아간다(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-22 (150)** — **[사용자 세션] feature/relics(유물·세이브 슬롯·챕터 구조·최적화) ↔ 팀원 main(144~149 드라이브 새 그림 창들) 병합.**
   - 충돌 정리: 전투 HUD는 팀원 새 배치(체력 막대·골드·보스 이름 줄) 위에 스테이지 표시("1-3 토벌 37/100", 중간 보스전 "1-5 중간 보스")와 값이 바뀔 때만 갱신을 얹었다.
     회귀창 큰 막대는 챕터 구조에 맞게 **왼쪽 = 가장 멀리 깬 스테이지(예: 2-보스), 오른쪽 = 회귀 뒤 이어서 할 스테이지(예: 3-1)** — 149의 "회귀 후 stage 1"은 이제 사실이 아니다(진행이 남는다).
