@@ -13,6 +13,8 @@ namespace ChronoSavior.UI
     ///     2026-11-19 챕터 구조부터는 **환생해도 진행이 남는다** — 왼쪽은 가장 멀리 깬 스테이지(예: 2-보스), 오른쪽은 회귀 뒤 이어서 할 스테이지(예: 3-1).
     /// 버튼 글자는 스크린샷에 없어서 예전대로(취소 / 회귀 (+파편)). 동작은 예전과 같다
     /// (`PlayerProfile.DoRegression`, 정복한 지역이 없으면 회귀 불가). 로비의 "환생" 건물에서 연다.
+    ///
+    /// **모양은 프리팹이 원본이다(2026-11-23 프리팹 UI 4호)** — 위치·크기·그림·글자는 <see cref="RegressionScreenView"/> 프리팹에서 고친다.
     /// </summary>
     public class RegressionScreen : PxScreen
     {
@@ -26,17 +28,6 @@ namespace ChronoSavior.UI
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
         protected override int DefaultNav => 1;
-
-        // 스크린샷에서 잰 값(640판 환산, ±1도트) — 창 왼쪽 위(W) 기준 상대 좌표
-        static readonly Vector2 W = new Vector2(64f, 36f);               // 창 512×304(Common/window_tall)
-        static readonly Rect Plate = new Rect(192f, -15f, 128f, 32f);    // 제목판(Common/title_plate)
-        static readonly Rect StageBar = new Rect(54f, 52f, 400f, 48f);   // 정보창 large
-        static readonly Rect ShardBar = new Rect(54f, 110f, 400f, 48f);
-        static readonly Rect LevelBar = new Rect(54f, 167f, 184f, 48f);  // 정보창 small
-        static readonly Rect KillBar = new Rect(270f, 167f, 184f, 48f);
-        static readonly Rect CancelBox = new Rect(95f, 236f, 96f, 32f);  // 회귀창 버튼
-        static readonly Rect OkBox = new Rect(321f, 236f, 96f, 32f);
-        const float LabelH = 14f, ValueH = 24f;
 
         // values: 0 이전 최고 스테이지 · 1 회귀 후 스테이지 · 2 획득한 파편 · 3 최고 레벨 · 4 총 처치 수
         readonly Text[] values = new Text[5];
@@ -55,51 +46,32 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
-        /// <summary>막대 안(막대 왼쪽 위 기준) 가운데 (cx, cy)에 글자 한 줄.</summary>
-        Text Line(Rect bar, string name, string text, float cx, float cy, float w, float h, int size)
-        {
-            return Px.Text(Content, name, text, W.x + bar.x + cx - w / 2f, W.y + bar.y + cy - h / 2f, w, h, size, Color.white);
-        }
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="RegressionScreenView"/>, `Resources/UI/Views/RegressionScreenView`)이 원본이다(2026-11-23 프리팹 UI 4호).
+        /// 여기선 값 글자 자리·버튼을 받아 동작과 키보드 순서(취소 → 회귀)만 연결한다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Backdrop", new Color(Px.Backdrop.r, Px.Backdrop.g, Px.Backdrop.b, Px.BackdropAlpha));
-            Px.Image(Content, "Frame", PxArt.Get("Common/window_tall"), W.x, W.y, 512f, 304f).raycastTarget = true;
-            Px.Image(Content, "TitlePlate", PxArt.Get("Common/title_plate"), W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height);
-            Px.Text(Content, "Title", "회귀 결과", W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height, 24, Color.white);
-            Px.Text(Content, "Subtitle", "시간을 되감아 더 강한 회차로 넘어 갑니다", W.x, W.y + 22f, 512f, 20f, 13, Color.white);
+            var view = LoadView<RegressionScreenView>(RegressionScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[RegressionScreen] 화면 프리팹(Resources/" + RegressionScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/시간 회귀 창 만들기", this);
+                view = RegressionScreenView.CreateFromCode(Root);
+            }
+            if (view.ValueCount != values.Length || view.ButtonCount != 2)
+                Debug.LogError($"[RegressionScreen] 화면 프리팹 값 칸 {view.ValueCount}개·버튼 {view.ButtonCount}개 — 값 5개·버튼 2개(취소·회귀)여야 한다", view);
 
-            // 큰 막대 — 이전 최고 스테이지 ⟫ 회귀 후 스테이지
-            Px.Image(Content, "StageBar", PxArt.Get("Regression/info_large"), W.x + StageBar.x, W.y + StageBar.y, StageBar.width, StageBar.height);
-            Line(StageBar, "LabelFrom", "이전 최고 스테이지", 82f, 8f, 160f, LabelH, 11);
-            values[0] = Line(StageBar, "ValueFrom", "", 82f, 33f, 160f, ValueH, 20);
-            Line(StageBar, "Arrow", ">>>", 200f, 24f, 60f, 24f, 20);
-            Line(StageBar, "LabelTo", "회귀 후 스테이지", 320f, 8f, 160f, LabelH, 11);
-            values[1] = Line(StageBar, "ValueTo", "", 320f, 33f, 160f, ValueH, 20);
-
-            // 큰 막대 — 획득한 파편
-            Px.Image(Content, "ShardBar", PxArt.Get("Regression/info_large"), W.x + ShardBar.x, W.y + ShardBar.y, ShardBar.width, ShardBar.height);
-            Line(ShardBar, "LabelShard", "획득한 파편", 200f, 9f, 160f, LabelH, 11);
-            values[2] = Line(ShardBar, "ValueShard", "", 200f, 31f, 200f, ValueH, 20);
-
-            // 작은 막대 둘 — 왼쪽 아이콘(32×32 1:1), 위 이름, 아래 값
-            SmallBar(LevelBar, "Level", "Icons/star", "최고 레벨", 3);
-            SmallBar(KillBar, "Kill", "Icons/skull", "총 처치 수", 4);
-
-            AddNav(Px.TextButton(Content, "Cancel", PxArt.Get("Regression/button"), W.x + CancelBox.x, W.y + CancelBox.y, CancelBox.width,
-                                 CancelBox.height, "취소", 13, Color.white, Close));
-            ok = AddNav(Px.TextButton(Content, "Ok", PxArt.Get("Regression/button"), W.x + OkBox.x, W.y + OkBox.y, OkBox.width,
-                                      OkBox.height, "회귀", 13, Color.white, Regress));
-            okLabel = ok.Inner.GetComponentInChildren<Text>();
-        }
-
-        void SmallBar(Rect bar, string key, string icon, string label, int valueIndex)
-        {
-            Px.Image(Content, key + "Bar", PxArt.Get("Regression/info_small"), W.x + bar.x, W.y + bar.y, bar.width, bar.height);
-            Px.Image(Content, key + "Icon", PxArt.Get(icon), W.x + bar.x + 6f, W.y + bar.y + 8f, 32f, 32f);
-            Line(bar, key + "Label", label, 108f, 9f, 130f, LabelH + 2f, 13);
-            values[valueIndex] = Line(bar, key + "Value", "", 112f, 31f, 130f, ValueH, 20);
+            for (int i = 0; i < values.Length; i++) values[i] = view.Value(i);
+            AddNav(view.WireRegressionButton(RegressionScreenView.Slot.Cancel, Close));
+            ok = AddNav(view.WireRegressionButton(RegressionScreenView.Slot.Ok, Regress));
+            okLabel = view.OkLabel;
         }
 
         /// <summary>테스트용 — 값 글자(0 이전 최고 스테이지 · 1 회귀 후 스테이지 · 2 획득한 파편 · 3 최고 레벨 · 4 총 처치 수).</summary>

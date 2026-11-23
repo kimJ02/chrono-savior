@@ -288,6 +288,49 @@ public class UiFigmaUpdateTests
         reg.HideForCapture();
     }
 
+    /// <summary>
+    /// 프리팹 UI 4호(2026-11-23) — 시간 회귀 창 모양은 프리팹(`Resources/UI/Views/RegressionScreenView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/시간 회귀 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Regression_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<RegressionScreenView>(RegressionScreenView.ResourcePath),
+                         "시간 회귀 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/시간 회귀 창 만들기");
+        var reg = pc.GetComponent<RegressionScreen>();
+        reg.ShowForCapture();
+        yield return null;
+        Assert.IsTrue(reg.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, reg.Root.GetComponentsInChildren<RegressionScreenView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(2, reg.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 둘(취소·회귀)뿐 — 두 벌로 생기지 않는다");
+        reg.HideForCapture();
+    }
+
+    /// <summary>
+    /// 시간 회귀 창 버튼이 예전과 같은 순서·글자·동작이다(프리팹이든 대체 코드 모양이든) — 키보드 순서 취소(0) → 회귀(1),
+    /// 처음엔 회귀를 고르고, 새 프로필(파편 0·날짜 남음)이면 회귀 버튼은 "회귀 불가"로 못 누른다. 취소는 창을 닫는다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Regression_ButtonsKeepOrderAndActions()
+    {
+        GameState.Set(GameScene.Lobby);
+        var reg = pc.GetComponent<RegressionScreen>();
+        RegressionScreen.Open();
+        yield return null;
+        Assert.IsTrue(reg.IsShown, "로비에서 열면 보인다");
+        Assert.AreEqual(1, reg.NavIndex, "처음엔 회귀 버튼");
+        Find(reg, "Cancel").OnHover?.Invoke();
+        Assert.AreEqual(0, reg.NavIndex, "취소 = 0번");
+        Find(reg, "Ok").OnHover?.Invoke();
+        Assert.AreEqual(1, reg.NavIndex, "회귀 = 1번");
+        Assert.AreEqual("회귀 불가", Find(reg, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "새 프로필은 회귀 불가");
+        Assert.IsFalse(Find(reg, "Ok").Interactable, "회귀 불가면 못 누른다");
+
+        Find(reg, "Cancel").Click();
+        Assert.IsFalse(RegressionScreen.IsOpen, "취소는 창을 닫는다");
+    }
+
     static string TextOf(PxScreen s, string name)
     {
         foreach (var t in s.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true)) if (t.name == name) return t.text;

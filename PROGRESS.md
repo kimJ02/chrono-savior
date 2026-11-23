@@ -309,6 +309,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (154)** — **[사용자 세션] 프리팹 UI 4호: 시간 회귀 창(`RegressionScreen`) — `feature/ui-prefab-regression`**(1~3호(151~153)와 같은 방식).
+  - 모양(어두운 막·창 틀·제목판·부제·큰 막대 둘·작은 막대 둘(아이콘)·취소/회귀 버튼)은 프리팹 `Resources/UI/Views/RegressionScreenView`. 창 안 요소는 전부 `Window`(512×304) 아래 창 왼쪽 위 기준으로 놓아 **`Window` 하나를 옮기면 창 전체가 움직인다**(예전엔 판 기준 좌표에 창 위치를 더해 놓았다 — 화면상 위치는 같다).
+    값(이전 최고·회귀 후 스테이지·파편·최고 레벨·처치 수)·회귀 버튼 글자/눌림 가능·동작(취소 = 닫기, 회귀 = `DoRegression` + 저장 + 알림)·←/→ 순서(취소 → 회귀)는 코드(`RegressionScreen`). 공개 API(`Open`·`Close`·`IsOpen`·`ValueText`·`HighestClearedLabel` 등) 그대로.
+  - 파일별: `UI/Screens/RegressionScreen.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/RegressionScreenView.cs`(값 글자 5·버튼 2·회귀 글자 참조, `WireRegressionButton`, 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/시간 회귀 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 버튼 순서·글자·취소 동작) · `CreationOwnershipTests`·`OriginalFidelityTests`(`RegressionScreenView`·`WireRegressionButton`).
+  - ⚠️ 버튼 이름 `Cancel`·`Ok`는 바꾸지 말 것(테스트가 이름으로 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/RegressionScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **620 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 로비 "환생" 건물로 연 창의 모양·값·←/→·Enter/Z·마우스·ESC/취소 닫기, 프리팹 편집(`Window` 이동) 반영 확인. 회귀 실행 자체는 진행을 바꾸므로 손으로 누르지 않았다(코드 경로는 그대로).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
 - **2026-11-23 (153)** — **[사용자 세션] 프리팹 UI 3호: 타이틀(`TitleMenu`) — `feature/ui-prefab-title`**(1·2호(151·152)와 같은 방식).
   - 모양(검은 여백·배경·로고·메뉴 판 넷·◆ 커서, 메뉴 글자 색 두 가지·◆ 간격)은 프리팹 `Resources/UI/Views/TitleMenuView`. 메뉴 판 넷은 예전엔 for문으로 지었는데 이제 프리팹에 하나씩 놓여 따로 고칠 수 있다.
     동작(메뉴별 할 일 — 새 원정·불러오기는 세이브 슬롯 창, 설정, 나가기)·↑/↓ 순서·고른 메뉴 색칠·◆ 위치 계산은 코드(`TitleMenu`). ◆는 판 자리(앵커 왼쪽 위)와 글자 폭으로 계산하므로 판을 옮겨도 따라간다.
