@@ -183,10 +183,6 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
-- **[2026-11-22, 프리팹 UI 시범] 일시정지 화면 — 남은 손 검증.** 프리팹 생성·컴파일·PlayMode는 끝(2026-11-23, 로그 (151)).
-  남은 것: ① Play → 사냥 중 ESC → ←/→·Enter/Z·마우스로 ▶ 계속·⚙ 설정·↩ 로비로 ② 겉모습이 예전과 같은지(`CaptureUiPreview` "일시정지" 전후)
-  ③ 프리팹에서 버튼 위치·그림을 바꿔 게임에 반영되는지. 통과하면 다음 화면을 고른다(분석 순서: CommonPopup → TitleMenu → RegressionScreen …).
-
 - **[2026-11-23 발견, `main` 150 병합에서 넘어옴] PlayMode 실패 4건 — 코드 수치가 바뀌었는데 테스트 기대값이 옛 값.** 프리팹 UI 브랜치와 무관(그 브랜치에선 안 고침).
   테스트를 새 값에 맞출지, 코드를 되돌릴지는 수치를 바꾼 사람이 정할 것:
   · `UiFigmaUpdateTests.Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock` — 노말 확률 기대 "55%", 실제 "70%"(`Core/ItemDatabase.Weight` Common=70)
@@ -319,7 +315,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   - 프리팹(`Assets/Resources/UI/Views/PauseMenuView.prefab` + 폴더 `.meta`)은 사용자가 에디터 메뉴로 만들었다(2026-11-23, YAML 손작성 없음).
   - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **613 통과 / 4 실패 / 2 건너뜀** — 새 테스트 2개(`PauseMenu_LayoutComesFromViewPrefab`·`PauseMenu_ButtonsKeepOrderAndActions`)와 `CreationOwnershipTests`·`OriginalFidelityTests` 통과.
     실패 4건은 이 브랜치와 무관한 `main`(150 병합, 테스트 미실행) 쪽 — 아래 "확인 필요"에 정리. 건너뜀 2건은 성능 측정(`Perf/SlotPerfProbe` `Slot3_*`).
-    **아직 미검증**: 실제 플레이에서 ESC → ←/→·Enter/Z·마우스로 버튼 셋 동작, 겉모습 전후 비교(캡처), 프리팹을 에디터에서 고쳐 게임에 반영되는지.
+    손 검증(사용자, 2026-11-23)도 끝: 실제 플레이에서 ESC → ←/→·Enter/Z·마우스로 버튼 셋 동작, 겉모습, 프리팹을 에디터에서 고쳐 게임에 반영되는 것까지 확인.
+  - **`main`에 병합(2026-11-23, fast-forward — `main`이 브랜치 시점 8629021에서 안 움직여 충돌 없음).** 사용자 결정: 실패 4건(`main`에서 넘어온 것, 위 "확인 필요")은 그대로 두고 합친다 — "병합 전 전체 테스트 통과" 규칙의 예외, 이 브랜치가 만든 실패는 0건.
   - 되돌리기: 프리팹을 지우면 예전 코드 모양으로 돌아간다(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-22 (150)** — **[사용자 세션] feature/relics(유물·세이브 슬롯·챕터 구조·최적화) ↔ 팀원 main(144~149 드라이브 새 그림 창들) 병합.**
   - 충돌 정리: 전투 HUD는 팀원 새 배치(체력 막대·골드·보스 이름 줄) 위에 스테이지 표시("1-3 토벌 37/100", 중간 보스전 "1-5 중간 보스")와 값이 바뀔 때만 갱신을 얹었다.
