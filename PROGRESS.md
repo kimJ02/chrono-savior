@@ -309,6 +309,17 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (155)** — **[사용자 세션] 프리팹 UI 5호: 설정 창(`SettingsWindow`) — `feature/ui-prefab-settings`**(1~4호(151~154)와 같은 방식).
+  - 모양(어두운 막·창 틀·제목판·X·설정 줄 다섯·◀▶·음량 막대 셋(바탕·채움·손잡이·누르기 칸 `PxSlider`)·숫자칸·나눔선·적용, 줄 이름 색 두 가지)은 프리팹 `Resources/UI/Views/SettingsWindowView`.
+    줄마다 `Row0`~`Row4`(480×32) 아래 줄 왼쪽 위 기준으로 놓아 **줄 하나를 통째로 옮길 수 있다**(예전엔 판 기준 좌표 — 화면상 위치는 같다). 음량 손잡이는 같은 줄 막대 바탕(`VolumeBack`)의 자리·폭을 읽어 놓으므로 막대를 옮겨도 따라간다.
+    값(화면 모드·해상도·음량 숫자·채움·손잡이)·고른 줄 색칠·동작(X/적용 = 닫기, ◀▶ = 값 바꾸기, 막대 = 누르고 끌기)·키보드(↑/↓ 줄, ←/→ 값)는 코드(`SettingsWindow`). 공개 API(`Open`·`Close`·`IsOpen`·`VolumeShown`·테스트 창구) 그대로 — 단 `KnobXForTest`는 이제 **줄 안 좌표**(기존 테스트는 상대 비교라 영향 없음).
+  - 파일별: `UI/Screens/SettingsWindow.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/SettingsWindowView.cs`(줄 이름·값·◀▶·음량·X·적용 참조, 색 칸, `WireSettings`·`ShowVolume`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/설정 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 음량 막대·X 동작) · `CreationOwnershipTests`(생성 담당 `SettingsWindow.cs` → `SettingsWindowView.cs`) · `OriginalFidelityTests`(`WireSettings`).
+  - ⚠️ 버튼 이름 `Apply`·`Close`는 바꾸지 말 것(테스트가 이름으로 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/SettingsWindowView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **622 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 설정 창 모양·↑/↓(줄 색)·←/→·◀▶·음량 막대 끌기·X/적용/ESC 닫기, 프리팹 편집(줄 이동) 반영 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
 - **2026-11-23 (154)** — **[사용자 세션] 프리팹 UI 4호: 시간 회귀 창(`RegressionScreen`) — `feature/ui-prefab-regression`**(1~3호(151~153)와 같은 방식).
   - 모양(어두운 막·창 틀·제목판·부제·큰 막대 둘·작은 막대 둘(아이콘)·취소/회귀 버튼)은 프리팹 `Resources/UI/Views/RegressionScreenView`. 창 안 요소는 전부 `Window`(512×304) 아래 창 왼쪽 위 기준으로 놓아 **`Window` 하나를 옮기면 창 전체가 움직인다**(예전엔 판 기준 좌표에 창 위치를 더해 놓았다 — 화면상 위치는 같다).
     값(이전 최고·회귀 후 스테이지·파편·최고 레벨·처치 수)·회귀 버튼 글자/눌림 가능·동작(취소 = 닫기, 회귀 = `DoRegression` + 저장 + 알림)·←/→ 순서(취소 → 회귀)는 코드(`RegressionScreen`). 공개 API(`Open`·`Close`·`IsOpen`·`ValueText`·`HighestClearedLabel` 등) 그대로.

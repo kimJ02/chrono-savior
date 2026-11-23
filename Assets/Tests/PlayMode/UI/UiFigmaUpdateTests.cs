@@ -461,6 +461,56 @@ public class UiFigmaUpdateTests
         finally { GameSettings.BgmVolume = bgm; SettingsWindow.Close(); }
     }
 
+    /// <summary>
+    /// 프리팹 UI 5호(2026-11-23) — 설정 창 모양은 프리팹(`Resources/UI/Views/SettingsWindowView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/설정 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Settings_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<SettingsWindowView>(SettingsWindowView.ResourcePath),
+                         "설정 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/설정 창 만들기");
+        try
+        {
+            var settings = pc.GetComponent<SettingsWindow>();
+            SettingsWindow.Open();
+            yield return null;
+            Assert.IsTrue(settings.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            Assert.AreEqual(1, settings.Root.GetComponentsInChildren<SettingsWindowView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+            Assert.AreEqual(6, settings.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 여섯(X·적용·◀▶ 둘씩)뿐 — 두 벌로 생기지 않는다");
+            Assert.AreEqual(3, settings.Root.GetComponentsInChildren<PxSlider>(true).Length, "음량 막대 셋뿐");
+        }
+        finally { SettingsWindow.Close(); }
+    }
+
+    /// <summary>
+    /// 설정 창 음량 막대·X가 예전과 같이 동작한다(프리팹이든 대체 코드 모양이든) — 배경음 막대를 누르면(값 7) 배경음이 7·숫자 "70"이 되고
+    /// 그 줄(배경음, 넷째)이 골라진다. X는 창을 닫는다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Settings_VolumeSliderAndClose_Work()
+    {
+        int bgm = GameSettings.BgmVolume;
+        try
+        {
+            var settings = pc.GetComponent<SettingsWindow>();
+            SettingsWindow.Open();
+            yield return null;
+            var sliders = settings.Root.GetComponentsInChildren<PxSlider>(true);
+            Assert.AreEqual(3, sliders.Length);
+            Assert.AreEqual(GameSettings.VolumeMax, sliders[1].Steps, "막대 칸 수 = 음량 최대");
+            sliders[1].OnChange?.Invoke(7); // 둘째 막대 = 배경음
+            yield return null;
+            Assert.AreEqual(7, GameSettings.BgmVolume, "배경음 막대를 누른 값으로");
+            Assert.AreEqual("70", settings.ValueTextForTest(3), "숫자는 ×10");
+
+            Find(settings, "Close").Click();
+            Assert.IsFalse(SettingsWindow.IsOpen, "X는 창을 닫는다");
+        }
+        finally { GameSettings.BgmVolume = bgm; SettingsWindow.Close(); }
+    }
+
     /// <summary>마스터 볼륨(2026-11-16 새 기능) — 0~10, 효과음 등 모든 소리에 곱하는 배율.</summary>
     [Test]
     public void MasterVolume_ClampsAndScales()
