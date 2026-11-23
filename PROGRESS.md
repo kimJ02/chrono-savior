@@ -309,6 +309,16 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (153)** — **[사용자 세션] 프리팹 UI 3호: 타이틀(`TitleMenu`) — `feature/ui-prefab-title`**(1·2호(151·152)와 같은 방식).
+  - 모양(검은 여백·배경·로고·메뉴 판 넷·◆ 커서, 메뉴 글자 색 두 가지·◆ 간격)은 프리팹 `Resources/UI/Views/TitleMenuView`. 메뉴 판 넷은 예전엔 for문으로 지었는데 이제 프리팹에 하나씩 놓여 따로 고칠 수 있다.
+    동작(메뉴별 할 일 — 새 원정·불러오기는 세이브 슬롯 창, 설정, 나가기)·↑/↓ 순서·고른 메뉴 색칠·◆ 위치 계산은 코드(`TitleMenu`). ◆는 판 자리(앵커 왼쪽 위)와 글자 폭으로 계산하므로 판을 옮겨도 따라간다.
+  - 파일별: `UI/Screens/TitleMenu.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`; 맨 위 설명에 "11-19부터 새 원정·불러오기는 슬롯 창" 덧붙임) · **새** `UI/Screens/TitleMenuView.cs`(메뉴 판·글자·◆ 참조, 글자 색·◆ 간격 칸, `WireTitleButton`·`PlaceCursor`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/타이틀 화면 만들기`, 그림 없이 색만 칠하는 칸 목록을 화면별로) · 테스트 `PixelUiTests`(+2: 프리팹에서 한 벌만 / 메뉴 순서·글자·동작·◆ 따라감 — 좌표는 고정하지 않고 상대 위치만) · `CreationOwnershipTests`(생성 담당 `TitleMenu.cs` → `TitleMenuView.cs`) · `OriginalFidelityTests`(`WireTitleButton`·`PlaceCursor`).
+  - ⚠️ 메뉴 판은 판(Board)의 직접 자식·왼쪽 위 기준(앵커·피벗 0,1)으로 둘 것, 이름 `Cursor`는 바꾸지 말 것(테스트가 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/TitleMenuView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **618 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 타이틀 모양·↑/↓(◆·노란 글자 따라감)·Enter/Z·마우스로 메뉴 넷 동작, 프리팹 편집 반영 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
 - **2026-11-23 (152)** — **[사용자 세션] 프리팹 UI 2호: 공용 팝업(`CommonPopup`) — `feature/ui-prefab-popup`**(일시정지 시범(151)과 같은 방식, 사용자 "다음 화면 CommonPopup").
   - 모양(반투명 막·창 틀·X·제목/내용 자리·버튼 셋)은 프리팹 `Resources/UI/Views/CommonPopupView`, 글자 채우기·묻기/알림에 따른 버튼 켜고 끄기·콜백 한 번만·X/ESC·키보드 순서(취소 → 큰 확인 → 확인, X는 순서 밖)는 코드(`CommonPopup`). 공개 API(`Confirm`·`Alert`·`AlertIfTransitionFails`)와 테스트 창구(`CancelShown`·`WideShown`·`OkShown`·`DismissForTest`) 그대로.
   - 파일별: `UI/Screens/CommonPopup.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/CommonPopupView.cs`(글자 자리·버튼·버튼 글자 참조, `WirePopupButton`, Figma 좌표는 `CreateFromCode`로 옮김) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/공용 팝업 만들기` 추가, 화면 목록으로 정리 — 배치 `RunBatch`는 없는 것만 만든다) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 글자·키보드 순서) · `CreationOwnershipTests`·`OriginalFidelityTests`(`CommonPopupView`·`WirePopupButton` 등록).

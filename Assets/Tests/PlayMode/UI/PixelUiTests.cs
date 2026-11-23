@@ -157,6 +157,64 @@ public class PixelUiTests
         yield return null;
     }
 
+    /// <summary>
+    /// 프리팹 UI 3호(2026-11-23) — 타이틀 모양은 프리팹(`Resources/UI/Views/TitleMenuView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/타이틀 화면 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Title_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<TitleMenuView>(TitleMenuView.ResourcePath),
+                         "타이틀 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/타이틀 화면 만들기");
+        var title = pc.GetComponent<TitleMenu>();
+        GameState.Set(GameScene.Title);
+        yield return null;
+        Assert.IsTrue(title.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, title.Root.GetComponentsInChildren<TitleMenuView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(4, title.Root.GetComponentsInChildren<PxButton>(true).Length, "메뉴 판 넷뿐 — 두 벌로 생기지 않는다");
+    }
+
+    /// <summary>
+    /// 타이틀 메뉴가 예전과 같은 순서·글자·동작이고(프리팹이든 대체 코드 모양이든) ◆가 고른 메뉴를 따라간다 —
+    /// 마우스를 올리면 그 메뉴가 키보드 선택이 되고(↑/↓ 순서 새 원정 → 불러오기 → 설정 → 나가기), ◆는 그 판의 세로 가운데·글자 왼쪽에 붙는다.
+    /// "설정"은 설정 창을 연다. 좌표 자체는 고정하지 않는다(프리팹에서 옮겨도 통과해야 하므로 상대 위치만 본다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Title_MenusKeepOrderAndActions_CursorFollows()
+    {
+        var title = pc.GetComponent<TitleMenu>();
+        GameState.Set(GameScene.Title);
+        yield return null;
+
+        string[] expected = { "새 원정", "불러오기", "설정", "나가기" };
+        var buttons = title.Root.GetComponentsInChildren<PxButton>(true);
+        Assert.AreEqual(4, buttons.Length);
+        RectTransform cursor = null;
+        foreach (var rt in title.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Cursor") cursor = rt;
+        Assert.IsNotNull(cursor, "◆ 커서");
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Assert.AreEqual(expected[i], buttons[i].GetComponentInChildren<UnityEngine.UI.Text>(true).text, $"메뉴 {i} 글자");
+            buttons[i].OnHover?.Invoke();
+            Assert.AreEqual(i, title.NavIndex, $"메뉴 {i}에 마우스를 올리면 키보드 선택도 {i}번");
+
+            var plate = (RectTransform)buttons[i].transform;
+            float plateMid = -plate.anchoredPosition.y + plate.sizeDelta.y / 2f;
+            float cursorMid = -cursor.anchoredPosition.y + cursor.sizeDelta.y / 2f;
+            Assert.AreEqual(plateMid, cursorMid, 1f, $"◆가 메뉴 {i} 판의 세로 가운데");
+            Assert.Less(cursor.anchoredPosition.x + cursor.sizeDelta.x, plate.anchoredPosition.x + plate.sizeDelta.x / 2f,
+                        $"◆가 메뉴 {i} 글자 왼쪽");
+        }
+
+        Assert.IsFalse(SettingsWindow.IsOpen);
+        buttons[2].Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "설정은 설정 창을 연다");
+        SettingsWindow.Close();
+        yield return null;
+    }
+
     [UnityTest]
     public IEnumerator Settings_TakesEscapeFirst_SoPauseIsNotResumed()
     {

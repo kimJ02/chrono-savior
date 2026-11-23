@@ -6,7 +6,7 @@ using ChronoSavior.UI;
 namespace ChronoSavior.Editor
 {
     /// <summary>
-    /// 화면 모양 프리팹을 **Unity 에디터 API로** 만든다(2026-11-22~ 프리팹 UI 점진 전환 — 1호 일시정지, 2호 공용 팝업).
+    /// 화면 모양 프리팹을 **Unity 에디터 API로** 만든다(2026-11-22~ 프리팹 UI 점진 전환 — 1호 일시정지, 2호 공용 팝업, 3호 타이틀).
     /// 예전 코드 모양(각 View의 <c>CreateFromCode</c>, Figma 좌표)을 잠깐 지어 그대로 프리팹으로 저장한다 —
     /// 그래서 처음 만든 프리팹은 예전 화면과 같다. 프리팹 YAML을 손으로 쓰지 않는다(`HANDOFF.md`의 fileID 사고 참고).
     ///
@@ -22,25 +22,38 @@ namespace ChronoSavior.Editor
         {
             public string Label, AssetPath;
             public System.Func<Transform, Component> Build;
+            /// <summary>그림 없이 색만 칠하는 칸(막·여백·반투명 판) — 그림 빠짐 검사에서 뺀다.</summary>
+            public string[] ColorOnly;
         }
 
         static readonly ViewSpec Pause = new ViewSpec
         {
             Label = "일시정지 화면", AssetPath = PauseMenuView.AssetPath, Build = PauseMenuView.CreateFromCode,
+            ColorOnly = new[] { "Backdrop" },
         };
 
         static readonly ViewSpec Popup = new ViewSpec
         {
             Label = "공용 팝업", AssetPath = CommonPopupView.AssetPath, Build = CommonPopupView.CreateFromCode,
+            ColorOnly = new[] { "Backdrop" },
         };
 
-        static readonly ViewSpec[] All = { Pause, Popup };
+        static readonly ViewSpec Title = new ViewSpec
+        {
+            Label = "타이틀 화면", AssetPath = TitleMenuView.AssetPath, Build = TitleMenuView.CreateFromCode,
+            ColorOnly = new[] { "Letterbox", "Menu0", "Menu1", "Menu2", "Menu3" }, // 검은 여백 · 반투명 메뉴 판
+        };
+
+        static readonly ViewSpec[] All = { Pause, Popup, Title };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
 
         [MenuItem("ChronoSavior/UI 프리팹/공용 팝업 만들기")]
         public static void BuildCommonPopupFromMenu() => BuildFromMenu(Popup);
+
+        [MenuItem("ChronoSavior/UI 프리팹/타이틀 화면 만들기")]
+        public static void BuildTitleMenuFromMenu() => BuildFromMenu(Title);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()
@@ -76,7 +89,7 @@ namespace ChronoSavior.Editor
             try
             {
                 var view = spec.Build(temp.transform);
-                if (!CheckArt(view)) return false;
+                if (!CheckArt(view, spec.ColorOnly)) return false;
                 view.transform.SetParent(null, false);
                 var saved = PrefabUtility.SaveAsPrefabAsset(view.gameObject, spec.AssetPath, out bool success);
                 Object.DestroyImmediate(view.gameObject);
@@ -95,12 +108,12 @@ namespace ChronoSavior.Editor
         }
 
         /// <summary>그림이 빠진 채(분홍 칸) 프리팹이 되지 않게 — 그림 자리(이름 있는 Image)는 전부 Figma 그림이 있어야 한다.</summary>
-        static bool CheckArt(Component view)
+        static bool CheckArt(Component view, string[] colorOnly)
         {
             bool ok = true;
             foreach (var img in view.GetComponentsInChildren<UnityEngine.UI.Image>(true))
             {
-                if (img.name == "Backdrop") continue; // 한 색 막 — 그림 없음이 정상
+                if (colorOnly != null && System.Array.IndexOf(colorOnly, img.name) >= 0) continue; // 색만 칠하는 칸 — 그림 없음이 정상
                 if (img.sprite == null)
                 {
                     Debug.LogError("[BuildUiViewPrefabs] 그림이 없다: " + img.name + " — Resources/Art/Figma/UI 확인", img);

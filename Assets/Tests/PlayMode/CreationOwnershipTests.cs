@@ -28,7 +28,7 @@ public class CreationOwnershipTests
         EnemyAssembly,
         /// <summary>D. 그림만 있는 일회성 효과·효과 풀(판정 없음). 정당한 코드 생성.</summary>
         VisualEffect,
-        /// <summary>E. UI를 코드로 짓기(Figma 좌표 그대로). 정당한 코드 생성. 2026-11-22부터 화면 모양을 프리팹으로 옮기는 중(1호 PauseMenu, 2호 CommonPopup) —
+        /// <summary>E. UI를 코드로 짓기(Figma 좌표 그대로). 정당한 코드 생성. 2026-11-22부터 화면 모양을 프리팹으로 옮기는 중(1호 PauseMenu, 2호 CommonPopup, 3호 TitleMenu) —
         /// 옮긴 화면은 프리팹이 원본이고, 코드 모양은 프리팹을 처음 만들 때·프리팹이 없을 때의 대체로만 남는다.</summary>
         UiBuild,
         /// <summary>F. 크기 입력으로 그림을 깔기(땅 타일·발판·배경). 정당한 코드 생성.</summary>
@@ -92,7 +92,7 @@ public class CreationOwnershipTests
         ["UI/Screens/StageSelectScreen.cs"] = (Kind.UiBuild, "스테이지 칸 버튼"),
         ["UI/Screens/RelicHudStrip.cs"]    = (Kind.UiBuild, "전투 화면 유물 칸의 마우스 올림 알림(RelicCellHover, 2026-11-19)"),
         ["UI/Screens/SettingsWindow.cs"]   = (Kind.UiBuild, "음량 막대 누르기 칸(PxSlider) — 2026-11-16 Figma 새 설정창, 다른 화면처럼 코드로 짓는 UI 부품"),
-        ["UI/Screens/TitleMenu.cs"]        = (Kind.UiBuild, "타이틀 메뉴 버튼"),
+        ["UI/Screens/TitleMenuView.cs"]    = (Kind.UiBuild, "타이틀 모양(메뉴 판 버튼) 짓기(CreateFromCode) — 프리팹을 처음 만드는 에디터 메뉴와, 프리팹이 없을 때의 대체 전용(2026-11-23 프리팹 UI 3호, 예전 TitleMenu.cs)"),
         ["UI/Lobby/LobbyWorld.cs"]         = (Kind.UiBuild, "로비 건물(월드 캔버스, 건물 표 Buildings에서 짓는다 — 건물 그림이 생기면 씬/프리팹으로). 카메라 기준점은 씬에 놓인다"),
 
         // F. 크기 입력으로 그림 깔기

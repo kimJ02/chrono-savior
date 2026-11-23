@@ -381,6 +381,8 @@ public class OriginalFidelityTests
             ("LoadView",                   "PxScreen.cs"),         // PauseMenu.Build
             ("WireButton",                 "PauseMenuView.cs"),    // PauseMenu.Build(안 부르면 버튼이 눌려도 아무 일도 안 한다)
             ("WirePopupButton",            "CommonPopupView.cs"),  // CommonPopup.Build(안 부르면 팝업 버튼이 눌려도 아무 일도 안 한다)
+            ("WireTitleButton",            "TitleMenuView.cs"),    // TitleMenu.Build(안 부르면 타이틀 메뉴가 눌려도 아무 일도 안 한다)
+            ("PlaceCursor",                "TitleMenuView.cs"),    // TitleMenu.OnNavChanged(안 부르면 ◆가 안 따라온다)
         };
 
         var scriptFiles = Directory.GetFiles(
