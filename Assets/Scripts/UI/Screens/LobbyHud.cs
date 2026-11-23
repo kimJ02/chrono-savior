@@ -23,58 +23,59 @@ namespace ChronoSavior.UI
         protected override bool WantsVisible => GameState.Current == GameScene.Lobby;
         protected override bool TakesKeys => false;
 
-        static readonly Color Gold = Px.Hex(0xfac70e);
-        static readonly Color Plate = new Color(0f, 0f, 0f, 0.38f);
-        static readonly Color ExpBorder = Px.Hex(0x472e17), ExpBack = Px.Hex(0x57306e), ExpFill = Px.Hex(0x44ff00);
-        static readonly Rect Minimap = new Rect(504f, 312f, 128f, 32f);
-
+        // 모양(좌표·색)은 프리팹 LobbyHudView에 있다(2026-11-23 프리팹 UI 10호). 여기엔 글자 내용·자리 계산·버튼 동작만.
+        LobbyHudView view;
         Text doom, region, who, money, prompt;
         Text[] buildingNames, buildingDoors;
         Image expFill, playerDot;
         static readonly string[] CharacterNames = { "마법사", "메카닉", "살수", "드루이드" }; // '살수' = 예전 섬영(화면 이름만, 2026-11-07)
 
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
+
+        /// <summary>
+        /// 모양은 프리팹(<see cref="LobbyHudView"/>, `Resources/UI/Views/LobbyHudView`)이 원본이다(2026-11-23 프리팹 UI 10호).
+        /// 여기선 조각을 받아 오고, 빠른 버튼 셋에 동작을 잇고, 미니맵 건물 칸·건물 글씨를 견본에서 건물 수만큼 복제한다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
-            Px.Fill(Content, "DoomPlate", Plate, 190f, 4f, 260f, 38f);
-            doom = Px.Text(Content, "Doom", "", 190f, 6f, 260f, 20f, 16, Gold).WithOutline(Px.Ink);
-            region = Px.Text(Content, "Region", "", 190f, 26f, 260f, 14f, 10, Color.white);
+            view = LoadView<LobbyHudView>(LobbyHudView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[LobbyHud] 화면 프리팹(Resources/" + LobbyHudView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/로비 HUD 만들기", this);
+                view = LobbyHudView.CreateFromCode(Root);
+            }
+            if (view.quickButtons.Length != 3)
+                Debug.LogError($"[LobbyHud] 화면 프리팹 빠른 버튼 수가 다르다({view.quickButtons.Length}) — 3(캐릭터·업적·설정)이어야 한다", view);
 
-            Px.Fill(Content, "InfoPlate", Plate, 6f, 6f, 176f, 38f);
-            who = Px.Text(Content, "Who", "", 12f, 8f, 168f, 18f, 12, Color.white, TextAnchor.MiddleLeft);
-            money = Px.Text(Content, "Money", "", 12f, 26f, 168f, 14f, 10, Gold, TextAnchor.MiddleLeft);
+            doom = view.doom;
+            region = view.region;
+            who = view.who;
+            money = view.money;
+            prompt = view.prompt;
+            expFill = view.expFill;
+            playerDot = view.playerDot;
 
-            QuickButton(0, "캐릭터", CharacterSelectScreen.Open);
-            QuickButton(1, "업적", AchievementsScreen.Open);
-            QuickButton(2, "설정", SettingsWindow.Open);
+            System.Action[] quick = { CharacterSelectScreen.Open, AchievementsScreen.Open, SettingsWindow.Open };
+            for (int i = 0; i < quick.Length && i < view.quickButtons.Length; i++) view.quickButtons[i].Wire(quick[i]);
 
-            Px.Fill(Content, "MinimapPlate", Plate, Minimap.x, Minimap.y, Minimap.width, Minimap.height);
-            Px.Fill(Content, "MinimapGround", Px.Ink, Minimap.x + 2f, Minimap.y + 24f, Minimap.width - 4f, 1f);
-            for (int i = 0; i < LobbyWorld.Buildings.Length; i++)
-                Px.Fill(Content, "MinimapBuilding", Px.Hex(0xc7cfdd), Minimap.x + MapX(LobbyWorld.XOf(i)) - 2f, Minimap.y + 16f, 5f, 8f);
-            playerDot = Px.Fill(Content, "MinimapPlayer", Color.white, 0f, 0f, 2f, 2f);
-
-            prompt = Px.Text(Content, "Prompt", "", 170f, 292f, 300f, 14f, 10, Gold).WithOutline(Px.Ink);
-
-            // 건물 글씨 — 월드 건물(LobbyWorld) 위에 화면 해상도로 겹쳐 그린다(월드에 그리면 늘어나 흐렸다, 사용자 2026-10-28).
+            // 미니맵 건물 칸 — 가로 자리만 건물 위치로(세로·크기는 견본)
             int n = LobbyWorld.Buildings.Length;
-            buildingNames = new Text[n];
-            buildingDoors = new Text[n];
+            var marks = LobbyHudView.Clone(view.buildingTemplate, n, "Building");
             for (int i = 0; i < n; i++)
             {
-                buildingNames[i] = Px.Text(Content, "BuildingName" + i, LobbyWorld.Buildings[i].Name, 0f, 0f, 80f, 12f, 8, Color.white).WithOutline(Px.Ink);
-                buildingDoors[i] = Px.Text(Content, "BuildingDoor" + i, "F / ↑", 0f, 0f, 80f, 10f, 6, Gold).WithOutline(Px.Ink);
+                if (marks[i] == null) continue;
+                var rt = (RectTransform)marks[i].transform;
+                rt.anchoredPosition = new Vector2(MapX(LobbyWorld.XOf(i)) - 2f, rt.anchoredPosition.y);
             }
 
-            Px.Fill(Content, "ExpBorder", ExpBorder, 0f, 356f, 640f, 4f);
-            Px.Fill(Content, "ExpBack", ExpBack, 1f, 357f, 638f, 2f);
-            expFill = Px.Fill(Content, "ExpFill", ExpFill, 1f, 357f, 0f, 2f);
-        }
-
-        void QuickButton(int i, string label, System.Action onClick)
-        {
-            var b = Px.TextButton(Content, "Quick" + i, PxArt.Sliced("Common/button", 4), 8f + i * 58f, 326f, 54f, 24f,
-                                  label, 10, Color.white, onClick);
-            b.Art.type = Image.Type.Sliced;
+            // 건물 글씨 — 월드 건물(LobbyWorld) 위에 화면 해상도로 겹쳐 그린다(월드에 그리면 늘어나 흐렸다, 사용자 2026-10-28). 자리는 매 프레임.
+            buildingNames = LobbyHudView.Clone(view.buildingNameTemplate, n, "BuildingName");
+            buildingDoors = LobbyHudView.Clone(view.buildingDoorTemplate, n, "BuildingDoor");
+            for (int i = 0; i < n; i++) if (buildingNames[i] != null) buildingNames[i].text = LobbyWorld.Buildings[i].Name;
         }
 
         /// <summary>
@@ -87,7 +88,8 @@ namespace ChronoSavior.UI
             Vector2 c = cam.transform.position;
             for (int i = 0; i < buildingNames.Length; i++)
             {
-                Place(buildingNames[i], LobbyWorld.LabelWorldPos(i, LobbyWorld.NameFromTop), c);
+                if (buildingNames[i] != null) Place(buildingNames[i], LobbyWorld.LabelWorldPos(i, LobbyWorld.NameFromTop), c);
+                if (buildingDoors[i] == null) continue;
                 Place(buildingDoors[i], LobbyWorld.LabelWorldPos(i, LobbyWorld.DoorFromTop), c);
                 // 그 건물 앞에 서 있으면 "F / ↑"는 숨긴다 — 글씨가 캐릭터 위에 겹치고, 아래쪽 큰 안내가 대신 뜬다.
                 buildingDoors[i].enabled = WorldView.Lobby == null || WorldView.Lobby.NearBuilding != i;
@@ -96,10 +98,11 @@ namespace ChronoSavior.UI
 
         static void Place(Text t, Vector2 world, Vector2 cam) => Px.PlaceAtWorld(t, world, cam);
 
-        static float MapX(float worldX)
+        /// <summary>월드 x → 미니맵 안 가로 자리(px, 미니맵 왼쪽 기준).</summary>
+        float MapX(float worldX)
         {
             float span = Mathf.Max(0.01f, FieldBounds.MaxX - FieldBounds.MinX);
-            return Mathf.Round((worldX - FieldBounds.MinX) / span * (Minimap.width - 4f)) + 2f;
+            return view.MinimapX((worldX - FieldBounds.MinX) / span);
         }
 
         protected override void Refresh()
@@ -114,15 +117,17 @@ namespace ChronoSavior.UI
 
             long need = PlayerProfile.RequiredExp(p.level);
             float ratio = need > 0 ? Mathf.Clamp01(p.exp / (float)need) : 0f;
-            ((RectTransform)expFill.transform).sizeDelta = new Vector2(Mathf.Round(ratio * 638f), 2f);
+            view.SetExp(ratio);
 
             // 로비 월드는 읽기 창구(`Systems/WorldView.Lobby`)로만 읽는다(2026-11-05 2b — 예전엔 태그로 캐릭터를 찾고 정적 Instance를 읽었다).
             var world = WorldView.Lobby;
             var avatar = world != null ? world.AvatarPosition : null;
             playerDot.enabled = avatar.HasValue;
             if (avatar.HasValue)
-                ((RectTransform)playerDot.transform).anchoredPosition =
-                    new Vector2(Minimap.x + MapX(avatar.Value.x) - 1f, -(Minimap.y + 22f));
+            {
+                var dot = (RectTransform)playerDot.transform;
+                dot.anchoredPosition = new Vector2(MapX(avatar.Value.x) - 1f, dot.anchoredPosition.y); // 세로는 프리팹 자리
+            }
 
             PlaceBuildingLabels();
 

@@ -312,6 +312,22 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (160)** — **[사용자 세션] 프리팹 UI 10호: 로비 HUD(`LobbyHud`) — `feature/ui-prefab-lobbyhud`**(1~9호와 같은 방식, 견본 복제는 7호 업적 창과 같은 방식).
+  - 모양(멸망 판·캐릭터 정보 판·빠른 버튼 셋·미니맵·건물 앞 안내·건물 글씨 견본·경험치 바)은 프리팹 `Resources/UI/Views/LobbyHudView`.
+    글자 내용(남은 기간·다음 원정·캐릭터·돈)·경험치 비율·미니맵 건물/캐릭터 점 가로 자리·건물 글씨 자리(매 프레임 월드 따라감)·빠른 버튼 동작은 그대로 코드(`LobbyHud`).
+  - 미니맵은 묶음 `Minimap`(판·땅 선·건물 견본 `BuildingTemplate`·캐릭터 점 `Player`, 안쪽 좌표는 미니맵 왼쪽 위 기준) — 묶음을 옮기면 통째로 움직인다. 건물 칸은 견본을 건물 수만큼 복제하고 **가로만** 코드가 정한다(세로·크기는 견본). 가로 범위 = 미니맵 폭 − 여백(`minimapInset`, 2)×2.
+  - 건물 이름·"F / ↑" 글씨는 견본(`BuildingNameTemplate`·`BuildingDoorTemplate`, 꺼 둔 채)을 건물 수만큼 복제해 견본 바로 뒤에 둔다(그리는 순서 유지). 자리는 매 프레임 코드가 월드 위치로 옮기므로 견본은 크기·글꼴·색만 쓰인다.
+  - 경험치 채움 폭 = 비율 × 바탕(`ExpBack`) 폭(예전엔 638 고정 — 폭을 안 바꾸면 같다).
+  - 테스트가 리플렉션으로 읽는 `playerDot`(`WorldViewTests`)·`Camera` 속성은 그대로.
+  - 파일별: `UI/Screens/LobbyHud.cs`(Build가 프리팹을 불러 연결·복제, `UsesViewPrefab`, 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/LobbyHudView.cs`(모양, `ButtonRef.Wire`·`Clone`·`MinimapX`·`SetExp`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Pixel/PxSlicedArt.cs`(9-슬라이스 그림을 프리팹에서 다시 만들기, 아래 1차 검증) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/로비 HUD 만들기`, 색만 칠한 칸 9개) · 테스트 `PixelUiTests`(+2: 프리팹·건물 수만큼 복제·견본 꺼짐·빠른 버튼 셋이 창을 엶 / 경험치 바 = 바탕 폭 × 비율·미니맵 건물 칸이 미니맵 안) · `CreationOwnershipTests`(`LobbyHudView.cs`, 복제 포함) · `OriginalFidelityTests`(`LobbyHudView.Clone`·`MinimapX`·`SetExp`).
+  - ⚠️ 견본 셋은 **꺼 둔 채**, 이름 그대로(`BuildingTemplate`·`BuildingNameTemplate`·`BuildingDoorTemplate`). 글씨 견본은 판(Board)의 직접 자식으로(월드 위치 계산이 판 좌표). 빠른 버튼 순서(캐릭터·업적·설정)는 코드와 짝.
+  - **1차 검증(2026-11-23, 사용자 에디터)**: PlayMode 632 / 3 / 2 통과, 창은 열리는데 **빠른 버튼 셋이 흰 네모**로 보였다.
+    원인: 버튼 그림이 9-슬라이스(`PxArt.Sliced`)인데 이건 **실행 중에 만든 그림**이라 프리팹에 저장되지 않는다(저장하면 그림 칸이 비어 흰 네모). 그림 확인(`CheckArt`)은 저장 전 그림을 봐서 못 잡았다.
+    고침: **새** `UI/Pixel/PxSlicedArt.cs` — 프리팹엔 그림 경로·테두리만 남기고, 불러올 때(Awake, 그리고 뷰의 `Wire`가 버튼 연결 직전에 한 번 더) 9-슬라이스 그림을 다시 만들어 넣는다. 에디터(플레이 전)에선 저장 안 되는 `overrideSprite`로 미리 보여 줘 프리팹 파일은 안 바뀐다.
+    `LobbyHudView.CreateFromCode`가 빠른 버튼에 이걸 붙인다 → **프리팹을 메뉴로 다시 만들어야(덮어쓰기) 반영된다.** 테스트도 빠른 버튼 그림이 비지 않았는지·9-슬라이스인지 본다.
+    ⚠️ 뒤 순서의 `RelicScreen`(페이지 버튼·확률 판·테스트 버튼)·`AwakenScreen`(SP +1 테스트 버튼)도 `PxArt.Sliced`를 쓴다 — 옮길 때 같은 방식으로.
+  - **2차 검증(2026-11-23, 사용자 에디터)**: 프리팹을 메뉴로 다시 만들고(덮어쓰기, `Assets/Resources/UI/Views/LobbyHudView.prefab` + `.meta`, YAML 손작성 없음) 컴파일 통과 · PlayMode **632 통과 / 3 실패 / 2 건너뜀**(실패 3은 `main`에서 넘어온 것, 건너뜀 2는 성능 측정) · 로비 빠른 버튼 그림·동작 손 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-23 (159)** — **[사용자 세션] 프리팹 UI 9호: 캐릭터 선택(`CharacterSelectScreen`) — `feature/ui-prefab-character`**(1~8호와 같은 방식).
   - 모양(먹색 바탕·직업 일러스트 배경·왼쪽 위 틀/아이콘/이름/"준비 중"·계열 칸 둘·선택칸 넷과 이름·"선택" 버튼·계열 설명 창, 금색·잠긴 이름 불투명도)은 프리팹 `Resources/UI/Views/CharacterSelectScreenView`.
     캐릭터 표(이름·그림 키·계열)·고른 캐릭터에 따라 배경/아이콘/이름/계열/설명 바꾸기·버튼 동작·키보드 순서(선택칸 1~4 → 선택)·고르기(세이브 저장)는 그대로 코드(`CharacterSelectScreen`).

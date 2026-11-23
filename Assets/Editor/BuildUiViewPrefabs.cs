@@ -78,7 +78,13 @@ namespace ChronoSavior.Editor
             Label = "캐릭터 선택", AssetPath = CharacterSelectScreenView.AssetPath, Build = CharacterSelectScreenView.CreateFromCode,
             ColorOnly = new[] { "Background", "Hover" }, // 먹색 바탕 · 계열 칸 마우스 올림 자리(투명)
         };
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character };
+        static readonly ViewSpec LobbyHud = new ViewSpec
+        {
+            Label = "로비 HUD", AssetPath = LobbyHudView.AssetPath, Build = LobbyHudView.CreateFromCode,
+            // 반투명 판 둘 · 미니맵 판/땅 선/건물 견본/캐릭터 점 · 경험치 바 셋 — 전부 색만 칠한 칸
+            ColorOnly = new[] { "DoomPlate", "InfoPlate", "Plate", "Ground", "BuildingTemplate", "Player", "ExpBorder", "ExpBack", "ExpFill" },
+        };
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements, Stage, Character, LobbyHud };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -104,6 +110,8 @@ namespace ChronoSavior.Editor
         public static void BuildStageFromMenu() => BuildFromMenu(Stage);
         [MenuItem("ChronoSavior/UI 프리팹/캐릭터 선택 만들기")]
         public static void BuildCharacterFromMenu() => BuildFromMenu(Character);
+        [MenuItem("ChronoSavior/UI 프리팹/로비 HUD 만들기")]
+        public static void BuildLobbyHudFromMenu() => BuildFromMenu(LobbyHud);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

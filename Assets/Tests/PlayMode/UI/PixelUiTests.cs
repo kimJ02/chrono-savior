@@ -362,6 +362,83 @@ public class PixelUiTests
         finally { StageSelectScreen.Close(); }
     }
 
+    /// <summary>
+    /// 프리팹 UI 10호(2026-11-23) — 로비 HUD 모양은 프리팹(`Resources/UI/Views/LobbyHudView`)에서 오고, 미니맵 건물 칸·건물 글씨는
+    /// 견본(꺼 둔 채)을 건물 수만큼 복제한다. 빠른 버튼 셋은 캐릭터·업적·설정 창을 연다.
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/로비 HUD 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator LobbyHud_LayoutFromViewPrefab_ClonesPerBuilding_QuickButtonsOpen()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        Assert.IsNotNull(Resources.Load<LobbyHudView>(LobbyHudView.ResourcePath), "로비 HUD 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/로비 HUD 만들기");
+        GameState.Set(GameScene.Lobby);
+        var hud = pc.GetComponent<LobbyHud>();
+        yield return null;
+        Assert.IsTrue(hud.IsShown, "로비에선 보인다");
+        Assert.IsTrue(hud.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        var views = hud.Root.GetComponentsInChildren<LobbyHudView>(true);
+        Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+        var v = views[0];
+
+        int n = LobbyWorld.Buildings.Length;
+        int marks = 0, names = 0, doors = 0;
+        foreach (Transform c in v.minimap) if (c.name.StartsWith("Building") && c.name != "BuildingTemplate") marks++;
+        foreach (var t in hud.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+        {
+            if (t.name.StartsWith("BuildingName") && t.name != "BuildingNameTemplate") names++;
+            if (t.name.StartsWith("BuildingDoor") && t.name != "BuildingDoorTemplate") doors++;
+        }
+        Assert.AreEqual(n, marks, "미니맵 건물 칸 = 건물 수");
+        Assert.AreEqual(n, names, "건물 이름 = 건물 수");
+        Assert.AreEqual(n, doors, "F / ↑ = 건물 수");
+        Assert.IsFalse(v.buildingTemplate.gameObject.activeSelf || v.buildingNameTemplate.gameObject.activeSelf || v.buildingDoorTemplate.gameObject.activeSelf,
+                       "견본은 꺼진 채");
+        StringAssert.StartsWith("멸망까지 남은 기간", v.doom.text, "글자는 코드가 채운다");
+        // 2026-11-23 사용자: 빠른 버튼이 흰 네모로 보였다 — 9-슬라이스 그림(PxArt.Sliced)은 실행 중에 만든 그림이라 프리팹에 저장되지 않는다(PxSlicedArt가 다시 만든다)
+        foreach (var q in v.quickButtons)
+        {
+            Assert.IsNotNull(q.button.Art.sprite, q.button.name + " 버튼 그림이 비었다(흰 네모)");
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, q.button.Art.type, q.button.name + "는 9-슬라이스");
+        }
+
+        v.quickButtons[0].button.Click();
+        Assert.IsTrue(CharacterSelectScreen.IsOpen, "캐릭터 버튼 → 캐릭터 선택");
+        CharacterSelectScreen.Close();
+        v.quickButtons[1].button.Click();
+        Assert.IsTrue(AchievementsScreen.IsOpen, "업적 버튼 → 업적");
+        AchievementsScreen.Close();
+        v.quickButtons[2].button.Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "설정 버튼 → 설정");
+        SettingsWindow.Close();
+    }
+
+    /// <summary>경험치 바는 바탕 폭 × 비율로 채운다(프리팹에서 바 폭을 바꿔도 따라간다). 미니맵 건물 칸은 미니맵 안에서 왼쪽→오른쪽 순서로 놓인다.</summary>
+    [UnityTest]
+    public IEnumerator LobbyHud_ExpBarFollowsBackWidth_MinimapMarksInsideMinimap()
+    {
+        GameState.Set(GameScene.Lobby);
+        var p = ProfileService.Current;
+        long need = PlayerProfile.RequiredExp(p.level);
+        Assume.That(need >= 2, "필요 경험치가 2 이상이어야 절반을 볼 수 있다");
+        p.exp = need / 2;
+        var hud = pc.GetComponent<LobbyHud>();
+        yield return null;
+        var v = hud.Root.GetComponentInChildren<LobbyHudView>(true);
+
+        float back = ((RectTransform)v.expBack.transform).sizeDelta.x;
+        float want = Mathf.Round((need / 2) / (float)need * back);
+        Assert.AreEqual(want, ((RectTransform)v.expFill.transform).sizeDelta.x, 0.01f, "경험치 채움 = 바탕 폭 × 비율");
+
+        float w = v.minimap.sizeDelta.x;
+        foreach (Transform c in v.minimap)
+        {
+            if (!c.name.StartsWith("Building") || c.name == "BuildingTemplate") continue;
+            float x = ((RectTransform)c).anchoredPosition.x;
+            Assert.That(x, Is.InRange(0f, w), c.name + "는 미니맵 안");
+        }
+    }
+
     [UnityTest]
     public IEnumerator Settings_TakesEscapeFirst_SoPauseIsNotResumed()
     {

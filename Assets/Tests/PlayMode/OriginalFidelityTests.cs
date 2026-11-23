@@ -391,6 +391,9 @@ public class OriginalFidelityTests
             ("TooltipAnchor",              "AchievementsScreenView.cs"), // AchievementsScreen.OnNavChanged(안 부르면 설명 상자가 안 뜬다)
             ("MarkerPositionFor",          "StageSelectScreenView.cs"), // StageSelectScreen.Refresh(안 부르면 ▼가 챕터 리본을 안 따라간다)
             ("CardLook",                   "CharacterSelectScreen.cs"), // CharacterSelectScreenView.CreateFromCode(안 부르면 선택칸 이름·그림이 빈 채로 지어진다)
+            ("LobbyHudView.Clone",         "LobbyHudView.cs"),     // LobbyHud.Build(안 부르면 미니맵 건물·건물 글씨가 없다 — 이름이 흔해 클래스까지 적는다)
+            ("MinimapX",                   "LobbyHudView.cs"),     // LobbyHud.MapX(안 부르면 미니맵 건물·캐릭터 점 자리가 안 맞는다)
+            ("SetExp",                     "LobbyHudView.cs"),     // LobbyHud.Refresh(안 부르면 경험치 바가 비어 있다)
         };
 
         var scriptFiles = Directory.GetFiles(
