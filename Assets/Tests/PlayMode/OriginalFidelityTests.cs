@@ -387,6 +387,8 @@ public class OriginalFidelityTests
             ("WireSettings",               "SettingsWindowView.cs"),   // SettingsWindow.Build(안 부르면 X·적용·◀▶·음량 막대가 아무 일도 안 한다)
             ("WireResultButton",           "RunResultScreenView.cs"),  // RunResultScreen.Build(안 부르면 다시 입장·마을로가 아무 일도 안 한다)
             ("SetProgress",                "RunResultScreenView.cs"),  // RunResultScreen.Refresh(안 부르면 진행 막대가 비어 있다)
+            ("BuildRows",                  "AchievementsScreenView.cs"), // AchievementsScreen.Build(안 부르면 업적 줄이 하나도 없다)
+            ("TooltipAnchor",              "AchievementsScreenView.cs"), // AchievementsScreen.OnNavChanged(안 부르면 설명 상자가 안 뜬다)
         };
 
         var scriptFiles = Directory.GetFiles(

@@ -133,6 +133,9 @@ public class PixelUiTests
     [UnityTest]
     public IEnumerator PauseMenu_ButtonsKeepOrderAndActions()
     {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
         var pause = pc.GetComponent<PauseMenu>();
         GameState.Set(GameScene.Pause);
         yield return null;
@@ -183,6 +186,9 @@ public class PixelUiTests
     [UnityTest]
     public IEnumerator Title_MenusKeepOrderAndActions_CursorFollows()
     {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
         var title = pc.GetComponent<TitleMenu>();
         GameState.Set(GameScene.Title);
         yield return null;
@@ -213,6 +219,77 @@ public class PixelUiTests
         Assert.IsTrue(SettingsWindow.IsOpen, "설정은 설정 창을 연다");
         SettingsWindow.Close();
         yield return null;
+    }
+
+    /// <summary>
+    /// 프리팹 UI 7호(2026-11-23, 첫 목록형) — 업적 창 모양은 프리팹(`Resources/UI/Views/AchievementsScreenView`)에서 오고,
+    /// 업적 줄은 그 안의 견본 줄(꺼 둔 `RowTemplate`)을 **업적 수만큼** 복제해 만든다. 견본은 꺼진 채 남고, 키보드 선택엔 안 들어간다.
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/업적 창 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Achievements_LayoutFromViewPrefab_RowsFromTemplate()
+    {
+        Assert.IsNotNull(Resources.Load<AchievementsScreenView>(AchievementsScreenView.ResourcePath),
+                         "업적 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/업적 창 만들기");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<AchievementsScreen>();
+        AchievementsScreen.Open();
+        yield return null;
+        Assert.IsTrue(screen.IsShown, "로비에서 열면 보인다");
+        Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, screen.Root.GetComponentsInChildren<AchievementsScreenView>(true).Length, "모양은 한 벌뿐");
+        Assert.AreEqual(Achievements.All.Length, screen.RowCount, "업적 수만큼 줄");
+
+        int shownRows = 0, templates = 0;
+        foreach (var row in screen.Root.GetComponentsInChildren<AchievementRowView>(true))
+        {
+            if (row.name == "RowTemplate") { templates++; Assert.IsFalse(row.gameObject.activeSelf, "견본 줄은 꺼진 채"); }
+            else if (row.gameObject.activeInHierarchy) shownRows++;
+        }
+        Assert.AreEqual(1, templates, "견본 줄 하나");
+        Assert.AreEqual(Achievements.All.Length, shownRows, "보이는 줄 = 업적 수");
+        AchievementsScreen.Close();
+    }
+
+    /// <summary>
+    /// 업적 줄이 예전처럼 2열 격자로 놓이고(같은 열의 다음 줄은 바로 아래), 고르면 설명 상자가 뜨며, 닫기 버튼이 창을 닫는다.
+    /// 좌표 자체는 고정하지 않는다(프리팹에서 칸 크기를 바꿔도 통과해야 하므로 상대 위치만 본다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Achievements_RowsInGrid_TooltipOnSelect_CloseWorks()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        Assume.That(Achievements.All.Length >= 4, "격자를 보려면 업적이 넷 이상 있어야 한다");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<AchievementsScreen>();
+        AchievementsScreen.Open();
+        yield return null;
+
+        Assert.AreEqual(AchievementRow(screen, 0).anchoredPosition.y, AchievementRow(screen, 1).anchoredPosition.y, 0.01f, "0·1번은 같은 줄(2열)");
+        Assert.Greater(AchievementRow(screen, 1).anchoredPosition.x, AchievementRow(screen, 0).anchoredPosition.x, "1번은 0번 오른쪽");
+        Assert.AreEqual(AchievementRow(screen, 0).anchoredPosition.x, AchievementRow(screen, 2).anchoredPosition.x, 0.01f, "2번은 0번 바로 아래");
+        Assert.Less(AchievementRow(screen, 2).anchoredPosition.y, AchievementRow(screen, 0).anchoredPosition.y, "2번은 0번 아래");
+
+        AchievementRow(screen, 3).GetComponent<PxButton>().OnHover?.Invoke();
+        Assert.AreEqual(3, screen.NavIndex, "3번 줄에 마우스를 올리면 키보드 선택도 3번");
+        RectTransform tooltip = null;
+        foreach (var rt in screen.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Tooltip") tooltip = rt;
+        Assert.IsNotNull(tooltip, "설명 상자");
+        Assert.IsTrue(tooltip.gameObject.activeSelf, "고르면 설명 상자가 뜬다");
+
+        PxButton close = null;
+        foreach (var b in screen.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == "Close") close = b;
+        Assert.IsNotNull(close);
+        close.Click();
+        Assert.IsFalse(AchievementsScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+    }
+
+    static RectTransform AchievementRow(PxScreen screen, int i)
+    {
+        foreach (var r in screen.Root.GetComponentsInChildren<AchievementRowView>(true)) if (r.name == "Row" + i) return (RectTransform)r.transform;
+        return null;
     }
 
     [UnityTest]

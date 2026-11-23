@@ -314,6 +314,9 @@ public class UiFigmaUpdateTests
     [UnityTest]
     public IEnumerator Regression_ButtonsKeepOrderAndActions()
     {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
         GameState.Set(GameScene.Lobby);
         var reg = pc.GetComponent<RegressionScreen>();
         RegressionScreen.Open();
@@ -402,6 +405,9 @@ public class UiFigmaUpdateTests
     [UnityTest]
     public IEnumerator Popup_TextsAndNavOrderKept()
     {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
         var popup = pc.GetComponent<CommonPopup>();
         bool ok = false;
         CommonPopup.Confirm("새 원정", "지울까요?", () => ok = true, "시작", "그만");
@@ -604,6 +610,9 @@ public class UiFigmaUpdateTests
     [UnityTest]
     public IEnumerator Result_ButtonsKeepOrder()
     {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
         var result = pc.GetComponent<RunResultScreen>();
         result.PreviewReason = RunEndReason.Timeout;
         GameState.Set(GameScene.Result);

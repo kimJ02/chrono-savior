@@ -6,7 +6,7 @@ using ChronoSavior.UI;
 namespace ChronoSavior.Editor
 {
     /// <summary>
-    /// 화면 모양 프리팹을 **Unity 에디터 API로** 만든다(2026-11-22~ 프리팹 UI 점진 전환 — 1호 일시정지, 2호 공용 팝업, 3호 타이틀, 4호 시간 회귀, 5호 설정, 6호 결과).
+    /// 화면 모양 프리팹을 **Unity 에디터 API로** 만든다(2026-11-22~ 프리팹 UI 점진 전환 — 1호 일시정지, 2호 공용 팝업, 3호 타이틀, 4호 시간 회귀, 5호 설정, 6호 결과, 7호 업적).
     /// 예전 코드 모양(각 View의 <c>CreateFromCode</c>, Figma 좌표)을 잠깐 지어 그대로 프리팹으로 저장한다 —
     /// 그래서 처음 만든 프리팹은 예전 화면과 같다. 프리팹 YAML을 손으로 쓰지 않는다(`HANDOFF.md`의 fileID 사고 참고).
     ///
@@ -62,7 +62,13 @@ namespace ChronoSavior.Editor
             ColorOnly = new[] { "Backdrop" },
         };
 
-        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result };
+        static readonly ViewSpec Achievements = new ViewSpec
+        {
+            Label = "업적 창", AssetPath = AchievementsScreenView.AssetPath, Build = AchievementsScreenView.CreateFromCode,
+            ColorOnly = new[] { "Backdrop", "RowTemplate" }, // 막 · 견본 줄(투명 판)
+        };
+
+        static readonly ViewSpec[] All = { Pause, Popup, Title, Regression, Settings, Result, Achievements };
 
         [MenuItem("ChronoSavior/UI 프리팹/일시정지 화면 만들기")]
         public static void BuildPauseMenuFromMenu() => BuildFromMenu(Pause);
@@ -81,6 +87,9 @@ namespace ChronoSavior.Editor
 
         [MenuItem("ChronoSavior/UI 프리팹/결과 창 만들기")]
         public static void BuildResultFromMenu() => BuildFromMenu(Result);
+
+        [MenuItem("ChronoSavior/UI 프리팹/업적 창 만들기")]
+        public static void BuildAchievementsFromMenu() => BuildFromMenu(Achievements);
 
         /// <summary>배치용 — 없는 것만 만든다. 하나라도 실패하면 종료 코드 1.</summary>
         public static void RunBatch()

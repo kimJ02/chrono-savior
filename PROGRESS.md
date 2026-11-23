@@ -309,6 +309,18 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-23 (157)** — **[사용자 세션] 프리팹 UI 7호: 업적 창(`AchievementsScreen`) — 첫 목록형 — `feature/ui-prefab-achievements`**.
+  - **목록형 방식(이후 목록 화면들의 기준)**: 창 프리팹 `Resources/UI/Views/AchievementsScreenView` 안에 목록 자리 `List`와 **견본 줄 `List/RowTemplate`(꺼 둔 채, `AchievementRowView`)**을 둔다. 실행하면 견본을 **업적 수만큼 복제**해(`BuildRows`) `List` 왼쪽 위부터 격자(열 수·칸 크기는 프리팹 칸)로 놓는다.
+    견본 하나를 고치면 모든 줄이 바뀌고, 업적이 늘어도 프리팹을 안 고쳐도 된다. 줄을 따로 프리팹 파일로 빼지 않은 건 창 하나 안에서 같이 보고 고치기 쉬워서(필요해지면 나눈다).
+  - 모양(막·창 틀·제목·요약 줄·닫기·목록 자리·견본 줄, 줄 글자 색 두 가지, 열 수·칸 크기·설명 상자 폭)은 프리팹. 글자 내용(★/☆ 이름·달성 수·누적 기록)·색칠·키보드 격자·설명 상자 띄우기·닫기 동작은 코드(`AchievementsScreen`).
+  - 파일별: `UI/Screens/AchievementsScreen.cs`(Build가 프리팹 불러 줄 복제·연결, `UsesViewPrefab`·`RowCount`) · **새** `UI/Screens/AchievementsScreenView.cs`(창 모양, `BuildRows`·`TooltipAnchor`·`WireClose`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Screens/AchievementRowView.cs`(줄 하나 — 버튼·글자 참조, `Wire`·`Show`) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/업적 창 만들기`) · 테스트 `PixelUiTests`(+2: 프리팹·견본에서 업적 수만큼 줄 / 2열 격자·설명 상자·닫기) · `CreationOwnershipTests`(생성 담당 `AchievementsScreen.cs` → `AchievementsScreenView.cs`, 견본 복제 포함) · `OriginalFidelityTests`(`BuildRows`·`TooltipAnchor`).
+  - ⚠️ `List`는 판(Board)의 직접 자식·왼쪽 위 기준으로, 견본 줄 이름 `RowTemplate`·닫기 이름 `Close`는 바꾸지 말 것. 견본 줄은 **꺼 둔 채** 둔다(켜 두면 빈 줄 하나가 더 보인다).
+  - 프리팹(`Assets/Resources/UI/Views/AchievementsScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음). 견본 줄은 꺼진 채, 좌표 전부 정수, 값은 처음 모양 그대로.
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **628 통과 / 3 실패 / 0 건너뜀**(이번엔 성능 측정 `Slot3_*` 둘도 돌아 통과) — 새 테스트 2개와 포인터 끈 6개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 로비 "업적" 창의 모양·줄·방향키 격자·설명 상자·마우스·닫기/ESC, 견본 줄 편집이 모든 줄에 반영되는 것 확인.
+  - 테스트 고침(2026-11-23): `Result_ButtonsKeepOrder`가 "처음엔 마을로 Expected 1 But was 0"으로 실패 — 실제 마우스가 Game 창 버튼 위에 있어 EventSystem이 마우스 올림을 보낸 것(11-22 타이틀 테스트와 같은 원인). 1~7호에서 "처음 고른 칸"·마우스 올림 순서를 보는 새 테스트 6개(`PauseMenu_ButtonsKeepOrderAndActions`·`Title_MenusKeepOrderAndActions_CursorFollows`·`Popup_TextsAndNavOrderKept`·`Regression_ButtonsKeepOrderAndActions`·`Result_ButtonsKeepOrder`·`Achievements_RowsInGrid_TooltipOnSelect_CloseWorks`)는 시작할 때 포인터 이벤트를 끈다.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
 - **2026-11-23 (156)** — **[사용자 세션] 프리팹 UI 6호: 사냥 결과 창(`RunResultScreen`) — `feature/ui-prefab-result`**(1~5호(151~155)와 같은 방식).
   - 모양(어두운 막·창 틀·띠·제목/스테이지/시간 자리·붕괴 원인 줄·칸 셋·통계 이름표/나눔선/상자·진행 막대(바탕·채움·틀·글자)·진행도 이름표·버튼 둘, 제목 색 두 가지(쓰러짐 붉음·평소 흰색))은 프리팹 `Resources/UI/Views/RunResultScreenView`.
     글자 내용(끝난 이유에 따라 제목·칸 순서·버튼 글자가 바뀐다)·막대 채움(채움 칸 폭을 정수 도트로)·버튼 동작(다시 입장 = 같은 스테이지, 마을로 = 로비)·←/→ 순서는 코드(`RunResultScreen`). 이름은 예전과 똑같이 둬서(`Title`·`Cause`·`CellLabel0~2`·`StatLabel0~2`·`BarText0`·`Retry`·`Ok`) 기존 테스트 그대로.
