@@ -154,6 +154,31 @@ public class RelicEffectTests
         Assert.IsTrue(RelicFx.IsTarget(col, out _), "설치 갈래엔 이 제한이 없다");
     }
 
+    /// <summary>
+    /// 편지 — 메카닉 레이저 갈래는 레이저가 배달한다(2026-11-23 사용자 후보 B): 레이저가 안 닿은 적에게도 광선이 가서 닿은 적이 되고,
+    /// 광선 자체는 피해가 없고 1초 뒤 폭발로만 피해(예전엔 닿은 적만 골라 5층 레이저면 편지가 거의 안 붙었다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Letter_LaserBranch_BeamDeliversThenExplodes()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Gunner;
+        p.gunnerBranch = GunnerBranch.Laser;
+        p.items.Add("letter");
+        var target = NewEnemy(new Vector3(400.8f, 0.5f, 0f));
+        yield return new WaitForFixedUpdate();
+        var col = target.GetComponent<Collider2D>();
+        Assert.IsFalse(RelicFx.IsTarget(col, out _), "시작부터 레이저가 닿은 적이었다");
+
+        using (Relics.Signature()) RelicDirector.OnChainKill(new Vector2(400f, 0.5f)); // 메카닉은 레이저 처치만 공용 처치 유물이 센다
+        yield return new WaitForSeconds(0.4f);
+        Assert.IsTrue(RelicFx.IsTarget(col, out _), "편지 광선이 닿았는데 레이저가 닿은 적이 안 됐다");
+        Assert.AreEqual(target.MaxHp, target.CurrentHp, "광선이 피해를 줬다(폭발만 피해)");
+
+        yield return new WaitForSeconds(1.2f);
+        Assert.Less(target.CurrentHp, target.MaxHp, "1초 뒤 폭발이 없다");
+    }
+
     /// <summary>메카닉은 시그니처 처치만 공용 처치 유물이 센다(2026-11-22) — 마법사·섬영은 모든 처치.</summary>
     [Test]
     public void CommonKillRelics_CountOnlySignatureKills_ForGunnerAndBlade()

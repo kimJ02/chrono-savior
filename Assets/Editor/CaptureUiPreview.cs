@@ -733,6 +733,168 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 편지 유물 메카닉 그림 후보(2026-11-23, 사용자 "편지부터 다시" → "레이저 쏘는 걸로 다시 찍어"). 게임 코드는 안 바꾸고 여기서만 재현한다.
+        /// 최종 빌드 레이저(5층 곡선)로 가까운 적을 처치 → 처치된 적에서 연쇄 광선이 가까운 적 3마리에 동시에 뻗고(GPT 합의 — 레이저가 편지를 배달해야
+        /// "레이저가 닿은 적만" 규칙을 지킨다) → 닿는 순간 머리 위 표식, 1초(마지막 0.3초 빠르게) → 폭발 그림 하나씩(0.06초 시차). 도트 배율 2 하나만.
+        /// </summary>
+        public static void RunLetterCandidates()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var kit = player.GetComponent<ChronoSavior.Characters.GunnerAttack>();
+            var flashMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteFlash.mat");
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var grunt = catalog.Find(EnemyType.Grunt);
+            var skin = grunt.SkinFor(1);
+            Sprite art = skin != null && skin.move != null && skin.move.frames.Length > 0 ? skin.move.frames[0] : grunt.sprite;
+            // 0 = 레이저로 처치할 적, 1~3 = 편지 받을 적(가까운 순: 오른쪽 땅·오른쪽 발판·왼쪽 발판), 4 = 왼쪽 땅(4번째로 멀어 안 받는다)
+            // 땅 위 적을 한 줄로 세우면 광선끼리 겹쳐 한 줄로 보였다(2차 캡처) — 방향이 서로 다르게 둔다. 화면 오른쪽 끝(9.9)은 잘렸다.
+            var spots = new[] { new Vector2(7.4f, feet + 0.25f), new Vector2(8.6f, feet + 0.25f), new Vector2(8.8f, feet + 1.63f), new Vector2(5.0f, feet + 1.63f), new Vector2(4.2f, feet + 0.25f) };
+            int[] letterTargets = { 1, 2, 3 };
+            Vector2 Center(Vector2 p) => p + new Vector2(0f, DotScale.Units(art.rect.height * 0.5f - art.pivot.y));
+            Vector2 Feet(Vector2 p) => p - new Vector2(0f, DotScale.Units(art.pivot.y));
+            // 표식은 머리 위 — 몸에 겹치면 적이 가려져 누가 표식을 받았는지 안 보였다(1차 캡처)
+            Vector2 Above(Vector2 p, float markPx) => p + new Vector2(0f, DotScale.Units(art.rect.height - art.pivot.y + markPx * 0.5f + 1f));
+            float halfW = DotScale.Units(art.rect.width) * 0.3f;
+            Vector2 Edge(Vector2 from, Vector2 to) => from + (to - from).normalized * halfW;
+            Vector2 Bez(Vector2 a0, Vector2 c0, Vector2 b0, float u) => (1f - u) * (1f - u) * a0 + 2f * (1f - u) * u * c0 + u * u * b0;
+
+            // (이름, 표식 키, 표식 크기(그림 px), 표식 fps, 폭발 키, 폭발 fps, 건너뛸 장 수, 미리 시작할 장 수(그림이 닿는 장을 피해 순간에 맞춘다), 발밑 기준, 그림 가운데~바닥 px)
+            var variants = new (string name, string mark, float markPx, float markFps, string boom, float boomFps, int skip, int preRoll, bool atFeet, float bottomPx)[]
+            {
+                ("A_폭탄표식_충격파", "mechanic/bomb_small", 16f, 12f, "mechanic/burst", 18f, 2, 0, false, 0f),
+                ("B_에너지구슬_전기기둥", "mechanic/pellet", 16f, 10f, "mechanic/warp", 24f, 0, 4, true, 58f),
+                ("C_릴레이머리_번개폭발", "mechanic/relay_head", 24f, 15f, "mechanic/aura_large", 24f, 0, 0, false, 0f),
+            };
+            const float KillAt = 0.6f, Fuse = 1f, Rush = 0.3f, Stagger = 0.06f, Dt = 1f / 30f;
+            const int Tier = 5;
+            var bf = System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var tField = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetField("t", bf);
+            var impactTField = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetField("impactT", bf);
+            var applyM = typeof(ChronoSavior.Characters.GunnerBeamVfx).GetMethod("Apply", bf);
+            string oldHitKey = ChronoSavior.Characters.GunnerChainBeamVfx.HitKey;
+            ChronoSavior.Characters.GunnerChainBeamVfx.HitKey = "none/none"; // 배달 광선은 닿을 때 따로 번쩍이지 않는다 — 표식이 그 자리에 붙는다
+            foreach (var v in variants)
+            {
+                string dir = Path.Combine(outDir, v.name);
+                Directory.CreateDirectory(dir);
+                var made = new System.Collections.Generic.List<GameObject>();
+                var bodies = new GameObject[spots.Length];
+                var flashes = new SpriteRenderer[spots.Length];
+                for (int i = 0; i < spots.Length; i++)
+                {
+                    var e = new GameObject("PreviewEnemy", typeof(SpriteRenderer));
+                    e.transform.position = spots[i];
+                    e.transform.localScale = Vector3.one * DotScale.Value;
+                    e.GetComponent<SpriteRenderer>().sprite = art;
+                    var f = new GameObject("Flash", typeof(SpriteRenderer));
+                    f.transform.SetParent(e.transform, false);
+                    var fsr = f.GetComponent<SpriteRenderer>();
+                    fsr.sprite = art;
+                    fsr.sharedMaterial = flashMat;
+                    fsr.sortingOrder = 1;
+                    fsr.color = new Color(1f, 1f, 1f, 0f);
+                    flashes[i] = fsr;
+                    bodies[i] = e;
+                    made.Add(e);
+                }
+
+                // 본 레이저 — 실제 게임과 같은 5층 곡선 경로(총구 → 앞으로 나갔다가 목표로 휜다, 그림은 목표 가장자리에서 끝)
+                var beam = ChronoSavior.Characters.GunnerBeamVfx.Create(kit.BeamMaterial, kit.LaserTipPrefab);
+                made.Add(beam.gameObject);
+                Vector2 o = kit.FeetPosition + new Vector2(ChronoSavior.Characters.GunnerSpecConfig.BeamOriginForward, ChronoSavior.Characters.GunnerSpecConfig.BeamOriginHeight);
+                Vector2 tc = Center(spots[0]);
+                Vector2 tv = tc - o;
+                float len = tv.magnitude;
+                Vector2 ctrl = new Vector2(o.x + ChronoSavior.Characters.GunnerSpecConfig.BeamCurveAhead(len), o.y);
+                Vector2 end = tc + tv / len * ChronoSavior.Characters.GunnerSpecConfig.BeamCurveOvershoot;
+                var path = new System.Collections.Generic.List<Vector2> { o };
+                for (int i = 1; i <= ChronoSavior.Characters.GunnerSpecConfig.BeamCurveSamples; i++)
+                {
+                    Vector2 q = Bez(o, ctrl, end, i / (float)ChronoSavior.Characters.GunnerSpecConfig.BeamCurveSamples);
+                    path.Add(q);
+                    if (Vector2.Distance(q, tc) <= halfW) break;
+                }
+                beam.Show(path, Tier, true, ChronoSavior.Characters.GunnerSpecConfig.BeamWidth(Tier));
+                bool released = false;
+
+                // 처치 순간 — 처치된 적에서 편지 받을 적들로 연쇄 광선이 동시에
+                var hops = new ChronoSavior.Characters.GunnerChainBeamVfx[letterTargets.Length];
+                for (int k = 0; k < letterTargets.Length; k++)
+                {
+                    int j = letterTargets[k];
+                    Vector2 from = Edge(tc, Center(spots[j]));
+                    Vector2 to = Edge(Center(spots[j]), tc);
+                    hops[k] = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, from, to, KillAt, k % 2 == 0 ? 1f : -1f, Center(spots[j]));
+                    made.Add(hops[k].gameObject);
+                }
+                float arrive = hops[0].ArriveTime;
+                var marks = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
+                var booms = new ChronoSavior.Combat.VfxPlayer[letterTargets.Length];
+                float total = arrive + Fuse + Stagger * (letterTargets.Length - 1) + 0.8f;
+                int frame = 0;
+                for (float t = 0f; t <= total; t += Dt, frame++)
+                {
+                    // 레이저: 처치 순간까지 쏘다가 손을 뗀다(사그라듦)
+                    if (!released && t >= KillAt) { beam.Release(); released = true; }
+                    if (beam.gameObject.activeSelf)
+                    {
+                        tField.SetValue(beam, released ? t - KillAt : t);
+                        impactTField.SetValue(beam, t);
+                        applyM.Invoke(beam, null);
+                    }
+                    // 레이저 맞는 동안 깜빡임(틱마다), 처치 순간 사라진다
+                    bodies[0].SetActive(t < KillAt);
+                    flashes[0].color = new Color(1f, 1f, 1f, (t % 0.13f) < 0.05f ? 0.75f : 0f);
+                    foreach (var h in hops) h.Evaluate(t);
+
+                    for (int k = 0; k < letterTargets.Length; k++)
+                    {
+                        int j = letterTargets[k];
+                        float since = t - arrive; // 광선이 닿은 뒤
+                        if (since >= 0f && since < Fuse)
+                        {
+                            if (marks[k] == null) { marks[k] = ChronoSavior.Combat.VfxPlayer.Spawn(v.mark, Above(spots[j], v.markPx), DotScale.Value, v.markFps, 4, loop: true); made.Add(marks[k].gameObject); }
+                            float mt = since < Fuse - Rush ? since : (Fuse - Rush) + (since - (Fuse - Rush)) * 2.5f; // 마지막 0.3초는 2.5배 빠르게 — 곧 터진다
+                            marks[k].gameObject.SetActive(true);
+                            marks[k].SetTimeForCapture(mt);
+                        }
+                        else if (marks[k] != null) marks[k].gameObject.SetActive(false);
+
+                        float hitAt = arrive + Fuse + Stagger * k;        // 피해 순간
+                        float bt = t - hitAt + v.preRoll / v.boomFps;     // 그림 시간(그림이 닿는 장이 피해 순간에 오게)
+                        if (bt >= 0f && booms[k] == null)
+                        {
+                            Vector2 at = v.atFeet ? Feet(spots[j]) + new Vector2(0f, DotScale.Units(v.bottomPx)) : Center(spots[j]);
+                            booms[k] = ChronoSavior.Combat.VfxPlayer.Spawn(v.boom, at, DotScale.Value, v.boomFps, 4);
+                            if (booms[k] != null) made.Add(booms[k].gameObject);
+                        }
+                        if (booms[k] != null) booms[k].SetTimeForCapture(Mathf.Max(0f, bt) + v.skip / v.boomFps);
+                        float sinceHit = t - hitAt;
+                        flashes[j].color = new Color(1f, 1f, 1f, sinceHit >= 0f ? Mathf.Max(0f, 1f - sinceHit * 6f) * 0.75f : 0f);
+                    }
+                    Render(pc, cam, dir, $"f_{frame:00}", 1920, 1080, 3f);
+                }
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            }
+            ChronoSavior.Characters.GunnerChainBeamVfx.HitKey = oldHitKey;
+            Debug.Log("[CaptureUiPreview] 편지 후보 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);

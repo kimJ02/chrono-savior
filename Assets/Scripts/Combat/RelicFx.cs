@@ -87,9 +87,12 @@ namespace ChronoSavior.Combat
             }
         }
 
-        /// <summary>원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림, 늘 범위 고리.</summary>
+        /// <summary>
+        /// 원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림, 범위 고리는 <paramref name="showRing"/>일 때
+        /// (부르는 쪽이 제 그림을 따로 띄우면 끈다 — 2026-11-23 사용자: 직접 그린 고리 대신 받은 VFX만).
+        /// </summary>
         public static int Circle(Vector2 pos, float radius, float atkMult, Color ring, string vfxKey = null,
-                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null)
+                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null, bool showRing = true)
         {
             int n = 0;
             var cols = QueryCircle(pos, radius);
@@ -104,7 +107,7 @@ namespace ChronoSavior.Combat
                 }
             }
             finally { Release(cols); }
-            RangeRing.Show(pos, radius, ring);
+            if (showRing) RangeRing.Show(pos, radius, ring);
             if (vfxKey != null) VfxPlayer.Spawn(vfxKey, pos, DotScale.Value, 15f, SortingOrder, tint: null);
             if (n > 0) HitFeel.Shake(3f, 0.12f);
             return n;

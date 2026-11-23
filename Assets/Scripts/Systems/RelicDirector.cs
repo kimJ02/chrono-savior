@@ -195,6 +195,10 @@ namespace ChronoSavior.Systems
                 Relics.Proc("letter");
                 float m = Relics.V("letter", 1);
                 bool gold = Relics.Awakened("letter");
+                // 메카닉 레이저 — 레이저가 편지를 배달한다(전기 기둥 폭발, 2026-11-23 사용자 후보 B). 구현은 메카닉 쪽(Relics.LaserLetter)
+                if (Relics.RequireLaserTouch && Relics.LaserLetter != null)
+                    Relics.LaserLetter(pos, Relics.VI("letter", 0), m, gold, AwakenDelay, AwakenPower);
+                else
                 foreach (var c in RelicFx.Nearest(pos, Relics.VI("letter", 0), 6f))
                 {
                     var target = c;

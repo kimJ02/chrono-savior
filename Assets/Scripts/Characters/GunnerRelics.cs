@@ -23,7 +23,11 @@ namespace ChronoSavior.Characters
         static bool setArmed;
         static float overloadUntil = -1f;
 
-        public static void ResetForRun() { zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched(); }
+        public static void ResetForRun()
+        {
+            zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched();
+            Relics.LaserLetter = LetterByLaser; // 편지 레이저 배달(RelicDirector가 부른다)
+        }
 
         /// <summary>광선 연쇄 그림의 머티리얼(본 레이저와 같은 것 — 메카닉 키트가 런 시작 때 넣는다). 없으면 그림 없이 바로 맞힌다(테스트).</summary>
         public static Material ChainMaterial;
@@ -143,6 +147,75 @@ namespace ChronoSavior.Characters
                 start = arrive + 0.04f; // 앞 광선이 닿고 0.04초 뒤 다음 적으로
                 bend = -bend;           // 지그재그로 읽히게 번갈아 휜다
             }
+        }
+
+        // ── 편지(공용 유물) — 메카닉 레이저 갈래 ──
+        /// <summary>표식이 붙어 있는 시간(초)·그중 마지막에 빨라지는 시간·적마다 폭발 시차·폭발 반경(원래 편지와 같은 1.3).</summary>
+        public const float LetterFuse = 1f, LetterRush = 0.3f, LetterStagger = 0.06f, LetterRadius = 1.3f, LetterRange = 6f;
+        const float LetterMarkFps = 10f, LetterRushMult = 2.5f, LetterBoomFps = 24f;
+        /// <summary>전기 기둥 그림은 위에서 에너지가 떨어져 4번째 장에 바닥에 닿는다 — 그만큼 먼저 시작해 닿는 장이 피해 순간에 오게.</summary>
+        const int LetterBoomLeadFrames = 4;
+        /// <summary>전기 기둥 그림(128px) 가운데에서 바닥까지(그림 px) — 발밑에 세운다. 표식 그림 크기(px).</summary>
+        const float LetterBoomBottomPx = 58f, LetterMarkPx = 16f;
+
+        /// <summary>
+        /// 편지 — 메카닉 레이저 갈래(2026-11-23 사용자 후보 B, GPT 합의). 5층 레이저는 목표 하나만 따라가 "레이저가 닿은 적"이 거의 지금 목표뿐이라,
+        /// 처치 순간 근처에 닿은 적이 없어 편지가 아무에게도 안 붙었다. 그래서 **레이저가 편지를 배달한다**:
+        /// 처치 자리에서 가까운 적 n마리로 광선 연쇄(승인된 그림, 닿을 때 번쩍임 없이)가 동시에 뻗고 → 닿는 순간 레이저가 닿은 적이 되고 머리 위에
+        /// 파란 에너지 구슬 표식(마지막 0.3초 빠르게) → 1초 뒤 위에서 에너지가 떨어져 발밑에서 전기 기둥, 닿는 순간 반경 1.3 피해(적마다 0.06초 시차).
+        /// 광선은 피해가 없다. 닿기 전에 죽은 적은 표식도 폭발도 없다. 범위 고리는 그리지 않는다(받은 VFX만). 도트 배율 2 하나.
+        /// </summary>
+        public static void LetterByLaser(Vector2 from, int n, float mult, bool gold, float awakenDelay, float awakenPower)
+        {
+            List<Collider2D> targets;
+            using (Relics.AsLaser()) targets = RelicFx.Nearest(from, n, LetterRange); // 레이저가 배달하니 아직 안 닿은 적도 고른다
+            for (int k = 0; k < targets.Count; k++)
+            {
+                var target = targets[k];
+                Vector2 center = RelicFx.Center(target);
+                Vector2 to = target.ClosestPoint(from);
+                if ((to - from).sqrMagnitude < 1e-4f) to = center;
+                var fx = GunnerChainBeamVfx.Play(ChainMaterial, from, to, 0f, k % 2 == 0 ? 1f : -1f, center, hitSpark: false);
+                float arrive = fx != null ? fx.ArriveTime : 0f;
+                float stagger = LetterStagger * k;
+                RelicFx.After(arrive, () => Deliver(target, stagger, mult, gold, awakenDelay, awakenPower));
+            }
+        }
+
+        static void Deliver(Collider2D target, float stagger, float mult, bool gold, float awakenDelay, float awakenPower)
+        {
+            if (target == null || !target.gameObject.activeInHierarchy) return; // 광선이 닿기 전에 죽었다
+            Relics.MarkLaserTouched(target);
+            var b = target.bounds;
+            Vector2 center = b.center;
+            float feetY = b.min.y;
+            var mark = VfxPlayer.Spawn(VfxKeys.MechanicPellet, new Vector2(b.center.x, b.max.y + DotScale.Units(LetterMarkPx * 0.5f + 1f)),
+                                       DotScale.Value, LetterMarkFps, RelicFx.SortingOrder, loop: true);
+            if (mark != null) mark.transform.SetParent(target.transform, true); // 머리 위에 붙어 따라간다(적이 사라지면 같이)
+            RelicFx.After(LetterFuse - LetterRush, () =>
+            {
+                if (mark != null) mark.Play(VfxFrames.Get(VfxKeys.MechanicPellet), LetterMarkFps * LetterRushMult, true, 0f, Color.white); // 곧 터진다
+            });
+            RelicFx.After(LetterFuse, () => { if (mark != null) Object.Destroy(mark.gameObject); });
+
+            float lead = LetterBoomLeadFrames / LetterBoomFps;
+            RelicFx.After(LetterFuse + stagger - lead, () =>
+            {
+                if (target != null && target.gameObject.activeInHierarchy) { center = target.bounds.center; feetY = target.bounds.min.y; }
+                Vector2 boomAt = new Vector2(center.x, feetY + DotScale.Units(LetterBoomBottomPx));
+                VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder);
+                RelicFx.After(lead, () =>
+                {
+                    RelicFx.Circle(center, LetterRadius, mult, RelicFx.Cyan, null, showRing: false);
+                    if (!gold) return;
+                    // 각성 — 같은 자리에 한 번 더(옅게)
+                    RelicFx.After(awakenDelay - lead, () =>
+                    {
+                        VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder, tint: new Color(1f, 1f, 1f, 0.6f));
+                        RelicFx.After(lead, () => RelicFx.Circle(center, LetterRadius, mult * awakenPower, RelicFx.Cyan, null, showRing: false));
+                    });
+                });
+            });
         }
 
         /// <summary>드론이 한 발 쐈다 — 자율 포좌: n발마다 부채꼴 추가 탄.</summary>

@@ -54,7 +54,9 @@ namespace ChronoSavior.Characters
         /// from(앞 적 몸 가장자리)에서 to(다음 적 몸 가장자리)로 한 번 튄다. <paramref name="delay"/>초 뒤에 시작. 머티리얼이 없으면 null.
         /// <paramref name="bendSign"/>: 휘는 쪽(+1·-1) — 연쇄마다 번갈아 주면 지그재그로 읽힌다.
         /// </summary>
-        public static GunnerChainBeamVfx Play(Material material, Vector2 from, Vector2 to, float delay = 0f, float bendSign = 1f, Vector2? targetCenter = null)
+        /// <paramref name="hitSpark"/>: 닿을 때 적중 그림(D 하얀 번개)을 띄울지 — 편지 배달처럼 닿은 자리에 다른 그림이 붙으면 끈다.
+        public static GunnerChainBeamVfx Play(Material material, Vector2 from, Vector2 to, float delay = 0f, float bendSign = 1f, Vector2? targetCenter = null,
+                                              bool hitSpark = true)
         {
             if (material == null) return null;
             var go = new GameObject("GunnerChainBeam");
@@ -78,6 +80,7 @@ namespace ChronoSavior.Characters
             v.control = (from + to) * 0.5f + n * DotScale.Units(BendDots) * Mathf.Sign(bendSign == 0f ? 1f : bendSign);
             v.delay = Mathf.Max(0f, delay);
             v.targetCenter = targetCenter;
+            v.sparked = !hitSpark; // 안 띄우면 이미 띄운 것으로 친다
             v.mat.SetFloat(SrcRowsId, SourceRows);
             v.mat.SetFloat(BodyRowsId, BodyRows);
             v.mat.SetFloat(WindowRowsId, WindowRows);
