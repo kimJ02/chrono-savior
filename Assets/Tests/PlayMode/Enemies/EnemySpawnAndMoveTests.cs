@@ -231,6 +231,51 @@ public class EnemySpawnAndMoveTests
     }
 
     /// <summary>
+    /// 2026-11-23 사용자 "x축이 겹치면 몬스터가 도리도리" — 플레이어와 x가 거의 같으면(데드존 안) 방향을 그대로 두고 제자리에 선다.
+    /// 예전엔 한 걸음에 지나쳐 매 프레임 좌우로 돌았다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator EnemyMove_OverlappingPlayerX_DoesNotJitter()
+    {
+        var playerGO = new GameObject("TestPlayer");
+        playerGO.tag = "Player";
+        const float px = 6f; // 필드 왼쪽 끝(x=0)은 벽 여유 때문에 못 다가간다 — 가운데쯤에서
+        playerGO.transform.position = new Vector3(px, FieldBounds.GroundY, 0f);
+        var monsterGO = new GameObject("TestMover");
+        monsterGO.transform.position = new Vector3(px + 0.6f, FieldBounds.GroundY, 0f);
+        var move = monsterGO.AddComponent<EnemyMove>();
+        move.Target = playerGO.transform;
+        monsterGO.GetComponent<Rigidbody2D>().gravityScale = 0f;
+        typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(move, 0f);
+
+        int flips = 0;
+        float gap = 0f;
+        try
+        {
+            // 플레이어 쪽으로 걸어와 겹칠 때까지
+            float t = 0f;
+            while (t < 3f && Mathf.Abs(monsterGO.transform.position.x - px) >= EnemyMove.FacingDeadZoneX) { t += Time.deltaTime; yield return null; }
+            Assert.Less(Mathf.Abs(monsterGO.transform.position.x - px), EnemyMove.FacingDeadZoneX, "플레이어에게 다가오지 않았다");
+
+            int last = move.Direction;
+            for (int i = 0; i < 60; i++)
+            {
+                yield return null;
+                if (move.Direction != last) { flips++; last = move.Direction; }
+            }
+            gap = Mathf.Abs(monsterGO.transform.position.x - px);
+        }
+        finally
+        {
+            Object.Destroy(playerGO);
+            Object.Destroy(monsterGO);
+        }
+        Assert.AreEqual(0, flips, "겹친 채로 방향이 왔다 갔다 했다(도리도리)");
+        Assert.Less(gap, EnemyMove.FacingDeadZoneX, "겹친 뒤 플레이어를 지나쳐 갔다");
+        yield return null;
+    }
+
+    /// <summary>
     /// 몹을 발판 위에서 살짝 위쪽에 놓고 떨어뜨렸을 때 실제 Physics2D로 그 발판 위에 착지해서
     /// 멈추는지 확인한다 — "발판 위에도 스폰된다"는 게 실제로 물리적으로 성립하는지의 핵심 검증.
     /// 예전엔 EnemyMove가 순수 transform 이동이라 발판 콜라이더를 그냥 통과했다.

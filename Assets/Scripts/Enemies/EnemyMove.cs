@@ -246,7 +246,7 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
         bool frozen = spawnProtectTimer > 0f;
         float ownSpeed = frozen ? 0f
             : motion != null ? motion.GetHorizontalSpeed(Time.fixedDeltaTime, target, buffedSpeed)
-            : dir * buffedSpeed;
+            : holdX ? 0f : dir * buffedSpeed;
         // 비행형(까마귀 등)은 방향 판단을 자기 이동이 하는데 방향을 안 알려 줘, 처음 방향 그대로 뒤로 날아오는 것처럼 보였다(2026-11-22 사용자).
         // 자기 이동 속도의 부호로 바라보는 쪽을 맞춘다(넉백은 제외 — 밀려나는 동안 돌아보지 않게).
         if (verticalMotion != null && !frozen && Mathf.Abs(ownSpeed) > 0.01f) dir = ownSpeed > 0f ? 1 : -1;
@@ -284,15 +284,25 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     /// <summary>현재 바라보는 방향(1/-1). 종류 전용 스크립트가 읽는다.</summary>
     public int Direction => dir;
 
-    /// <summary>원본: `if (Math.abs(dx) < 300) dir = sign(dx) || dir; else { wander }`.</summary>
+    /// <summary>
+    /// 플레이어와 x가 이만큼 안이면 돌아보지도 걷지도 않는다(유닛).
+    /// > **의도적 편차 — 원본은 `sign(dx)`로 매 프레임 돌아서, 한 걸음에 플레이어를 지나치면 다음 프레임에 반대로 돌아 좌우로 떨었다**
+    /// (2026-11-23 사용자 "x축이 겹치면 몬스터가 도리도리"). 걸음 한 번(약 0.015)보다 넉넉히 크고 몸 폭보다 훨씬 작게.
+    /// </summary>
+    public const float FacingDeadZoneX = 0.1f;
+    bool holdX;
+
+    /// <summary>원본: `if (Math.abs(dx) < 300) dir = sign(dx) || dir; else { wander }` — 단 바로 위(겹치면 멈춤)는 편차.</summary>
     void UpdateDirection()
     {
+        holdX = false;
         if (target != null)
         {
             float dx = target.position.x - transform.position.x;
             if (Mathf.Abs(dx) < aggroRangeX)
             {
-                if (dx != 0f) dir = dx > 0f ? 1 : -1; // Math.sign(0)이 falsy라 dx==0이면 dir 유지
+                if (Mathf.Abs(dx) < FacingDeadZoneX) { holdX = true; return; } // 겹쳤다 — 그 방향 그대로 선다
+                dir = dx > 0f ? 1 : -1;
                 return;
             }
         }
