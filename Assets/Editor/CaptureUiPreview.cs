@@ -951,8 +951,8 @@ namespace ChronoSavior.Editor
             var variants = new (string name, string idle, string comet, string pickup)[]
             {
                 ("A_지금_보라원", null, null, null),
-                ("B_에너지구슬_작은", "orb/pellet", "orb/comet", "orb/pickup"),
-                ("C_에너지구슬_큰", "orb/pellet_large", "orb/comet", "orb/pickup"),
+                ("B_에너지구슬_작은", "common/orb_pellet", "common/orb_comet", "common/orb_pickup"),
+                ("C_에너지구슬_큰", "common/orb_pellet_large", "common/orb_comet", "common/orb_pickup"),
             };
             const float Dt = 1f / 30f, WalkFrom = 0.5f, WalkTo = 0.9f, WalkDist = 0.6f;
             foreach (var v in variants)

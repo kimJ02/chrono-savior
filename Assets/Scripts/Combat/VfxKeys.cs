@@ -69,11 +69,11 @@ namespace ChronoSavior.Combat
 
         // ── 경험치 구슬(2026-11-23 사용자 후보 B) ──
         /// <summary>떠 있을 때 — 빙글 도는 보라 에너지 조각(Projectiles Pack 4 energy_pellet small 보라, 16px).</summary>
-        public const string OrbIdle = "orb/pellet";
+        public const string OrbIdle = "common/orb_pellet";
         /// <summary>끌려올 때 — 혜성 모양(energy_blast_B small 보라, 머리가 오른쪽), 날아오는 쪽으로 돌린다.</summary>
-        public const string OrbComet = "orb/comet";
+        public const string OrbComet = "common/orb_comet";
         /// <summary>먹을 때 플레이어 자리 반짝임(기가팩 round_sparkle_burst_001 small 파랑을 보라로 +60도).</summary>
-        public const string OrbPickup = "orb/pickup";
+        public const string OrbPickup = "common/orb_pickup";
         /// <summary>편지(공용 유물) 메카닉 레이저 폭발 — 위에서 에너지가 떨어져 바닥에서 전기 기둥이 솟는다(기가팩 scifi_warp_003 large 파랑, 2026-11-23 사용자 후보 B).</summary>
         public const string MechanicWarp = "mechanic/warp";
 

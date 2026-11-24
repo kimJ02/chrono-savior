@@ -189,28 +189,14 @@ namespace ChronoSavior.Systems
                 RelicFx.Line(pos + new Vector2(-5f, 0.8f), pos + new Vector2(5f, 0.6f), 0.5f, 0.3f, RelicFx.Gold, 0.25f);
             }
 
-            // 편지 — 가까운 적 n마리에 편지, 1초 뒤 그 자리 폭발
+            // 편지 — 메카닉 레이저 갈래 전용(2026-11-24 사용자). 레이저가 배달·전기 기둥은 메카닉 쪽(Relics.LaserLetter)
             if (Relics.Rank("letter") > 0)
             {
                 Relics.Proc("letter");
                 float m = Relics.V("letter", 1);
                 bool gold = Relics.Awakened("letter");
-                // 메카닉 레이저 — 레이저가 편지를 배달한다(전기 기둥 폭발, 2026-11-23 사용자 후보 B). 구현은 메카닉 쪽(Relics.LaserLetter)
-                if (Relics.RequireLaserTouch && Relics.LaserLetter != null)
-                    Relics.LaserLetter(pos, Relics.VI("letter", 0), m, gold, AwakenDelay, AwakenPower);
-                else
-                foreach (var c in RelicFx.Nearest(pos, Relics.VI("letter", 0), 6f))
-                {
-                    var target = c;
-                    VfxPlayer.Spawn(VfxKeys.MechanicHitSpark, RelicFx.Center(target), DotScale.Value, 15f, RelicFx.SortingOrder);
-                    Vector2 last = RelicFx.Center(target);
-                    RelicFx.After(1f, () =>
-                    {
-                        Vector2 at = target != null ? RelicFx.Center(target) : last;
-                        RelicFx.Circle(at, 1.3f, m, new Color(1f, 0.9f, 0.6f, 0.9f), VfxKeys.MageFireExplosion);
-                        if (gold) RelicFx.After(AwakenDelay, () => RelicFx.Circle(at, 1.3f, m * AwakenPower, RelicFx.Gold));
-                    });
-                }
+                // 레이저가 편지를 배달한다(전기 기둥, 2026-11-23 사용자 후보 B). 예전 공용 편지(마법사 불꽃 폭발)는 2026-11-24에 없앴다
+                Relics.LaserLetter?.Invoke(pos, Relics.VI("letter", 0), m, gold, AwakenDelay, AwakenPower);
             }
 
             // 연쇄 모래시계 — 연쇄 n번마다 바닥 충격파

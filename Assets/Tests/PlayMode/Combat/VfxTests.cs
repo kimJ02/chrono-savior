@@ -31,7 +31,7 @@ public class VfxTests
     public void Keys_FollowTheNamingRule_AndAreUnique()
     {
         var keys = VfxKeys.All;
-        var rule = new Regex(@"^(mage|mechanic|assassin)/[a-z0-9]+(_[a-z0-9]+)*$");
+        var rule = new Regex(@"^(mage|mechanic|assassin|common)/[a-z0-9]+(_[a-z0-9]+)*$"); // common = 캐릭터 공용(경험치 구슬, 2026-11-24)
         foreach (var k in keys) Assert.IsTrue(rule.IsMatch(k), $"키 규칙(<캐릭터>/<효과>_…, 소문자 snake_case)에 안 맞는다: {k}");
         Assert.AreEqual(keys.Length, keys.Distinct().Count(), "같은 키가 두 번 있다");
     }

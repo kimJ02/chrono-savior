@@ -147,7 +147,7 @@ namespace ChronoSavior.Characters
             }
         }
 
-        // ── 편지(공용 유물) — 메카닉 레이저 갈래 ──
+        // ── 편지 — 메카닉 레이저 갈래 전용 유물(2026-11-24 공용에서 옮김) ──
         /// <summary>표식이 붙어 있는 시간(초)·그중 마지막에 빨라지는 시간·적마다 폭발 시차·폭발 반경(원래 편지와 같은 1.3).</summary>
         public const float LetterFuse = 1f, LetterRush = 0.3f, LetterStagger = 0.06f, LetterRadius = 1.3f, LetterRange = 6f;
         const float LetterMarkFps = 10f, LetterRushMult = 2.5f, LetterBoomFps = 24f;

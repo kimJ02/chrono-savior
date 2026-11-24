@@ -25,7 +25,7 @@ public class ItemAndGachaTests
     [Test]
     public void RelicDatabase_Has30_FivePerCharacter_AndGradeSplit()
     {
-        Assert.AreEqual(48, ItemDatabase.All.Length, "전용 18(6/6/6) + 공용 30(2026-11-22)");
+        Assert.AreEqual(48, ItemDatabase.All.Length, "전용 19(6/7/6) + 공용 29 — 편지가 공용에서 메카닉 레이저 전용으로(2026-11-24)");
         var ids = new HashSet<string>();
         var perOwner = new Dictionary<RelicOwner, int>();
         var legendPerOwner = new Dictionary<RelicOwner, int>();
@@ -40,10 +40,10 @@ public class ItemAndGachaTests
             perGrade[d.grade] = perGrade.TryGetValue(d.grade, out var g) ? g + 1 : 1;
             if (d.grade == ItemGrade.Legend) legendPerOwner[d.owner] = legendPerOwner.TryGetValue(d.owner, out var l) ? l + 1 : 1;
         }
-        Assert.AreEqual(30, perOwner[RelicOwner.Common], "공용 30종(사용자 2026-11-22)");
+        Assert.AreEqual(29, perOwner[RelicOwner.Common], "공용 29종(2026-11-22 30종 — 편지는 2026-11-24 레이저 전용으로)");
         foreach (var o in new[] { RelicOwner.Mage, RelicOwner.Gunner, RelicOwner.Blade })
         {
-            Assert.AreEqual(6, perOwner[o], $"{o} 전용 유물 수(2026-11-22 — 6/6/6)");
+            Assert.AreEqual(o == RelicOwner.Gunner ? 7 : 6, perOwner[o], $"{o} 전용 유물 수(2026-11-22 6/6/6, 메카닉은 편지까지 7)");
             Assert.GreaterOrEqual(legendPerOwner[o], 1, $"{o} 전설 수");
         }
         Assert.AreEqual(20, perGrade[ItemGrade.Common]);

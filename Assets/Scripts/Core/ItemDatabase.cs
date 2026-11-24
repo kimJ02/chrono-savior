@@ -200,8 +200,9 @@ namespace ChronoSavior.Core
             R("lantern", "등불", C, RelicBranch.Any, N,
               "처치 8/7/6번마다 가장 가까운 무리에 빛 파동(공격력 70/85/100%).", Chain,
               V(8, 7, 6), V(0.70f, 0.85f, 1.00f)),                                    // 처치 간격, 피해 배수
-            R("letter", "편지", C, RelicBranch.Any, N,
-              "연쇄 처치 때마다 가까운 적 1/2/3마리에 폭발 편지, 1초 뒤 폭발(공격력 40/45/50%).", Chain,
+            // 편지 — 2026-11-24 사용자 "편지라는 건 레이저만 해당" → 공용에서 메카닉 레이저 갈래 전용으로(레이저가 배달·전기 기둥, GunnerRelics.LetterByLaser)
+            R("letter", "편지", G, RelicBranch.Laser, N,
+              "레이저로 연쇄 처치할 때마다 광선이 가까운 적 1/2/3마리에게 편지를 배달하고, 1초 뒤 전기 기둥이 떨어진다(공격력 40/45/50%).", Chain,
               V(1, 2, 3), V(0.40f, 0.45f, 0.50f)),                                    // 편지 수, 피해 배수
             R("chainHourglass", "연쇄 모래시계", C, RelicBranch.Any, Ra,
               "연쇄 처치 4/3/2번마다 바닥 충격파(공격력 90/110/130%).", Chain,

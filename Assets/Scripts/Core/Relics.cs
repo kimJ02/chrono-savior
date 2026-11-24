@@ -95,7 +95,7 @@ namespace ChronoSavior.Core
 
         /// <summary>
         /// 레이저 갈래 편지 배달(처치 위치, 편지 수, 피해 배수, 각성, 각성 지연, 각성 위력) — 메카닉(<c>GunnerRelics</c>)이 넣고
-        /// <c>RelicDirector</c>가 부른다(Systems는 Characters를 참조하지 않는다 — 계층 규칙). 없으면 원래 편지.
+        /// <c>RelicDirector</c>가 부른다(Systems는 Characters를 참조하지 않는다 — 계층 규칙). 편지는 레이저 갈래 전용(2026-11-24).
         /// </summary>
         public static System.Action<Vector2, int, float, bool, float, float> LaserLetter;
 

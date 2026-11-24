@@ -302,6 +302,11 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-24 (169)** — **[사용자 세션] 편지 = 메카닉 레이저 전용 유물** — 사용자 "블랙홀·폭발 마법사는 최종 작업까지 끝난 상태, 편지라는 건 레이저만 해당". 공용(`C`, Any) → 메카닉(`G`) 레이저 갈래(`RelicBranch.Laser`).
+  예전 공용 편지(작은 표식 + 1초 뒤 마법사 불꽃 폭발)는 지웠다 — 설치 갈래에서 "어디선가 폭발"하던 원인. 유물 수: 공용 30 → **29**, 메카닉 전용 6 → **7**(6/7/6) — `ItemAndGachaTests` 기대값 갱신, `docs/relic-report.md` 갱신.
+  - 경험치 구슬 키 이름이 VFX 키 규칙(`<캐릭터>/<효과>`)에 안 맞았다(165에서 전체 테스트를 안 돌려 놓침) → `common/orb_pellet`·`common/orb_comet`·`common/orb_pickup`, 규칙에 공용 `common/` 추가(`VfxTests`).
+  - 전체 630 중 625 통과 + 이름 규칙 고친 뒤 관련 81/81 — 남은 실패 2 = 보스 수치(원래 실패), 2 = 수동 전용 건너뜀.
+
 - **2026-11-24 (168)** — **[사용자 세션] 삼각 방전: X 한 번에 하나만 설치** — "한 번 설치할 때 3개 한번에 말고 하나만": X 때 중계기를 더 놓던 효과(`GunnerRelics.ExtraRelays`)를 뺐다. 삼각 방전은 설치 한도 +1/2/3만.
   - 확인 필요: 설치 갈래에서 "어디선가 폭발"하던 건 **편지** — 레이저 갈래만 새 편지(광선 배달·구슬·전기 기둥)이고, 설치 갈래는 예전 편지(작은 표식 + 1초 뒤 마법사 불꽃 폭발 `mage/fire_explosion`)라 중계기와 무관하게 터져 보였다. 어떻게 바꿀지 사용자 결정 대기.
   - 메카닉·유물 테스트 48/48 통과.
@@ -319,8 +324,8 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   새로 그린 픽셀 없음. 가져오기(배치)로 만든 결과가 Python 시험본과 12장 모두 픽셀까지 같음을 확인. 후보 (나) 뾰족 번개(lightning_burst_002) 합성은 미선택.
   - 다른 폴더(clone)는 `ChronoSavior/VFX 팩 가져오기`를 다시 돌려야 반영(이 작업 폴더엔 반영해 둠).
 
-- **2026-11-23 (165)** — **[사용자 세션] 경험치 구슬 그림(사용자 후보 B)** — 보라 원 → 받은 팩 그림: 떠 있을 땐 빙글 도는 보라 에너지 조각(`orb/pellet`, energy_pellet small 보라 16px),
-  끌려올 땐 혜성(`orb/comet`, energy_blast_B small 보라)을 날아오는 쪽으로, 먹으면 플레이어 자리 보라 반짝임(`orb/pickup`, round_sparkle_burst small 파랑 +60도). 도트 배율 2.
+- **2026-11-23 (165)** — **[사용자 세션] 경험치 구슬 그림(사용자 후보 B)** — 보라 원 → 받은 팩 그림: 떠 있을 땐 빙글 도는 보라 에너지 조각(`common/orb_pellet`, energy_pellet small 보라 16px),
+  끌려올 땐 혜성(`common/orb_comet`, energy_blast_B small 보라)을 날아오는 쪽으로, 먹으면 플레이어 자리 보라 반짝임(`common/orb_pickup`, round_sparkle_burst small 파랑 +60도). 도트 배율 2.
   그림이 없으면(가져오기 전) 예전 보라 원. 후보 캡처 도구 `CaptureUiPreview.RunExpOrbCandidates`(A 지금/B 작은/C 큰).
   - 다른 폴더(clone)는 메뉴 `ChronoSavior/VFX 팩 가져오기` 한 번(이 작업 폴더엔 풀어 둠). 테스트 `ExpOrbTests.Orb_UsesPelletArt_OrOriginalPurpleCircle` 등 23/23 통과.
 
