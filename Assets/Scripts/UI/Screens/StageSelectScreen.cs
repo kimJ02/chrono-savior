@@ -53,6 +53,7 @@ namespace ChronoSavior.UI
         PxButton bossFrame, arrowL, arrowR, bossArrowL, bossArrowR, enter, bossEnter;
         Text plateNum, plateName, bossPlateNum, bossPlateName, bossFrameLabel;
         Text title, progText, lockText, bossNameText, bossLockText;
+        Text powerText, bossPowerText; // 권장 전투력 · 내 전투력(2026-11-22 사용자 "환산 주 스탯 - 권장 전투력", 2026-11-24 팀원 프리팹 UI 위에 다시 얹음)
         Image progFill, bossPortrait;
         Image[] mobs = new Image[3];
 
@@ -145,7 +146,7 @@ namespace ChronoSavior.UI
             bossPlateName = view.bossPlateName;
             bossFrameLabel = view.bossFrameLabel;
             // 보스 칸도 누르면 고르기만(출발은 원정 떠나기 — 일반 칸과 같다, 2026-11-20). 키보드 확인이면 원정 떠나기로 선택 이동.
-            bossFrame = view.bossFrame.Wire(() => SelectNav(GameInput.MenuConfirmDown ? NavBossEnter : NavBossFrame));
+            bossFrame = view.bossFrame.Wire(() => SelectNav(NavBossFrame)); // 누르면 고르기만 — 키보드 확인은 OnKeys가 출발
             bossArrowL = view.bossArrowL.Wire(() => Step(-1));
             bossArrowR = view.bossArrowR.Wire(() => Step(+1));
             bossEnter = view.bossEnter.Wire(EnterSelected);
@@ -153,6 +154,56 @@ namespace ChronoSavior.UI
             AddNav(bossFrame);
             AddNav(bossArrowR);
             AddNav(bossEnter);
+
+            ReapplyFeedback();
+        }
+
+        /// <summary>
+        /// 2026-11-22 사용자 피드백(스테이지 선택 — 띠 위치·화살표·권장 전투력)을 2026-11-24 팀원 프리팹 UI 위에 다시 얹는다.
+        /// 프리팹 파일은 고치지 않고(프로젝트 UI 규칙), 열 때 프리팹의 자리를 기준으로 맞춘다:
+        /// - 보스 쪽 띠·챕터 판·보스 칸을 일반 쪽 띠에 맞춘다(Figma가 2·4도트 어긋나 넘길 때 띠가 튀었다 — "스테이지 바 위치가 안 맞음").
+        /// - 챕터 판 화살표를 판 그림 기준 좌우 대칭(판 +8 · +85)으로, 반대를 보던 그림(arrow_left·boss_arrow_right)은 뒤집는다("양쪽 화살표가 왜 이렇게 달렸냐").
+        /// - 오른쪽 판에 "권장 전투력 · 내 전투력" 한 줄(일반 = 등장 몬스터 위, 보스 = 보스 아이콘 위 빈 줄).
+        /// </summary>
+        void ReapplyFeedback()
+        {
+            RectTransform Child(RectTransform root, string name) => root != null ? root.Find(name) as RectTransform : null;
+            var nBar = Child(normalRoot, "Bar");
+            var bBar = Child(bossRoot, "Bar");
+            if (nBar != null && bBar != null)
+            {
+                Vector2 d = nBar.anchoredPosition - bBar.anchoredPosition;
+                foreach (var name in new[] { "Bar", "Plate", "PlateNum", "PlateName", "BossStage" })
+                {
+                    var c = Child(bossRoot, name);
+                    if (c != null) c.anchoredPosition += d;
+                }
+            }
+            PlaceArrows(Child(normalRoot, "Plate"), arrowL, arrowR, mirrorLeft: true);
+            PlaceArrows(Child(bossRoot, "Plate"), bossArrowL, bossArrowR, mirrorLeft: false);
+
+            if (powerText == null) powerText = Px.Text(normalRoot, "Power", "", 378f, 72f, 224f, 14f, 10, Color.white).WithOutline(Px.Ink);
+            if (bossPowerText == null) bossPowerText = Px.Text(bossRoot, "Power", "", 378f, 25f, 224f, 12f, 10, Color.white).WithOutline(Px.Ink);
+        }
+
+        /// <summary>판 그림(110×48, 좌우 장식 안쪽)에 화살표를 대칭으로 — 판 왼쪽 +8 · +85(세로는 프리팹 그대로). 반대를 보는 그림 하나를 뒤집는다.</summary>
+        static void PlaceArrows(RectTransform plate, PxButton left, PxButton right, bool mirrorLeft)
+        {
+            if (plate == null || left == null || right == null) return;
+            var l = (RectTransform)left.transform;
+            var r = (RectTransform)right.transform;
+            l.anchoredPosition = new Vector2(plate.anchoredPosition.x + 8f, l.anchoredPosition.y);
+            r.anchoredPosition = new Vector2(plate.anchoredPosition.x + 85f, l.anchoredPosition.y);
+            Mirror(mirrorLeft ? left : right);
+        }
+
+        /// <summary>좌우로 뒤집는다(픽셀 그대로 — 1:1 유지). 기준점이 왼쪽 위라 폭만큼 옮겨 같은 자리에 둔다.</summary>
+        static void Mirror(PxButton b)
+        {
+            var rt = (RectTransform)b.transform;
+            if (rt.localScale.x < 0f) return;
+            rt.localScale = new Vector3(-1f, 1f, 1f);
+            rt.anchoredPosition += new Vector2(rt.sizeDelta.x, 0f);
         }
 
         // Nav 순서: 일반 0 ◀, 1~5 스테이지, 6 ▶, 7 원정 / 보스 8 ◀, 9 보스, 10 ▶, 11 원정
@@ -193,7 +244,29 @@ namespace ChronoSavior.UI
             int page = (chapter - 1) * 2 + (bossPage ? 1 : 0) + dir;
             int max = ChapterConfig.ChapterCount * 2 - 1;
             if (page < 0 || page > max) return;
+            // 앞으로 넘어 새 챕터면 1스테이지부터, 보스에서 뒤로 오면 바로 옆인 5스테이지
+            if (page % 2 == 0) stage = dir > 0 ? 1 : ChapterConfig.StagesPerChapter;
             GoChapter(page / 2 + 1, page % 2 == 1);
+        }
+
+        // ── 키보드(2026-11-22 사용자, 2026-11-24 다시 얹음): ←→ = 스테이지 1~5만, ↑ = 다음(챕터 n 보스 → n+1), ↓ = 이전, 확인 = 출발 ──
+        protected override bool OwnsNavKeys => true;
+
+        protected override void OnKeys()
+        {
+            if (GameInput.MenuUpDown) { Step(+1); return; }
+            if (GameInput.MenuDownDown) { Step(-1); return; }
+            if (!bossPage)
+            {
+                int dx = (GameInput.MenuRightDown ? 1 : 0) - (GameInput.MenuLeftDown ? 1 : 0);
+                if (dx != 0)
+                {
+                    stage = Mathf.Clamp(stage + dx, 1, ChapterConfig.StagesPerChapter);
+                    SelectNav(NavStage0 + stage - 1);
+                    return;
+                }
+            }
+            if (GameInput.MenuConfirmDown) EnterSelected();
         }
 
         void GoChapter(int c, bool boss)
@@ -257,6 +330,7 @@ namespace ChronoSavior.UI
                 bool done5 = p.IsStageCleared(chapter, stage);
                 progText.text = done5 ? "클리어" : $"{Mathf.RoundToInt(ratio * 100f)}%";
                 bool can = p.IsStageOpen(chapter, stage);
+                SetPower(powerText, p, chapter, stage);
                 lockText.text = chapterLock != "" ? chapterLock : !can ? "앞 스테이지를 깨야 열린다"
                               : stage == ChapterConfig.StagesPerChapter && !done5 ? $"{ChapterConfig.StageKillTarget}마리 처치 후 포탈 → 중간 보스" : "";
                 enter.Interactable = can && p.CanEnterStage;
@@ -268,6 +342,7 @@ namespace ChronoSavior.UI
                 bossFrameLabel.text = ChapterConfig.StageLabel(chapter, ChapterConfig.BossStage);
                 bossArrowR.Interactable = chapter < ChapterConfig.ChapterCount;
                 bossNameText.text = RegionConfig.BossNameOf(chapter);
+                SetPower(bossPowerText, p, chapter, ChapterConfig.BossStage);
                 var bs = BossPortraitOf(chapter);
                 bossPortrait.sprite = bs;
                 bossPortrait.enabled = bs != null;
@@ -357,8 +432,19 @@ namespace ChronoSavior.UI
         {
             if (bossPage) return;
             stage = s;
-            // 키보드 확인이면 선택을 "원정 떠나기"로 넘긴다(한 번 더 누르면 출발) — 마우스는 고르기만
-            SelectNav(GameInput.MenuConfirmDown ? NavNormalEnter : NavStage0 + s - 1);
+            SelectNav(NavStage0 + s - 1); // 누르면 고르기만(출발은 원정 떠나기·키보드 확인 — OnKeys)
+        }
+
+        static readonly Color PowerOk = Px.Hex(0x8be38b), PowerTight = Px.Hex(0xfac70e), PowerLow = Px.Hex(0xff6b6b);
+
+        /// <summary>"권장 전투력 21,500 · 내 전투력 40,000" — 내 쪽이 권장의 100% 이상 초록, 70% 이상 노랑, 그 아래 빨강.</summary>
+        static void SetPower(Text t, PlayerProfile p, int chapter, int stage)
+        {
+            if (t == null) return;
+            int rec = CombatPower.RecommendedFor(chapter, stage), mine = CombatPower.Of(p);
+            int g = CombatPower.Grade(mine, rec);
+            var c = g == 2 ? PowerOk : g == 1 ? PowerTight : PowerLow;
+            t.text = $"권장 전투력 {rec:N0} · 내 전투력 <color=#{ColorUtility.ToHtmlStringRGB(c)}>{mine:N0}</color>";
         }
 
         void EnterSelected() =>

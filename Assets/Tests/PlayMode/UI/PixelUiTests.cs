@@ -357,7 +357,7 @@ public class PixelUiTests
             v.bossArrowL.button.Click();
             yield return null;
             Assert.IsTrue(v.normalRoot.gameObject.activeSelf, "보스 쪽 ◀ → 다시 일반 쪽");
-            Assert.AreEqual(3, screen.NavIndex, "고른 스테이지(1-3)가 그대로");
+            Assert.AreEqual(5, screen.NavIndex, "보스 쪽에서 ◀로 돌아오면 보스 바로 옆인 1-5(2026-11-22 사용자 스테이지 선택 조작, 2026-11-24 다시 얹음)");
         }
         finally { StageSelectScreen.Close(); }
     }

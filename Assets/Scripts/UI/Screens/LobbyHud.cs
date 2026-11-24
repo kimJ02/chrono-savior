@@ -34,6 +34,21 @@ namespace ChronoSavior.UI
         public bool UsesViewPrefab { get; private set; }
 
         /// <summary>
+        /// 캐릭터 버튼은 뺀다(2026-11-22 사용자 — 캐릭터는 새 원정·환생 때만 고른다, <see cref="CharacterSelectScreen.OpenForRun"/>; "이번 회차에서는 캐릭터를 바꿀 수 없다").
+        /// 2026-11-24 팀원 프리팹 UI 위에 다시 얹음 — 프리팹은 그대로 두고, 첫 칸(캐릭터)을 숨긴 뒤 업적·설정을 한 칸씩 당긴다(프리팹의 칸 자리를 그대로 쓴다).
+        /// </summary>
+        void HideCharacterButton()
+        {
+            var q = view.quickButtons;
+            if (q.Length < 3 || q[0]?.button == null) return;
+            var slots = new Vector2[q.Length];
+            for (int i = 0; i < q.Length; i++) slots[i] = q[i]?.button != null ? ((RectTransform)q[i].button.transform).anchoredPosition : Vector2.zero;
+            q[0].button.gameObject.SetActive(false);
+            for (int i = 1; i < q.Length; i++)
+                if (q[i]?.button != null) ((RectTransform)q[i].button.transform).anchoredPosition = slots[i - 1];
+        }
+
+        /// <summary>
         /// 모양은 프리팹(<see cref="LobbyHudView"/>, `Resources/UI/Views/LobbyHudView`)이 원본이다(2026-11-23 프리팹 UI 10호).
         /// 여기선 조각을 받아 오고, 빠른 버튼 셋에 동작을 잇고, 미니맵 건물 칸·건물 글씨를 견본에서 건물 수만큼 복제한다.
         /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
@@ -61,6 +76,7 @@ namespace ChronoSavior.UI
 
             System.Action[] quick = { CharacterSelectScreen.Open, AchievementsScreen.Open, SettingsWindow.Open };
             for (int i = 0; i < quick.Length && i < view.quickButtons.Length; i++) view.quickButtons[i].Wire(quick[i]);
+            HideCharacterButton();
 
             // 미니맵 건물 칸 — 가로 자리만 건물 위치로(세로·크기는 견본)
             int n = LobbyWorld.Buildings.Length;
