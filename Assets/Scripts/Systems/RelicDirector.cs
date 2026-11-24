@@ -81,7 +81,7 @@ namespace ChronoSavior.Systems
             if (Relics.Rank("thresholdClock") > 0)
             {
                 CombatModifiers.FreezeEnemies(Relics.V("thresholdClock", 0));
-                Echo("thresholdClock", m => RelicFx.Circle(p + Vector2.up * 0.4f, 6f, m, RelicFx.Light, RelicFx.BladeOnly(VfxKeys.AssassinLandRing)), Relics.V("thresholdClock", 1));
+                Echo("thresholdClock", m => RelicFx.Circle(p + Vector2.up * 0.4f, 6f, m, RelicFx.Light, RelicFx.HideForGunner(VfxKeys.AssassinLandRing)), Relics.V("thresholdClock", 1));
             }
             if (Relics.Rank("sevenSands") > 0)
             {
@@ -133,7 +133,7 @@ namespace ChronoSavior.Systems
             if (elite && Relics.Rank("eliteBell") > 0)
             {
                 float r = Relics.V("eliteBell", 0), vuln = Relics.V("eliteBell", 1);
-                Echo("eliteBell", m => RelicFx.Circle(pos, r, m, RelicFx.Light, RelicFx.BladeOnly(VfxKeys.AssassinLandRing),
+                Echo("eliteBell", m => RelicFx.Circle(pos, r, m, RelicFx.Light, RelicFx.HideForGunner(VfxKeys.AssassinLandRing),
                     onHit: c => c.GetComponent<IVulnerable>()?.ApplyVulnerable(vuln)), Relics.V("eliteBell", 2));
             }
 
@@ -141,7 +141,7 @@ namespace ChronoSavior.Systems
             if (Every("lantern"))
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 7f, 1.8f) ?? pos;
-                Echo("lantern", m => RelicFx.Circle(at, 2.2f, m, RelicFx.Light, RelicFx.BladeOnly(VfxKeys.AssassinBurstSpark)), Relics.V("lantern", 1));
+                Echo("lantern", m => RelicFx.Circle(at, 2.2f, m, RelicFx.Light, RelicFx.HideForGunner(VfxKeys.AssassinBurstSpark)), Relics.V("lantern", 1));
             }
 
             // 월하의 별똥 — 처치 n번마다 가장 밀집한 곳에 운석
@@ -149,7 +149,7 @@ namespace ChronoSavior.Systems
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 9f, 1.8f) ?? pos;
                 Echo("moonMeteor", m => RelicProjectile.Spawn(at + new Vector2(-1.5f, 7f), new Vector2(0.22f, -1f), 11f, 2.5f, m,
-                    RelicProjectile.Mode.Falling, VfxKeys.MageBasicProjectileLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, RelicFx.MageOnly(VfxKeys.MageGravityExplosion)), // 블랙홀과 헷갈리지 않게 파란 탄 그림
+                    RelicProjectile.Mode.Falling, VfxKeys.MageBasicProjectileLarge, new Color(0.85f, 0.95f, 1f), 0.4f, 0, 1.8f, RelicFx.HideForGunner(VfxKeys.MageGravityExplosion)), // 블랙홀과 헷갈리지 않게 파란 탄 그림
                     Relics.V("moonMeteor", 1));
             }
 
@@ -157,7 +157,7 @@ namespace ChronoSavior.Systems
             if (Every("paperBirds"))
             {
                 Vector2 at = RelicFx.Densest(PlayerPos, 8f, 2f) ?? pos;
-                Echo("paperBirds", m => RelicPullZone.Spawn(at, 2.4f, 0.8f, 9f, m, new Color(1f, 1f, 0.9f, 0.9f), null /* 심장 박동 그림은 뺐다(2026-11-23 사용자) */, RelicFx.BladeOnly(VfxKeys.AssassinBurstSpark)),
+                Echo("paperBirds", m => RelicPullZone.Spawn(at, 2.4f, 0.8f, 9f, m, new Color(1f, 1f, 0.9f, 0.9f), null /* 심장 박동 그림은 뺐다(2026-11-23 사용자) */, RelicFx.HideForGunner(VfxKeys.AssassinBurstSpark)),
                      Relics.V("paperBirds", 1));
             }
 
@@ -165,7 +165,7 @@ namespace ChronoSavior.Systems
             if (Every("doomBell"))
             {
                 Vector2 at = PlayerPos + Vector2.up * 0.5f;
-                Echo("doomBell", m => RelicFx.Circle(at, 14f, m, new Color(1f, 0.4f, 0.3f, 0.9f), RelicFx.MageOnly(VfxKeys.MageCollapseCritical), 2.5f), Relics.V("doomBell", 1));
+                Echo("doomBell", m => RelicFx.Circle(at, 14f, m, new Color(1f, 0.4f, 0.3f, 0.9f), RelicFx.HideForGunner(VfxKeys.MageCollapseCritical), 2.5f), Relics.V("doomBell", 1));
                 HitFeel.Shake(14f, 0.4f);
             }
         }
@@ -182,7 +182,7 @@ namespace ChronoSavior.Systems
             // 연쇄 세트 2 — 연쇄 처치 두 번에 한 번 작은 충격파(50%). 4 — 연쇄 처치마다 바닥을 가르는 칼날 2줄(30%)
             int chainTags = Relics.TagCount("연쇄");
             if (chainTags >= 2 && chainKills % 2 == 0)
-                RelicFx.Circle(pos, 1.6f, 0.5f, RelicFx.Gold, RelicFx.BladeOnly(VfxKeys.AssassinLandRing));
+                RelicFx.Circle(pos, 1.6f, 0.5f, RelicFx.Gold, RelicFx.HideForGunner(VfxKeys.AssassinLandRing));
             if (chainTags >= 4 && !LineEffectsOff)
             {
                 RelicFx.Line(pos + new Vector2(-5f, 0.2f), pos + new Vector2(5f, 0.2f), 0.5f, 0.3f, RelicFx.Gold, 0.25f);

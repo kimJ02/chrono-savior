@@ -247,7 +247,7 @@ namespace ChronoSavior.Characters
             {
                 timeShieldReady = false;
                 SetHitInvuln(1f);
-                RelicFx.Circle((Vector2)transform.position + Vector2.up * 0.4f, 3f, 0.8f, RelicFx.Light, RelicFx.BladeOnly(VfxKeys.AssassinLandRing));
+                RelicFx.Circle((Vector2)transform.position + Vector2.up * 0.4f, 3f, 0.8f, RelicFx.Light, RelicFx.HideForGunner(VfxKeys.AssassinLandRing));
                 return;
             }
 
@@ -261,7 +261,7 @@ namespace ChronoSavior.Characters
                 Relics.Proc("glassOath");
                 float m = Relics.V("glassOath", 2);
                 Vector2 at = transform.position;
-                RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), RelicFx.BladeOnly(VfxKeys.AssassinBurstSpark));
+                RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m, new Color(0.75f, 0.95f, 1f, 0.9f), RelicFx.HideForGunner(VfxKeys.AssassinBurstSpark));
                 if (Relics.Awakened("glassOath")) RelicFx.After(0.2f, () => RelicFx.Circle(at + Vector2.up * 0.4f, 2.4f, m * 0.35f, RelicFx.Gold));
             }
             int applied = Mathf.Max(1, Mathf.RoundToInt(amount * dr * UnityEngine.Random.Range(0.9f, 1.1f)));
@@ -300,7 +300,7 @@ namespace ChronoSavior.Characters
                     GrantInvuln(ReviveInvuln);
                     Vector2 at = (Vector2)transform.position + Vector2.up * 0.4f;
                     float m = Relics.V("timelineReboot", 1);
-                    RelicFx.Circle(at, 14f, m, RelicFx.Light, RelicFx.MageOnly(VfxKeys.MageCollapseCritical), 3f);
+                    RelicFx.Circle(at, 14f, m, RelicFx.Light, RelicFx.HideForGunner(VfxKeys.MageCollapseCritical), 3f);
                     if (Relics.Awakened("timelineReboot")) RelicFx.After(0.2f, () => RelicFx.Circle(at, 14f, m * 0.35f, RelicFx.Gold));
                     HitFeel.Shake(16f, 0.5f);
                     return;

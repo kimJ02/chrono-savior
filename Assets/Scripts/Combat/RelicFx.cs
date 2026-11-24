@@ -88,19 +88,14 @@ namespace ChronoSavior.Combat
         }
 
         /// <summary>
-        /// 마법사 그림(보라 붕괴·중력 폭발 등)은 마법사일 때만 — 다른 캐릭터에겐 왜 나오는지 모를 그림이라 뺀다(2026-11-23 사용자). 아니면 null(그림 없음).
+        /// 다른 직업 그림(마법사 보라 붕괴·중력 폭발, 섬영 착지 고리·반짝임)은 **메카닉일 때만 뺀다**(null = 그림 없음).
+        /// 2026-11-23 메카닉으로 플레이한 사용자 "왜 나오는지 모르겠으니 빼"·"얼음 파편 같다" → 처음엔 "그 직업일 때만"으로 막았다가,
+        /// 최종 완성된 마법사의 공용 유물 그림까지 사라져 2026-11-24 메카닉만 빼도록 고침. 메카닉 그림은 따로 채운다.
         /// </summary>
-        public static string MageOnly(string key)
+        public static string HideForGunner(string key)
         {
             var p = ProfileService.Current;
-            return p != null && p.character == CharacterId.Mage ? key : null;
-        }
-
-        /// <summary>섬영(살수) 그림(착지 고리·반짝임)은 섬영일 때만 — 메카닉엔 얼음 파편처럼 보여 어울리지 않았다(2026-11-23 사용자 "일단 빼").</summary>
-        public static string BladeOnly(string key)
-        {
-            var p = ProfileService.Current;
-            return p != null && p.character == CharacterId.Blade ? key : null;
+            return p != null && p.character == CharacterId.Gunner ? null : key;
         }
 
         /// <summary>
