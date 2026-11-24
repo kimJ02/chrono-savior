@@ -245,20 +245,36 @@ namespace ChronoSavior.Characters
             ChainFrom(RelicFx.Center(first), Relics.VI("siegeNetwork", 0), Relics.V("siegeNetwork", 1), Relics.Awakened("siegeNetwork"), first); // 맞은 적은 빼고 다음 적부터
         }
 
-        /// <summary>at에서 가까운 적으로 n번 튀는 전류·광선.</summary>
+        /// <summary>설치 유물 전류가 한 마리에서 다음으로 넘어가는 간격(초).</summary>
+        const float ChainHopGap = 0.06f;
+
+        /// <summary>
+        /// at에서 가까운 적으로 n번 튀는 전류(설치 유물 — 교차 전류·공성 연결망·잔탄 포켓 설치 쪽).
+        /// 그림(2026-11-24 사용자 B안 — 실제 게임 캡처 4종 중): 설치기가 적을 칠 때와 같은 **전기 아크**(<see cref="GunnerZap"/>, 승인 I-B)가
+        /// 앞에서 이 적까지 이어지고 적 자리에 전기, 한 마리씩 0.06초 간격으로. 예전의 직접 그린 노란·하늘색 선(RelicLine)은 뺐다.
+        /// </summary>
         static void ChainFrom(Vector2 at, int n, float mult, bool gold, Collider2D exclude = null)
         {
             var visited = new List<Collider2D>();
             if (exclude != null) visited.Add(exclude);
             Vector2 from = at;
+            float start = 0f;
             for (int i = 0; i < n; i++)
             {
                 var next = RelicFx.NearestOne(from, 4.5f, visited);
                 if (next == null) break;
                 Vector2 to = RelicFx.Center(next);
-                RelicLine.Show(from, to, 0.2f, gold ? RelicFx.Gold : RelicFx.Cyan, 0.22f);
-                RelicFx.Hit(next, mult, Mathf.Sign(to.x - from.x), 0.5f);
-                VfxPlayer.Spawn(VfxKeys.MechanicZap, to, DotScale.Value, 15f, RelicFx.SortingOrder);
+                float dir = Mathf.Sign(to.x - from.x);
+                var target = next;
+                Vector2 a = from;
+                float w = next.bounds.extents.x;
+                RelicFx.After(start, () =>
+                {
+                    if (target == null) return;
+                    RelicFx.Hit(target, mult, dir, 0.5f);
+                    GunnerZap.At(target, RelicFx.Center(target), a, w);
+                });
+                start += ChainHopGap;
                 visited.Add(next);
                 from = to;
             }
