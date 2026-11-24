@@ -93,11 +93,8 @@ namespace ChronoSavior.Core
             public void Dispose() { if (on) laserSelf--; }
         }
 
-        /// <summary>
-        /// 레이저 갈래 편지 배달(처치 위치, 편지 수, 피해 배수, 각성, 각성 지연, 각성 위력) — 메카닉(<c>GunnerRelics</c>)이 넣고
-        /// <c>RelicDirector</c>가 부른다(Systems는 Characters를 참조하지 않는다 — 계층 규칙). 편지는 레이저 갈래 전용(2026-11-24).
-        /// </summary>
-        public static System.Action<Vector2, int, float, bool, float, float> LaserLetter;
+        /// <summary>각성(최대 랭크) 메아리 — 이만큼(초) 뒤 이 비율의 위력으로 한 번 더(공통 — RelicDirector·캐릭터 유물이 같이 쓴다).</summary>
+        public const float AwakenDelay = 0.2f, AwakenPower = 0.35f;
 
         /// <summary>새 사냥 — 닿음 기록을 비운다.</summary>
         public static void ClearLaserTouched() => laserTouched.Clear();

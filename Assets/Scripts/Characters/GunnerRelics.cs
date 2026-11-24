@@ -19,14 +19,13 @@ namespace ChronoSavior.Characters
     public static class GunnerRelics
     {
         const int MaxSpareCharges = 3;
-        static int zHits, spareCharges, beamKills, droneShots;
+        static int zHits, spareCharges, beamKills, droneShots, letterKills;
         static bool setArmed;
         static float overloadUntil = -1f;
 
         public static void ResetForRun()
         {
-            zHits = spareCharges = beamKills = droneShots = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched();
-            Relics.LaserLetter = LetterByLaser; // 편지 레이저 배달(RelicDirector가 부른다)
+            zHits = spareCharges = beamKills = droneShots = letterKills = 0; setArmed = false; overloadUntil = -1f; Relics.ClearLaserTouched();
         }
 
         /// <summary>광선 연쇄 그림의 머티리얼(본 레이저와 같은 것 — 메카닉 키트가 런 시작 때 넣는다). 없으면 그림 없이 바로 맞힌다(테스트).</summary>
@@ -148,6 +147,20 @@ namespace ChronoSavior.Characters
         }
 
         // ── 편지 — 메카닉 레이저 갈래 전용 유물(2026-11-24 공용에서 옮김) ──
+        /// <summary>
+        /// 레이저 광선(Z) 또는 드론 탄(X)이 적을 쓰러뜨렸다 — 편지: 8/6/5마리마다 그 자리에서 배달(2026-11-24 사용자 "발동이 잘 안 된다" → GPT 추천안).
+        /// 예전 조건(레이저 광선의 연쇄 처치 — 0.8초 안 3마리째부터)은 5층 광선이 한 마리씩 따라가 거의 안 터졌고 드론 처치는 안 셌다. 유물 피해 처치는 안 센다.
+        /// </summary>
+        public static void OnLaserKill(Vector2 at)
+        {
+            if (Relics.InRelicDamage || Relics.Rank("letter") <= 0) return;
+            if (++letterKills < Relics.VI("letter", 0)) return;
+            letterKills = 0;
+            Relics.Proc("letter");
+            LetterByLaser(at, Relics.VI("letter", 1), Relics.V("letter", 2), Relics.Awakened("letter"), Relics.AwakenDelay, Relics.AwakenPower);
+        }
+
+
         /// <summary>표식이 붙어 있는 시간(초)·그중 마지막에 빨라지는 시간·적마다 폭발 시차·폭발 반경(원래 편지와 같은 1.3).</summary>
         public const float LetterFuse = 1f, LetterRush = 0.3f, LetterStagger = 0.06f, LetterRadius = 1.3f, LetterRange = 6f;
         const float LetterMarkFps = 10f, LetterRushMult = 2.5f, LetterBoomFps = 24f;

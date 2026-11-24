@@ -192,7 +192,11 @@ public class RelicEffectTests
         var col = target.GetComponent<Collider2D>();
         Assert.IsFalse(RelicFx.IsTarget(col, out _), "시작부터 레이저가 닿은 적이었다");
 
-        using (Relics.Signature()) RelicDirector.OnChainKill(new Vector2(400f, 0.5f)); // 메카닉은 레이저 처치만 공용 처치 유물이 센다
+        // 1랭크 = 레이저 광선·드론 탄 처치 8번마다(2026-11-24 — 연쇄 처치에서 바꿈)
+        for (int i = 0; i < 7; i++) GunnerRelics.OnLaserKill(new Vector2(400f, 0.5f));
+        yield return new WaitForSeconds(0.4f);
+        Assert.IsFalse(RelicFx.IsTarget(col, out _), "8번 전에 편지가 왔다");
+        GunnerRelics.OnLaserKill(new Vector2(400f, 0.5f));
         yield return new WaitForSeconds(0.4f);
         Assert.IsTrue(RelicFx.IsTarget(col, out _), "편지 광선이 닿았는데 레이저가 닿은 적이 안 됐다");
         Assert.AreEqual(target.MaxHp, target.CurrentHp, "광선이 피해를 줬다(폭발만 피해)");
@@ -215,7 +219,7 @@ public class RelicEffectTests
         var bystander = NewEnemy(new Vector3(601.8f, 0.5f, 0f)); // 표식 적 옆(폭발 반경 1.3 안), 편지 대상은 아님(더 멀다)
         yield return new WaitForFixedUpdate();
 
-        using (Relics.Signature()) RelicDirector.OnChainKill(new Vector2(600f, 0.5f));
+        for (int i = 0; i < 8; i++) GunnerRelics.OnLaserKill(new Vector2(600f, 0.5f)); // 1랭크 = 처치 8번마다
         yield return new WaitForSeconds(0.3f);
         Assert.IsTrue(RelicFx.IsTarget(marked.GetComponent<Collider2D>(), out _), "편지가 가까운 적에게 안 갔다");
         marked.TakeDamage(1000f, null); // 폭발 전에 죽는다

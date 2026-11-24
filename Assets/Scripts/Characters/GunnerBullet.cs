@@ -193,6 +193,7 @@ namespace ChronoSavior.Characters
             using (new Relics.SignatureScope(droneShot))
                 target.TakeDamageWithKnockback(dmg, null, knockbackDirSign, HitKnockback, HitFeel.HitstopNone); // 원본 noHitstop(:3721)
             if (stackOwner != null) GunnerRelics.OnZHit(); // 잔탄 포켓 — Z 총알 적중(2026-11-22)
+            if (droneShot && target.IsDead) GunnerRelics.OnLaserKill(other.bounds.center); // 편지 — 드론 탄 처치도 센다(2026-11-24)
 
             // 원본 `if (w.stackOnHit) addGunnerStack(w.stackOnHit)`(:3722) — 갈래가 없으면 AddStack이 무시한다.
             if (stackOnHit > 0 && stackOwner != null) stackOwner.AddStack(stackOnHit);

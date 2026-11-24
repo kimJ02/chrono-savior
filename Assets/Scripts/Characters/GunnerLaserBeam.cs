@@ -270,7 +270,7 @@ namespace ChronoSavior.Characters
                     if (vfx != null) vfx.Spark(e.collider, e.center, Direction); // 맞은 자리에 작은 충격(그림만, 적마다 0.25초에 한 번)
                     kit.AddStack(1);
                     GunnerRelics.OnZHit();                                          // 잔탄 포켓 — 광선도 Z(적마다)
-                    if (e.damageable.IsDead) GunnerRelics.OnBeamKill(e.center);   // 프리즘 구경 — 광선 처치만
+                    if (e.damageable.IsDead) { GunnerRelics.OnBeamKill(e.center); GunnerRelics.OnLaserKill(e.center); } // 프리즘 구경(광선 처치만)·편지(광선·드론 처치)
                 }
         }
 

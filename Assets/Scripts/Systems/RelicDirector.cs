@@ -19,7 +19,7 @@ namespace ChronoSavior.Systems
     /// </summary>
     public static class RelicDirector
     {
-        public const float AwakenDelay = 0.2f, AwakenPower = 0.35f;
+        public const float AwakenDelay = Relics.AwakenDelay, AwakenPower = Relics.AwakenPower;
 
         /// <summary>
         /// 가로로 길게 긋는 선 공격(칠일의 모래·연쇄 모래시계 바닥 파동, 콤보 종착역·일곱째 날의 왕관 화면 베기, 연쇄 세트 4 칼날 줄)을 끈다 —
@@ -189,15 +189,7 @@ namespace ChronoSavior.Systems
                 RelicFx.Line(pos + new Vector2(-5f, 0.8f), pos + new Vector2(5f, 0.6f), 0.5f, 0.3f, RelicFx.Gold, 0.25f);
             }
 
-            // 편지 — 메카닉 레이저 갈래 전용(2026-11-24 사용자). 레이저가 배달·전기 기둥은 메카닉 쪽(Relics.LaserLetter)
-            if (Relics.Rank("letter") > 0)
-            {
-                Relics.Proc("letter");
-                float m = Relics.V("letter", 1);
-                bool gold = Relics.Awakened("letter");
-                // 레이저가 편지를 배달한다(전기 기둥, 2026-11-23 사용자 후보 B). 예전 공용 편지(마법사 불꽃 폭발)는 2026-11-24에 없앴다
-                Relics.LaserLetter?.Invoke(pos, Relics.VI("letter", 0), m, gold, AwakenDelay, AwakenPower);
-            }
+            // 편지는 연쇄 처치가 아니라 레이저 광선·드론 탄 처치 횟수로 발동한다(2026-11-24 사용자 — GunnerRelics.OnLaserKill)
 
             // 연쇄 모래시계 — 연쇄 n번마다 바닥 충격파
             if (!LineEffectsOff && Relics.Rank("chainHourglass") > 0 && chainKills % Mathf.Max(1, Relics.VI("chainHourglass", 0)) == 0)
