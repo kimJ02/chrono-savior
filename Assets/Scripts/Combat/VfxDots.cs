@@ -25,8 +25,15 @@ namespace ChronoSavior.Combat
         /// <summary>끊임없이 다시 생기는지(Rise·Inward). 끄면 남은 점만 사라지고 더 안 생긴다.</summary>
         public bool Emitting { get; set; } = true;
 
+        /// <summary>엘리트 표식과 화상에 쓰는, 몸 너비 안에서 천천히 떠오르는 세 점.</summary>
+        public static VfxDots AttachBodyRise(SpriteRenderer body, Color color, int sortingOrder)
+        {
+            return Attach(body.transform, Motion.Rise, 3, color, body.bounds.extents.x,
+                0.5f, 0.3f, sortingOrder, body.sortingLayerID);
+        }
+
         /// <summary>점 무리를 붙인다 — <paramref name="radius"/>는 생기는 둘레(유닛), <paramref name="life"/>는 점 하나의 수명(초).</summary>
-        public static VfxDots Attach(Transform parent, Motion motion, int count, Color color, float radius, float life, float speed, int sortingOrder)
+        public static VfxDots Attach(Transform parent, Motion motion, int count, Color color, float radius, float life, float speed, int sortingOrder, int sortingLayerID = 0)
         {
             var go = new GameObject("VfxDots_" + motion);
             go.transform.SetParent(parent, false);
@@ -46,10 +53,13 @@ namespace ChronoSavior.Combat
                 dgo.transform.SetParent(go.transform, false);
                 var sr = dgo.GetComponent<SpriteRenderer>();
                 sr.sprite = DotSprite();
+                sr.sortingLayerID = sortingLayerID;
                 sr.sortingOrder = sortingOrder;
                 var dot = new Dot { sr = sr };
                 d.Respawn(ref dot);
                 if (motion != Motion.Burst) dot.t = Random.value * dot.life; // 제각각 다른 때에 시작
+                sr.transform.localPosition = dot.pos;
+                sr.color = color;
                 d.dots.Add(dot);
             }
             return d;

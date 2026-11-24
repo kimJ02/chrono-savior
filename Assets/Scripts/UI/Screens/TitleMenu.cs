@@ -11,65 +11,62 @@ namespace ChronoSavior.UI
     ///
     /// 동작은 예전 타이틀(`TitleScreen`)과 같다: 새 원정은 기록이 있으면 한 번 더 묻고(이제 공용 팝업으로) 지우고 시작,
     /// 불러오기는 기록이 있을 때만, 설정은 설정 창, 나가기는 종료. 키보드: ↑/↓ 고르기, Enter·Space·Z.
+    /// (2026-11-19부터 "새 원정"·"불러오기"는 둘 다 세이브 슬롯 창을 연다 — 아래 <see cref="Choose"/>. 위 줄은 예전 동작 기록.)
+    ///
+    /// **모양은 프리팹이 원본이다(2026-11-23 프리팹 UI 3호)** — 위치·크기·그림·글자·색은 <see cref="TitleMenuView"/> 프리팹에서 고친다.
     /// </summary>
     public class TitleMenu : PxScreen
     {
         protected override bool WantsVisible => GameState.Current == GameScene.Title;
         protected override NavLayout Layout => NavLayout.Vertical;
 
-        // Figma 좌표(640판 원점 0·0)
-        static readonly Rect Logo = new Rect(155f, 20f, 329f, 185f);   // 375:2 (그림이 칸 높이의 94.47%)
-        const float PlateX = 256f, PlateW = 128f, PlateH = 32f;          // 404:5 · 404:9 · 404:10 · 404:11
-        static readonly float[] PlateY = { 200f, 238f, 276f, 314f };
-        const int MenuSize = 12;                                         // 319:2~319:5 12px
-        const float CursorGap = 6f, CursorSize = 16f;                    // ◆(404:15) — "새 원정" 글자 왼쪽 6px 앞(278 + 16 = 294 … 글자 300)
-        static readonly Color Plate = new Color(0f, 0f, 0f, 0.33f);
-        static readonly Color Selected = Px.Hex(0xfac70e);
-        static readonly Color Normal = Px.Hex(0xd4ae88);
-        static readonly string[] Labels = { "새 원정", "불러오기", "설정", "나가기" };
+        TitleMenuView view;
 
-        readonly Text[] labels = new Text[4];
-        Image cursor;
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="TitleMenuView"/>, `Resources/UI/Views/TitleMenuView`)이 원본이다(2026-11-23 프리팹 UI 3호).
+        /// 여기선 메뉴 판 넷에 동작과 키보드 순서(↑/↓, 새 원정 → 불러오기 → 설정 → 나가기)만 연결한다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
-            // 16:9가 아닌 화면의 남는 곳은 검게, 판엔 배경 그림
-            Px.FullFill(Back, "Letterbox", Color.black);
-            Px.Image(Content, "Background", PxArt.Get("Title/background"), 0f, 0f, PixelCanvas.Width, PixelCanvas.Height);
-            Px.Image(Content, "Logo", PxArt.Get("Title/logo"), Logo.x, Logo.y, Logo.width, Logo.height);
-
-            for (int i = 0; i < 4; i++)
+            view = LoadView<TitleMenuView>(TitleMenuView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[TitleMenu] 화면 프리팹(Resources/" + TitleMenuView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/타이틀 화면 만들기", this);
+                view = TitleMenuView.CreateFromCode(Root);
+            }
+            if (view.MenuCount != MenuCount)
+                Debug.LogError($"[TitleMenu] 화면 프리팹 메뉴가 {view.MenuCount}개다 — {MenuCount}개(새 원정·불러오기·설정·나가기)여야 한다", view);
+            for (int i = 0; i < Mathf.Min(view.MenuCount, MenuCount); i++)
             {
                 int k = i;
-                var plate = Px.Fill(Content, "Menu" + i, Plate, PlateX, PlateY[i], PlateW, PlateH);
-                var inner = Px.Stretch(plate.transform, "Inner");
-                var b = plate.gameObject.AddComponent<PxButton>();
-                b.Init(plate, inner);
-                b.OnClick = () => Choose(k);
-                labels[i] = Px.Text(inner, "Label", Labels[i], 0f, 0f, PlateW, PlateH, MenuSize, Normal);
-                AddNav(b);
+                AddNav(view.WireTitleButton(i, () => Choose(k)));
             }
-            cursor = Px.Image(Content, "Cursor", PxArt.Get("Common/cursor"), 0f, 0f, CursorSize, CursorSize);
         }
+
+        const int MenuCount = 4;
 
         protected override void Refresh()
         {
             Nav[1].Interactable = true; // 불러오기 — 2026-11-19부터 세이브 슬롯 창을 연다(슬롯은 늘 셋 다 있다)
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < Nav.Count; i++)
             {
-                Color c = i == NavIndex ? Selected : Normal;
+                var label = view.Label(i);
+                if (label == null) continue;
+                Color c = i == NavIndex ? view.SelectedColor : view.NormalColor;
                 if (!Nav[i].Interactable) c.a = 0.45f;
-                labels[i].color = c;
+                label.color = c;
             }
         }
 
         protected override void OnNavChanged(int index)
         {
-            if (cursor == null) return;
-            float textW = labels[index].preferredWidth;
-            float x = PlateX + (PlateW - textW) / 2f - CursorGap - CursorSize;
-            float y = PlateY[index] + (PlateH - CursorSize) / 2f;
-            ((RectTransform)cursor.transform).anchoredPosition = new Vector2(Mathf.Round(x), -Mathf.Round(y));
+            if (view != null) view.PlaceCursor(index);
         }
 
 

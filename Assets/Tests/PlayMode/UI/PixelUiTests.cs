@@ -107,6 +107,338 @@ public class PixelUiTests
         Assert.IsFalse(pause.IsShown);
     }
 
+    /// <summary>
+    /// 프리팹 UI 시범(2026-11-22) — 일시정지 모양은 프리팹(`Resources/UI/Views/PauseMenuView`)에서 온다.
+    /// 프리팹이 없으면 화면은 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/일시정지 화면 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator PauseMenu_LayoutComesFromViewPrefab()
+    {
+        Assert.IsNotNull(Resources.Load<PauseMenuView>(PauseMenuView.ResourcePath),
+                         "일시정지 화면 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/일시정지 화면 만들기");
+        var pause = pc.GetComponent<PauseMenu>();
+        GameState.Set(GameScene.Pause);
+        yield return null;
+        Assert.IsTrue(pause.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, pause.Root.GetComponentsInChildren<PauseMenuView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(3, pause.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 셋(계속·설정·로비로)뿐 — 두 벌로 생기지 않는다");
+    }
+
+    /// <summary>
+    /// 일시정지 버튼 셋이 예전과 같은 순서·동작으로 연결된다(프리팹이든 대체 코드 모양이든) —
+    /// 마우스를 올리면 그 버튼이 키보드 선택이 되고(<see cref="PxScreen.NavIndex"/>), ⚙는 설정 창을 연다.
+    /// ▶·↩는 `GameFlow`를 부르는데 테스트 판엔 흐름이 없어(<see cref="PixelCanvas.Flow"/> null) 누르기만 해 본다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator PauseMenu_ButtonsKeepOrderAndActions()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        var pause = pc.GetComponent<PauseMenu>();
+        GameState.Set(GameScene.Pause);
+        yield return null;
+
+        var buttons = pause.Root.GetComponentsInChildren<PxButton>(true);
+        Assert.AreEqual(3, buttons.Length);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Assert.IsNotNull(buttons[i].Art, $"버튼 {i} 그림이 연결됐다(상태 그림을 만들 수 있게)");
+            Assert.IsNotNull(buttons[i].Inner, $"버튼 {i} 안쪽(눌림 1도트)이 연결됐다");
+            buttons[i].OnHover?.Invoke();
+            Assert.AreEqual(i, pause.NavIndex, $"버튼 {i}에 마우스를 올리면 키보드 선택도 {i}번 — 순서 ▶ ⚙ ↩");
+        }
+
+        Assert.IsFalse(SettingsWindow.IsOpen);
+        buttons[1].Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "⚙는 설정 창을 연다");
+        SettingsWindow.Close();
+
+        Assert.DoesNotThrow(() => buttons[0].Click(), "▶ 계속 — 흐름이 없는 판에서도 터지지 않는다");
+        Assert.DoesNotThrow(() => buttons[2].Click(), "↩ 로비로 — 흐름이 없는 판에서도 터지지 않는다");
+        yield return null;
+    }
+
+    /// <summary>
+    /// 프리팹 UI 3호(2026-11-23) — 타이틀 모양은 프리팹(`Resources/UI/Views/TitleMenuView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/타이틀 화면 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Title_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<TitleMenuView>(TitleMenuView.ResourcePath),
+                         "타이틀 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/타이틀 화면 만들기");
+        var title = pc.GetComponent<TitleMenu>();
+        GameState.Set(GameScene.Title);
+        yield return null;
+        Assert.IsTrue(title.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, title.Root.GetComponentsInChildren<TitleMenuView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(4, title.Root.GetComponentsInChildren<PxButton>(true).Length, "메뉴 판 넷뿐 — 두 벌로 생기지 않는다");
+    }
+
+    /// <summary>
+    /// 타이틀 메뉴가 예전과 같은 순서·글자·동작이고(프리팹이든 대체 코드 모양이든) ◆가 고른 메뉴를 따라간다 —
+    /// 마우스를 올리면 그 메뉴가 키보드 선택이 되고(↑/↓ 순서 새 원정 → 불러오기 → 설정 → 나가기), ◆는 그 판의 세로 가운데·글자 왼쪽에 붙는다.
+    /// "설정"은 설정 창을 연다. 좌표 자체는 고정하지 않는다(프리팹에서 옮겨도 통과해야 하므로 상대 위치만 본다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Title_MenusKeepOrderAndActions_CursorFollows()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        var title = pc.GetComponent<TitleMenu>();
+        GameState.Set(GameScene.Title);
+        yield return null;
+
+        string[] expected = { "새 원정", "불러오기", "설정", "나가기" };
+        var buttons = title.Root.GetComponentsInChildren<PxButton>(true);
+        Assert.AreEqual(4, buttons.Length);
+        RectTransform cursor = null;
+        foreach (var rt in title.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Cursor") cursor = rt;
+        Assert.IsNotNull(cursor, "◆ 커서");
+
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            Assert.AreEqual(expected[i], buttons[i].GetComponentInChildren<UnityEngine.UI.Text>(true).text, $"메뉴 {i} 글자");
+            buttons[i].OnHover?.Invoke();
+            Assert.AreEqual(i, title.NavIndex, $"메뉴 {i}에 마우스를 올리면 키보드 선택도 {i}번");
+
+            var plate = (RectTransform)buttons[i].transform;
+            float plateMid = -plate.anchoredPosition.y + plate.sizeDelta.y / 2f;
+            float cursorMid = -cursor.anchoredPosition.y + cursor.sizeDelta.y / 2f;
+            Assert.AreEqual(plateMid, cursorMid, 1f, $"◆가 메뉴 {i} 판의 세로 가운데");
+            Assert.Less(cursor.anchoredPosition.x + cursor.sizeDelta.x, plate.anchoredPosition.x + plate.sizeDelta.x / 2f,
+                        $"◆가 메뉴 {i} 글자 왼쪽");
+        }
+
+        Assert.IsFalse(SettingsWindow.IsOpen);
+        buttons[2].Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "설정은 설정 창을 연다");
+        SettingsWindow.Close();
+        yield return null;
+    }
+
+    /// <summary>
+    /// 프리팹 UI 7호(2026-11-23, 첫 목록형) — 업적 창 모양은 프리팹(`Resources/UI/Views/AchievementsScreenView`)에서 오고,
+    /// 업적 줄은 그 안의 견본 줄(꺼 둔 `RowTemplate`)을 **업적 수만큼** 복제해 만든다. 견본은 꺼진 채 남고, 키보드 선택엔 안 들어간다.
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/업적 창 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Achievements_LayoutFromViewPrefab_RowsFromTemplate()
+    {
+        Assert.IsNotNull(Resources.Load<AchievementsScreenView>(AchievementsScreenView.ResourcePath),
+                         "업적 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/업적 창 만들기");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<AchievementsScreen>();
+        AchievementsScreen.Open();
+        yield return null;
+        Assert.IsTrue(screen.IsShown, "로비에서 열면 보인다");
+        Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, screen.Root.GetComponentsInChildren<AchievementsScreenView>(true).Length, "모양은 한 벌뿐");
+        Assert.AreEqual(Achievements.All.Length, screen.RowCount, "업적 수만큼 줄");
+
+        int shownRows = 0, templates = 0;
+        foreach (var row in screen.Root.GetComponentsInChildren<AchievementRowView>(true))
+        {
+            if (row.name == "RowTemplate") { templates++; Assert.IsFalse(row.gameObject.activeSelf, "견본 줄은 꺼진 채"); }
+            else if (row.gameObject.activeInHierarchy) shownRows++;
+        }
+        Assert.AreEqual(1, templates, "견본 줄 하나");
+        Assert.AreEqual(Achievements.All.Length, shownRows, "보이는 줄 = 업적 수");
+        AchievementsScreen.Close();
+    }
+
+    /// <summary>
+    /// 업적 줄이 예전처럼 2열 격자로 놓이고(같은 열의 다음 줄은 바로 아래), 고르면 설명 상자가 뜨며, 닫기 버튼이 창을 닫는다.
+    /// 좌표 자체는 고정하지 않는다(프리팹에서 칸 크기를 바꿔도 통과해야 하므로 상대 위치만 본다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Achievements_RowsInGrid_TooltipOnSelect_CloseWorks()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        Assume.That(Achievements.All.Length >= 4, "격자를 보려면 업적이 넷 이상 있어야 한다");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<AchievementsScreen>();
+        AchievementsScreen.Open();
+        yield return null;
+
+        Assert.AreEqual(AchievementRow(screen, 0).anchoredPosition.y, AchievementRow(screen, 1).anchoredPosition.y, 0.01f, "0·1번은 같은 줄(2열)");
+        Assert.Greater(AchievementRow(screen, 1).anchoredPosition.x, AchievementRow(screen, 0).anchoredPosition.x, "1번은 0번 오른쪽");
+        Assert.AreEqual(AchievementRow(screen, 0).anchoredPosition.x, AchievementRow(screen, 2).anchoredPosition.x, 0.01f, "2번은 0번 바로 아래");
+        Assert.Less(AchievementRow(screen, 2).anchoredPosition.y, AchievementRow(screen, 0).anchoredPosition.y, "2번은 0번 아래");
+
+        AchievementRow(screen, 3).GetComponent<PxButton>().OnHover?.Invoke();
+        Assert.AreEqual(3, screen.NavIndex, "3번 줄에 마우스를 올리면 키보드 선택도 3번");
+        RectTransform tooltip = null;
+        foreach (var rt in screen.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Tooltip") tooltip = rt;
+        Assert.IsNotNull(tooltip, "설명 상자");
+        Assert.IsTrue(tooltip.gameObject.activeSelf, "고르면 설명 상자가 뜬다");
+
+        PxButton close = null;
+        foreach (var b in screen.Root.GetComponentsInChildren<PxButton>(true)) if (b.name == "Close") close = b;
+        Assert.IsNotNull(close);
+        close.Click();
+        Assert.IsFalse(AchievementsScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+    }
+
+    static RectTransform AchievementRow(PxScreen screen, int i)
+    {
+        foreach (var r in screen.Root.GetComponentsInChildren<AchievementRowView>(true)) if (r.name == "Row" + i) return (RectTransform)r.transform;
+        return null;
+    }
+
+    /// <summary>
+    /// 프리팹 UI 8호(2026-11-23) — 스테이지 선택 모양은 프리팹(`Resources/UI/Views/StageSelectScreenView`)에서 오고,
+    /// ▼ 표시는 마우스를 올린 챕터 리본을 따라간다(리본 자리 + 뷰의 markerOffset — 프리팹에서 리본을 옮겨도 따라가야 한다).
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/스테이지 선택 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator StageSelect_LayoutFromViewPrefab_MarkerFollowsRibbon()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스 올림이 섞이지 않게(위 업적 테스트와 같은 이유)
+        Assert.IsNotNull(Resources.Load<StageSelectScreenView>(StageSelectScreenView.ResourcePath),
+                         "스테이지 선택 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/스테이지 선택 만들기");
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<StageSelectScreen>();
+        StageSelectScreen.Open();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(screen.IsShown, "로비에서 열면 보인다");
+            Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = screen.Root.GetComponentsInChildren<StageSelectScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(ChapterConfig.ChapterCount, v.ribbons.Length, "챕터 수만큼 리본");
+            Assert.AreEqual(ChapterConfig.StagesPerChapter, v.frames.Length, "스테이지 수만큼 칸");
+
+            Assert.AreEqual(v.MarkerPositionFor(1), v.marker.anchoredPosition, "처음엔 지금 챕터(1) 리본 위에 ▼");
+            v.ribbons[1].button.OnHover?.Invoke();
+            yield return null;
+            Assert.AreEqual(v.MarkerPositionFor(2), v.marker.anchoredPosition, "2챕터 리본에 마우스를 올리면 ▼가 그리로");
+            Assert.AreNotEqual(v.MarkerPositionFor(1), v.MarkerPositionFor(2), "리본마다 ▼ 자리가 다르다");
+        }
+        finally { StageSelectScreen.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹으로 옮겨도 버튼 동작·키보드 순서가 예전 그대로 — ◀ · 1~5 · ▶ · 원정 / 보스 ◀ · 보스 · ▶ · 원정(0~7 / 8~11).
+    /// ▶는 보스 쪽(빨간 판)으로, 보스 쪽 ◀는 다시 일반 쪽으로, 스테이지 칸은 고르기만 한다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator StageSelect_ButtonsKeepOrderAndPages()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        GameState.Set(GameScene.Lobby);
+        var screen = pc.GetComponent<StageSelectScreen>();
+        StageSelectScreen.Open();
+        yield return null;
+        try
+        {
+            var v = screen.Root.GetComponentInChildren<StageSelectScreenView>(true);
+            Assert.AreEqual(1, screen.NavIndex, "새 기록은 1-1 칸부터");
+            Assert.IsTrue(v.normalRoot.gameObject.activeSelf && !v.bossRoot.gameObject.activeSelf, "처음엔 일반 쪽");
+
+            v.frames[2].button.Click();
+            yield return null;
+            Assert.AreEqual(3, screen.NavIndex, "3번 칸을 누르면 그 칸이 골라진다");
+            Assert.IsTrue(StageSelectScreen.IsOpen, "칸을 눌러도 출발하지 않는다");
+
+            v.arrowR.button.Click();
+            yield return null;
+            Assert.IsTrue(v.bossRoot.gameObject.activeSelf && !v.normalRoot.gameObject.activeSelf, "▶ → 1챕터 보스 쪽");
+            Assert.AreEqual(9, screen.NavIndex, "보스 쪽에선 보스 칸이 골라진다");
+
+            v.bossArrowL.button.Click();
+            yield return null;
+            Assert.IsTrue(v.normalRoot.gameObject.activeSelf, "보스 쪽 ◀ → 다시 일반 쪽");
+            Assert.AreEqual(3, screen.NavIndex, "고른 스테이지(1-3)가 그대로");
+        }
+        finally { StageSelectScreen.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹 UI 10호(2026-11-23) — 로비 HUD 모양은 프리팹(`Resources/UI/Views/LobbyHudView`)에서 오고, 미니맵 건물 칸·건물 글씨는
+    /// 견본(꺼 둔 채)을 건물 수만큼 복제한다. 빠른 버튼 셋은 캐릭터·업적·설정 창을 연다.
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/로비 HUD 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator LobbyHud_LayoutFromViewPrefab_ClonesPerBuilding_QuickButtonsOpen()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        Assert.IsNotNull(Resources.Load<LobbyHudView>(LobbyHudView.ResourcePath), "로비 HUD 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/로비 HUD 만들기");
+        GameState.Set(GameScene.Lobby);
+        var hud = pc.GetComponent<LobbyHud>();
+        yield return null;
+        Assert.IsTrue(hud.IsShown, "로비에선 보인다");
+        Assert.IsTrue(hud.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        var views = hud.Root.GetComponentsInChildren<LobbyHudView>(true);
+        Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+        var v = views[0];
+
+        int n = LobbyWorld.Buildings.Length;
+        int marks = 0, names = 0, doors = 0;
+        foreach (Transform c in v.minimap) if (c.name.StartsWith("Building") && c.name != "BuildingTemplate") marks++;
+        foreach (var t in hud.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true))
+        {
+            if (t.name.StartsWith("BuildingName") && t.name != "BuildingNameTemplate") names++;
+            if (t.name.StartsWith("BuildingDoor") && t.name != "BuildingDoorTemplate") doors++;
+        }
+        Assert.AreEqual(n, marks, "미니맵 건물 칸 = 건물 수");
+        Assert.AreEqual(n, names, "건물 이름 = 건물 수");
+        Assert.AreEqual(n, doors, "F / ↑ = 건물 수");
+        Assert.IsFalse(v.buildingTemplate.gameObject.activeSelf || v.buildingNameTemplate.gameObject.activeSelf || v.buildingDoorTemplate.gameObject.activeSelf,
+                       "견본은 꺼진 채");
+        StringAssert.StartsWith("멸망까지 남은 기간", v.doom.text, "글자는 코드가 채운다");
+        // 2026-11-23 사용자: 빠른 버튼이 흰 네모로 보였다 — 9-슬라이스 그림(PxArt.Sliced)은 실행 중에 만든 그림이라 프리팹에 저장되지 않는다(PxSlicedArt가 다시 만든다)
+        foreach (var q in v.quickButtons)
+        {
+            Assert.IsNotNull(q.button.Art.sprite, q.button.name + " 버튼 그림이 비었다(흰 네모)");
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, q.button.Art.type, q.button.name + "는 9-슬라이스");
+        }
+
+        v.quickButtons[0].button.Click();
+        Assert.IsTrue(CharacterSelectScreen.IsOpen, "캐릭터 버튼 → 캐릭터 선택");
+        CharacterSelectScreen.Close();
+        v.quickButtons[1].button.Click();
+        Assert.IsTrue(AchievementsScreen.IsOpen, "업적 버튼 → 업적");
+        AchievementsScreen.Close();
+        v.quickButtons[2].button.Click();
+        Assert.IsTrue(SettingsWindow.IsOpen, "설정 버튼 → 설정");
+        SettingsWindow.Close();
+    }
+
+    /// <summary>경험치 바는 바탕 폭 × 비율로 채운다(프리팹에서 바 폭을 바꿔도 따라간다). 미니맵 건물 칸은 미니맵 안에서 왼쪽→오른쪽 순서로 놓인다.</summary>
+    [UnityTest]
+    public IEnumerator LobbyHud_ExpBarFollowsBackWidth_MinimapMarksInsideMinimap()
+    {
+        GameState.Set(GameScene.Lobby);
+        var p = ProfileService.Current;
+        long need = PlayerProfile.RequiredExp(p.level);
+        Assume.That(need >= 2, "필요 경험치가 2 이상이어야 절반을 볼 수 있다");
+        p.exp = need / 2;
+        var hud = pc.GetComponent<LobbyHud>();
+        yield return null;
+        var v = hud.Root.GetComponentInChildren<LobbyHudView>(true);
+
+        float back = ((RectTransform)v.expBack.transform).sizeDelta.x;
+        float want = Mathf.Round((need / 2) / (float)need * back);
+        Assert.AreEqual(want, ((RectTransform)v.expFill.transform).sizeDelta.x, 0.01f, "경험치 채움 = 바탕 폭 × 비율");
+
+        float w = v.minimap.sizeDelta.x;
+        foreach (Transform c in v.minimap)
+        {
+            if (!c.name.StartsWith("Building") || c.name == "BuildingTemplate") continue;
+            float x = ((RectTransform)c).anchoredPosition.x;
+            Assert.That(x, Is.InRange(0f, w), c.name + "는 미니맵 안");
+        }
+    }
+
     [UnityTest]
     public IEnumerator Settings_TakesEscapeFirst_SoPauseIsNotResumed()
     {
@@ -163,6 +495,59 @@ public class PixelUiTests
         GameState.Set(GameScene.Lobby);
         yield return null;
         Assert.IsFalse(hud.IsShown, "로비에선 HUD 없음(원본도 로비에서 숨긴다)");
+    }
+
+    /// <summary>
+    /// 프리팹 UI 14호(2026-11-23) — 전투 HUD 모양은 프리팹(`Resources/UI/Views/CombatHudView`)에서 오고, 개수가 실행 중에 바뀌는 부분
+    /// (유물 칸 22개·미니맵 점/발판 선)은 프리팹의 자리(`RelicStrip`·`Minimap`) 안에 코드가 짓는다(사용자 "틀만 프리팹").
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/전투 HUD 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator CombatHud_LayoutFromViewPrefab_RelicAndMinimapBuiltInSlots()
+    {
+        Assert.IsNotNull(Resources.Load<CombatHudView>(CombatHudView.ResourcePath), "전투 HUD 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/전투 HUD 만들기");
+        var hud = pc.GetComponent<CombatHud>();
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f };
+        yield return null;
+        Assert.IsTrue(hud.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        var views = hud.Root.GetComponentsInChildren<CombatHudView>(true);
+        Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+        var v = views[0];
+
+        int cells = 0;
+        foreach (Transform c in v.relicStrip) if (c.name.StartsWith("Relic")) cells++;
+        Assert.AreEqual(22, cells, "유물 칸 22개(2열 × 11줄)가 프리팹의 RelicStrip 자리 안에");
+        bool player = false, ground = false;
+        foreach (Transform c in v.minimap) { if (c.name == "Player") player = true; if (c.name == "Ground") ground = true; }
+        Assert.IsTrue(player && ground, "미니맵 점·땅 선이 프리팹의 Minimap 자리 안에");
+        Assert.IsFalse(v.popupTemplate.gameObject.activeSelf, "팝업 글씨 견본은 꺼진 채");
+        Assert.AreEqual(3, v.slots.Length, "스킬 칸 Z·X·C");
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 팝업 글씨는 견본에서 복제돼 뜨고, 쿨다운 덮개는 Dim 자리 안에서 아래부터 차오른다.</summary>
+    [UnityTest]
+    public IEnumerator CombatHud_PopupFromTemplate_CooldownVeilInsideDim()
+    {
+        var hud = pc.GetComponent<CombatHud>();
+        hud.Preview = new CombatHud.PreviewState { Hp = 50f, MaxHp = 100f, Attack = SkillSlotState.Cooldown(1f, 2f) };
+        yield return null;
+        var v = hud.Root.GetComponentInChildren<CombatHudView>(true);
+
+        CombatEvents.RaisePopup(Vector2.zero, "중첩 x3", Color.white);
+        CollectionAssert.Contains(new System.Collections.Generic.List<string>(hud.ActivePopups), "중첩 x3", "팝업 글씨가 뜬다");
+        int shown = 0;
+        foreach (var t in v.board.GetComponentsInChildren<UnityEngine.UI.Text>(false)) if (t.name == "Popup") shown++;
+        Assert.AreEqual(1, shown, "견본을 복제한 팝업 하나");
+        Assert.IsFalse(v.popupTemplate.gameObject.activeSelf, "견본은 그대로 꺼진 채");
+
+        var dim = (RectTransform)v.slots[0].dim[0].transform;
+        var veil = (RectTransform)v.slots[0].veil[0].transform;
+        Assert.IsTrue(v.slots[0].veil[0].enabled, "쿨다운 중이면 덮개");
+        float dimTop = -dim.anchoredPosition.y, dimBottom = dimTop + dim.sizeDelta.y;
+        float veilTop = -veil.anchoredPosition.y, veilBottom = veilTop + veil.sizeDelta.y;
+        Assert.GreaterOrEqual(veilTop, dimTop, "덮개 위 끝은 Dim 자리 안");
+        Assert.AreEqual(dimBottom, veilBottom, 0.01f, "덮개는 아래 끝에 붙어 차오른다");
+        Assert.Less(veil.sizeDelta.y, dim.sizeDelta.y, "절반 쿨다운이면 덮개는 다 안 찼다");
     }
 
     /// <summary>

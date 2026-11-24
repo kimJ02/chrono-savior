@@ -272,6 +272,205 @@ public class UiFigmaUpdateTests
         relic.HideForCapture();
     }
 
+    /// <summary>
+    /// 프리팹 UI 11호(2026-11-23) — 유물 소환 창 모양은 프리팹(`Resources/UI/Views/RelicScreenView`)에서 오고, 칸은 견본(`Slots/Template`, 꺼 둔 채)을
+    /// 30칸으로 복제한다. 실행 중 만든 그림(9-슬라이스 버튼·확률 이름표, 흰 등급 ◆)은 프리팹에 안 남으므로 불러올 때 다시 만들어져야 한다(10호 흰 네모 사고).
+    /// 확률 판의 등급 이름·색·값은 데이터에서 채운다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/유물 소환 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Relic_LayoutFromViewPrefab_SlotsFromTemplate_RuntimeArtRestored()
+    {
+        Assert.IsNotNull(Resources.Load<RelicScreenView>(RelicScreenView.ResourcePath), "유물 소환 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/유물 소환 만들기");
+        var relic = pc.GetComponent<RelicScreen>();
+        relic.ShowForCapture();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(relic.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = relic.Root.GetComponentsInChildren<RelicScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+
+            int clones = 0;
+            foreach (var sl in v.slots.GetComponentsInChildren<RelicSlotView>(true))
+            {
+                if (sl.name == "Template") { Assert.IsFalse(sl.gameObject.activeSelf, "견본 칸은 꺼진 채"); continue; }
+                clones++;
+                Assert.IsNotNull(sl.gem.sprite, sl.name + " 등급 ◆ 그림이 비었다(실행 중 만든 흰 그림 복원 안 됨)");
+                Assert.IsNotNull(sl.gemEdge.sprite, sl.name + " ◆ 테두리 그림이 비었다");
+            }
+            Assert.AreEqual(30, clones, "한 쪽 30칸");
+
+            foreach (var b in new[] { v.prevPage.button, v.nextPage.button })
+            {
+                Assert.IsNotNull(b.Art.sprite, b.name + " 그림이 비었다(흰 네모)");
+                Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, b.Art.type, b.name + "는 9-슬라이스");
+            }
+            foreach (var img in v.GetComponentsInChildren<UnityEngine.UI.Image>(true))
+                if (img.name == "RatePlate") Assert.IsNotNull(img.sprite, "확률 이름표 그림이 비었다(흰 네모)");
+
+            string[] names = { "노말:", "레어:", "에픽:", "레전드:" };
+            for (int g = 0; g < 4; g++)
+            {
+                Assert.AreEqual(names[g], v.rateRows[g].name.text, "등급 이름은 코드가 채운다");
+                Assert.AreEqual(ItemDatabase.GradeColor((ItemGrade)g), v.rateRows[g].gem.color, "등급 ◆ 색");
+                Assert.IsNotNull(v.rateRows[g].gem.sprite, "확률 ◆ 그림");
+                StringAssert.EndsWith("%", v.rateRows[g].value.text);
+            }
+        }
+        finally { relic.HideForCapture(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 쪽 넘김(&lt; &gt;)·칸에 마우스를 올리면 설명 상자·닫기.</summary>
+    [UnityTest]
+    public IEnumerator Relic_PageButtons_SlotTooltip_Close()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        GameState.Set(GameScene.Lobby);
+        var relic = pc.GetComponent<RelicScreen>();
+        RelicScreen.Open();
+        yield return null;
+        try
+        {
+            var v = relic.Root.GetComponentInChildren<RelicScreenView>(true);
+            Assume.That(ItemDatabase.All.Length > 30, "두 쪽이어야 쪽 넘김을 볼 수 있다");
+            Assert.AreEqual("1/2", v.pageText.text);
+            v.nextPage.button.Click();
+            yield return null;
+            Assert.AreEqual("2/2", v.pageText.text, "> → 다음 쪽");
+            v.prevPage.button.Click();
+            yield return null;
+            Assert.AreEqual("1/2", v.pageText.text, "< → 앞 쪽");
+
+            PxButton slot6 = null;
+            foreach (var b in v.slots.GetComponentsInChildren<PxButton>(false)) if (b.name == "Slot6") slot6 = b;
+            Assert.IsNotNull(slot6);
+            slot6.OnHover?.Invoke();
+            yield return null;
+            Assert.AreEqual(6, relic.NavIndex, "칸에 마우스를 올리면 키보드 선택도 그 칸");
+            RectTransform tip = null;
+            foreach (var rt in relic.Root.GetComponentsInChildren<RectTransform>(true)) if (rt.name == "Tooltip") tip = rt;
+            Assert.IsNotNull(tip);
+            Assert.IsTrue(tip.gameObject.activeSelf, "칸을 고르면 설명 상자");
+
+            v.close.button.Click();
+            Assert.IsFalse(RelicScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { RelicScreen.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹 UI 12호(2026-11-23) — 각성창 모양은 프리팹(`Resources/UI/Views/AwakenScreenView`)에서 온다. 스킬 칸 10개·강화 줄 5개·스탯 5줄이 그대로 있고,
+    /// 에디터 전용 "SP +1"의 9-슬라이스 그림(실행 중 만든 그림)이 다시 만들어져 흰 네모가 아니다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/각성창 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Awaken_LayoutFromViewPrefab_PartsKept()
+    {
+        Assert.IsNotNull(Resources.Load<AwakenScreenView>(AwakenScreenView.ResourcePath), "각성창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/각성창 만들기");
+        var awaken = pc.GetComponent<AwakenScreen>();
+        awaken.ShowForCapture();
+        yield return null;
+        try
+        {
+            Assert.IsTrue(awaken.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = awaken.Root.GetComponentsInChildren<AwakenScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(10, v.nodes.Length, "스킬 칸 2줄 × 5층");
+            Assert.AreEqual(5, v.upgradeRows.Length, "강화 줄 5개");
+            Assert.AreEqual(5, v.statValues.Length, "스탯 5줄");
+            Assert.IsNotNull(v.testSp.button.Art.sprite, "SP +1 그림이 비었다(흰 네모)");
+            Assert.AreEqual(UnityEngine.UI.Image.Type.Sliced, v.testSp.button.Art.type, "SP +1은 9-슬라이스");
+            Assert.IsTrue(v.tree.gameObject.activeSelf && v.skillDetail.gameObject.activeSelf, "처음엔 [각성] 탭");
+            Assert.IsFalse(v.upgrades.gameObject.activeSelf || v.statDetail.gameObject.activeSelf);
+        }
+        finally { awaken.HideForCapture(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — 탭 버튼이 두 얼굴을 바꾸고, 강화 목록을 끝까지 밀면 스크롤 표시가 맨 아래로, 닫기가 창을 닫는다.</summary>
+    [UnityTest]
+    public IEnumerator Awaken_TabButtons_ScrollThumb_Close()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        GameState.Set(GameScene.Lobby);
+        var awaken = pc.GetComponent<AwakenScreen>();
+        AwakenScreen.Open();
+        yield return null;
+        try
+        {
+            var v = awaken.Root.GetComponentInChildren<AwakenScreenView>(true);
+            v.tabStat.button.Click();
+            yield return null;
+            Assert.IsTrue(v.upgrades.gameObject.activeSelf && v.statDetail.gameObject.activeSelf, "[스탯] 버튼 → 강화 목록·스탯 5줄");
+            Assert.IsFalse(v.tree.gameObject.activeSelf || v.skillDetail.gameObject.activeSelf);
+            Assert.AreEqual(-v.scrollTrackY, v.thumb.anchoredPosition.y, 0.01f, "처음엔 스크롤 표시가 맨 위");
+
+            awaken.PickUpgradeForTest(4, 0); // 마지막 줄 → 목록이 끝까지 밀린다
+            Assert.AreEqual(-(v.scrollTrackY + v.scrollTrackHeight - v.thumb.sizeDelta.y), v.thumb.anchoredPosition.y, 0.01f, "끝까지 밀면 스크롤 표시가 맨 아래");
+
+            v.tabAwaken.button.Click();
+            yield return null;
+            Assert.IsTrue(v.tree.gameObject.activeSelf && v.skillDetail.gameObject.activeSelf, "[각성] 버튼 → 스킬 칸·스킬 상세");
+
+            v.close.button.Click();
+            Assert.IsFalse(AwakenScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { AwakenScreen.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹 UI 13호(2026-11-23) — 세이브 슬롯 창 모양은 프리팹(`Resources/UI/Views/SaveSlotScreenView`)에서 오고, 슬롯 칸은 세이브 슬롯 수만큼(3).
+    /// 글자(슬롯 번호·시나리오 이름)는 코드가 채운다. (처음엔 메뉴 `ChronoSavior/UI 프리팹/세이브 슬롯 만들기`로 만들어야 통과한다.)
+    /// </summary>
+    [UnityTest]
+    public IEnumerator SaveSlot_LayoutFromViewPrefab_ThreeSlots()
+    {
+        Assert.IsNotNull(Resources.Load<SaveSlotScreenView>(SaveSlotScreenView.ResourcePath), "세이브 슬롯 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/세이브 슬롯 만들기");
+        var screen = pc.GetComponent<SaveSlotScreen>();
+        SaveSlotScreen.Open(); // 타이틀에서 열린다(SetUp이 타이틀)
+        yield return null;
+        try
+        {
+            Assert.IsTrue(screen.IsShown, "타이틀에서 열면 보인다");
+            Assert.IsTrue(screen.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            var views = screen.Root.GetComponentsInChildren<SaveSlotScreenView>(true);
+            Assert.AreEqual(1, views.Length, "모양은 한 벌뿐");
+            var v = views[0];
+            Assert.AreEqual(SaveService.SlotCount, v.slots.Length, "슬롯 칸 = 세이브 슬롯 수");
+            for (int i = 0; i < v.slots.Length; i++)
+                StringAssert.StartsWith($"슬롯 {i + 1} · {SavePresets.Name(i + 1)}", v.slots[i].title.text, "제목은 코드가 채운다");
+            Assert.AreEqual(0, screen.NavIndex, "처음엔 1번 이어하기");
+        }
+        finally { SaveSlotScreen.Close(); }
+    }
+
+    /// <summary>프리팹으로 옮겨도 동작은 그대로 — [초기화]는 확인 팝업을 띄우고(바로 지우지 않는다), 닫기 버튼이 창을 닫는다.</summary>
+    [UnityTest]
+    public IEnumerator SaveSlot_ResetAsksFirst_CloseCloses()
+    {
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; } // 실제 마우스가 섞이지 않게
+        var screen = pc.GetComponent<SaveSlotScreen>();
+        SaveSlotScreen.Open();
+        yield return null;
+        try
+        {
+            var v = screen.Root.GetComponentInChildren<SaveSlotScreenView>(true);
+            v.slots[1].resetButton.button.Click();
+            yield return null;
+            Assert.IsTrue(CommonPopup.IsOpen, "[초기화] → 확인 팝업(바로 지우지 않는다)");
+            PxButton cancel = null;
+            foreach (var b in pc.GetComponent<CommonPopup>().Root.GetComponentsInChildren<PxButton>(true)) if (b.name == "Cancel") cancel = b;
+            Assert.IsNotNull(cancel);
+            cancel.Click(); // 취소 — 아무것도 안 지운다
+            yield return null;
+            Assert.IsFalse(CommonPopup.IsOpen);
+
+            v.close.button.Click();
+            Assert.IsFalse(SaveSlotScreen.IsOpen, "닫기 버튼은 창을 닫는다");
+        }
+        finally { SaveSlotScreen.Close(); }
+    }
+
     /// <summary>2026-11-22 회귀 결과창 — 새 프로필: 이전 최고 stage 1 → 회귀 후 stage 1, 획득 파편 0, Lv.1, 처치 0. 정복한 지역이 있으면 그 파편이 보인다.</summary>
     [UnityTest]
     public IEnumerator Regression_ShowsStageBeforeAfter_Shards_Level_Kills()
@@ -286,6 +485,58 @@ public class UiFigmaUpdateTests
         Assert.AreEqual("Lv.1", reg.ValueText(3));
         Assert.AreEqual("0", reg.ValueText(4));
         reg.HideForCapture();
+    }
+
+    /// <summary>
+    /// 프리팹 UI 4호(2026-11-23) — 시간 회귀 창 모양은 프리팹(`Resources/UI/Views/RegressionScreenView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/시간 회귀 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Regression_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<RegressionScreenView>(RegressionScreenView.ResourcePath),
+                         "시간 회귀 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/시간 회귀 창 만들기");
+        var reg = pc.GetComponent<RegressionScreen>();
+        reg.ShowForCapture();
+        yield return null;
+        Assert.IsTrue(reg.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, reg.Root.GetComponentsInChildren<RegressionScreenView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(2, reg.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 둘(취소·회귀)뿐 — 두 벌로 생기지 않는다");
+        reg.HideForCapture();
+    }
+
+    /// <summary>
+    /// 시간 회귀 창 버튼이 예전과 같은 순서·글자·동작이다(프리팹이든 대체 코드 모양이든) — 키보드 순서 취소(0) → 회귀(1),
+    /// 처음엔 회귀를 고르고, 새 프로필(파편 0·날짜 남음)이면 회귀 버튼은 "회귀 불가"로 못 누른다. 취소는 창을 닫는다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Regression_ButtonsKeepOrderAndActions()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        GameState.Set(GameScene.Lobby);
+        var reg = pc.GetComponent<RegressionScreen>();
+        RegressionScreen.Open();
+        yield return null;
+        Assert.IsTrue(reg.IsShown, "로비에서 열면 보인다");
+        Assert.AreEqual(1, reg.NavIndex, "처음엔 회귀 버튼");
+        Find(reg, "Cancel").OnHover?.Invoke();
+        Assert.AreEqual(0, reg.NavIndex, "취소 = 0번");
+        Find(reg, "Ok").OnHover?.Invoke();
+        Assert.AreEqual(1, reg.NavIndex, "회귀 = 1번");
+        Assert.AreEqual("회귀 불가", Find(reg, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "새 프로필은 회귀 불가");
+        Assert.IsFalse(Find(reg, "Ok").Interactable, "회귀 불가면 못 누른다");
+
+        Find(reg, "Cancel").Click();
+        Assert.IsFalse(RegressionScreen.IsOpen, "취소는 창을 닫는다");
+    }
+
+    static string TextOf(PxScreen s, string name)
+    {
+        foreach (var t in s.Root.GetComponentsInChildren<UnityEngine.UI.Text>(true)) if (t.name == name) return t.text;
+        return null;
     }
 
     PxButton Find(PxScreen s, string name)
@@ -327,6 +578,57 @@ public class UiFigmaUpdateTests
         Assert.AreEqual(1, calls, "알림의 X는 확인과 같다 — 한 번만");
     }
 
+    /// <summary>
+    /// 프리팹 UI 2호(2026-11-23) — 공용 팝업 모양은 프리팹(`Resources/UI/Views/CommonPopupView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/공용 팝업 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Popup_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<CommonPopupView>(CommonPopupView.ResourcePath),
+                         "공용 팝업 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/공용 팝업 만들기");
+        var popup = pc.GetComponent<CommonPopup>();
+        CommonPopup.Alert("알림", "내용");
+        yield return null;
+        Assert.IsTrue(popup.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, popup.Root.GetComponentsInChildren<CommonPopupView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(4, popup.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 넷(X·취소·큰 확인·확인)뿐 — 두 벌로 생기지 않는다");
+        popup.DismissForTest();
+    }
+
+    /// <summary>
+    /// 공용 팝업의 글자·키보드 순서가 예전과 같다(프리팹이든 대체 코드 모양이든) —
+    /// 제목·내용·버튼 글자는 코드가 채우고, 키보드 순서는 취소(0) → 큰 확인(1) → 확인(2), X는 순서 밖.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Popup_TextsAndNavOrderKept()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        var popup = pc.GetComponent<CommonPopup>();
+        bool ok = false;
+        CommonPopup.Confirm("새 원정", "지울까요?", () => ok = true, "시작", "그만");
+        yield return null;
+        Assert.AreEqual(2, popup.NavIndex, "묻기는 처음에 오른쪽 확인을 고른다");
+
+        Assert.AreEqual("새 원정", TextOf(popup, "Title"));
+        Assert.AreEqual("지울까요?", TextOf(popup, "Body"));
+        Assert.AreEqual("시작", Find(popup, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "확인 버튼 글자");
+        Assert.AreEqual("그만", Find(popup, "Cancel").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text, "취소 버튼 글자");
+
+        Find(popup, "Cancel").OnHover?.Invoke();
+        Assert.AreEqual(0, popup.NavIndex, "취소 = 0번");
+        Find(popup, "OkWide").OnHover?.Invoke();
+        Assert.AreEqual(1, popup.NavIndex, "큰 확인 = 1번");
+        Find(popup, "Close").OnHover?.Invoke();
+        Assert.AreEqual(1, popup.NavIndex, "X는 키보드 순서에 없다 — 선택이 그대로");
+
+        Find(popup, "Ok").Click();
+        Assert.IsTrue(ok, "확인을 누르면 콜백");
+    }
+
     [Test]
     public void Volume_ShownAs0To100_SliderMapsPositionToSteps()
     {
@@ -360,6 +662,56 @@ public class UiFigmaUpdateTests
             Assert.IsNotNull(Find(settings, "Apply"), "적용 버튼");
             Find(settings, "Apply").Click();
             Assert.IsFalse(SettingsWindow.IsOpen, "적용 = 닫기(값은 바꾸는 즉시 적용된다)");
+        }
+        finally { GameSettings.BgmVolume = bgm; SettingsWindow.Close(); }
+    }
+
+    /// <summary>
+    /// 프리팹 UI 5호(2026-11-23) — 설정 창 모양은 프리팹(`Resources/UI/Views/SettingsWindowView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/설정 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Settings_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<SettingsWindowView>(SettingsWindowView.ResourcePath),
+                         "설정 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/설정 창 만들기");
+        try
+        {
+            var settings = pc.GetComponent<SettingsWindow>();
+            SettingsWindow.Open();
+            yield return null;
+            Assert.IsTrue(settings.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+            Assert.AreEqual(1, settings.Root.GetComponentsInChildren<SettingsWindowView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+            Assert.AreEqual(6, settings.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 여섯(X·적용·◀▶ 둘씩)뿐 — 두 벌로 생기지 않는다");
+            Assert.AreEqual(3, settings.Root.GetComponentsInChildren<PxSlider>(true).Length, "음량 막대 셋뿐");
+        }
+        finally { SettingsWindow.Close(); }
+    }
+
+    /// <summary>
+    /// 설정 창 음량 막대·X가 예전과 같이 동작한다(프리팹이든 대체 코드 모양이든) — 배경음 막대를 누르면(값 7) 배경음이 7·숫자 "70"이 되고
+    /// 그 줄(배경음, 넷째)이 골라진다. X는 창을 닫는다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Settings_VolumeSliderAndClose_Work()
+    {
+        int bgm = GameSettings.BgmVolume;
+        try
+        {
+            var settings = pc.GetComponent<SettingsWindow>();
+            SettingsWindow.Open();
+            yield return null;
+            var sliders = settings.Root.GetComponentsInChildren<PxSlider>(true);
+            Assert.AreEqual(3, sliders.Length);
+            Assert.AreEqual(GameSettings.VolumeMax, sliders[1].Steps, "막대 칸 수 = 음량 최대");
+            sliders[1].OnChange?.Invoke(7); // 둘째 막대 = 배경음
+            yield return null;
+            Assert.AreEqual(7, GameSettings.BgmVolume, "배경음 막대를 누른 값으로");
+            Assert.AreEqual("70", settings.ValueTextForTest(3), "숫자는 ×10");
+
+            Find(settings, "Close").Click();
+            Assert.IsFalse(SettingsWindow.IsOpen, "X는 창을 닫는다");
         }
         finally { GameSettings.BgmVolume = bgm; SettingsWindow.Close(); }
     }
@@ -428,6 +780,49 @@ public class UiFigmaUpdateTests
         Assert.AreEqual("다시 입장", Find(result, "Retry").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text);
         Assert.AreEqual("마을로", Find(result, "Ok").Inner.GetComponentInChildren<UnityEngine.UI.Text>().text);
         result.HideForCapture();
+    }
+
+    /// <summary>
+    /// 프리팹 UI 6호(2026-11-23) — 결과 창 모양은 프리팹(`Resources/UI/Views/RunResultScreenView`)에서 온다.
+    /// 프리팹이 없으면 코드 모양으로 대신 지어져 겉으론 멀쩡하므로, 빠진 걸 이 테스트가 잡는다
+    /// (처음엔 메뉴 `ChronoSavior/UI 프리팹/결과 창 만들기`로 만들어야 통과한다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Result_LayoutComesFromViewPrefab_OneSetOnly()
+    {
+        Assert.IsNotNull(Resources.Load<RunResultScreenView>(RunResultScreenView.ResourcePath),
+                         "결과 창 프리팹이 없다 — 메뉴 ChronoSavior/UI 프리팹/결과 창 만들기");
+        var result = pc.GetComponent<RunResultScreen>();
+        result.PreviewReason = RunEndReason.Timeout;
+        result.ShowForCapture();
+        yield return null;
+        Assert.IsTrue(result.UsesViewPrefab, "모양을 프리팹에서 불러온다");
+        Assert.AreEqual(1, result.Root.GetComponentsInChildren<RunResultScreenView>(true).Length, "모양은 한 벌뿐(코드로 또 짓지 않는다)");
+        Assert.AreEqual(2, result.Root.GetComponentsInChildren<PxButton>(true).Length, "버튼 둘(다시 입장·마을로)뿐 — 두 벌로 생기지 않는다");
+        result.HideForCapture();
+    }
+
+    /// <summary>
+    /// 결과 창 버튼 순서가 예전과 같다(프리팹이든 대체 코드 모양이든) — 키보드 순서 다시 입장(0) → 마을로(1), 처음엔 마을로를 고른다.
+    /// 버튼을 실제로 누르진 않는다(테스트 판엔 흐름이 없고, 다시 입장은 날짜를 쓴다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Result_ButtonsKeepOrder()
+    {
+        // 실제 마우스가 Game 창의 버튼 위에 있으면 EventSystem이 "마우스 올림"을 보내 고른 칸이 바뀐다 — 사람 손이 섞이지 않게 포인터 이벤트를 끈다
+        // (2026-11-23 "처음엔 마을로 Expected 1 But was 0", 타이틀 테스트 2026-11-22와 같은 원인). EventSystem은 TearDown이 지운다.
+        { var es = UnityEngine.EventSystems.EventSystem.current; if (es != null) es.enabled = false; }
+        var result = pc.GetComponent<RunResultScreen>();
+        result.PreviewReason = RunEndReason.Timeout;
+        GameState.Set(GameScene.Result);
+        yield return null;
+        Assert.IsTrue(result.IsShown, "결과 화면에서 보인다");
+        Assert.AreEqual(1, result.NavIndex, "처음엔 마을로");
+        Find(result, "Retry").OnHover?.Invoke();
+        Assert.AreEqual(0, result.NavIndex, "다시 입장 = 0번");
+        Find(result, "Ok").OnHover?.Invoke();
+        Assert.AreEqual(1, result.NavIndex, "마을로 = 1번");
+        result.PreviewReason = null;
     }
 
     static UnityEngine.UI.Text Label(PxScreen s, string name)

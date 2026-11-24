@@ -10,6 +10,8 @@ namespace ChronoSavior.UI
     /// 항목은 Figma 다섯 줄 — 화면 모드 · 해상도 · 마스터 볼륨(2026-11-16 새 기능, 효과음·배경음에 곱한다) · 배경음 · 효과음.
     /// 값은 바꾸는 즉시 적용(예전과 같다) — "적용"은 창을 닫는다. 음량은 0~10 그대로 저장하고 0~100으로 보인다(×10), 막대는 눌러 끌 수 있다.
     /// 예전 조작키 안내는 새 디자인에 자리가 없어 일시정지 화면 아래로 옮겼다. 닫기는 X·적용·ESC. 키보드: ↑/↓ 줄 고르기, ←/→ 값 바꾸기.
+    ///
+    /// **모양은 프리팹이 원본이다(2026-11-23 프리팹 UI 5호)** — 위치·크기·그림·글자·색은 <see cref="SettingsWindowView"/> 프리팹에서 고친다.
     /// </summary>
     public class SettingsWindow : PxScreen
     {
@@ -33,33 +35,13 @@ namespace ChronoSavior.UI
         protected override bool WantsVisible => open;
         protected override bool TakesKeys => true;
 
-        // Figma 좌표(어두운 배경 -314·-174를 원점으로 뺀 값)
-        static readonly Rect Frame = new Rect(65f, 29f, 512f, 304f);     // 416:23 "설정 배경 1"
-        static readonly Rect Plate = new Rect(250f, 7f, 128f, 32f);      // 416:32 "설정"(제목판)
-        static readonly Rect TitleBox = new Rect(262f, 4f, 103f, 37f);   // 416:33 글자
-        static readonly Rect CloseBox = new Rect(534f, 17f, 40f, 40f);   // 588:12 "나가기_버튼 1" + 416:35 "x 1"
-        static readonly Rect ApplyBox = new Rect(250f, 283f, 144f, 32f); // 417:42 "적용버튼 1"
-        static readonly Rect Divider = new Rect(83f, 149f, 475f, 3f);    // 416:31 "Rectangle 16"
-        const float RowX = 81f;                                          // 설정바 왼쪽
-        static readonly float[] RowY = { 72f, 110f, 159f, 197f, 235f };  // 화면 모드(420:93) · 해상도(420:89) · 마스터(419:58) · bgm(419:57) · 효과음(420:72)
-        // 줄 안(설정바 왼쪽 위 기준)
-        const float IconX = 6f, IconY = 4f, LabelX = 36f, LabelW = 96f;
-        const float LeftArrowX = 209f, RightArrowX = 442f, ArrowY = 4f, ArrowSize = 24f, GlyphInset = 4f, GlyphSize = 16f;
-        const float ValueBoxX = 240f, ValueBoxY = 6f, ValueBoxW = 192f, ValueBoxH = 20f;
-        const float BarX = 209f, BarY = 8f, BarW = 208f, BarH = 16f, KnobW = 20f, KnobH = 24f, KnobY = 4f;
-        const float NumberX = 436f, NumberY = 4f, NumberW = 36f, NumberH = 24f;
-        static readonly Color Selected = Px.Hex(0xffe066);
-        static readonly Color Line = Px.Hex(0xc7cfdd);
-
         enum Row { Screen, Resolution, Master, Bgm, Sfx }
         const int Rows = 5, Volumes = 3;
-        static readonly string[] RowNames = { "화면 모드", "해상도", "마스터 볼륨", "배경음", "효과음" };
-        static readonly string[] RowIcons = { "Settings/icon_screen", "Settings/icon_resolution", "Settings/icon_master", "Settings/icon_bgm", "Settings/icon_sfx" };
-        readonly Text[] labels = new Text[Rows];
-        readonly Text[] values = new Text[Rows];
-        readonly Image[] fills = new Image[Volumes];
-        readonly RectTransform[] knobs = new RectTransform[Volumes];
+        SettingsWindowView view;
         int row;
+
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
         protected override void Awake()
         {
@@ -73,64 +55,30 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="SettingsWindowView"/>, `Resources/UI/Views/SettingsWindowView`)이 원본이다(2026-11-23 프리팹 UI 5호).
+        /// 여기선 X·적용(닫기)·◀▶(값 바꾸기)·음량 막대(누르고 끌기)에 동작만 연결한다. 키보드는 아래 <see cref="OnKeys"/>.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Backdrop", new Color(Px.Backdrop.r, Px.Backdrop.g, Px.Backdrop.b, 0.35f));
-            Px.Image(Content, "Frame", PxArt.Get("Settings/window"), Frame.x, Frame.y, Frame.width, Frame.height)
-              .raycastTarget = true; // 창 뒤(일시정지 버튼)가 눌리지 않게
-            Px.Image(Content, "TitlePlate", PxArt.Get("Common/title_plate"), Plate.x, Plate.y, Plate.width, Plate.height);
-            Px.Text(Content, "Title", "설정", TitleBox.x, TitleBox.y, TitleBox.width, TitleBox.height, 20, Color.white);
-            Px.IconButton(Content, "Close", PxArt.Get("Common/close_frame"), PxArt.Get("Icons/close_x"),
-                          CloseBox.x, CloseBox.y, CloseBox.width, CloseBox.height, 0f, 0f, CloseBox.width, CloseBox.height, Close);
-
-            for (int i = 0; i < Rows; i++)
+            view = LoadView<SettingsWindowView>(SettingsWindowView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
             {
-                int r = i;
-                float y = RowY[i];
-                Px.Image(Content, "Row" + i, PxArt.Get("Settings/row"), RowX, y, 480f, 32f);
-                Px.Image(Content, "RowIcon" + i, PxArt.Get(RowIcons[i]), RowX + IconX, y + IconY, 24f, 24f);
-                labels[i] = Px.Text(Content, "Label" + i, RowNames[i], RowX + LabelX, y, LabelW, 32f, 13, Color.white);
-                if (i < 2)
-                {
-                    ArrowButton(RowX + LeftArrowX, y + ArrowY, false, () => { row = r; Change(-1); });
-                    Px.Image(Content, "ValueBox" + i, PxArt.Get("Settings/value_box"), RowX + ValueBoxX, y + ValueBoxY, ValueBoxW, ValueBoxH);
-                    values[i] = Px.Text(Content, "Value" + i, "", RowX + ValueBoxX, y + ValueBoxY, ValueBoxW, ValueBoxH, 12, Color.white);
-                    ArrowButton(RowX + RightArrowX, y + ArrowY, true, () => { row = r; Change(+1); });
-                }
-                else
-                {
-                    int v = i - 2;
-                    Px.Image(Content, "VolumeBack" + v, PxArt.Get("Settings/volume_back"), RowX + BarX, y + BarY, BarW, BarH);
-                    fills[v] = Px.Image(Content, "VolumeFill" + v, PxArt.Get("Settings/volume_fill"), RowX + BarX, y + BarY, BarW, BarH);
-                    fills[v].type = Image.Type.Filled;
-                    fills[v].fillMethod = Image.FillMethod.Horizontal;
-                    knobs[v] = (RectTransform)Px.Image(Content, "VolumeKnob" + v, PxArt.Get("Settings/volume_knob"), RowX + BarX, y + KnobY, KnobW, KnobH).transform;
-                    // 눌러 끄는 칸 — 손잡이가 넘나드는 자리까지(막대 위아래 4도트)
-                    var hit = Px.Fill(Content, "VolumeHit" + v, new Color(0f, 0f, 0f, 0f), RowX + BarX, y + KnobY, BarW, KnobH);
-                    hit.raycastTarget = true;
-                    var slider = hit.gameObject.AddComponent<PxSlider>();
-                    slider.Steps = GameSettings.VolumeMax;
-                    slider.OnChange = value => { row = r; SetVolume((Row)r, value); };
-                    Px.Image(Content, "NumberBox" + v, PxArt.Get("Settings/number_box"), RowX + NumberX, y + NumberY, NumberW, NumberH);
-                    values[i] = Px.Text(Content, "Value" + i, "", RowX + NumberX, y + NumberY, NumberW, NumberH, 12, Color.white);
-                }
+                Debug.LogWarning("[SettingsWindow] 화면 프리팹(Resources/" + SettingsWindowView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/설정 창 만들기", this);
+                view = SettingsWindowView.CreateFromCode(Root);
             }
-            Px.Fill(Content, "Divider", Line, Divider.x, Divider.y, Divider.width, Divider.height);
+            if (view.RowCount != Rows || view.ValueCount != Rows || view.ArrowRowCount != Rows - Volumes || view.VolumeCount != Volumes)
+                Debug.LogError($"[SettingsWindow] 화면 프리팹 칸 수가 다르다(줄 {view.RowCount}·값 {view.ValueCount}·◀▶ {view.ArrowRowCount}·음량 {view.VolumeCount}) — " +
+                               $"줄 {Rows}·값 {Rows}·◀▶ {Rows - Volumes}·음량 {Volumes}이어야 한다", view);
 
-            Px.TextButton(Content, "Apply", PxArt.Get("Settings/apply"), ApplyBox.x, ApplyBox.y, ApplyBox.width, ApplyBox.height,
-                          "적용", 16, Color.white, Close);
-        }
-
-        /// <summary>◀/▶ — 틀(설정_버튼 24×24) 안에 화살표(16×16). ▶는 ◀ 그림을 좌우로 뒤집는다.</summary>
-        void ArrowButton(float x, float y, bool right, System.Action onClick)
-        {
-            var b = Px.IconButton(Content, right ? "ArrowRight" : "ArrowLeft", PxArt.Get("Settings/arrow_frame"), PxArt.Get("Settings/arrow"),
-                                  x, y, ArrowSize, ArrowSize, GlyphInset, GlyphInset, GlyphSize, GlyphSize, onClick);
-            if (!right) return;
-            var glyph = (RectTransform)b.Inner.Find("Icon");
-            glyph.localScale = new Vector3(-1f, 1f, 1f);
-            glyph.anchoredPosition += new Vector2(GlyphSize, 0f); // 왼쪽 위 기준이라 뒤집으면 왼쪽으로 넘어간다
+            view.WireSettings(Close,
+                              (r, d) => { row = r; Change(d); },
+                              (v, value) => { row = 2 + v; SetVolume((Row)(2 + v), value); },
+                              GameSettings.VolumeMax);
         }
 
         // 지난번에 그린 값 — 그대로면 다시 그리지 않는다(Refresh는 보이는 동안 매 프레임)
@@ -195,26 +143,22 @@ namespace ChronoSavior.UI
             if (fs == shownFullscreen && res == shownRes && m == shownMaster && b == shownBgm && s == shownSfx && row == shownRow) return;
             shownFullscreen = fs; shownRes = res; shownMaster = m; shownBgm = b; shownSfx = s; shownRow = row;
 
-            values[0].text = fs ? "전체 화면" : "창 모드";
-            values[1].text = $"{res.x} X {res.y}";
+            view.Value(0).text = fs ? "전체 화면" : "창 모드";
+            view.Value(1).text = $"{res.x} X {res.y}";
             ShowVolume(0, m);
             ShowVolume(1, b);
             ShowVolume(2, s);
-            for (int i = 0; i < Rows; i++) labels[i].color = i == row ? Selected : Color.white;
+            for (int i = 0; i < view.RowCount; i++) view.Label(i).color = i == row ? view.SelectedColor : view.NormalColor;
         }
 
         void ShowVolume(int v, int volume)
         {
-            float ratio = volume / (float)GameSettings.VolumeMax;
-            values[2 + v].text = VolumeShown(volume).ToString();
-            fills[v].fillAmount = ratio;
-            // 손잡이 가운데가 채움 끝에 오게, 막대 밖으로는 안 나가게
-            float x = RowX + BarX + Mathf.Clamp(Mathf.Round(ratio * BarW - KnobW / 2f), 0f, BarW - KnobW);
-            knobs[v].anchoredPosition = new Vector2(x, knobs[v].anchoredPosition.y);
+            view.Value(2 + v).text = VolumeShown(volume).ToString();
+            view.ShowVolume(v, volume / (float)GameSettings.VolumeMax); // 손잡이 가운데가 채움 끝에 오게, 막대 밖으로는 안 나가게
         }
 
-        /// <summary>테스트용 — 음량 막대 손잡이 왼쪽 x(판 좌표)와 숫자.</summary>
-        public float KnobXForTest(int v) => knobs[v].anchoredPosition.x;
-        public string ValueTextForTest(int i) => values[i].text;
+        /// <summary>테스트용 — 음량 막대 손잡이 왼쪽 x(2026-11-23부터 줄 안 좌표 — 예전엔 판 좌표)와 숫자.</summary>
+        public float KnobXForTest(int v) => view.KnobX(v);
+        public string ValueTextForTest(int i) => view.Value(i).text;
     }
 }

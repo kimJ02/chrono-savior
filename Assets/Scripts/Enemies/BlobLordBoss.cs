@@ -20,7 +20,11 @@ namespace ChronoSavior.Enemies
     /// ① 플레이어가 <see cref="StationaryTime"/>초 동안 <see cref="StationaryRange"/> 안에 머묾 → 점프 ② 체력 <see cref="LowHpRatio"/> 이하 → 점프
     /// ③ 멀다(<see cref="FarDistance"/>) → 투척 ④ 직전과 반대.
     ///
-    /// Codex 상의로 정한 것(명세 밖): 몸통 접촉 피해 없음(피해는 예고된 공격으로만), 걷기·졸개 소환 없음(제자리), 경고와 착지는
+    /// **보스 강화(2026-11-24 사용자 — 명세 밖, "너무 쉽다")**: ① 몸통 접촉 피해 = 대상 최대 체력 <see cref="ContactDamagePct"/>(공중에선 없음 —
+    /// 예전엔 0이라 붙어서 때려도 안전했다) ② 체력 <see cref="EnrageRatio"/> 이하에서 추적 점프 강하가 **연속 점프 강하**
+    /// (<see cref="ChainJumps"/>번, 사이 <see cref="ChainGap"/>초, 추적 <see cref="ChainTrack"/>초, 마지막만 <see cref="ImpactDamagePct"/>·나머지 <see cref="ChainImpactDamagePct"/>).
+    ///
+    /// Codex 상의로 정한 것(명세 밖): ~~몸통 접촉 피해 없음~~(2026-11-24 위 강화로 바뀜), 걷기·졸개 소환 없음(제자리), 경고와 착지는
     /// 플레이어 발밑 **표면**(바닥 또는 발판 윗면 — `FieldLayout.SurfaceBelow`)에 — 발판 위가 안전지대가 되지 않게.
     ///
     /// 이동은 `EnemyMove`에 수평 속도(<see cref="IEnemyMotion"/>)와 Y(<see cref="IEnemyVerticalMotion"/>)를 넘겨서 한다 — Y는 언제나
@@ -66,7 +70,7 @@ namespace ChronoSavior.Enemies
         public const float JumpRise = 0.35f;         // 뛰어오르는 시간
         public const float JumpTrack = 0.9f;         // 공중 추적 0.8~1.2 (고정 구간 포함)
         public const float JumpFall = 0.2f;          // 빠른 낙하
-        public const float LockBeforeImpact = 0.3f;  // 착지 0.3초 전 고정
+        public const float LockBeforeImpact = 0.5f;  // 착지 0.5초 전 고정 — 2026-11-24 사용자 "낙하 직전까지 쫓아와 피하기 어렵다"(예전 0.3, 명세 0.3)
         public const float JumpRecover = 1.2f;       // 후딜 1.0~1.5
         public const float JumpCooldown = 5f;        // 4~6
         public const float ImpactRadius = 1.8f;      // 1.5~2.2
@@ -80,7 +84,7 @@ namespace ChronoSavior.Enemies
         public const float ThrowPrep = 0.7f;         // 0.6~0.8
         public const float ThrowWarn = 0.6f;         // 0.5~0.8
         public const float BoulderSpeed = 8f;        // 6~10
-        public const float BoulderDamagePct = 0.14f; // 10~18%
+        public const float BoulderDamagePct = 0.10f; // 돌 하나 — 2026-11-24 여러 개를 던지게 되며 14%→10%(명세 10~18%)
         public const float ThrowRecover = 1.0f;      // 0.8~1.2
         public const float ThrowCooldown = 4f;       // 3~5
         public const float MinThrowDistance = 3.5f;  // 근거리 최소 투척 거리 보정
@@ -95,13 +99,35 @@ namespace ChronoSavior.Enemies
         public const float StationaryRange = 0.5f;
         public const float LowHpRatio = 0.4f;
         public const int MaxConsecutive = 1;         // 같은 패턴 연속 금지
+
+        // ── 보스 강화(2026-11-24 사용자, `HANDOFF.md` "1·2지역 보스 강화") ──
+        /// <summary>몸통 접촉 피해 — 플레이어 최대 체력의 8%(공중에 뜬 동안은 없다). 예전엔 0(피해는 예고된 공격으로만).</summary>
+        public const float ContactDamagePct = 0.08f;
+        /// <summary>이 체력 비율 이하면 추적 점프 강하가 **연속 점프 강하**(<see cref="ChainJumps"/>번)로 바뀐다.</summary>
+        public const float EnrageRatio = 0.5f;
+        public const int ChainJumps = 3;
+        /// <summary>연속 점프 사이 땅에 있는 틈(이 동안은 맞는다).</summary>
+        public const float ChainGap = 0.35f;
+        /// <summary>연속 점프 중 공중 추적 시간 — 한 번짜리(<see cref="JumpTrack"/>)보다 짧다(고정 구간 포함).</summary>
+        public const float ChainTrack = 0.6f;
+        /// <summary>연속 점프의 마지막이 아닌 착지 피해 — 최대 체력 12%(마지막은 <see cref="ImpactDamagePct"/>).</summary>
+        public const float ChainImpactDamagePct = 0.12f;
+        /// <summary>
+        /// 조약돌 연속 투척(2026-11-24 사용자 "돌 생성 위치는 보스 근처, 개수를 늘리고 시간차로 생성·발사") — 돌 <see cref="VolleyCount"/>개
+        /// (분노면 <see cref="VolleyCountEnraged"/>개)를 <see cref="VolleyInterval"/>초 간격으로 보스 둘레에 만들고, 각 돌은 만들어지는 순간
+        /// 플레이어 발밑을 노려 경고·경로 선을 띄운 뒤 <see cref="ThrowWarn"/>초 뒤 날아간다.
+        /// </summary>
+        public const int VolleyCount = 3, VolleyCountEnraged = 5;
+        public const float VolleyInterval = 0.4f;
+        /// <summary>보스 둘레 돌 자리 가로 간격(유닛) — 가운데를 중심으로 좌우로 벌린다.</summary>
+        public const float VolleySpread = 0.55f;
         public const float FirstDelay = 1.0f;
         public const float IdleGap = 0.4f;
         /// <summary>대상 최대 체력을 못 읽을 때(테스트 등) — 플레이어 기본 최대 체력.</summary>
         public const float FallbackTargetMaxHp = 100f;
 
         public enum Pattern { None, Jump, Throw }
-        public enum State { Idle, JumpPrep, JumpRise, JumpTrack, JumpFall, JumpRecover, ThrowPrep, ThrowWarn, ThrowRecover }
+        public enum State { Idle, JumpPrep, JumpRise, JumpTrack, JumpFall, JumpRecover, ThrowPrep, ThrowWarn, ThrowRecover, ChainGap }
 
         [SerializeField] GroundWarning warningPrefab;
         [SerializeField] BoulderProjectile boulderPrefab;
@@ -136,6 +162,13 @@ namespace ChronoSavior.Enemies
         EnemyHealth health;
         SpriteRenderer body;
         GroundWarning jumpWarning, throwWarning;
+        // 조약돌 연속 투척 — 돌마다 든 돌 그림·바닥 경고·경로 선 한 벌(0번 = 프리팹 자식 heldBoulder·throwWarning·throwPathLine)
+        SpriteRenderer[] volleyHeld;
+        GroundWarning[] volleyWarn;
+        LineRenderer[] volleyLine;
+        readonly Vector2[] volleyFrom = new Vector2[VolleyCountEnraged], volleyTo = new Vector2[VolleyCountEnraged];
+        readonly int[] volleyPhase = new int[VolleyCountEnraged]; // 0 아직, 1 들고 조준 중, 2 던짐
+        int volleyCount;
 
         State state = State.Idle;
         float stateT, stateDur = FirstDelay;
@@ -146,6 +179,12 @@ namespace ChronoSavior.Enemies
         // 점프
         float launchX, launchY, markerX, markerSurfaceY, apexY;
         bool locked;
+        // 연속 점프(체력 EnrageRatio 이하) — 남은 점프 수(이번 것 포함), 이번 추적 시간
+        int jumpsLeft;
+        bool chainStarted; // 이번 묶음에서 이미 한 번 이상 착지했다(마지막 점프도 짧은 추적을 쓰게)
+        float trackDur = JumpTrack;
+        // 몸통 접촉 피해 % 계산에 쓰는 마지막 대상
+        Transform lastTarget;
         // 투척
         Vector2 throwFrom, throwTo;
         // 정지 감지
@@ -180,13 +219,31 @@ namespace ChronoSavior.Enemies
         public bool IsAirborne => state == State.JumpRise || state == State.JumpTrack || state == State.JumpFall;
         public GroundWarning JumpWarning => jumpWarning;
         public GroundWarning ThrowWarning => throwWarning;
-        public Vector2 ThrowTarget => throwTo;
+        public Vector2 ThrowTarget => throwTo; // 첫 돌의 끝점
+        /// <summary>이번 투척의 돌 수(평소 3·분노 5, 투척 중이 아니면 마지막 값).</summary>
+        public int VolleySize => volleyCount;
         public LineRenderer ThrowPathLine => throwPathLine;
 
         /// <summary>도약~낙하 동안 무적(명세 2절 "도약 중 무적 / 후딜 중 피격 가능").</summary>
         public bool IsDamageProtected => IsAirborne;
-        /// <summary>몸통 접촉 피해 없음 — 피해는 예고된 공격으로만(Codex 상의, `EnemyMove.TryAttack`이 0이면 건너뜀).</summary>
-        public float ContactDamageMultiplier => 0f;
+        /// <summary>
+        /// 몸통 접촉 피해(2026-11-24 사용자 "1지역 보스는 접촉 피해를 넣고") — 대상 최대 체력의 <see cref="ContactDamagePct"/>.
+        /// `EnemyMove.TryAttack`은 `attackPower × 이 배수`를 주므로 그 곱이 최대 체력 8%가 되게 배수를 돌려준다. 공중에 뜬 동안은 0.
+        /// (예전엔 늘 0 — 피해는 예고된 공격으로만, Codex 상의.)
+        /// </summary>
+        public float ContactDamageMultiplier
+        {
+            get
+            {
+                if (IsAirborne || mover == null) return 0f;
+                return TargetMaxHp(lastTarget) * ContactDamagePct / Mathf.Max(1f, mover.attackPower);
+            }
+        }
+
+        /// <summary>지금 체력이 <see cref="EnrageRatio"/> 이하인가 — 연속 점프 강하가 열린다.</summary>
+        public bool IsEnraged => health != null && health.MaxHp > 0f && health.CurrentHp / health.MaxHp <= EnrageRatio;
+        /// <summary>이번 점프 묶음에서 남은 점프 수(이번 것 포함, 점프 중이 아니면 0).</summary>
+        public int JumpsLeft => jumpsLeft;
 
         // <see cref="ICrowdControlImmune"/> — 끌어당김·스턴 등 이동 제한 디버프 면역(2026-11-18 사용자 요청, 보스 공통).
 
@@ -216,6 +273,42 @@ namespace ChronoSavior.Enemies
             }
             if (heldBoulder != null) heldBoulder.enabled = false;
             if (throwPathLine != null) throwPathLine.enabled = false;
+            BuildVolleyParts();
+        }
+
+        /// <summary>
+        /// 연속 투척용 부품 — 0번은 프리팹의 것을 그대로, 나머지는 그걸 복제해 보스가 살아 있는 동안 재사용한다(경고·선·든 돌 그림, 판정은 보스가).
+        /// </summary>
+        void BuildVolleyParts()
+        {
+            int n = VolleyCountEnraged;
+            volleyHeld = new SpriteRenderer[n];
+            volleyWarn = new GroundWarning[n];
+            volleyLine = new LineRenderer[n];
+            volleyHeld[0] = heldBoulder;
+            volleyWarn[0] = throwWarning;
+            volleyLine[0] = throwPathLine;
+            for (int i = 1; i < n; i++)
+            {
+                if (heldBoulder != null)
+                {
+                    volleyHeld[i] = Instantiate(heldBoulder, heldBoulder.transform.parent);
+                    volleyHeld[i].name = heldBoulder.name + i;
+                    volleyHeld[i].enabled = false;
+                }
+                if (throwPathLine != null)
+                {
+                    volleyLine[i] = Instantiate(throwPathLine, throwPathLine.transform.parent);
+                    volleyLine[i].name = throwPathLine.name + i;
+                    volleyLine[i].enabled = false;
+                }
+                if (warningPrefab != null)
+                {
+                    volleyWarn[i] = Instantiate(warningPrefab);
+                    volleyWarn[i].name = "BlobLordThrowWarning" + i;
+                    RunTransient.Mark(volleyWarn[i].gameObject);
+                }
+            }
         }
 
         void Start()
@@ -251,6 +344,8 @@ namespace ChronoSavior.Enemies
         {
             if (jumpWarning != null) Destroy(jumpWarning.gameObject);
             if (throwWarning != null) Destroy(throwWarning.gameObject);
+            if (volleyWarn != null)
+                for (int i = 1; i < volleyWarn.Length; i++) if (volleyWarn[i] != null) Destroy(volleyWarn[i].gameObject);
         }
 
         // ───────────────────────── 매 물리 프레임 ─────────────────────────
@@ -266,6 +361,7 @@ namespace ChronoSavior.Enemies
             if (float.IsNaN(standSurfaceY)) standSurfaceY = FieldLayout.SurfaceBelow(transform.position.x, transform.position.y);
             clock += dt;
             stateT += dt;
+            lastTarget = target;
             TrackStationary(target);
 
             bool targetGone = !TargetAlive(target);
@@ -294,11 +390,11 @@ namespace ChronoSavior.Enemies
 
                 case State.JumpTrack:
                     // 착지(= 추적 끝 + 낙하)까지 LockBeforeImpact가 남으면 고정
-                    if (!locked && (JumpTrack - stateT) + JumpFall <= LockBeforeImpact) LockMarker();
+                    if (!locked && (trackDur - stateT) + JumpFall <= LockBeforeImpact) LockMarker();
                     if (!locked) UpdateMarker(target, dt);
                     desiredX = markerX;
                     Squash(0f);
-                    if (stateT >= JumpTrack) { if (!locked) LockMarker(); Enter(State.JumpFall, JumpFall); }
+                    if (stateT >= trackDur) { if (!locked) LockMarker(); Enter(State.JumpFall, JumpFall); }
                     break;
 
                 case State.JumpFall:
@@ -312,15 +408,24 @@ namespace ChronoSavior.Enemies
                     if (stateT >= JumpRecover) ToIdle();
                     break;
 
+                case State.ChainGap:
+                    // 연속 점프 사이 — 땅에서 잠깐 찌그러졌다가 바로 다시 뛴다(이 동안은 맞는다)
+                    Squash(-0.2f * (1f - Mathf.Clamp01(stateT / ChainGap)));
+                    if (stateT >= ChainGap)
+                    {
+                        if (targetGone) { jumpsLeft = 0; ToIdle(); }
+                        else BeginRise(target);
+                    }
+                    break;
+
                 case State.ThrowPrep:
                     Face(target);
-                    ShowHeld(Mathf.Clamp01(stateT / ThrowPrep));
-                    if (stateT >= ThrowPrep) BeginThrowWarn(target);
+                    if (stateT >= ThrowPrep) BeginVolley(target);
                     break;
 
                 case State.ThrowWarn:
-                    ShowHeld(1f);
-                    if (stateT >= ThrowWarn) Throw(target);
+                    // 연속 투척 — 돌 i는 i × 간격에 보스 둘레에 생겨 조준하고, 그 뒤 ThrowWarn초에 날아간다
+                    if (UpdateVolley(target)) Enter(State.ThrowRecover, ThrowRecover);
                     break;
 
                 case State.ThrowRecover:
@@ -408,10 +513,8 @@ namespace ChronoSavior.Enemies
         /// </summary>
         public void PlayDeathAndDestroy()
         {
-            if (heldBoulder != null) heldBoulder.enabled = false;
-            if (throwPathLine != null) throwPathLine.enabled = false;
+            HideVolley(true);
             if (jumpWarning != null) jumpWarning.gameObject.SetActive(false);
-            if (throwWarning != null) throwWarning.gameObject.SetActive(false);
             // 사망 그림이 도는 동안 시체를 겨누거나 맞히지 않게(2026-11-17 — 레이저·유도 대상 고르기는 콜라이더로 찾는다)
             foreach (var c in GetComponents<Collider2D>()) c.enabled = false;
             StartCoroutine(DeathSequence());
@@ -458,8 +561,18 @@ namespace ChronoSavior.Enemies
             if (next == Pattern.None) return; // 둘 다 쿨 — 기다린다
             consecutive = next == last ? consecutive + 1 : 1;
             last = next;
-            if (next == Pattern.Jump) { jumpReadyAt = clock + JumpCooldown; Enter(State.JumpPrep, JumpPrep); }
-            else { throwReadyAt = clock + ThrowCooldown; Enter(State.ThrowPrep, ThrowPrep); }
+            if (next == Pattern.Jump)
+            {
+                jumpReadyAt = clock + JumpCooldown;
+                jumpsLeft = IsEnraged ? ChainJumps : 1; // 체력 50% 이하 — 연속 점프 강하(2026-11-24)
+                Enter(State.JumpPrep, JumpPrep);
+            }
+            else
+            {
+                throwReadyAt = clock + ThrowCooldown;
+                volleyCount = IsEnraged ? VolleyCountEnraged : VolleyCount; // 2026-11-24 — 분노면 더 많이
+                Enter(State.ThrowPrep, ThrowPrep);
+            }
         }
 
         /// <summary>
@@ -499,6 +612,8 @@ namespace ChronoSavior.Enemies
             launchY = transform.position.y;
             apexY = FieldBounds.GroundY + ApexHeight;
             locked = false;
+            if (jumpsLeft < 1) jumpsLeft = 1;
+            trackDur = jumpsLeft > 1 || chainStarted ? ChainTrack : JumpTrack; // 연속 점프 중엔 추적이 짧다
             markerX = ClampMarkerX(target != null ? target.position.x : launchX);
             markerSurfaceY = SurfaceUnder(markerX, target);
             if (jumpWarning != null) jumpWarning.Show(new Vector2(markerX, markerSurfaceY), ImpactRadius);
@@ -525,16 +640,27 @@ namespace ChronoSavior.Enemies
         {
             standSurfaceY = markerSurfaceY;
             var point = new Vector2(markerX, markerSurfaceY);
+            bool last = jumpsLeft <= 1;
             bool hit = false;
             if (TargetAlive(target) && InImpactArea(point, target.position))
             {
                 var d = target.GetComponent<IDamageable>();
-                if (d != null) { d.TakeDamage(TargetMaxHp(target) * ImpactDamagePct, gameObject); hit = true; }
+                float pct = last ? ImpactDamagePct : ChainImpactDamagePct; // 연속 점프는 마지막이 가장 세다
+                if (d != null) { d.TakeDamage(TargetMaxHp(target) * pct, gameObject); hit = true; }
             }
             if (jumpWarning != null) jumpWarning.Flash();
-            HitFeel.Shake(12f, 0.3f);
+            HitFeel.Shake(last ? 12f : 8f, last ? 0.3f : 0.2f);
             RangeRing.Show(point, ImpactRadius, new Color(1f, 0.85f, 0.7f, 0.9f), 0.25f);
             Impacted?.Invoke(point, hit);
+            if (!last)
+            {
+                jumpsLeft--;
+                chainStarted = true;
+                Enter(State.ChainGap, ChainGap);
+                return;
+            }
+            jumpsLeft = 0;
+            chainStarted = false;
             Enter(State.JumpRecover, JumpRecover);
         }
 
@@ -550,47 +676,114 @@ namespace ChronoSavior.Enemies
 
         // ───────────────────────── 투척 ─────────────────────────
 
-        void BeginThrowWarn(Transform target)
+        void BeginVolley(Transform target)
         {
-            throwFrom = HeldPosition();
-            // 플레이어 **발밑 표면**을 노린다(명세 4-2 "플레이어 현재 위치 바닥에 경고, 그 위치로 던진다") — 몸 중심을 노리면 위에서 비스듬히
-            // 내려오는 돌이 플레이어 뒤쪽 바닥까지 날아가 경고가 엉뚱한 데 뜬다. 돌은 내려오면서 플레이어 몸을 지나므로 서 있으면 맞는다.
+            if (volleyCount < 1) volleyCount = VolleyCount;
+            for (int i = 0; i < volleyPhase.Length; i++) volleyPhase[i] = 0;
+            Enter(State.ThrowWarn, (volleyCount - 1) * VolleyInterval + ThrowWarn);
+            UpdateVolley(target); // 첫 돌은 바로
+        }
+
+        /// <summary>연속 투척 한 프레임 — 다 던졌으면 true.</summary>
+        bool UpdateVolley(Transform target)
+        {
+            bool allThrown = true;
+            for (int i = 0; i < volleyCount; i++)
+            {
+                float spawnAt = i * VolleyInterval;
+                if (volleyPhase[i] == 0 && stateT >= spawnAt) AimStone(i, target);
+                if (volleyPhase[i] == 1)
+                {
+                    ShowHeldStone(i, Mathf.Clamp01((stateT - spawnAt) / 0.2f));
+                    if (stateT >= spawnAt + ThrowWarn) ThrowStone(i, target);
+                }
+                if (volleyPhase[i] != 2) allThrown = false;
+            }
+            return allThrown;
+        }
+
+        /// <summary>
+        /// 돌 i를 보스 둘레에 만들고 그 순간 플레이어 **발밑 표면**을 노린다(명세 4-2 "플레이어 현재 위치 바닥에 경고, 그 위치로 던진다") —
+        /// 몸 중심을 노리면 위에서 비스듬히 내려오는 돌이 플레이어 뒤쪽 바닥까지 날아가 경고가 엉뚱한 데 뜬다. 끝점은 이때 고정(유도 없음).
+        /// </summary>
+        void AimStone(int i, Transform target)
+        {
+            volleyPhase[i] = 1;
+            volleyFrom[i] = StonePosition(i);
             Vector2 aim = target != null
                 ? new Vector2(target.position.x, SurfaceUnder(target.position.x, target))
                 : new Vector2(transform.position.x + mover.Direction * MinThrowDistance, FieldBounds.GroundY);
             aim = CorrectAim(transform.position.x, mover.Direction, aim);
-            throwTo = aim; // 노린 표면 점까지 직선 — 사이의 발판은 지나간다(한쪽 방향 발판)
+            volleyTo[i] = aim; // 노린 표면 점까지 직선 — 사이의 발판은 지나간다(한쪽 방향 발판)
+            if (i == 0) { throwFrom = volleyFrom[0]; throwTo = aim; }
 
-            if (throwWarning != null)
+            var warn = Part(volleyWarn, i);
+            if (warn != null)
             {
-                throwWarning.Show(throwTo, BoulderWarnRadius);
-                throwWarning.Lock();
+                warn.Show(aim, BoulderWarnRadius);
+                warn.Lock();
             }
-            if (throwPathLine != null)
+            var line = Part(volleyLine, i);
+            if (line != null)
             {
-                throwPathLine.enabled = true;
-                throwPathLine.positionCount = 2;
-                throwPathLine.SetPosition(0, throwFrom);
-                throwPathLine.SetPosition(1, throwTo);
+                line.enabled = true;
+                line.positionCount = 2;
+                line.SetPosition(0, volleyFrom[i]);
+                line.SetPosition(1, aim);
             }
-            Enter(State.ThrowWarn, ThrowWarn);
         }
 
-        void Throw(Transform target)
+        void ThrowStone(int i, Transform target)
         {
-            if (heldBoulder != null) heldBoulder.enabled = false;
-            if (throwPathLine != null) throwPathLine.enabled = false;
+            volleyPhase[i] = 2;
+            var held = Part(volleyHeld, i);
+            if (held != null) held.enabled = false;
+            var line = Part(volleyLine, i);
+            if (line != null) line.enabled = false;
             float dmg = TargetMaxHp(target) * BoulderDamagePct;
-            var b = BoulderProjectile.Spawn(boulderPrefab, throwFrom, throwTo, BoulderSpeed, dmg);
+            var b = BoulderProjectile.Spawn(boulderPrefab, volleyFrom[i], volleyTo[i], BoulderSpeed, dmg);
             if (b != null)
             {
-                var warn = throwWarning;
+                var warn = Part(volleyWarn, i);
                 b.Finished += _ => { if (warn != null) warn.Flash(); };
                 b.Landed += _ => HitFeel.Shake(5f, 0.15f);
                 Thrown?.Invoke(b);
             }
-            Enter(State.ThrowRecover, ThrowRecover);
         }
+
+        /// <summary>돌 i의 자리 — 몸 위 들어 올린 높이에서 가운데를 중심으로 좌우로 벌린다(가운데 돌은 조금 더 높게).</summary>
+        Vector2 StonePosition(int i)
+        {
+            float mid = (volleyCount - 1) / 2f;
+            float off = (i - mid) * VolleySpread;
+            float lift = 0.15f * (1f - Mathf.Abs(i - mid) / Mathf.Max(1f, mid));
+            return HeldPosition() + new Vector2(off, lift);
+        }
+
+        void ShowHeldStone(int i, float pop)
+        {
+            var held = Part(volleyHeld, i);
+            if (held == null) return;
+            held.enabled = true;
+            // 몸 꼭대기에서 자기 자리로 솟아오른다. 부모 배율과 상관없이 월드 위치로 놓는다.
+            Vector2 top = (Vector2)transform.position + new Vector2(0f, HalfHeight * 0.6f);
+            held.transform.position = Vector2.Lerp(top, volleyFrom[i], EaseOut(pop));
+        }
+
+        void HideVolley(bool warnings)
+        {
+            for (int i = 0; i < VolleyCountEnraged; i++)
+            {
+                var held = Part(volleyHeld, i); if (held != null) held.enabled = false;
+                var line = Part(volleyLine, i); if (line != null) line.enabled = false;
+                if (warnings) { var w = Part(volleyWarn, i); if (w != null) w.gameObject.SetActive(false); }
+            }
+            if (heldBoulder != null) heldBoulder.enabled = false;
+            if (throwPathLine != null) throwPathLine.enabled = false;
+            if (warnings && throwWarning != null) throwWarning.gameObject.SetActive(false);
+        }
+
+        static T Part<T>(T[] arr, int i) where T : Object => arr != null && i >= 0 && i < arr.Length ? arr[i] : null;
 
         /// <summary>
         /// 근거리 보정(명세 4-4) — 바로 앞에 던지면 못 피한다. 플레이어가 <see cref="MinThrowDistance"/>보다 가까우면 같은 쪽으로
@@ -607,15 +800,6 @@ namespace ChronoSavior.Enemies
         }
 
         Vector2 HeldPosition() => (Vector2)transform.position + new Vector2(0f, HalfHeight + HoldAbove);
-
-        void ShowHeld(float lift)
-        {
-            if (heldBoulder == null) return;
-            heldBoulder.enabled = true;
-            // 몸 꼭대기에서 위로 들어 올린다. 부모 배율과 상관없이 월드 위치로 놓는다.
-            Vector2 top = (Vector2)transform.position + new Vector2(0f, HalfHeight * 0.6f);
-            heldBoulder.transform.position = Vector2.Lerp(top, HeldPosition(), EaseOut(lift));
-        }
 
         // ───────────────────────── 공통 ─────────────────────────
 

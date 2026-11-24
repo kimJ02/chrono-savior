@@ -132,7 +132,106 @@ public class BlobLordBossTests
         yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpRecover);
         Assert.IsFalse(move.IsSpawnProtected);
         Assert.Greater(health.TakeDamageWithKnockback(50f, null, 1f, 0f), 0f, "후딜엔 반격이 들어간다");
-        Assert.AreEqual(0f, boss.ContactDamageMultiplier);
+        Assert.Greater(boss.ContactDamageMultiplier, 0f, "땅에선 몸통 접촉 피해가 있다(2026-11-24 보스 강화 — 예전엔 0)");
+    }
+
+    // ───────────────────────── 보스 강화(2026-11-24) ─────────────────────────
+
+    /// <summary>몸통 접촉 피해 = 대상 최대 체력 8%(`attackPower × 배수`가 그 값이 되게), 공중에 뜬 동안은 0.</summary>
+    [UnityTest]
+    public IEnumerator Contact_IsPercentOfTargetMaxHp_AndZeroInAir()
+    {
+        var target = NewTarget(9f, FieldBounds.GroundY);
+        target.maxHp = 200f;
+        var boss = NewBoss(10f, target.transform);
+        var move = boss.GetComponent<EnemyMove>();
+        move.attackPower = 30f;
+        yield return new WaitForFixedUpdate();
+        yield return new WaitForFixedUpdate();
+
+        Assert.AreEqual(200f * BlobLordBoss.ContactDamagePct, move.attackPower * boss.ContactDamageMultiplier, 0.01f, "땅 = 최대 체력 8%");
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpTrack);
+        Assert.AreEqual(0f, boss.ContactDamageMultiplier, "공중에선 몸통 피해 없음");
+    }
+
+    /// <summary>체력 50% 이하면 추적 점프 강하가 3번 연속(사이에 땅에 잠깐) — 마지막 착지 뒤에만 후딜. 50% 위면 한 번.</summary>
+    [UnityTest]
+    public IEnumerator Enraged_JumpBecomesThreeChainedJumps()
+    {
+        var target = NewTarget(9f, FieldBounds.GroundY);
+        var boss = NewBoss(10f, target.transform);
+        var health = boss.GetComponent<EnemyHealth>();
+        health.TakeDamageWithKnockback(health.MaxHp * 0.6f, null, 1f, 0f); // 체력 40%
+        Assert.IsTrue(boss.IsEnraged, "체력 50% 이하 = 분노");
+
+        int impacts = 0;
+        bool sawGap = false;
+        boss.Impacted += (p, hit) => impacts++;
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpPrep, 6f);
+        Assert.AreEqual(BlobLordBoss.ChainJumps, boss.JumpsLeft, "저체력 → 점프 강하를 3번 이어서");
+        yield return Until(() =>
+        {
+            if (boss.CurrentState == BlobLordBoss.State.ChainGap) sawGap = true;
+            return boss.CurrentState == BlobLordBoss.State.JumpRecover;
+        }, 12f);
+        Assert.AreEqual(BlobLordBoss.ChainJumps, impacts, "후딜 전에 착지 3번");
+        Assert.IsTrue(sawGap, "착지 사이엔 땅에서 잠깐(맞을 수 있는 틈)");
+        Assert.AreEqual(0, boss.JumpsLeft);
+    }
+
+    /// <summary>체력 50% 위에선 예전처럼 한 번 뛰고 바로 후딜.</summary>
+    [UnityTest]
+    public IEnumerator NotEnraged_SingleJump()
+    {
+        var target = NewTarget(9f, FieldBounds.GroundY);
+        var boss = NewBoss(10f, target.transform);
+        Assert.IsFalse(boss.IsEnraged);
+        int impacts = 0;
+        boss.Impacted += (p, hit) => impacts++;
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpPrep, 6f);
+        Assert.AreEqual(1, boss.JumpsLeft);
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpRecover, 8f);
+        Assert.AreEqual(1, impacts, "한 번만 착지");
+    }
+
+    /// <summary>
+    /// 조약돌 연속 투척(2026-11-24 사용자) — 돌 3개(분노면 5개)를 0.4초 간격으로 보스 근처에 만들어 차례로 던진다.
+    /// 돌은 보스 몸 근처에서 출발하고, 던지는 간격은 만드는 간격과 같다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Throw_Volley_ThreeStonesStaggeredFromNearBoss()
+    {
+        var target = NewTarget(3f, FieldBounds.GroundY);
+        var boss = NewBoss(11f, target.transform);
+        var times = new System.Collections.Generic.List<float>();
+        var starts = new System.Collections.Generic.List<Vector2>();
+        boss.Thrown += b => { times.Add(Time.time); starts.Add(b.transform.position); };
+
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.ThrowWarn);
+        Assert.AreEqual(BlobLordBoss.VolleyCount, boss.VolleySize);
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.ThrowRecover, 6f);
+        Assert.AreEqual(BlobLordBoss.VolleyCount, times.Count, "돌 3개");
+        for (int i = 1; i < times.Count; i++)
+            Assert.AreEqual(BlobLordBoss.VolleyInterval, times[i] - times[i - 1], 0.08f, "시간차로 하나씩");
+        foreach (var p in starts)
+            Assert.Less(Mathf.Abs(p.x - boss.transform.position.x), 2f, "보스 근처에서 출발");
+    }
+
+    /// <summary>분노(체력 50% 이하)면 돌이 5개.</summary>
+    [UnityTest]
+    public IEnumerator Throw_Volley_EnragedThrowsFive()
+    {
+        var target = NewTarget(3f, FieldBounds.GroundY);
+        var boss = NewBoss(11f, target.transform);
+        var health = boss.GetComponent<EnemyHealth>();
+        health.TakeDamageWithKnockback(health.MaxHp * 0.6f, null, 1f, 0f);
+        int thrown = 0;
+        boss.Thrown += b => thrown++;
+        // 분노면 점프가 우선이라 투척이 나올 때까지 기다린다
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.ThrowWarn, 16f);
+        Assert.AreEqual(BlobLordBoss.VolleyCountEnraged, boss.VolleySize);
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.ThrowRecover, 6f);
+        Assert.AreEqual(BlobLordBoss.VolleyCountEnraged, thrown);
     }
 
     /// <summary>경고가 플레이어 X를 따라가다 착지 0.3초 전에 고정 — 고정 뒤엔 플레이어가 움직여도 그 자리에 떨어진다(명세 3-1).</summary>
@@ -165,15 +264,20 @@ public class BlobLordBossTests
         var target = NewTarget(8f, FieldBounds.GroundY);
         var boss = NewBoss(11f, target.transform);
         bool impacted = false;
-        boss.Impacted += (p, h) => impacted = true;
+        int hitsBefore = 0, hitsAtImpact = 0;
+        float takenBefore = 0f, takenAtImpact = 0f;
+        boss.Impacted += (p, h) => { impacted = true; hitsAtImpact = target.hits; takenAtImpact = target.taken; };
 
         yield return Until(() => boss.CurrentState == BlobLordBoss.State.JumpTrack);
         Assert.AreEqual(BlobLordBoss.ImpactRadius, boss.JumpWarning.Radius, 1e-4f);
         Assert.AreEqual(BlobLordBoss.ImpactRadius * 2f, boss.JumpWarning.GetComponent<SpriteRenderer>().bounds.size.x, 0.1f, "그림 폭 = 판정 지름");
+        // 2026-11-24 보스 강화 — 땅에선 몸통 접촉 피해가 있다. 이 가짜 대상은 맞은 뒤 무적이 없어 착지 뒤 접촉이 매 프레임 쌓이므로,
+        // 내려찍기 한 번의 몫만 보려고 착지 순간(Impacted, 피해 직후에 불린다)에 센다. 뜬 동안엔 접촉 피해가 없어 그 전 값이 기준.
+        hitsBefore = target.hits;
+        takenBefore = target.taken;
         yield return Until(() => impacted);
-        yield return new WaitForFixedUpdate();
-        Assert.AreEqual(1, target.hits);
-        Assert.AreEqual(200f * BlobLordBoss.ImpactDamagePct, target.taken, 0.01f);
+        Assert.AreEqual(1, hitsAtImpact - hitsBefore, "내려찍기는 한 번");
+        Assert.AreEqual(200f * BlobLordBoss.ImpactDamagePct, takenAtImpact - takenBefore, 0.01f);
     }
 
     /// <summary>플레이어가 발판 위면 경고·착지도 발판 윗면 — 발판이 안전지대가 되지 않는다(Codex 상의).</summary>
@@ -229,10 +333,12 @@ public class BlobLordBossTests
         Assert.AreEqual(3f, boss.ThrowTarget.x, 0.4f, "플레이어 발밑 쪽");
 
         yield return Until(() => rock != null);
-        Assert.IsFalse(boss.ThrowPathLine.enabled);
-        yield return Until(() => target.hits > 0, 4f);
-        Assert.AreEqual(1, target.hits);
-        Assert.AreEqual(200f * BlobLordBoss.BoulderDamagePct, target.taken, 0.01f);
+        Assert.IsFalse(boss.ThrowPathLine.enabled, "첫 돌의 길은 던지면 지워진다");
+        // 2026-11-24 연속 투척 — 서 있는 대상에겐 돌 3개가 하나씩 다 맞는다(돌마다 최대 체력 10%)
+        yield return Until(() => boss.CurrentState == BlobLordBoss.State.ThrowRecover, 6f);
+        yield return Until(() => target.hits >= BlobLordBoss.VolleyCount, 4f);
+        Assert.AreEqual(BlobLordBoss.VolleyCount, target.hits, "돌마다 한 번");
+        Assert.AreEqual(200f * BlobLordBoss.BoulderDamagePct * BlobLordBoss.VolleyCount, target.taken, 0.01f);
         yield return new WaitForSeconds(GroundWarning.FlashTime * 1.5f);
         Assert.IsFalse(boss.ThrowWarning.Visible, "맞혀도 경고가 지워진다");
     }
@@ -257,15 +363,18 @@ public class BlobLordBossTests
     {
         var target = NewTarget(3f, FieldBounds.GroundY);
         var boss = NewBoss(11f, target.transform);
-        BoulderProjectile rock = null; bool landed = false;
-        Vector2 landAt = default;
-        boss.Thrown += b => { rock = b; b.Landed += r => { landed = true; landAt = r.transform.position; }; };
+        BoulderProjectile rock = null;
+        boss.Thrown += b => { rock = b; };
+        BoulderProjectile first = null;
+        boss.Thrown += b => { if (first == null) first = b; };
         yield return Until(() => rock != null);
         target.transform.position = new Vector3(15f, target.transform.position.y, 0f); // 피함
-        Vector2 planned = boss.ThrowTarget;
-        yield return Until(() => landed, 4f);
-        Assert.AreEqual(0, target.hits);
-        Assert.AreEqual(planned.x, landAt.x, 0.01f, "유도 없이 처음 정한 끝점에 떨어진다");
+        Vector2 planned = boss.ThrowTarget; // 첫 돌의 끝점(만들어질 때 고정)
+        // (2026-11-24 연속 투척 — 뒤에 만들어지는 돌은 그 순간의 플레이어를 새로 노리므로, 여기선 첫 돌만 본다)
+        bool firstLanded = false; Vector2 firstAt = default;
+        first.Landed += r => { firstLanded = true; firstAt = r.transform.position; };
+        yield return Until(() => firstLanded, 4f);
+        Assert.AreEqual(planned.x, firstAt.x, 0.01f, "유도 없이 처음 정한 끝점에 떨어진다");
 
         yield return Until(() => boss.CurrentState == BlobLordBoss.State.Idle);
         yield return Until(() => boss.CurrentState != BlobLordBoss.State.Idle);

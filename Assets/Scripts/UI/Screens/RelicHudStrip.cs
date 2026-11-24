@@ -45,9 +45,16 @@ namespace ChronoSavior.UI
         bool builtVisible;
         int shownCount;
 
-        public RelicHudStrip(Transform parent)
+        public RelicHudStrip(Transform parent) : this(Px.Node(parent, "RelicStrip", X, Y, CellW * Cols, CellH * Rows), parent) { }
+
+        /// <summary>
+        /// 이미 있는 자리(프리팹의 `RelicStrip`, 2026-11-23 프리팹 UI 14호) 안에 칸을 짓는다 — 자리·크기는 프리팹이 정하고 칸 모양·개수는 여기서.
+        /// 설명 상자는 자리의 부모(판) 위에 띄운다.
+        /// </summary>
+        public static RelicHudStrip Attach(RectTransform root) => new RelicHudStrip(root, root.parent);
+
+        RelicHudStrip(RectTransform root, Transform parent)
         {
-            var root = Px.Node(parent, "RelicStrip", X, Y, CellW * Cols, CellH * Rows);
             for (int i = 0; i < Max; i++)
             {
                 float cx = (i % Cols) * CellW, cy = (i / Cols) * CellH;

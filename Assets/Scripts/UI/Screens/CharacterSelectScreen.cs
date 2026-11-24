@@ -39,23 +39,8 @@ namespace ChronoSavior.UI
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
 
-        static readonly Color Gold = Px.Hex(0xfac70e);
-
-        // ── Figma 좌표(640×360 판 기준 — 배경 일러스트 왼쪽 위가 0,0) ──
+        // 모양(좌표·색)은 프리팹 CharacterSelectScreenView에 있다(2026-11-23 프리팹 UI 9호). 여기엔 캐릭터 표(데이터)와 동작만.
         const string Art = "CharacterSelect/";
-        static readonly Vector2 ClassFramePos = new Vector2(40f, 51f);   // 64×64 마름모 틀
-        static readonly Vector2 ClassIconPos = new Vector2(56f, 67f);    // 32×32 직업 아이콘
-        static readonly Vector2 NamePos = new Vector2(114f, 55f);        // 직업 이름(20)
-        static readonly float[] TypeX = { 40f, 173f };                   // 계열 칸 둘(64×64), 아이콘은 칸 안 (12,12) 40×40
-        const float TypeY = 148f, TypeFrame = 64f, TypeIcon = 40f, TypeIconInset = 12f;
-        const float TypeTextDx = 60f, TypeTextW = 64f, TypeTextH = 41f;  // 계열 이름 — 칸 오른쪽 2줄(14)
-        const float TypeHoverW = 124f;                                   // 칸 + 이름까지 마우스 올림 자리
-        const float SlotY = 263f, SlotSize = 80f, SlotIconX = 24f, SlotIconY = 13f, SlotIcon = 32f;
-        static readonly float[] SlotX = { 64f, 164f, 264f, 364f };       // 직업 선택칸 4개
-        const float SlotLabelY = 320f, SlotLabelH = 20f;                 // 칸 아래쪽 띠 안의 이름(14)
-        static readonly Rect SelectBox = new Rect(485f, 302f, 96f, 32f);
-        // 설명 창(256×192) — Figma엔 견본만 있어 자리가 없다. 계열 칸·선택칸을 안 가리는 빈 자리에 둔다.
-        static readonly Rect TipBox = new Rect(250f, 60f, 256f, 192f);
 
         struct Entry
         {
@@ -72,6 +57,16 @@ namespace ChronoSavior.UI
             new Entry { Id = null, Name = "히어로", Bg = "bg_hero", Cls = "class_hero", Icon1 = null, Icon2 = null },
         };
 
+        /// <summary>칸 수 — 모양(<see cref="CharacterSelectScreenView.CreateFromCode"/>)이 칸을 지을 때 읽는다.</summary>
+        internal static int CardCount => Entries.Length;
+
+        /// <summary>i번째 칸의 이름·그림 키(처음 모양을 지을 때만 쓴다 — 실행 중 그림은 <see cref="Refresh"/>가 바꾼다).</summary>
+        internal static (string name, string bg, string cls, string icon1) CardLook(int i)
+        {
+            var e = Entries[Mathf.Clamp(i, 0, Entries.Length - 1)];
+            return (e.Name, e.Bg, e.Cls, e.Icon1 ?? Entries[0].Icon1);
+        }
+
         /// <summary>카드에서 고를 수 있는 캐릭터 — 씬 검증이 전투 씬 Player의 키트와 맞춰 본다.</summary>
         public static IEnumerable<CharacterId> Selectable
         {
@@ -82,6 +77,7 @@ namespace ChronoSavior.UI
             }
         }
 
+        CharacterSelectScreenView view;
         Image bg, classIcon, tipIcon;
         GameObject tip;
         Text nameText, soonText, tipName, tipDesc;
@@ -91,6 +87,9 @@ namespace ChronoSavior.UI
         readonly Text[] slotNames = new Text[4];
         int shownCard;
         int hoveredType = -1;
+
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
         protected override void Awake()
         {
@@ -104,56 +103,62 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="CharacterSelectScreenView"/>, `Resources/UI/Views/CharacterSelectScreenView`)이 원본이다(2026-11-23 프리팹 UI 9호).
+        /// 여기선 조각을 받아 오고, 선택칸·선택 버튼 동작과 키보드 순서(선택칸 1~4 → 선택), 계열 칸 마우스 올림만 연결한다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Background", Px.Ink);
-            bg = Px.Image(Content, "Bg", PxArt.Get(Art + Entries[0].Bg), 0f, 0f, PixelCanvas.Width, PixelCanvas.Height);
+            view = LoadView<CharacterSelectScreenView>(CharacterSelectScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[CharacterSelectScreen] 화면 프리팹(Resources/" + CharacterSelectScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/캐릭터 선택 만들기", this);
+                view = CharacterSelectScreenView.CreateFromCode(Root);
+            }
+            if (view.types.Length != 2 || view.slots.Length != Entries.Length || view.slotNames.Length != Entries.Length)
+                Debug.LogError($"[CharacterSelectScreen] 화면 프리팹 칸 수가 다르다(계열 {view.types.Length}·선택칸 {view.slots.Length}·이름 {view.slotNames.Length}) " +
+                               $"— 계열 2·선택칸 {Entries.Length}·이름 {Entries.Length}이어야 한다", view);
 
-            // 왼쪽 위 — 고른 직업 아이콘 + 이름
-            Px.Image(Content, "ClassFrame", PxArt.Get(Art + "class_frame"), ClassFramePos.x, ClassFramePos.y, 64f, 64f);
-            classIcon = Px.Image(Content, "ClassIcon", PxArt.Get(Art + Entries[0].Cls), ClassIconPos.x, ClassIconPos.y, 32f, 32f);
-            nameText = Px.Text(Content, "Name", "", NamePos.x, NamePos.y, 220f, 28f, 20, Color.white, TextAnchor.MiddleLeft);
-            soonText = Px.Text(Content, "Soon", "준비 중", NamePos.x, NamePos.y + 30f, 120f, 14f, 10, Gold, TextAnchor.MiddleLeft);
+            bg = view.background;
+            classIcon = view.classIcon;
+            nameText = view.nameText;
+            soonText = view.soonText;
 
             // 계열 칸 둘 — 마우스를 올리면 설명 창
             for (int k = 0; k < 2; k++)
             {
                 int kk = k;
-                float x = TypeX[k];
-                var frame = Px.Image(Content, "TypeFrame" + k, PxArt.Get(Art + "type_frame"), x, TypeY, TypeFrame, TypeFrame);
-                typeIcons[k] = Px.Image(Content, "TypeIcon" + k, PxArt.Get(Art + Entries[0].Icon1), x + TypeIconInset, TypeY + TypeIconInset,
-                                        TypeIcon, TypeIcon);
-                typeNames[k] = Px.Text(Content, "TypeName" + k, "", x + TypeTextDx, TypeY, TypeTextW, TypeTextH, 14, Color.white);
-                var hover = Px.Fill(Content, "TypeHover" + k, new Color(0f, 0f, 0f, 0f), x, TypeY, TypeHoverW, TypeFrame);
-                hover.raycastTarget = true;
-                var area = hover.gameObject.AddComponent<HoverArea>();
+                var t = k < view.types.Length ? view.types[k] : null;
+                typeIcons[k] = t?.icon;
+                typeNames[k] = t?.name;
+                typeParts[k] = t != null && t.root != null ? new[] { t.root } : new GameObject[0];
+                if (t == null || t.hover == null) continue;
+                t.hover.raycastTarget = true;
+                var area = t.hover.gameObject.AddComponent<HoverArea>(); // 화면 안쪽 클래스라 프리팹에 저장할 수 없어 실행 중에 붙인다
                 area.Enter = () => hoveredType = kk;
                 area.Exit = () => { if (hoveredType == kk) hoveredType = -1; };
-                typeParts[k] = new[] { frame.gameObject, typeIcons[k].gameObject, typeNames[k].gameObject, hover.gameObject };
             }
 
             // 아래 — 직업 선택칸 4개(처음 누르면 보기, 한 번 더(또는 Enter·선택 버튼) 고르기)
             for (int i = 0; i < Entries.Length; i++)
             {
                 int k = i;
-                var b = Px.IconButton(Content, "Slot" + i, PxArt.Get(Art + "slot"), PxArt.Get(Art + Entries[i].Cls), SlotX[i], SlotY,
-                                      SlotSize, SlotSize, SlotIconX, SlotIconY, SlotIcon, SlotIcon,
-                                      () => { if (shownCard == k) Pick(k); else shownCard = k; });
-                slotNames[i] = Px.Text(Content, "SlotName" + i, Entries[i].Name, SlotX[i], SlotLabelY, SlotSize, SlotLabelH, 14, Color.white);
+                slotNames[i] = i < view.slotNames.Length ? view.slotNames[i] : null;
+                var b = i < view.slots.Length ? view.slots[i].Wire(() => { if (shownCard == k) Pick(k); else shownCard = k; }) : null;
                 AddNav(b);
             }
-            AddNav(Px.TextButton(Content, "Select", PxArt.Get(Art + "select_button"), SelectBox.x, SelectBox.y, SelectBox.width,
-                                 SelectBox.height, "선택", 20, Color.white, () => Pick(Mathf.Clamp(shownCard, 0, Entries.Length - 1))));
+            AddNav(view.select.Wire(() => Pick(Mathf.Clamp(shownCard, 0, Entries.Length - 1))));
 
-            // 계열 설명 창 — 맨 위에 그린다
-            var tipImg = Px.Image(Content, "Tooltip", PxArt.Get(Art + "tooltip"), TipBox.x, TipBox.y, TipBox.width, TipBox.height);
-            tip = tipImg.gameObject;
-            tipIcon = Px.Image(tipImg.transform, "Icon", PxArt.Get(Art + Entries[0].Icon1), 25f, 28f, 40f, 40f);
-            tipName = Px.Text(tipImg.transform, "Name", "", 102f, 28f, 142f, 18f, 14, Gold, TextAnchor.MiddleLeft);
-            tipDesc = Px.Text(tipImg.transform, "Desc", "", 102f, 52f, 142f, 128f, 10, Color.white, TextAnchor.UpperLeft);
-            tipDesc.horizontalOverflow = HorizontalWrapMode.Wrap;
-            tip.SetActive(false);
+            // 계열 설명 창
+            tip = view.tooltip;
+            tipIcon = view.tipIcon;
+            tipName = view.tipName;
+            tipDesc = view.tipDesc;
+            if (tip != null) tip.SetActive(false);
         }
 
         protected override int DefaultNav
@@ -210,7 +215,7 @@ namespace ChronoSavior.UI
             {
                 bool ok = Entries[i].Id.HasValue;
                 Nav[i].Interactable = ok || i == shownCard; // 잠긴 칸도 골라 볼 수는 있게
-                slotNames[i].color = p.character == Entries[i].Id ? Gold : ok ? Color.white : new Color(1f, 1f, 1f, 0.45f);
+                if (slotNames[i] != null) slotNames[i].color = p.character == Entries[i].Id ? view.gold : ok ? Color.white : new Color(1f, 1f, 1f, view.lockedNameAlpha);
             }
             Nav[Entries.Length].Interactable = available;
         }

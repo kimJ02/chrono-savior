@@ -93,6 +93,13 @@ namespace ChronoSavior.UI
             return d;
         }
 
+        /// <summary>
+        /// 그림 모양 그대로 흰색으로 칠한 그림 — `Image.color`로 아무 색이나 입히려고(예: 유물 등급 색 ◆). <see cref="Derive"/>로 만들어 캐시한다.
+        /// 실행 중에 만든 그림이라 프리팹에 저장되지 않는다 — 프리팹에선 <see cref="PxWhiteArt"/>로 경로만 남긴다(2026-11-23).
+        /// </summary>
+        public static Sprite White(string path) =>
+            Derive(Get(path), "white", c => c.a > 0 ? new Color32(255, 255, 255, c.a) : c);
+
         public static bool Same(Color32 a, Color32 b) => a.r == b.r && a.g == b.g && a.b == b.b && a.a > 0;
 
         /// <summary>그림에서 그 색이 칠해진 가로 범위(그림 왼쪽 기준 도트, 없으면 0·0) — 막대 채움 칸을 그림에서 재려고.</summary>

@@ -5,6 +5,9 @@
 
 ## 지금 상태 (2026-11-05)
 
+> **지금(2026-11-24~) — 1·2지역 보스 강화 스프린트, 브랜치 `boss-level`**(사용자 "보스가 너무 쉽다"). 범위·수치는 [`HANDOFF.md`](HANDOFF.md) 맨 위, 기록은 로그 (165).
+> 1지역 덩어리 지배자: 몸통 접촉 피해(최대 체력 8%) + 체력 50% 이하 연속 점프 강하 3번 + 착지 0.5초 전 고정 + 조약돌 연속 투척(3개·분노 5개). 2지역 부서진 여신상: 접촉 피해 없이 더 빠르게(접근 1.5배·템포) + 돌진 잡기 + 사거리 60% 안에서 공격 + 연계(휘두르기→잡기)·같은 패턴 2연속.
+
 > **최종 목표가 바뀌었다(2026-09-30)**: 원본을 그대로 옮기는 게 아니라, **원본을 기준으로 팀 회의에서 정한 개선을 반영한다.**
 > 기본값은 여전히 원본 동작이고, 원본과 다른 점을 발견하면 사용자에게 짚는다(`CLAUDE.md` 작업 규칙 첫 항목).
 
@@ -183,6 +186,18 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
+- **[2026-11-24] `AttackMoveLockTests.Mage_LocksWhileChargingAndFirePose_ThenReleases`가 새 PC에서 실패**("발사 자세 동안은 아직 제자리", None) — 발사 자세 0.1초를 `yield return null` 한 프레임 뒤에 확인해서 그 프레임이 0.1초보다 길면 실패하는 타이밍 의존 테스트. 이번 보스 작업과 무관(Characters는 안 건드림). 다시 돌려도 나오면 고칠 것.
+- **[2026-11-23, 사용자 확인] 화면에 보이는 캐릭터 이름은 "살수"(예전 "섬영")** — 세이브 슬롯 요약은 로그 (163)에서 고쳤다. 아직 "섬영"으로 보이는 곳 둘: 유물 설명 상자 "섬영 전용"(`Core/ItemDatabase.OwnerName`), 업적 설명 "섬영 빌드 5층 완성"(`Core/Achievements` blade5). 에디터 툴팁 `CharacterArtSet`도 "섬영". 작은 글자 수정이라 `main` 후속 커밋으로 고치면 된다(코드 주석·테스트 메시지의 "섬영"은 개발용이라 그대로).
+- **[2026-11-23, 사용자] 스테이지 선택의 스테이지 칸 고르기·들어가기 방식이 원래부터 어색하다 — 나중에 고친다**(프리팹 8호 전부터 있던 동작, 이번엔 안 바꿈).
+  스테이지 칸에 마우스를 올리면 그 칸이 바로 "고른 스테이지"가 되어 숫자가 노랗게 바뀌고(`OnNavChanged`가 `stage`를 바꿈), 키보드로 칸을 지정한 뒤 확인 → "원정 떠나기"로 넘어가 한 번 더 눌러야 들어간다(`PickStage`).
+  어떻게 바꿀지(마우스 올림 = 미리보기만? 확인 한 번에 출발?)는 사용자가 정한다.
+- **[2026-11-23 발견, `main` 150 병합에서 넘어옴] PlayMode 실패 4건 — 코드 수치가 바뀌었는데 테스트 기대값이 옛 값.** 프리팹 UI 브랜치와 무관(그 브랜치에선 안 고침).
+  테스트를 새 값에 맞출지, 코드를 되돌릴지는 수치를 바꾼 사람이 정할 것:
+  · `UiFigmaUpdateTests.Relic_Layout_30SlotsPerPage_TwoPages_UnownedIsDarkWithLock` — 노말 확률 기대 "55%", 실제 "70%"(`Core/ItemDatabase.Weight` Common=70)
+  · `BlobLordBossTests.Catalog_Region1UsesBlobLord_OthersKeepCommonBoss` — 기대 800, 실제 932
+  · `BossAndShrine_GetTheirStatsAndSizes` — 기대 85, 실제 91
+  · `BladeCombatTests.SpinAttack_HitsEnemyInRadius_SkipsSpawnProtectedAndOutOfRange` — "반경 밖의 적이 맞았다(오탐)", 기대 38, 실제 29 — **11-23 재실행에선 통과: 결과가 그때그때 다른(불안정한) 테스트로 보인다**
+
 - **[팀원, 소유권 밖 수정 — 10/14 병합됨] `Assets/Editor/BuildEnemyData.cs`에 `SpriteEnabledTypes`
   조건 추가(2026-10-07) — 팀장 확인 필요.** 고블린·박쥐만 정식 아트(사용자 제공)를 쓰도록 1줄
   조건부 변경, 나머지 5종은 그대로 도형. `Enemies/`는 팀장 담당 영역이라 동작엔 문제없지만 병합 전
@@ -301,6 +316,14 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   이미 짚었던 항목, 아직 그대로).
 
 ## 로그 (최신이 위)
+
+- **2026-11-24 (175)** — **[사용자 세션] 팀원 main(UI 프리팹 1~14호·보스 레벨링·화상/비행 몹 수정, f9b07e6) → feature/relics 병합**. main에는 안 올림.
+  - 사용자 결정: "UI 바꾼 건 그냥 팀원이 업데이트한 대로" → 충돌 4개(`LobbyHud`·`PauseMenu`·`StageSelectScreen`·`CharacterSelectTests`)는 **팀원 버전**. 진행 기록은 양쪽 로그 다 남김
+    (**번호가 겹친다** — 이 아래 151~174는 feature/relics, 그 밑 151~167은 팀원 main. 날짜·브랜치 표기로 구분).
+  - 그 결과 **빠진 feature/relics UI 기능**(사용자에게 보고, 다시 얹을지 결정 대기): 로비 ESC 메뉴(계속·설정·타이틀로 — `LobbyMenuTests` 삭제), 로비의 캐릭터 선택 버튼 제거(팀원 판엔 다시 있음 — "이번 회차 캐릭터 변경 불가"와 부딪힐 수 있음),
+    스테이지 선택의 권장 전투력 표시·←/→ 1~5 / ↑/↓ 챕터·보스 키 조작·화살표 대칭.
+  - 맞춘 것: `SaveSlotScreen`의 에디터 전용 직업 테스트 버튼이 없어진 `Gold` 상수를 써서 같은 색 값으로. 캐릭터 선택 확인창("이번 회차 변경 불가")은 남기고 팀원 `CharacterSelectTests` 2개에 확인 누르기 추가.
+  - 검사(복사본 Unity 배치): 전체 668 중 660 통과 + 캐릭터 선택 5/5 재통과 — 남은 실패 3 = 보스 수치 2(원래)·순서 의존 회전베기(164), 건너뜀 3 = 수동 전용(성능 2·설치 캡처 1).
 
 - **2026-11-24 (174)** — **[사용자 세션] 발판 끝에서 몬스터가 떨던 것 고침 + 슬롯 3 되돌림**
   - `EnemyMove.TryTurnBackAtPlatformEdge`: 플레이어를 쫓다(추적 범위 안) 발판 끝에 닿으면 돌아서지 않고 끝에서 플레이어 쪽을 보고 선다(`chasing` + `holdX`). 배회 중이면 예전처럼 돌아선다.
@@ -463,6 +486,195 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
   11. 마법사 차지 중엔 공중에서도 좌우 이동 0(`AttackMoveLock.Root` 새로, 떨어지는 건 그대로).
   - 테스트: `CombatPowerTests` 3개, 캐릭터 선택(확인창·Esc 불가), 플립북 동기 재생, 공격 잠금 Root, 성소 타이머 테스트 갱신.
 
+- **2026-11-24 (167)** — **[사용자 세션] 여신상 잡기 — 손에 들린 모습 — `boss-level`**.
+  - 사용자: "잡기인데 캐릭터가 끌려가서 여신상 앞에 서 있기만 하고 손에 들려 있지 않다". 원인: 예전 끌어당기기는 높이를 그대로 두고 보스 앞 0.7유닛 땅(`GrabAnchorOffset`)으로 x만 옮겼다 — 그림의 주먹 자리와 무관.
+  - **`BrokenGoddessBoss`**: 잡기 그림(100×64)에서 주먹 가운데를 재서 `GrabReachHand`(앞 30px·아래 13px, 그림 4·5번)·`GrabHeldHand`(앞 7px·위 7px, 그림 6·7번), 1px = `GrabArtPixel`(1.5/64). `HandPoint(보스 위치, 방향, 손)`(맵 안으로 자름). `PullPoint`: 끌어당기기 앞 2/3 처음 자리→뻗은 주먹, 마지막 1/3 뻗은 주먹→들어 올린 주먹(위로 0.15 휘는 길) — 그림이 바뀌는 3등분과 맞춤. `HoldGrabbed`는 들어 올린 주먹 + 좌우 버둥댐 `GrabHoldShake` 0.02. `GrabHoldTime` 0.2→0.4→**0.8**(사용자 "붙잡아두는 시간을 0.8초로"). `GrabAnchorOffset`·`grabStartX/grabHeldY/grabAnchorX` 삭제(→ `grabStart`). 돌진 잡기도 같은 `TryGrab`이라 같이 바뀜.
+  - 테스트: `BrokenGoddessBossTests.Grab_SuccessPullsAndDamagesOncePercentOfMaxHp`에 붙잡아둠 동안 들어 올린 주먹 자리(x는 버둥댐 허용)·보스 가운데보다 위·여신상 정렬 확인 추가. `HANDOFF.md` 3차 조정 표.
+  - 이어서 사용자: "손 위로 캐릭터 머리가 다 보이게, 보이는 건 여신상 손이 우선 — 손과 머리만 보이게". 손 위치를 **주먹 윗변 + 캐릭터 턱 높이**(`GrabChinBelowPivot` 5/128 — 캐릭터 그림 32×48에서 기준점 16px·턱 ≈21px)로: 뻗은 주먹 앞 30·아래 8px, 들어 올린 주먹 앞 7·위 12px(+턱). 들어 올린 주먹 ≈10×10px(0.23유닛)이라 턱 아래 몸(0.22 높이·0.23 폭)이 거의 꼭 가려진다. 잡는 동안(끌어당기기·붙잡아둠) 여신상 몸 `sortingOrder` +`GrabFrontOrder`(2) — 캐릭터(0)·피격 깜빡임(+1) 앞, `ReleaseGrabbedTarget`에서 원래대로(보스 피격 깜빡임은 몸 정렬+1을 매번 다시 읽어 같이 따라간다). 버둥댐 0.02→0.01. 테스트에 정렬 2 → 놓은 뒤 0 확인 추가.
+  - 손 확인할 것: 머리가 주먹 위로 딱 맞게 나오는지(캐릭터마다 턱 높이가 조금 다를 수 있음 — 그림 기준점이 같으니 대체로 맞을 것), 몸이 주먹 아래·옆으로 삐져나오는지.
+  - **검증(2026-11-24)**: Unity를 못 돌려 **미검증** — 사용자 에디터에서 PlayMode 전체(예상 652 통과 / 실패 3) → 2지역 보스 잡기 눈으로 확인.
+- **2026-11-24 (166)** — **[사용자 세션] 보스 강화 2차 조정(플레이 피드백) — `boss-level`**.
+  - 사용자: "1지역은 낙하 직전까지 쫓아와 피하기 어렵다 → 0.5초 전쯤 추적 멈춤 / 돌던지기는 너무 쉽다 → 보스 근처에 개수를 늘려 시간차로 생성·발사 / 2지역은 사거리 끝자락에서 공격해 피하기 쉽다 → 안쪽에 있어야 공격 / 휘두르기·잡기 반복이라 예측이 쉽다 → 변주". 질문으로 확정: 돌 3개·0.4초(분노 5개, 돌마다 10%), 시작 거리 60%, 변주 = 연계 공격 + 같은 패턴 연속 허용.
+  - **`BlobLordBoss`**: `LockBeforeImpact` 0.3→**0.5**. 투척을 **연속 투척**으로 — `ThrowPrep` 뒤 `ThrowWarn` 상태가 투척 전체(길이 (n−1)×0.4+0.6): 돌 i는 i×`VolleyInterval`에 보스 둘레(`StonePosition`, 가로 `VolleySpread` 0.55)에 생겨 그 순간 플레이어 발밑(근거리 보정 포함)을 노리고 경고·경로 선을 띄운 뒤 `ThrowWarn`초에 날아감(유도 없음). `VolleyCount` 3 · `VolleyCountEnraged` 5 · `BoulderDamagePct` 0.14→**0.10**. 0번 돌은 프리팹의 `heldBoulder`·`throwPathLine`·`throwWarning`, 나머지는 `Awake`에서 복제(`BuildVolleyParts`). 공개 `VolleySize`, `ThrowTarget`은 첫 돌 끝점. 옛 `BeginThrowWarn`/`Throw`/`ShowHeld`는 `BeginVolley`/`UpdateVolley`/`AimStone`/`ThrowStone`/`ShowHeldStone`/`HideVolley`로.
+  - **`BrokenGoddessBoss`**: `EngageRatio` 0.6 — `GrabEngage`·`SweepEngage` 1.8 안이어야 시작, 접근은 그 거리까지(판정 3은 그대로, 돌진은 여전히 3~8) · `MaxConsecutive` 1→**2** · **연계 공격** `TryComboGrab`: 휘두르기 판정이 끝날 때 `ComboChance` 0.4(테스트용 `ComboChanceRuntime`)로 후딜 없이 잡기(`ComboGrabPrep` 0.25 — `GrabPrep`이 이제 `stateDur`로 끝을 본다), 잡기 쿨이 돌았고 사거리 3 안일 때만.
+  - 테스트: `BlobLordBossTests` 투척 둘 갱신(서 있는 대상은 돌 3개 다 맞음 / 첫 돌만 유도 없음 확인) + 새 2(3개 시간차·보스 근처 출발 / 분노 5개) · `BrokenGoddessBossTests` 휘두르기 테스트에 연계 0 + 새 2(시작 거리 안까지 걸어 들어옴 / 연계 휘두르기→잡기) · `CreationOwnershipTests`(덩어리 지배자 생성 이유 갱신) · `HANDOFF.md` 2차 조정 표.
+  - **검증(2026-11-24)**: 이 세션은 Unity를 못 돌려 **미검증** — 사용자 에디터에서 PlayMode 전체(예상 652 통과 / 실패 3 — 기존 2 + 마법사 타이밍) → 1·2지역 보스전 손 확인.
+- **2026-11-24 (165)** — **[사용자 세션] 1·2지역 보스 강화 — 브랜치 `boss-level`**(새 PC의 클론 `D:\그냥 과제 파일들\yokai_unity-main\yokai_unity`에서 작업, 원래 데스크탑으로 옮길 예정).
+  - 사용자 결정(2026-11-24, 질문 3번으로 확정): 대상 = 1지역 덩어리 지배자·2지역 부서진 여신상, 방향 = "너무 쉽다 → 강화", 패턴은 제안을 받아 고름.
+  - **1지역 `BlobLordBoss`**: ① 몸통 접촉 피해 = 대상 최대 체력 `ContactDamagePct` 8%(공중에 뜬 동안 0) — `EnemyMove.TryAttack`이 `attackPower × 배수`를 주므로 배수를 `최대 체력×8%÷attackPower`로 돌려준다(예전엔 늘 0). ② 체력 `EnrageRatio` 50% 이하에서 추적 점프 강하가 **연속 점프 강하 3번**(`ChainJumps`) — 사이 `ChainGap` 0.35초(땅, 맞는다)·추적 `ChainTrack` 0.6초·1·2번째 착지 `ChainImpactDamagePct` 12%·마지막 20%·후딜은 마지막 뒤에만. 새 상태 `State.ChainGap`, 공개 `IsEnraged`·`JumpsLeft`.
+  - **2지역 `BrokenGoddessBoss`**: 접촉 피해는 그대로 없음, 대신 ① 접근 `ApproachSpeed` 1.35(공통 보스 0.9의 1.5배) ② 준비 ×0.8(잡기 0.6→0.48·휘두르기 0.5→0.4)·후딜 ×0.7(1.2→0.84·1.0→0.7)·쿨 ×0.75(5→3.75·4→3), 경고 시간은 그대로(피할 수는 있게). ③ 새 패턴 **돌진 잡기**(`Pattern.DashGrab`, 상태 `DashPrep/DashWarn/DashRun/DashRecover`): 거리 3~8이면 방향 고정 0.5 → 바닥 직선 경고 0.5 → 초당 8로 최대 6 미끄러짐 → 몸 앞 1유닛 안이면 기존 잡기(끌어당김·붙잡아 둠·피해 20%) → 빗나가면 후딜 1.2, 쿨 6. 그림은 잡기 그림을 빌린다(준비 0·경고 1·돌진 2).
+  - 파일: `Enemies/BlobLordBoss.cs` · `Enemies/BrokenGoddessBoss.cs` · 테스트 `BlobLordBossTests`(+3: 접촉 % / 분노 3연속 / 평소 1번, 기존 "접촉 0" 검사를 "땅에선 접촉 피해 있음"으로) · `BrokenGoddessBossTests`(+3: 접근 속도 / 돌진 잡기 성공 / 돌진 잡기 회피) · `HANDOFF.md`(새 스프린트 절) · `CLAUDE.md`(지금 상태).
+  - **1차 검증(2026-11-24, 사용자 에디터 — 새 PC)**: 실패 6건. 내 변경 탓 3건 → 고침:
+    `Jump_ImpactHitsOnceForPercentOfMaxHp`(1 기대, 3 — 이제 땅에선 몸통 접촉 피해가 있어 무적 없는 가짜 대상에 착지 뒤 접촉이 쌓였다 → 착지 순간(`Impacted`)의 값으로 내려찍기 몫만 센다) ·
+    `Approach_IsFasterThanCommonBoss`(1.35±0.2 기대, 1.14 — 바닥 마찰·출발 프레임 → 상수 1.35 확인 + 실제 걸음은 0.2초 뒤부터 재서 공통 보스 ×1.2보다 빠른지만) ·
+    `DashGrab_FromMidRange…`(경고 검사 — 이 테스트의 보스는 프리팹 없이 세워 경고 프리팹이 없다 → 그 검사만 뺌).
+    나머지 3건은 이번 변경과 무관: `Catalog_Region1…`(800 vs 932)·`Relic_Layout…`(55% vs 70%)는 `main`에서 넘어온 기존 실패, `Mage_LocksWhileChargingAndFirePose_ThenReleases`(발사 자세 0.1초를 한 프레임 뒤에 보는 테스트 — 프레임이 0.1초보다 길면 실패, 새 PC 첫 실행 렉으로 보임 → "확인 필요"). 반대로 기존 실패였던 `BossAndShrine…`는 이번엔 안 나왔다.
+  - **2차 검증(2026-11-24, 사용자 에디터)**: PlayMode **648 통과 / 3 실패 / 0 건너뜀** — 실패는 기존 2건 + 마법사 잠금 테스트(타이밍, "확인 필요"). 이어서 플레이 피드백 → 로그 (166).
+- **2026-11-23 (164)** — **[사용자 세션] 프리팹 UI 14호(마지막): 전투 HUD(`CombatHud`) — `feature/ui-prefab-combathud`**(1~13호와 같은 방식, 범위는 사용자 결정 **"틀만 프리팹"**).
+  - 모양(피격 붉은 막·플레이어 판(체력 빨강·막대·숫자·골드)·남은 초/토벌/버프 줄/COMBO/포탈 안내 글자·스킬 칸 셋(아이콘·흐림 3조각·덮개 3조각·틀·쿨다운/키/스택 글자)·미니맵 판·보스 판(잔상·빨강·막대·이름·해골)·경험치 바·팝업 글씨 견본, 색 6가지)은 프리팹 `Resources/UI/Views/CombatHudView`.
+    값 읽기(전투 창구 `WorldView.Combat`·프로필)·글자·막대 폭·쿨다운 덮개·보스 등장/잔상 연출·해골 자리·팝업 띄우기·버프 줄·가짜 값(`Preview`)은 그대로 코드(`CombatHud`).
+  - **개수가 실행 중에 바뀌는 부분은 코드가 프리팹의 자리 안에 짓는다**(사용자 2026-11-23 선택): 보유 유물 칸(`RelicHudStrip` — 새 `RelicHudStrip.Attach(자리)`)·미니맵 점/발판 선(`CombatMinimapView` — 새 생성자 `CombatMinimapView(자리)`). 자리(`RelicStrip`·`Minimap`)를 옮기면 따라간다. 예전 생성자는 그대로 둠(최소 공용 변경).
+  - 막대 100% 폭 = **처음 프리팹 폭**(체력 `HpFill` 156·보스 `BossBar/Fill` 394·경험치 `ExpBack` 638 — 예전 코드 상수와 같다). 쿨다운 덮개는 같은 번호 `Dim` 자리 안에서 아래부터 차오른다(예전 상수 `SlotInner`와 같은 범위). 해골은 세로·크기는 프리팹, 가로만 이름 길이로.
+  - 팝업 글씨는 견본(`PopupTemplate`, 꺼 둔 채)을 복제(예전엔 `Px.Text`로 새로 지음 — 보이는 결과는 같다).
+  - 조금 달라진 것: 유물 칸 설명 상자가 이제 판의 맨 위(마지막 자식)에 그려진다(예전엔 스킬 칸·보스 판보다 아래) — 겹칠 일은 거의 없고 겹쳐도 설명이 위라 더 낫다.
+  - 테스트가 읽는 공개 API(`HpFillAmount`·`HpLabel`·`GoldLabel`·`TimerLabel`·`BuffsLabel`·`ExpFillWidth`·`ComboShown`·`BossBarShown`·`BossFillWidth`·`BossTrailWidth`·`BossBarRect`·`BossNameLabel`·`MinimapLineCount`·`ActivePopups`·`Preview`·`BuffLine`·`Camera`·`PopupLife/Rise/Size`·`BossIntroTime/TrailTime`)는 그대로. `SkillSlotTests`가 소스에서 찾는 `.PlayerKit`·`.AttackSlot`·`.SkillSlot`·`.BuffText`도 그대로(`Live()`의 지역 변수만 `view` → `world`로 — 필드 `view`(화면 모양)와 헷갈리지 않게).
+  - 파일별: `UI/Screens/CombatHud.cs`(Build가 프리팹을 불러 연결·막대 폭 재기, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/CombatHudView.cs`(모양, `SlotRef`, 예전 좌표는 `CreateFromCode`로) · `UI/Screens/RelicHudStrip.cs`(+`Attach`) · `UI/Screens/CombatMinimapView.cs`(+자리 받는 생성자) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/전투 HUD 만들기`) · 테스트 `PixelUiTests`(+2: 프리팹·유물 칸/미니맵이 자리 안에 / 팝업 견본 복제·쿨다운 덮개가 Dim 안) · `CreationOwnershipTests`(`CombatHud.cs` 이유 갱신 + `CombatHudView.cs`) · `OriginalFidelityTests`(`RelicHudStrip.Attach`).
+  - ⚠️ 이름 그대로 둘 것: `RelicStrip`·`Minimap`(자리)·`PopupTemplate`(꺼 둔 채)·스킬 칸 `Dim0~2`/`Veil0~2`(같은 번호끼리 짝)·`BossBar` 안 `Fill`/`Trail`/`Name`/`SkullLeft`/`SkullRight`. 스킬 칸 순서 = Z·X·C.
+  - 프리팹(`Assets/Resources/UI/Views/CombatHudView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **640 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 사냥 HUD 확인.
+  - **프리팹 UI 전환 14개 화면 전부 끝(1~14호, 로그 (151)~(164))** — 화면 모양은 `Assets/Resources/UI/Views/*View.prefab`, 메뉴 `ChronoSavior/UI 프리팹/…`로 처음 모양을 짓는다. 실행 중 만든 그림은 `PxSlicedArt`(9-슬라이스)·`PxWhiteArt`(흰 그림)로 복원.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (163)** — **[사용자 세션] 프리팹 UI 13호: 세이브 슬롯 창(`SaveSlotScreen`) — `feature/ui-prefab-saveslot`**(1~12호와 같은 방식).
+  - 모양(어두운 막·창 테두리·제목판·닫기, 슬롯 칸 셋 — 묶음 `Slot1~3` 안에 칸 바탕 `Card`·`Title`·`Info`·`Time`·`Continue`·`Reset`)은 프리팹 `Resources/UI/Views/SaveSlotScreenView`.
+    칸마다 시나리오 이름·진행 요약·마지막 저장 시각 글자, [이어하기]/[초기화]/닫기 동작, 키보드 순서(1번 이어하기 → 1번 초기화 → 2번 …, 2열 격자)는 그대로 코드(`SaveSlotScreen`).
+  - 슬롯 칸은 이제 묶음 하나(`Slot1`…) — 묶음을 옮기면 칸 전체가 같이 움직인다. 칸 안 이름이 짧아졌다(예전 `SlotTitle1`·`Continue1` → `Slot1/Title`·`Slot1/Continue`, 이 이름을 읽는 코드·테스트는 없었다).
+  - 슬롯 요약의 캐릭터 이름 "섬영" → **"살수"**(`SaveSlotScreen.Summary`, 2026-11-23 사용자 확인: "살수가 맞는 이름"). 화면에 보이는 "섬영"이 두 곳 더 남아 있다 — 유물 설명 상자의 "섬영 전용"(`Core/ItemDatabase.OwnerName`)·업적 설명 "섬영 빌드 5층 완성"(`Core/Achievements`). 이번 브랜치 범위(세이브 슬롯 창) 밖이라 안 고쳤다 → "확인 필요".
+  - ⚠️ 원래부터 있던 것(이번엔 안 바꿈): 요약은 보이는 동안 매 프레임 세이브 파일을 읽는다(`Refresh` → `SaveService.Peek`).
+  - 파일별: `UI/Screens/SaveSlotScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/SaveSlotScreenView.cs`(모양, `ButtonRef.Wire`·`SlotRef`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/세이브 슬롯 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·슬롯 칸 3·제목 / [초기화]는 확인 팝업·닫기) · `CreationOwnershipTests`(`SaveSlotScreenView.cs`).
+  - 프리팹(`Assets/Resources/UI/Views/SaveSlotScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **638 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (162)** — **[사용자 세션] 프리팹 UI 12호: 각성창(`AwakenScreen`) — `feature/ui-prefab-awaken`**(1~11호와 같은 방식).
+  - 모양(바탕·전신 그림·위 패널, 위 패널 두 얼굴 `SkillDetail`(큰 아이콘·설명·상태·SP·배우기·에디터 전용 SP +1)/`StatDetail`(스탯 5줄), [각성]·[스탯] 탭, 아래 창, 아래 창 두 얼굴 `Tree`(스킬 칸 2줄×5)/`Upgrades`(강화 목록 5줄+가림막·스크롤 나눔선·표시·강화 상세·구매 단위 셋·강화하기), 닫기, 금색·흐린 색)은 프리팹 `Resources/UI/Views/AwakenScreenView`.
+    캐릭터별 스킬트리 데이터·칸 틀 그림(배움/열림/막힘)·아이콘·설명·상태·스탯 값·강화 목록/상세·고른 줄/구매 단위 그림·탭 전환·키보드 순서(탭마다 다시 짬)·배우기/구매/SP +1 동작은 그대로 코드(`AwakenScreen`).
+  - 강화 목록 줄 간격(`rowStep` 28)·보이는 줄 수(`rowsVisible` 3)·스크롤 표시 범위(`scrollTrackY` 230·`scrollTrackHeight` 108)는 프리팹 값 — 목록 줄 세로 자리와 스크롤 표시 세로 자리는 코드가 이 값으로 정한다(`SetScroll`, 가로·크기는 프리팹 그대로).
+  - 에디터 전용 "SP +1"은 9-슬라이스라 `PxSlicedArt`로 복원, 프리팹엔 늘 있고 빌드한 게임에선 화면 코드가 끈다(11호 테스트 버튼과 같다).
+  - 테스트가 읽는 공개 API(`NodeFrameName`·`ShowTabForTest`·`StatValueText`·`PickUpgradeForTest`·`BuyForTest`·`BuyEnabled`·`BuyText`·`DetailNameText`·`Before/AfterLevelText`·`ClickNodeForTest`·`ScrollListForTest`·`ListTop`)와 칸 이름(`Node{줄}{층}`·`Icon`·`Row0~4`)은 그대로.
+  - 파일별: `UI/Screens/AwakenScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로) · **새** `UI/Screens/AwakenScreenView.cs`(모양, `ButtonRef.Wire/Label`·`NodeRef`·`UpgradeRowRef`·`SetScroll`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/각성창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·칸 수·SP +1 그림 / 탭 버튼·스크롤 표시·닫기) · `CreationOwnershipTests`(생성 담당 `AwakenScreen.cs` → `AwakenScreenView.cs`, 가림막 포함) · `OriginalFidelityTests`(`SetScroll`).
+  - ⚠️ 스킬 칸 순서(`nodes` = 줄 × 5 + 층 − 1)·강화 줄 순서(체력·공격력·이동속도·공격속도·치명타)·스탯 줄 순서(레벨·최대체력·공격력·이동속도·공격속도)는 코드와 짝. `SkillDetail`/`StatDetail`/`Tree`/`Upgrades` 이름·묶음 그대로(코드가 켜고 끈다). 강화 줄은 `Upgrades/List`(가림막) 안에.
+  - 프리팹(`Assets/Resources/UI/Views/AwakenScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **636 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "훈련소" 화면 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (161)** — **[사용자 세션] 프리팹 UI 11호: 유물 소환(`RelicScreen`) — 목록형 — `feature/ui-prefab-relic`**(견본 복제는 7호 업적 창, 실행 중 그림 복원은 10호 `PxSlicedArt`와 같은 방식).
+  - 모양(바탕·큰 창·제목판·닫기·칸 격자(`Slots` + 견본 칸 `Template`, 열 수 5·간격 37)·쪽 넘김·파편/유물 수 막대·확률 판 4줄·[1]·[10]·에디터 전용 "유물 전부 각성")은 프리팹 `Resources/UI/Views/RelicScreenView`.
+    한 쪽 칸 수(30)·칸마다 유물/개수/자물쇠/밝은·어두운 칸·쪽 번호·파편/유물 수·**확률 판의 등급 이름·색·값(데이터 `ItemDatabase`)**·버튼 동작·키보드 격자(칸 0~29 → [1] → [10], 열 수는 프리팹)·설명 상자·소환은 그대로 코드(`RelicScreen`).
+  - 등급 ◆는 커서 그림을 흰색으로 칠한 그림(`PxArt.Derive`)인데 이것도 **실행 중 만든 그림이라 프리팹에 안 남는다**(10호 흰 네모와 같은 문제) — **새** `UI/Pixel/PxWhiteArt.cs`(경로만 남겨 불러올 때 다시 만듦) + `PxArt.White(path)`(같은 "white" 캐시를 쓰는 짧은 길). 쪽 넘김·테스트 버튼·확률 이름표의 9-슬라이스는 `PxSlicedArt`.
+  - 칸 모양은 **새** `UI/Screens/RelicSlotView.cs`(버튼·◆ 테두리·◆·자물쇠·개수, `Wire`가 흰 그림 복원 후 버튼 연결).
+  - 에디터 전용 "유물 전부 각성" 버튼은 프리팹엔 늘 있고, 빌드한 게임에선 화면 코드가 끈다(예전엔 빌드에서 아예 안 지었다 — 보이는 결과는 같다).
+  - 테스트가 읽는 공개 API(`PageForTest`·`VisibleSlotCount`·`OwnedCountText`·`ShardText`·`Open`·`Close`·`IsOpen`)와 칸 이름(`Slot0~29`)·`Lock`·`RateValue0`은 그대로.
+  - 파일별: `UI/Screens/RelicScreen.cs`(Build가 프리팹을 불러 복제·연결, `UsesViewPrefab`, 좌표·색 상수는 뷰로, `NavColumns`는 프리팹 열 수) · **새** `UI/Screens/RelicScreenView.cs`(모양, `BuildSlots`·`SlotRect`·`RectOf`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Screens/RelicSlotView.cs` · **새** `UI/Pixel/PxWhiteArt.cs` · `UI/Pixel/PxArt.cs`(+`White`, 최소 공용 변경) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/유물 소환 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹·견본 30칸 복제·실행 중 그림 복원·확률 판 데이터 / 쪽 넘김·칸 설명 상자·닫기) · `CreationOwnershipTests`(`RelicScreenView.cs`) · `OriginalFidelityTests`(`BuildSlots`·`RelicScreenView.RectOf`·`PxArt.White`).
+  - ⚠️ 견본 칸 이름은 `Template`(**"Slot"으로 시작하면 안 됨** — 기존 테스트가 "Slot"으로 시작하는 버튼을 30개로 센다), 꺼 둔 채. `Slots`·버튼은 판(Board)의 직접 자식, 왼쪽 위 기준(설명 상자 자리 계산). 확률 줄 순서 = 노말·레어·에픽·레전드.
+  - ⚠️ 기존 실패 `Relic_Layout_…`(노말 확률 기대 55%, 실제 70%)는 이번 변경과 무관하게 그대로 실패한다("확인 필요" 참고).
+  - 프리팹(`Assets/Resources/UI/Views/RelicScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **634 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "가챠" 화면 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (160)** — **[사용자 세션] 프리팹 UI 10호: 로비 HUD(`LobbyHud`) — `feature/ui-prefab-lobbyhud`**(1~9호와 같은 방식, 견본 복제는 7호 업적 창과 같은 방식).
+  - 모양(멸망 판·캐릭터 정보 판·빠른 버튼 셋·미니맵·건물 앞 안내·건물 글씨 견본·경험치 바)은 프리팹 `Resources/UI/Views/LobbyHudView`.
+    글자 내용(남은 기간·다음 원정·캐릭터·돈)·경험치 비율·미니맵 건물/캐릭터 점 가로 자리·건물 글씨 자리(매 프레임 월드 따라감)·빠른 버튼 동작은 그대로 코드(`LobbyHud`).
+  - 미니맵은 묶음 `Minimap`(판·땅 선·건물 견본 `BuildingTemplate`·캐릭터 점 `Player`, 안쪽 좌표는 미니맵 왼쪽 위 기준) — 묶음을 옮기면 통째로 움직인다. 건물 칸은 견본을 건물 수만큼 복제하고 **가로만** 코드가 정한다(세로·크기는 견본). 가로 범위 = 미니맵 폭 − 여백(`minimapInset`, 2)×2.
+  - 건물 이름·"F / ↑" 글씨는 견본(`BuildingNameTemplate`·`BuildingDoorTemplate`, 꺼 둔 채)을 건물 수만큼 복제해 견본 바로 뒤에 둔다(그리는 순서 유지). 자리는 매 프레임 코드가 월드 위치로 옮기므로 견본은 크기·글꼴·색만 쓰인다.
+  - 경험치 채움 폭 = 비율 × 바탕(`ExpBack`) 폭(예전엔 638 고정 — 폭을 안 바꾸면 같다).
+  - 테스트가 리플렉션으로 읽는 `playerDot`(`WorldViewTests`)·`Camera` 속성은 그대로.
+  - 파일별: `UI/Screens/LobbyHud.cs`(Build가 프리팹을 불러 연결·복제, `UsesViewPrefab`, 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/LobbyHudView.cs`(모양, `ButtonRef.Wire`·`Clone`·`MinimapX`·`SetExp`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Pixel/PxSlicedArt.cs`(9-슬라이스 그림을 프리팹에서 다시 만들기, 아래 1차 검증) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/로비 HUD 만들기`, 색만 칠한 칸 9개) · 테스트 `PixelUiTests`(+2: 프리팹·건물 수만큼 복제·견본 꺼짐·빠른 버튼 셋이 창을 엶 / 경험치 바 = 바탕 폭 × 비율·미니맵 건물 칸이 미니맵 안) · `CreationOwnershipTests`(`LobbyHudView.cs`, 복제 포함) · `OriginalFidelityTests`(`LobbyHudView.Clone`·`MinimapX`·`SetExp`).
+  - ⚠️ 견본 셋은 **꺼 둔 채**, 이름 그대로(`BuildingTemplate`·`BuildingNameTemplate`·`BuildingDoorTemplate`). 글씨 견본은 판(Board)의 직접 자식으로(월드 위치 계산이 판 좌표). 빠른 버튼 순서(캐릭터·업적·설정)는 코드와 짝.
+  - **1차 검증(2026-11-23, 사용자 에디터)**: PlayMode 632 / 3 / 2 통과, 창은 열리는데 **빠른 버튼 셋이 흰 네모**로 보였다.
+    원인: 버튼 그림이 9-슬라이스(`PxArt.Sliced`)인데 이건 **실행 중에 만든 그림**이라 프리팹에 저장되지 않는다(저장하면 그림 칸이 비어 흰 네모). 그림 확인(`CheckArt`)은 저장 전 그림을 봐서 못 잡았다.
+    고침: **새** `UI/Pixel/PxSlicedArt.cs` — 프리팹엔 그림 경로·테두리만 남기고, 불러올 때(Awake, 그리고 뷰의 `Wire`가 버튼 연결 직전에 한 번 더) 9-슬라이스 그림을 다시 만들어 넣는다. 에디터(플레이 전)에선 저장 안 되는 `overrideSprite`로 미리 보여 줘 프리팹 파일은 안 바뀐다.
+    `LobbyHudView.CreateFromCode`가 빠른 버튼에 이걸 붙인다 → **프리팹을 메뉴로 다시 만들어야(덮어쓰기) 반영된다.** 테스트도 빠른 버튼 그림이 비지 않았는지·9-슬라이스인지 본다.
+    ⚠️ 뒤 순서의 `RelicScreen`(페이지 버튼·확률 판·테스트 버튼)·`AwakenScreen`(SP +1 테스트 버튼)도 `PxArt.Sliced`를 쓴다 — 옮길 때 같은 방식으로.
+  - **2차 검증(2026-11-23, 사용자 에디터)**: 프리팹을 메뉴로 다시 만들고(덮어쓰기, `Assets/Resources/UI/Views/LobbyHudView.prefab` + `.meta`, YAML 손작성 없음) 컴파일 통과 · PlayMode **632 통과 / 3 실패 / 2 건너뜀**(실패 3은 `main`에서 넘어온 것, 건너뜀 2는 성능 측정) · 로비 빠른 버튼 그림·동작 손 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (159)** — **[사용자 세션] 프리팹 UI 9호: 캐릭터 선택(`CharacterSelectScreen`) — `feature/ui-prefab-character`**(1~8호와 같은 방식).
+  - 모양(먹색 바탕·직업 일러스트 배경·왼쪽 위 틀/아이콘/이름/"준비 중"·계열 칸 둘·선택칸 넷과 이름·"선택" 버튼·계열 설명 창, 금색·잠긴 이름 불투명도)은 프리팹 `Resources/UI/Views/CharacterSelectScreenView`.
+    캐릭터 표(이름·그림 키·계열)·고른 캐릭터에 따라 배경/아이콘/이름/계열/설명 바꾸기·버튼 동작·키보드 순서(선택칸 1~4 → 선택)·고르기(세이브 저장)는 그대로 코드(`CharacterSelectScreen`).
+  - 계열 칸은 이제 묶음 `Type0`·`Type1`(틀·아이콘·이름·마우스 올림 자리 `Hover`) — 묶음을 옮기면 안쪽이 같이 움직이고, 없는 캐릭터(히어로)를 볼 땐 묶음째 숨긴다(예전엔 네 조각을 따로 숨김 — 보이는 결과는 같다).
+  - 선택칸의 아이콘·이름은 처음 모양에 박히고 실행 중엔 안 바꾼다(예전과 같다). 처음 모양은 캐릭터 표를 `CharacterSelectScreen.CardCount`·`CardLook`으로 읽어 짓는다(표가 한 곳에만 있게).
+  - 계열 칸의 마우스 올림 알림(`HoverArea`)은 화면 안쪽 클래스라 프리팹에 저장할 수 없어 **실행 중에 붙인다**(`CreationOwnershipTests`에 `CharacterSelectScreen.cs` 이유 갱신).
+  - 공개 API(`Open`·`Close`·`IsOpen`·`Selectable`)와 테스트가 리플렉션으로 부르는 `Pick`은 그대로.
+  - 파일별: `UI/Screens/CharacterSelectScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`·`CardCount`·`CardLook`, 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/CharacterSelectScreenView.cs`(모양, `ButtonRef.Wire`·`TypeRef`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/캐릭터 선택 만들기`, 그림 없는 칸 `Background`·`Hover`) · 테스트 `CharacterSelectTests`(+2: 프리팹·선택칸 순서·계열 칸 마우스 올림 설명 창 / 한 번 누르면 보기만·잠긴 히어로 칸은 마우스로 안 눌림·선택 버튼이 고르고 닫음, 둘 다 포인터 이벤트 끔) · `CreationOwnershipTests` · `OriginalFidelityTests`(`CardLook`).
+  - ⚠️ `Type0`·`Type1` 안의 `Hover`는 이름 그대로(마우스 올림 자리). `Tooltip`은 판(Board)의 마지막 자식으로 둬야 다른 칸 위에 그려진다. 선택칸 순서를 바꾸지 말 것(코드의 캐릭터 표 순서와 짝).
+  - 프리팹(`Assets/Resources/UI/Views/CharacterSelectScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **630 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것. 손 검증: 로비 "캐릭터" 화면 동작 확인.
+    사용자 관찰(예전부터 같은 동작, 이번엔 안 바꿈): 마우스로 선택칸을 누르면 바로 그 캐릭터로 바뀐다 — 마우스를 올리는 순간 그 칸이 "보는 칸"이 되므로(`OnNavChanged`) 첫 클릭이 곧 고르기다.
+    방향키로 움직이면 고른 칸 음영만 바뀌고, 노란 이름은 **지금 캐릭터** 표시라 고정이다. 바꿀지는 사용자가 정한다(아래 "확인 필요"의 스테이지 칸 항목과 같은 묶음으로 다룰 수 있음).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (158)** — **[사용자 세션] 프리팹 UI 8호: 스테이지 선택(`StageSelectScreen`) — `feature/ui-prefab-stage`**(1~7호와 같은 방식).
+  - 모양(배경·지도·챕터 리본 5개·▼·일반 쪽 `Normal` 전부·보스 쪽 `Boss` 전부, 리본 글자·고른 칸·잠긴 칸·진행 점 색, ▼ 자리 보정 `markerOffset`(24,-19))은 프리팹 `Resources/UI/Views/StageSelectScreenView`.
+    무엇을 보여 줄지(챕터·스테이지 글자, 몬스터·보스 그림, 진행도, 잠김 문구), 일반/보스 쪽 켜기, 버튼 동작, 키보드 순서(◀ · 1~5 · ▶ · 원정 / 보스 ◀ · 보스 · ▶ · 원정)는 그대로 코드(`StageSelectScreen`).
+  - ▼는 이제 **프리팹의 리본 자리 + `markerOffset`**에서 계산한다(예전엔 코드의 좌표 표) — 에디터에서 리본을 옮기면 ▼도 따라간다. 진행도 막대는 **채움 칸 폭**을 도트 단위로 나눠 채운다(예전엔 200 고정 — 크기를 안 바꾸면 같다).
+  - 리본의 마우스 내림 알림(`RelicCellHover`)은 그 클래스가 `RelicHudStrip.cs` 안에 있어 프리팹에 저장할 수 없으므로 **실행 중에 붙인다**(그래서 `CreationOwnershipTests`에 `StageSelectScreen.cs`가 이유를 바꿔 남는다).
+  - 공개 API(`Open`·`Close`·`IsOpen`·`Catalog`·`NextPlay`·`MonstersOf`·`TryEnter` 두 개)와 테스트가 리플렉션으로 읽는 비공개 필드(`mobs`·`frames`·`stage`·`bossPortrait`·`Step`)는 이름·타입 그대로.
+  - 파일별: `UI/Screens/StageSelectScreen.cs`(Build가 프리팹을 불러 연결, `UsesViewPrefab`, Figma 좌표·색 상수는 뷰로 이동) · **새** `UI/Screens/StageSelectScreenView.cs`(모양, `ButtonRef.Wire`·`MarkerPositionFor`·`SetProgress`, 예전 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/스테이지 선택 만들기`, 그림 없는 칸 `Letterbox`·`Mob0~2`·`Portrait`) · 테스트 `PixelUiTests`(+2: 프리팹에서 모양·▼가 마우스 올린 리본을 따라감 / 버튼·키보드 순서·▶ 보스 쪽·◀ 되돌아옴, 둘 다 포인터 이벤트 끔) · `CreationOwnershipTests`(`StageSelectScreen.cs` 이유 갱신 + `StageSelectScreenView.cs`) · `OriginalFidelityTests`(`MarkerPositionFor`).
+  - ⚠️ 리본(`Chapter1~5`)과 `Marker`는 판(Board)의 직접 자식·왼쪽 위 기준으로 둘 것(▼ 계산이 같은 부모의 anchoredPosition을 쓴다). `Normal`/`Boss`는 이름 그대로(코드가 켜고 끈다). 몬스터·보스 그림 칸은 그림 없이 두는 게 정상(실행 중 채움).
+  - 프리팹(`Assets/Resources/UI/Views/StageSelectScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **628 통과 / 3 실패 / 2 건너뜀**(건너뜀 2 = 성능 측정 `Slot3_*`) — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요"). 손 검증: 로비 "던전" 화면 동작 확인.
+    마우스 올리면 숫자가 노래지는 것·키보드로 칸 지정 후 들어가는 방식은 원래부터 어색한 동작이라 나중에 고치기로(위 "확인 필요").
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+- **2026-11-23 (157)** — **[사용자 세션] 프리팹 UI 7호: 업적 창(`AchievementsScreen`) — 첫 목록형 — `feature/ui-prefab-achievements`**.
+  - **목록형 방식(이후 목록 화면들의 기준)**: 창 프리팹 `Resources/UI/Views/AchievementsScreenView` 안에 목록 자리 `List`와 **견본 줄 `List/RowTemplate`(꺼 둔 채, `AchievementRowView`)**을 둔다. 실행하면 견본을 **업적 수만큼 복제**해(`BuildRows`) `List` 왼쪽 위부터 격자(열 수·칸 크기는 프리팹 칸)로 놓는다.
+    견본 하나를 고치면 모든 줄이 바뀌고, 업적이 늘어도 프리팹을 안 고쳐도 된다. 줄을 따로 프리팹 파일로 빼지 않은 건 창 하나 안에서 같이 보고 고치기 쉬워서(필요해지면 나눈다).
+  - 모양(막·창 틀·제목·요약 줄·닫기·목록 자리·견본 줄, 줄 글자 색 두 가지, 열 수·칸 크기·설명 상자 폭)은 프리팹. 글자 내용(★/☆ 이름·달성 수·누적 기록)·색칠·키보드 격자·설명 상자 띄우기·닫기 동작은 코드(`AchievementsScreen`).
+  - 파일별: `UI/Screens/AchievementsScreen.cs`(Build가 프리팹 불러 줄 복제·연결, `UsesViewPrefab`·`RowCount`) · **새** `UI/Screens/AchievementsScreenView.cs`(창 모양, `BuildRows`·`TooltipAnchor`·`WireClose`, 예전 좌표는 `CreateFromCode`로) · **새** `UI/Screens/AchievementRowView.cs`(줄 하나 — 버튼·글자 참조, `Wire`·`Show`) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/업적 창 만들기`) · 테스트 `PixelUiTests`(+2: 프리팹·견본에서 업적 수만큼 줄 / 2열 격자·설명 상자·닫기) · `CreationOwnershipTests`(생성 담당 `AchievementsScreen.cs` → `AchievementsScreenView.cs`, 견본 복제 포함) · `OriginalFidelityTests`(`BuildRows`·`TooltipAnchor`).
+  - ⚠️ `List`는 판(Board)의 직접 자식·왼쪽 위 기준으로, 견본 줄 이름 `RowTemplate`·닫기 이름 `Close`는 바꾸지 말 것. 견본 줄은 **꺼 둔 채** 둔다(켜 두면 빈 줄 하나가 더 보인다).
+  - 프리팹(`Assets/Resources/UI/Views/AchievementsScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음). 견본 줄은 꺼진 채, 좌표 전부 정수, 값은 처음 모양 그대로.
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **628 통과 / 3 실패 / 0 건너뜀**(이번엔 성능 측정 `Slot3_*` 둘도 돌아 통과) — 새 테스트 2개와 포인터 끈 6개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 로비 "업적" 창의 모양·줄·방향키 격자·설명 상자·마우스·닫기/ESC, 견본 줄 편집이 모든 줄에 반영되는 것 확인.
+  - 테스트 고침(2026-11-23): `Result_ButtonsKeepOrder`가 "처음엔 마을로 Expected 1 But was 0"으로 실패 — 실제 마우스가 Game 창 버튼 위에 있어 EventSystem이 마우스 올림을 보낸 것(11-22 타이틀 테스트와 같은 원인). 1~7호에서 "처음 고른 칸"·마우스 올림 순서를 보는 새 테스트 6개(`PauseMenu_ButtonsKeepOrderAndActions`·`Title_MenusKeepOrderAndActions_CursorFollows`·`Popup_TextsAndNavOrderKept`·`Regression_ButtonsKeepOrderAndActions`·`Result_ButtonsKeepOrder`·`Achievements_RowsInGrid_TooltipOnSelect_CloseWorks`)는 시작할 때 포인터 이벤트를 끈다.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-23 (156)** — **[사용자 세션] 프리팹 UI 6호: 사냥 결과 창(`RunResultScreen`) — `feature/ui-prefab-result`**(1~5호(151~155)와 같은 방식).
+  - 모양(어두운 막·창 틀·띠·제목/스테이지/시간 자리·붕괴 원인 줄·칸 셋·통계 이름표/나눔선/상자·진행 막대(바탕·채움·틀·글자)·진행도 이름표·버튼 둘, 제목 색 두 가지(쓰러짐 붉음·평소 흰색))은 프리팹 `Resources/UI/Views/RunResultScreenView`.
+    글자 내용(끝난 이유에 따라 제목·칸 순서·버튼 글자가 바뀐다)·막대 채움(채움 칸 폭을 정수 도트로)·버튼 동작(다시 입장 = 같은 스테이지, 마을로 = 로비)·←/→ 순서는 코드(`RunResultScreen`). 이름은 예전과 똑같이 둬서(`Title`·`Cause`·`CellLabel0~2`·`StatLabel0~2`·`BarText0`·`Retry`·`Ok`) 기존 테스트 그대로.
+    > 이번엔 창 안 요소를 묶지 않았다(판 기준 좌표 그대로) — 예전 테스트가 찾는 이름·구조를 바꾸지 않으려고. 창째 옮기려면 나중에 따로.
+  - 파일별: `UI/Screens/RunResultScreen.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/RunResultScreenView.cs`(글자·막대·버튼 참조, 색 칸, `WireResultButton`·`SetProgress`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/결과 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 버튼 순서) · `CreationOwnershipTests`·`OriginalFidelityTests`(`RunResultScreenView`·`WireResultButton`·`SetProgress`).
+  - 프리팹(`Assets/Resources/UI/Views/RunResultScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **624 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 사냥을 끝내 띄운 결과 창의 모양·글자·진행 막대·←/→·Enter/Z·마우스, 프리팹 편집 반영 확인(사용자 "다 됨").
+  - **모양 변경(사용자, 2026-11-23, 프리팹에서 직접)**: 진행 막대 묶음을 옮겼다 — 막대(`BarBack0`·`BarFrame0`·`BarText0`) (340,223)→(353,248), 채움 `BarFill0` (339,223)→(352,248), 이름표(`ProgressPlate`·`ProgressLabel`) (335,203)→(352,220)(판 왼쪽 위 기준, y는 아래로).
+    드래그로 생긴 소수 좌표를 정수로 맞췄다 — **프리팹 좌표·크기는 정수로**(도트가 흐려지지 않게). 코드의 `CreateFromCode` 좌표는 처음 모양 그대로(프리팹이 원본).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-23 (155)** — **[사용자 세션] 프리팹 UI 5호: 설정 창(`SettingsWindow`) — `feature/ui-prefab-settings`**(1~4호(151~154)와 같은 방식).
+  - 모양(어두운 막·창 틀·제목판·X·설정 줄 다섯·◀▶·음량 막대 셋(바탕·채움·손잡이·누르기 칸 `PxSlider`)·숫자칸·나눔선·적용, 줄 이름 색 두 가지)은 프리팹 `Resources/UI/Views/SettingsWindowView`.
+    줄마다 `Row0`~`Row4`(480×32) 아래 줄 왼쪽 위 기준으로 놓아 **줄 하나를 통째로 옮길 수 있다**(예전엔 판 기준 좌표 — 화면상 위치는 같다). 음량 손잡이는 같은 줄 막대 바탕(`VolumeBack`)의 자리·폭을 읽어 놓으므로 막대를 옮겨도 따라간다.
+    값(화면 모드·해상도·음량 숫자·채움·손잡이)·고른 줄 색칠·동작(X/적용 = 닫기, ◀▶ = 값 바꾸기, 막대 = 누르고 끌기)·키보드(↑/↓ 줄, ←/→ 값)는 코드(`SettingsWindow`). 공개 API(`Open`·`Close`·`IsOpen`·`VolumeShown`·테스트 창구) 그대로 — 단 `KnobXForTest`는 이제 **줄 안 좌표**(기존 테스트는 상대 비교라 영향 없음).
+  - 파일별: `UI/Screens/SettingsWindow.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/SettingsWindowView.cs`(줄 이름·값·◀▶·음량·X·적용 참조, 색 칸, `WireSettings`·`ShowVolume`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/설정 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 음량 막대·X 동작) · `CreationOwnershipTests`(생성 담당 `SettingsWindow.cs` → `SettingsWindowView.cs`) · `OriginalFidelityTests`(`WireSettings`).
+  - ⚠️ 버튼 이름 `Apply`·`Close`는 바꾸지 말 것(테스트가 이름으로 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/SettingsWindowView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **622 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 설정 창 모양·↑/↓(줄 색)·←/→·◀▶·음량 막대 끌기·X/적용/ESC 닫기, 프리팹 편집(줄 이동) 반영 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-23 (154)** — **[사용자 세션] 프리팹 UI 4호: 시간 회귀 창(`RegressionScreen`) — `feature/ui-prefab-regression`**(1~3호(151~153)와 같은 방식).
+  - 모양(어두운 막·창 틀·제목판·부제·큰 막대 둘·작은 막대 둘(아이콘)·취소/회귀 버튼)은 프리팹 `Resources/UI/Views/RegressionScreenView`. 창 안 요소는 전부 `Window`(512×304) 아래 창 왼쪽 위 기준으로 놓아 **`Window` 하나를 옮기면 창 전체가 움직인다**(예전엔 판 기준 좌표에 창 위치를 더해 놓았다 — 화면상 위치는 같다).
+    값(이전 최고·회귀 후 스테이지·파편·최고 레벨·처치 수)·회귀 버튼 글자/눌림 가능·동작(취소 = 닫기, 회귀 = `DoRegression` + 저장 + 알림)·←/→ 순서(취소 → 회귀)는 코드(`RegressionScreen`). 공개 API(`Open`·`Close`·`IsOpen`·`ValueText`·`HighestClearedLabel` 등) 그대로.
+  - 파일별: `UI/Screens/RegressionScreen.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/RegressionScreenView.cs`(값 글자 5·버튼 2·회귀 글자 참조, `WireRegressionButton`, 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/시간 회귀 창 만들기`) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 버튼 순서·글자·취소 동작) · `CreationOwnershipTests`·`OriginalFidelityTests`(`RegressionScreenView`·`WireRegressionButton`).
+  - ⚠️ 버튼 이름 `Cancel`·`Ok`는 바꾸지 말 것(테스트가 이름으로 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/RegressionScreenView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **620 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 로비 "환생" 건물로 연 창의 모양·값·←/→·Enter/Z·마우스·ESC/취소 닫기, 프리팹 편집(`Window` 이동) 반영 확인. 회귀 실행 자체는 진행을 바꾸므로 손으로 누르지 않았다(코드 경로는 그대로).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-23 (153)** — **[사용자 세션] 프리팹 UI 3호: 타이틀(`TitleMenu`) — `feature/ui-prefab-title`**(1·2호(151·152)와 같은 방식).
+  - 모양(검은 여백·배경·로고·메뉴 판 넷·◆ 커서, 메뉴 글자 색 두 가지·◆ 간격)은 프리팹 `Resources/UI/Views/TitleMenuView`. 메뉴 판 넷은 예전엔 for문으로 지었는데 이제 프리팹에 하나씩 놓여 따로 고칠 수 있다.
+    동작(메뉴별 할 일 — 새 원정·불러오기는 세이브 슬롯 창, 설정, 나가기)·↑/↓ 순서·고른 메뉴 색칠·◆ 위치 계산은 코드(`TitleMenu`). ◆는 판 자리(앵커 왼쪽 위)와 글자 폭으로 계산하므로 판을 옮겨도 따라간다.
+  - 파일별: `UI/Screens/TitleMenu.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`; 맨 위 설명에 "11-19부터 새 원정·불러오기는 슬롯 창" 덧붙임) · **새** `UI/Screens/TitleMenuView.cs`(메뉴 판·글자·◆ 참조, 글자 색·◆ 간격 칸, `WireTitleButton`·`PlaceCursor`, Figma 좌표는 `CreateFromCode`로) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/타이틀 화면 만들기`, 그림 없이 색만 칠하는 칸 목록을 화면별로) · 테스트 `PixelUiTests`(+2: 프리팹에서 한 벌만 / 메뉴 순서·글자·동작·◆ 따라감 — 좌표는 고정하지 않고 상대 위치만) · `CreationOwnershipTests`(생성 담당 `TitleMenu.cs` → `TitleMenuView.cs`) · `OriginalFidelityTests`(`WireTitleButton`·`PlaceCursor`).
+  - ⚠️ 메뉴 판은 판(Board)의 직접 자식·왼쪽 위 기준(앵커·피벗 0,1)으로 둘 것, 이름 `Cursor`는 바꾸지 말 것(테스트가 찾는다).
+  - 프리팹(`Assets/Resources/UI/Views/TitleMenuView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **618 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 타이틀 모양·↑/↓(◆·노란 글자 따라감)·Enter/Z·마우스로 메뉴 넷 동작, 프리팹 편집 반영 확인.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-23 (152)** — **[사용자 세션] 프리팹 UI 2호: 공용 팝업(`CommonPopup`) — `feature/ui-prefab-popup`**(일시정지 시범(151)과 같은 방식, 사용자 "다음 화면 CommonPopup").
+  - 모양(반투명 막·창 틀·X·제목/내용 자리·버튼 셋)은 프리팹 `Resources/UI/Views/CommonPopupView`, 글자 채우기·묻기/알림에 따른 버튼 켜고 끄기·콜백 한 번만·X/ESC·키보드 순서(취소 → 큰 확인 → 확인, X는 순서 밖)는 코드(`CommonPopup`). 공개 API(`Confirm`·`Alert`·`AlertIfTransitionFails`)와 테스트 창구(`CancelShown`·`WideShown`·`OkShown`·`DismissForTest`) 그대로.
+  - 파일별: `UI/Screens/CommonPopup.cs`(Build가 프리팹 불러 연결, `UsesViewPrefab`) · **새** `UI/Screens/CommonPopupView.cs`(글자 자리·버튼·버튼 글자 참조, `WirePopupButton`, Figma 좌표는 `CreateFromCode`로 옮김) · `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/공용 팝업 만들기` 추가, 화면 목록으로 정리 — 배치 `RunBatch`는 없는 것만 만든다) · 테스트 `UiFigmaUpdateTests`(+2: 프리팹에서 한 벌만 / 글자·키보드 순서) · `CreationOwnershipTests`·`OriginalFidelityTests`(`CommonPopupView`·`WirePopupButton` 등록).
+  - ⚠️ 버튼 오브젝트 이름(`Close`·`Cancel`·`OkWide`·`Ok`)과 글자 이름(`Title`·`Body`)은 프리팹에서 바꾸지 말 것 — 기존 테스트가 이름으로 찾는다.
+  - 프리팹(`Assets/Resources/UI/Views/CommonPopupView.prefab` + `.meta`)은 사용자가 에디터 메뉴로 만들었다(YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **616 통과 / 3 실패 / 2 건너뜀** — 새 테스트 2개 통과, 실패 3건은 `main`에서 넘어온 것(위 "확인 필요").
+    손 검증: 묻기 팝업(세이브 슬롯 창 [초기화] → "슬롯 초기화")의 모양·←/→·Enter/Z·마우스·X/ESC 취소, 프리팹 편집 반영 확인.
+    알림 팝업(가운데 큰 확인)은 손으로 띄울 계기가 마땅치 않아(잠긴 챕터는 버튼 위에 "안 열림"이 먼저 뜬다) 기존 테스트 `Popup_Alert_OneWideButton_XAlsoConfirms` 통과로 갈음.
+    참고: 타이틀 "새 원정"은 11-19부터 세이브 슬롯 창을 연다(팝업 아님 — `TitleMenu` 맨 위 설명 주석의 "한 번 더 묻고"는 옛 내용).
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양(경고만). 통째로는 이 커밋을 `git revert`.
+
+- **2026-11-22 (151)** — **[사용자 세션] 프리팹 UI 시범 1호: 일시정지 화면 — `feature/ui-prefab-pause`**(사용자 "UI 전체를 한 번에 말고, 기존 기능을 유지하며 점진적으로 Prefab 기반으로. 최종 목표는 UI 위치·크기·이미지·텍스트를 Unity Editor에서 직접 고치는 구조. 우선 PauseMenu 하나만").
+  - 구조: 화면 컴포넌트(main 기준 14개 — SaveSlotScreen 포함)는 그대로 `00_Persistent/PixelUI`에 둔다(씬·`PxScreens.All`·`SceneSetupValidator` 안 바뀜). 화면의 **모양**만 프리팹으로 — `PxScreen.LoadView<T>(path)`가 `Resources/UI/Views/`에서 불러 `Root` 아래에 붙인다. 버튼 동작·키보드 순서·켜고 끄기는 코드(`PauseMenu`)가 연결한다.
+  - 파일별: `UI/Pixel/PxScreen.cs`(+`LoadView`) · `UI/Screens/PauseMenu.cs`(Build가 프리팹 불러 버튼 연결, 프리팹 없으면 경고 + 예전 코드 모양, `UsesViewPrefab`) · **새** `UI/Screens/PauseMenuView.cs`(모양 컴포넌트 — 버튼 배열·`WireButton`, Figma 좌표는 `CreateFromCode`로 옮김) · **새** `Editor/BuildUiViewPrefabs.cs`(메뉴 `ChronoSavior/UI 프리팹/일시정지 화면 만들기`, 배치 `ChronoSavior.Editor.BuildUiViewPrefabs.RunBatch` — 에디터 API로 저장, 이미 있으면 안 덮어씀) · 테스트 `PixelUiTests`(+2: 프리팹에서 온다·한 벌뿐 / 버튼 순서·동작) · `CreationOwnershipTests`(PxScreen·PauseMenuView 생성 담당 추가, UiBuild 설명 갱신) · `OriginalFidelityTests`(`LoadView`·`WireButton` 호출 검사).
+  - 프리팹(`Assets/Resources/UI/Views/PauseMenuView.prefab` + 폴더 `.meta`)은 사용자가 에디터 메뉴로 만들었다(2026-11-23, YAML 손작성 없음).
+  - **검증(2026-11-23, 사용자 에디터)**: 컴파일 통과 · PlayMode **613 통과 / 4 실패 / 2 건너뜀** — 새 테스트 2개(`PauseMenu_LayoutComesFromViewPrefab`·`PauseMenu_ButtonsKeepOrderAndActions`)와 `CreationOwnershipTests`·`OriginalFidelityTests` 통과.
+    실패 4건은 이 브랜치와 무관한 `main`(150 병합, 테스트 미실행) 쪽 — 아래 "확인 필요"에 정리. 건너뜀 2건은 성능 측정(`Perf/SlotPerfProbe` `Slot3_*`).
+    손 검증(사용자, 2026-11-23)도 끝: 실제 플레이에서 ESC → ←/→·Enter/Z·마우스로 버튼 셋 동작, 겉모습, 프리팹을 에디터에서 고쳐 게임에 반영되는 것까지 확인.
+  - **`main`에 병합(2026-11-23, fast-forward — `main`이 브랜치 시점 8629021에서 안 움직여 충돌 없음).** 사용자 결정: 실패 4건(`main`에서 넘어온 것, 위 "확인 필요")은 그대로 두고 합친다 — "병합 전 전체 테스트 통과" 규칙의 예외, 이 브랜치가 만든 실패는 0건.
+  - 되돌리기: 프리팹을 지우면 예전 코드 모양으로 돌아간다(경고만). 통째로는 이 커밋을 `git revert`.
 - **2026-11-22 (150)** — **[사용자 세션] feature/relics(유물·세이브 슬롯·챕터 구조·최적화) ↔ 팀원 main(144~149 드라이브 새 그림 창들) 병합.**
   - 충돌 정리: 전투 HUD는 팀원 새 배치(체력 막대·골드·보스 이름 줄) 위에 스테이지 표시("1-3 토벌 37/100", 중간 보스전 "1-5 중간 보스")와 값이 바뀔 때만 갱신을 얹었다.
     회귀창 큰 막대는 챕터 구조에 맞게 **왼쪽 = 가장 멀리 깬 스테이지(예: 2-보스), 오른쪽 = 회귀 뒤 이어서 할 스테이지(예: 3-1)** — 149의 "회귀 후 stage 1"은 이제 사실이 아니다(진행이 남는다).

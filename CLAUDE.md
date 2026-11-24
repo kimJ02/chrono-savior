@@ -185,6 +185,7 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
 | -2 | 불길 장판 그림(`FireTrailZone.FlameSortingOrder`)·메카닉 내부 장판 흰 점·보스 바닥 빨간 경고(`GroundWarning.SortingOrder`)·덩어리 지배자 투척 길 선 |
 | -1 | 몸 바로 뒤: 잔상(살수 집중·칼날폭풍 잔상 사슬 포함)·마법사 차지 오라·살수 집중 하트비트(몸 정렬 − 1) |
 | 0 | 캐릭터·적(기본) — 몸 바로 앞(+1)은 피격·완충 깜빡임, 베기 효과 |
+| 2 | 부서진 여신상이 플레이어를 잡고 있는 동안의 몸(`BrokenGoddessBoss.GrabFrontOrder` — 잡힌 캐릭터·그 깜빡임보다 손이 앞, 놓으면 0) |
 | 3 | 투사체(덩어리 지배자 조약돌 포함)·메카닉 레이저·중계선 기준선·보조 아크·중계기 머리 전기 오라·드론 탄 꼬리 |
 | 4 | 폭발·착탄 그림(`MageSkillEffects.ExplosionSortingOrder`)·중계기 머리·살수 스플래터·하트비트·회전베기(궤적 선은 3)·레이저 총구 빛 바깥(`GunnerBeamVfx`, 가운데 밝은 원은 5)·중계선 주 아크·설치기 전기(`GunnerZap`)·드론 발사 섬광·적중 불꽃 |
 | 5 | 공격 판정 표시(링)·살수 착지 섬광 |
@@ -232,6 +233,23 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   - 절차 생성 프리미티브: 의도한 유닛 크기에 맞춘 값. 예) `Circle.png`는 128px 텍스처로 "스케일 1 = 지름 1유닛"을 의도했으므로 PPU = **128**(`Assets/Sprites/Circle.png.meta`).
 - **"전부 100" 같은 일괄 규칙으로 바꾸지 말 것** — Circle.png를 100으로 바꾸면 지름이 1.28유닛이 되어 `CircleCollider2D.radius = 0.5`(=1유닛)와 시각/물리 크기가 어긋난다. 기준은 PPU 숫자가 아니라 **"보이는 크기 == 콜라이더 크기"**다.
 
+## UI 리팩터링 안전 규칙 (2026-11-22 신설)
+
+UI를 코드 생성(`PxScreen.Build()` + Figma 좌표)에서 Scene/Prefab 기반으로 옮기는 작업은 전용 스킬
+`.claude/skills/unity-ui-refactor/SKILL.md`의 절차를 따른다. 아래 규칙은 그 작업뿐 아니라 **모든 UI 작업**에 적용한다.
+
+- **기존 기능을 임의로 삭제하지 않는다.** 화면·버튼·키보드 조작·툴팁을 없애야 하면 먼저 사용자에게 묻는다.
+- **`Assets`의 `.meta` 파일을 임의로 삭제·재생성·직접 편집하지 않는다.** 옮길 때는 에셋과 `.meta`를 같이 `git mv`.
+  의도하지 않은 `.meta` 변화가 `git status`에 보이면 멈추고 보고한다.
+- **씬·프리팹의 참조 관계를 보호한다.** `.unity`/`.prefab` YAML은 손으로 고치지 않고, `MonoBehaviour` 클래스·파일 이름을
+  바꾸지 않으며, 직렬화 필드 이름을 바꿀 땐 `[FormerlySerializedAs]`를 붙인다.
+- **모든 변경 전에 Git 작업 트리와 브랜치 상태를 확인한다**(`git status`, 현재 브랜치, 미병합 브랜치).
+- **별도 작업 브랜치(`feature/ui-refactor-<단위>`)에서 수정한다.** (협업 규칙 3의 "작은 후속 수정은 `main` 직접" 예외는 UI 리팩터링에 쓰지 않는다.)
+- **전체 UI를 한 번에 교체하지 않는다.** 한 번에 화면 하나(또는 공용 부품 하나)씩, 단위마다 검증·커밋.
+- **분석 단계에서는 파일을 수정하지 않는다.** 분석·계획은 보고서로만 내고, 사용자 승인 후 실행한다.
+- **Unity Editor(또는 배치모드)에서 검증하지 못한 항목은 "미검증"으로 보고한다** — 커밋 메시지와 `PROGRESS.md`에도 적는다.
+- 화면을 프리팹으로 옮기면 씬 없이 판을 만드는 경로(`PixelCanvas.Create` → `PxScreens.AddAll`, 테스트·캡처용)도 같이 맞춘다.
+
 ## 지금 프로젝트 상태
 
 - Unity: 2D (URP) 템플릿. `Assets/Scripts/`는 `Core / World / Combat / Characters / Enemies / Systems / UI`
@@ -243,7 +261,11 @@ Unity 씬(`.unity`)·프리팹(`.prefab`) 파일은 내부적으로 GUID/fileID�
   **순서·날짜는 노션 일정표(2026-09-23)를 따른다** — 옮겨 적은 표는 `docs/worksplit.md` 1절. 옛 "단계 1/2/3"
   (9/9 회의)은 더 쓰지 않는다 — 단계 1(모든 캐릭터 0차)은 2026-09-28에 끝났고 드루이드는 기획에서 빠졌다.
   **지금은 구조 정리 스프린트(2026-11-04~)** — 게임 이름이 Chrono Savior로 바뀌었고(네임스페이스 `ChronoSavior.*`),
-  **씬 분할(정리 순서 3)이 끝났다**(1차 상주 씬 분리 + 2차 단계 0 세이브 교체 경계·1 `CombatDirector`·2a 그림 데이터·2b 연결 규칙·3 `10_Lobby` 분리+씬 전환·4 마감, 2026-11-05). **정리 순서 2(생성 책임)도 끝났다**(2026-11-06) — 실행 중 생기는 전투 물체·몹 종류는 프리팹(`Assets/Prefabs/Combat`·`Enemies`), 생성 담당·이유는 `Tests/PlayMode/CreationOwnershipTests`의 목록이 유일한 원본(새 생성 코드는 거기 이유를 적어야 통과). **정리 순서 3.5(에셋 교체 경계)도 끝났다**(2026-11-06) — 그림·효과·소리는 외주로 갈아끼운다: 무엇을 어디서 바꾸는지는 `docs/asset-swap-points.md`, 도트 기준·배율 표는 `docs/pixel-standard.md`(메뉴 `ChronoSavior/도트 배율 보고서`). **정리 순서 4(상태 소유권)도 끝났다**(2026-11-06) — 상태마다 소유자·수명·변경 요청자는 `docs/state-ownership.md`, 상태는 자기 변경을 의미 있는 메서드로만 받는다(프로필도 `PlayerProfile` 메서드로 — 직렬화 필드라 public이지만 게임 코드는 메서드로). **정리 순서 5(책임별 분리)도 끝났다**(2026-11-07) — `EnemySpawner`는 언제·무엇을 세울지만, 몹 완성은 `Systems/EnemySetup`, 처치 보상은 `Systems/EnemyRewards`, 스폰 자리는 `Systems/EnemySpawnPlacement`(모두 상태 없는 정적), 전투 HUD 미니맵은 `UI/Screens/CombatMinimapView`(HUD 소유). `BladeCombat`은 두 갈래가 이동·물리·회전베기를 공유해 나누지 않고 파일 안을 공통·집중·칼날폭풍 구역으로 정리. 구조 정리 1~5가 모두 끝났다(`docs/sprints/07-structure-cleanup.md`). **VFX 적용 + 도트 재작업 스프린트도 끝났다(2026-11-07~11-10, `docs/sprints/09-vfx-dot.md`)** — 이펙트 그림은 라이선스 때문에 git 밖(`Assets/Resources/Vfx/`, 키로 불러온다 — 월드 그림 직렬화 원칙의 예외, 메뉴 `ChronoSavior/VFX 팩 가져오기`), 섬영의 화면 이름은 '살수'. **화면의 도트 크기는 하나 — 배율 2**(`Core.DotScale`, 2026-11-09): 새 월드 그림·이펙트도 판정에 맞춰 늘리지 말고 배율 2로, 크기는 그림 고르기·범위는 판정 고리(`Combat/RangeRing`) — 단 팀원 규칙(`docs/pixel-standard.md` 5절, Transform 배율 1)과 충돌해 팀장 결정 대기(`HANDOFF.md`) — 2026-11-17 사용자 결정: **캐릭터 그림 높이 0.75유닛 = 도트 2**(48px 그림, 0.5일 땐 도트 1.33이라 깨져 보였다 — 판정은 그대로, 그림만 1.5배). 팀원 규칙(Transform 배율 1)과 도트 배율 2 중 무엇을 표준으로 할지 전체 결정은 여전히 팀 확인. 이펙트 작업 방식: 지금 모습 캡처 → 다른 게임 사례 조사 → Codex 논의 → 움직이는 예시 그림 → 사용자 선택 → 구현 → 움직임 캡처 검증. **다음 스프린트는 미정.** 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+  **씬 분할(정리 순서 3)이 끝났다**(1차 상주 씬 분리 + 2차 단계 0 세이브 교체 경계·1 `CombatDirector`·2a 그림 데이터·2b 연결 규칙·3 `10_Lobby` 분리+씬 전환·4 마감, 2026-11-05). **정리 순서 2(생성 책임)도 끝났다**(2026-11-06) — 실행 중 생기는 전투 물체·몹 종류는 프리팹(`Assets/Prefabs/Combat`·`Enemies`), 생성 담당·이유는 `Tests/PlayMode/CreationOwnershipTests`의 목록이 유일한 원본(새 생성 코드는 거기 이유를 적어야 통과). **정리 순서 3.5(에셋 교체 경계)도 끝났다**(2026-11-06) — 그림·효과·소리는 외주로 갈아끼운다: 무엇을 어디서 바꾸는지는 `docs/asset-swap-points.md`, 도트 기준·배율 표는 `docs/pixel-standard.md`(메뉴 `ChronoSavior/도트 배율 보고서`). **정리 순서 4(상태 소유권)도 끝났다**(2026-11-06) — 상태마다 소유자·수명·변경 요청자는 `docs/state-ownership.md`, 상태는 자기 변경을 의미 있는 메서드로만 받는다(프로필도 `PlayerProfile` 메서드로 — 직렬화 필드라 public이지만 게임 코드는 메서드로). **정리 순서 5(책임별 분리)도 끝났다**(2026-11-07) — `EnemySpawner`는 언제·무엇을 세울지만, 몹 완성은 `Systems/EnemySetup`, 처치 보상은 `Systems/EnemyRewards`, 스폰 자리는 `Systems/EnemySpawnPlacement`(모두 상태 없는 정적), 전투 HUD 미니맵은 `UI/Screens/CombatMinimapView`(HUD 소유). `BladeCombat`은 두 갈래가 이동·물리·회전베기를 공유해 나누지 않고 파일 안을 공통·집중·칼날폭풍 구역으로 정리. 구조 정리 1~5가 모두 끝났다(`docs/sprints/07-structure-cleanup.md`). **VFX 적용 + 도트 재작업 스프린트도 끝났다(2026-11-07~11-10, `docs/sprints/09-vfx-dot.md`)** — 이펙트 그림은 라이선스 때문에 git 밖(`Assets/Resources/Vfx/`, 키로 불러온다 — 월드 그림 직렬화 원칙의 예외, 메뉴 `ChronoSavior/VFX 팩 가져오기`), 섬영의 화면 이름은 '살수'. **화면의 도트 크기는 하나 — 배율 2**(`Core.DotScale`, 2026-11-09): 새 월드 그림·이펙트도 판정에 맞춰 늘리지 말고 배율 2로, 크기는 그림 고르기·범위는 판정 고리(`Combat/RangeRing`) — 단 팀원 규칙(`docs/pixel-standard.md` 5절, Transform 배율 1)과 충돌해 팀장 결정 대기(`HANDOFF.md`) — 2026-11-17 사용자 결정: **캐릭터 그림 높이 0.75유닛 = 도트 2**(48px 그림, 0.5일 땐 도트 1.33이라 깨져 보였다 — 판정은 그대로, 그림만 1.5배). 팀원 규칙(Transform 배율 1)과 도트 배율 2 중 무엇을 표준으로 할지 전체 결정은 여전히 팀 확인. 이펙트 작업 방식: 지금 모습 캡처 → 다른 게임 사례 조사 → Codex 논의 → 움직이는 예시 그림 → 사용자 선택 → 구현 → 움직임 캡처 검증. **지금은 1·2지역 보스 강화 스프린트(2026-11-24~, 브랜치 `boss-level`)** — 덩어리 지배자 접촉 피해·분노 연속 점프, 부서진 여신상 속도·돌진 잡기(`HANDOFF.md` 맨 위). 지금 상태·테스트 수는 `PROGRESS.md`, 스프린트 스펙·합의안은 `HANDOFF.md`.
+- **UI 모양은 프리팹이 원본(2026-11-23, 프리팹 UI 1~14호 — 모든 화면 전환 끝)**: 화면마다 `UI/Screens/<화면>View.cs` + `Assets/Resources/UI/Views/<화면>View.prefab`.
+  화면 코드(`PxScreen`)는 `Build`에서 `LoadView<T>`로 프리팹을 불러 버튼 동작·키보드 순서·글자만 잇는다(프리팹이 없으면 경고 + `CreateFromCode` 대체).
+  프리팹은 손으로 쓰지 않고 메뉴 `ChronoSavior/UI 프리팹/…`(`Editor/BuildUiViewPrefabs`)로 처음 모양을 짓는다 — **이미 있으면 덮어쓰기는 에디터에서 고친 위치·크기가 사라진다.**
+  실행 중 만든 그림(9-슬라이스·흰색 칠)은 프리팹에 안 남으므로 `PxSlicedArt`·`PxWhiteArt`로 경로만 남긴다(10호 흰 네모 사고). 목록형(업적·유물 칸·로비 건물 글씨)은 꺼 둔 견본을 복제한다. 좌표는 정수로. 절차는 `.claude/skills/unity-ui-refactor/SKILL.md`, 기록은 `PROGRESS.md` 로그 (151)~(164).
 - **씬 구성(2026-11-05, 3씬)**: `Assets/Scenes/00_Persistent.unity`(빌드 0번, 늘 떠 있음 — `GameBoot`(세이브만)·`GameFlow`·`AutoSave`·UI 판 `PixelUI`·
   EventSystem·공용 카메라·`Audio`) + `10_Lobby.unity`(빌드 1번 — 로비 월드 `LobbyWorld`·로비 아바타·땅·스테이지 그림) + `20_Combat.unity`(빌드 2번 — 전투 담당 `CombatDirector`·플레이어·발판·포털·스포너·스테이지 그림).
   **월드 씬은 `GameFlow`가 불러오고 내린다**(`Systems/WorldScenes`의 `IWorldScenes`) — 타이틀엔 월드가 없고, 로비·사냥으로 갈 때 그 씬을 불러와(곧바로 활성 씬) 이전 씬을 내린다. 재도전은 전투 씬을 새로 부른다.

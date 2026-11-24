@@ -29,37 +29,16 @@ namespace ChronoSavior.UI
         protected override NavLayout Layout => NavLayout.Grid;
         protected override int NavColumns => statTab ? 1 : Cols;
 
-        // Figma 좌표(640판 원점 = 배경 324:2의 -959·-534)
-        static readonly Color Bg = Px.Hex(0x414141);
-        static readonly Rect Portrait = new Rect(6f, 43f, 192f, 288f);     // 501:2 전신 32×48을 6배
-        static readonly Rect TopPanel = new Rect(214f, 27f, 384f, 160f);   // 348:5
-        static readonly Rect BigFrame = new Rect(228f, 43f, 64f, 64f);     // 532:13 (금테 64칸)
-        static readonly Rect BigIcon = new Rect(230f, 45f, 60f, 60f);      // 629:14 (30px 아이콘 2배)
-        static readonly Rect DescBox = new Rect(308f, 43f, 168f, 128f);    // 532:21
-        static readonly Rect SpBox = new Rect(492f, 56f, 96f, 32f);        // 532:18
-        static readonly Rect LearnBtn = new Rect(492f, 126f, 96f, 32f);    // 532:15
-        static readonly Rect TabAwaken = new Rect(214f, 197f, 64f, 64f);   // 348:2 + 348:6 "각성" 20px
-        static readonly Rect TabStat = new Rect(214f, 277f, 64f, 64f);     // 348:4 + 348:7 "스탯"
-        static readonly Rect SkillWindow = new Rect(294f, 197f, 304f, 144f); // 348:9
-        static readonly float[] NodeX = { 306f, 368f, 430f, 492f, 554f };  // 미획득 칸 x(62 간격)
-        static readonly float[] NodeY = { 246f, 293f };
+        // 모양(좌표·색)은 프리팹 AwakenScreenView에 있다(2026-11-23 프리팹 UI 12호). 여기엔 데이터·동작만.
         const int Cols = 5, Tiers = 5;
-        const float NodeSize = 32f, IconInset = 1f, IconSize = 30f;         // 2026-11-18 Figma 도트 아이콘 30×30 — 1:1로 그려야 안 깨진다(32칸 가운데)
-        static readonly Rect CloseBox = new Rect(608f, 8f, 24f, 24f);       // Figma에 없음
-        // [스탯] 탭 — 사용자 스크린샷(2026-11-22)에서 잰 값(640판 환산, ±1도트). 위 패널 스탯 바 5줄:
-        const float StatBarX = 226f, StatBarY = 36f, StatBarStep = 29f, StatBarW = 360f, StatBarH = 24f;
-        const float StatLabelX = 306f, StatValueRight = 576f;          // 글자: 바 왼쪽 +80, 값은 오른쪽 맞춤
-        // 아래 창: 목록(왼쪽, 세 줄 보임) · 스크롤 표시 · 상세(오른쪽 144×96)
-        const float ListX = 300f, ListY = 234f, ListW = 128f, ListH = 104f, RowH = 24f, RowStep = 28f;
-        const int RowsVisible = 3;
-        const float ScrollX = 434f, ScrollY = 230f, ScrollH = 108f, ThumbH = 8f;
-        const float DetailX = 445f, DetailY = 236f;
-        static readonly string[] StatLabels = { "레벨", "최대체력", "공격력", "이동속도", "공격속도" };
         static readonly int[] Qtys = { 1, 10, GoldUpgradeConfig.BuyMax };
-        static readonly string[] QtyLabels = { "X1", "X10", "최대" };
-        static readonly Color Lime = Px.Hex(0xeeff00);                  // 산 뒤 값(스크린샷의 노랑)
-        static readonly Color Dim = new Color(0.55f, 0.55f, 0.6f, 1f);
-        static readonly Color Gold = Px.Hex(0xfac70e);
+
+        AwakenScreenView view;
+        int RowsVisible => view != null ? Mathf.Max(1, view.rowsVisible) : 3;
+        float RowStep => view != null ? view.rowStep : 28f;
+
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
         readonly Text[] statValues = new Text[5];
         Text spText, descText, stateText, learnLabel;
@@ -77,7 +56,6 @@ namespace ChronoSavior.UI
         readonly PxButton[] qtyButtons = new PxButton[3];
         PxButton buyButton;
         Text buyLabel, detailName, beforeLv, beforeVal, afterLv, afterVal;
-        RectTransform thumb;
         RectTransform treeRoot, statRoot;
         PxButton tabAwaken, tabStat;
         bool statTab;
@@ -149,104 +127,88 @@ namespace ChronoSavior.UI
             }
         }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="AwakenScreenView"/>, `Resources/UI/Views/AwakenScreenView`)이 원본이다(2026-11-23 프리팹 UI 12호).
+        /// 여기선 조각을 받아 오고 버튼 동작을 잇는다. 키보드 순서는 탭마다 <see cref="SetTab"/>이 다시 짠다(예전 그대로).
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            Px.FullFill(Back, "Background", Bg);
-
-            Px.Image(Content, "Portrait", PxArt.Get("Awaken/portrait_full"), Portrait.x, Portrait.y, Portrait.width, Portrait.height);
-            Px.Image(Content, "TopPanel", PxArt.Get("Awaken/stat_window"), TopPanel.x, TopPanel.y, TopPanel.width, TopPanel.height);
-
-            // 스킬 상세(각성 탭) — 큰 아이콘 + 설명 + SP + 배우기
-            skillDetail = Px.Stretch(Content, "SkillDetail");
-            Px.Image(skillDetail, "DescBox", PxArt.Get("Awaken/desc_window"), DescBox.x, DescBox.y, DescBox.width, DescBox.height);
-            Px.Image(skillDetail, "SpBox", PxArt.Get("Awaken/sp_box"), SpBox.x, SpBox.y, SpBox.width, SpBox.height);
-            spText = Px.Text(skillDetail, "Sp", "", SpBox.x + 5f, SpBox.y, SpBox.width - 10f, SpBox.height, 13, Gold, TextAnchor.MiddleLeft);
-            Px.Image(skillDetail, "BigFrame", PxArt.Get("Awaken/big_frame"), BigFrame.x, BigFrame.y, BigFrame.width, BigFrame.height);
-            bigIcon = Px.Image(skillDetail, "BigIcon", null, BigIcon.x, BigIcon.y, BigIcon.width, BigIcon.height);
-            descText = Px.Text(skillDetail, "Desc", "", DescBox.x + 8f, DescBox.y + 6f, DescBox.width - 16f, 84f, 10, Color.white, TextAnchor.UpperLeft);
-            descText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            stateText = Px.Text(skillDetail, "State", "", DescBox.x + 8f, DescBox.y + DescBox.height - 30f, DescBox.width - 16f, 24f, 10, Gold, TextAnchor.LowerLeft);
-            stateText.horizontalOverflow = HorizontalWrapMode.Wrap;
-            learnButton = Px.TextButton(skillDetail, "Learn", PxArt.Get("Awaken/learn_button"), LearnBtn.x, LearnBtn.y, LearnBtn.width, LearnBtn.height,
-                                        "배우기", 13, Color.white, LearnSelected);
-            learnLabel = learnButton.Inner.GetComponentInChildren<Text>();
-
-            // 스탯(스탯 탭) — 위 패널에 스탯 바 다섯 줄. 왼쪽 아이콘 칸(24×24)은 그림이 아직 안 와서 비워 둔다.
-            statDetail = Px.Stretch(Content, "StatDetail");
-            for (int i = 0; i < 5; i++)
+            view = LoadView<AwakenScreenView>(AwakenScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
             {
-                float y = StatBarY + i * StatBarStep;
-                Px.Image(statDetail, "Bar" + i, PxArt.Get("Awaken/stat_bar"), StatBarX, y, StatBarW, StatBarH);
-                Px.Text(statDetail, "Label" + i, StatLabels[i], StatLabelX, y, 150f, StatBarH, 16, Color.white, TextAnchor.MiddleLeft);
-                statValues[i] = Px.Text(statDetail, "Value" + i, "", StatValueRight - 150f, y, 150f, StatBarH, 16, Color.white, TextAnchor.MiddleRight);
+                Debug.LogWarning("[AwakenScreen] 화면 프리팹(Resources/" + AwakenScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/각성창 만들기", this);
+                view = AwakenScreenView.CreateFromCode(Root);
             }
+            if (view.nodes.Length != 2 * Cols || view.statValues.Length != statValues.Length || view.upgradeRows.Length != upRows.Length
+                || view.qtyButtons.Length != qtyButtons.Length)
+                Debug.LogError($"[AwakenScreen] 화면 프리팹 칸 수가 다르다(스킬 칸 {view.nodes.Length}·스탯 {view.statValues.Length}·강화 줄 {view.upgradeRows.Length}·구매 단위 {view.qtyButtons.Length}) " +
+                               $"— 스킬 칸 {2 * Cols}·스탯 {statValues.Length}·강화 줄 {upRows.Length}·구매 단위 {qtyButtons.Length}이어야 한다", view);
 
-            tabAwaken = Px.TextButton(Content, "TabAwaken", PxArt.Get("Awaken/tab_button"), TabAwaken.x, TabAwaken.y,
-                                      TabAwaken.width, TabAwaken.height, "각성", 20, Color.white, () => SetTab(false));
-            tabStat = Px.TextButton(Content, "TabStat", PxArt.Get("Awaken/tab_button"), TabStat.x, TabStat.y,
-                                    TabStat.width, TabStat.height, "스탯", 20, Color.white, () => SetTab(true));
-            Px.Image(Content, "SkillWindow", PxArt.Get("Awaken/skill_window"), SkillWindow.x, SkillWindow.y,
-                     SkillWindow.width, SkillWindow.height);
+            // 스킬 상세(각성 탭)
+            skillDetail = view.skillDetail;
+            spText = view.spText;
+            bigIcon = view.bigIcon;
+            descText = view.descText;
+            stateText = view.stateText;
+            learnButton = view.learn.Wire(LearnSelected);
+            learnLabel = view.learn.Label;
 
-            treeRoot = Px.Stretch(Content, "Tree");
+            // 스탯(스탯 탭)
+            statDetail = view.statDetail;
+            for (int i = 0; i < statValues.Length; i++) statValues[i] = i < view.statValues.Length ? view.statValues[i] : null;
+
+            tabAwaken = view.tabAwaken.Wire(() => SetTab(false));
+            tabStat = view.tabStat.Wire(() => SetTab(true));
+
+            // 스킬 칸 2줄 × 5층
+            treeRoot = view.tree;
             for (int r = 0; r < 2; r++)
                 for (int c = 0; c < Cols; c++)
                 {
-                    int row = r, col = c;
-                    var b = Px.Button(treeRoot, $"Node{r}{c}", PxArt.Get("Awaken/node_open"), NodeX[c], NodeY[r], NodeSize, NodeSize,
-                                      () => ClickNode(row, col), out var inner);
-                    icons[r, c] = Px.Image(inner, "Icon", null, IconInset, IconInset, IconSize, IconSize);
-                    numbers[r, c] = Px.Text(inner, "Tier", (c + 1).ToString(), 0f, 0f, NodeSize, NodeSize, 13, Color.white)
-                                      .WithOutline(Px.Ink);
-                    badges[r, c] = Px.Image(inner, "Learned", null, NodeSize - 6f, 2f, 4f, 4f);
-                    badges[r, c].color = Gold;
-                    cursors[r, c] = Px.Image(inner, "Cursor", PxArt.Get("Awaken/node_cursor"), 0f, 0f, NodeSize, NodeSize);
-                    nodes[r, c] = b;
+                    int row = r, col = c, k = r * Cols + c;
+                    var n = k < view.nodes.Length ? view.nodes[k] : null;
+                    if (n == null) continue;
+                    nodes[r, c] = n.frame.Wire(() => ClickNode(row, col));
+                    icons[r, c] = n.icon;
+                    numbers[r, c] = n.number;
+                    badges[r, c] = n.badge;
+                    cursors[r, c] = n.cursor;
                 }
 
-            // 아래 창(스탯 탭): 머리띠 가운데 제목 · 왼쪽 강화 목록 · 스크롤 표시 · 오른쪽 강화 상세
-            statRoot = Px.Stretch(Content, "Upgrades");
-            Px.Text(statRoot, "Title", "스탯 강화", 403f, SkillWindow.y, 85f, 32f, 16, Color.white);
-            var list = Px.Node(statRoot, "List", ListX, ListY, ListW, ListH);
-            list.gameObject.AddComponent<RectMask2D>(); // 네 번째 줄은 반쯤 잘려 보인다(스크린샷)
-            for (int i = 0; i < 5; i++)
+            // 아래 창(스탯 탭): 강화 목록 · 스크롤 표시 · 강화 상세
+            statRoot = view.upgrades;
+            for (int i = 0; i < upRows.Length && i < view.upgradeRows.Length; i++)
             {
                 int row = i;
-                upRows[i] = Px.Button(list, "Row" + i, PxArt.Get("Awaken/row_off"), 0f, i * RowStep, ListW, RowH, () => SelectNav(row), out var inner);
-                upNames[i] = Px.Text(inner, "Name", "", 10f, 0f, 80f, RowH, 11, Color.white, TextAnchor.MiddleLeft);
-                upLevels[i] = Px.Text(inner, "Lv", "", ListW - 10f - 50f, 0f, 50f, RowH, 11, Color.white, TextAnchor.MiddleRight);
+                var u = view.upgradeRows[i];
+                upRows[i] = u.row.Wire(() => SelectNav(row));
+                upNames[i] = u.name;
+                upLevels[i] = u.level;
             }
-            Px.Fill(statRoot, "Divider", Px.Hex(0xd9d9d9), 437f, ScrollY, 1f, ScrollH);
-            Px.Fill(statRoot, "Divider2", Px.Hex(0x6e798c), 438f, ScrollY, 1f, ScrollH);
-            thumb = Px.Fill(statRoot, "Thumb", Px.Hex(0xd9d9d9), ScrollX, ScrollY, 3f, ThumbH).rectTransform;
-
-            Px.Image(statRoot, "Detail", PxArt.Get("Awaken/stat_detail"), DetailX, DetailY, 144f, 96f);
-            detailName = Px.Text(statRoot, "DetailName", "", DetailX + 7f, DetailY + 1f, 130f, 13f, 11, Color.white, TextAnchor.MiddleLeft);
-            Px.Image(statRoot, "Before", PxArt.Get("Awaken/stat_value_box"), DetailX + 12f, DetailY + 18f, 48f, 24f);
-            beforeLv = Px.Text(statRoot, "BeforeLv", "", DetailX + 12f, DetailY + 18f, 48f, 12f, 8, Color.white);
-            beforeVal = Px.Text(statRoot, "BeforeVal", "", DetailX + 12f, DetailY + 29f, 48f, 12f, 8, Color.white);
-            Px.Text(statRoot, "Arrow", ">>", DetailX + 60f, DetailY + 18f, 24f, 24f, 13, Color.white);
-            Px.Image(statRoot, "After", PxArt.Get("Awaken/stat_value_box"), DetailX + 84f, DetailY + 18f, 48f, 24f);
-            afterLv = Px.Text(statRoot, "AfterLv", "", DetailX + 84f, DetailY + 18f, 48f, 12f, 8, Color.white);
-            afterVal = Px.Text(statRoot, "AfterVal", "", DetailX + 84f, DetailY + 29f, 48f, 12f, 8, Lime);
-            for (int k = 0; k < 3; k++)
+            detailName = view.detailName;
+            beforeLv = view.beforeLv;
+            beforeVal = view.beforeVal;
+            afterLv = view.afterLv;
+            afterVal = view.afterVal;
+            for (int k = 0; k < qtyButtons.Length && k < view.qtyButtons.Length; k++)
             {
                 int q = k;
-                qtyButtons[k] = Px.TextButton(statRoot, "Qty" + k, PxArt.Get("Awaken/mult_off"), DetailX + 12f + 42f * k, DetailY + 52f, 36f, 16f,
-                                              QtyLabels[k], 11, Color.white, () => qtyIndex = q);
+                qtyButtons[k] = view.qtyButtons[k].Wire(() => qtyIndex = q);
             }
-            buyButton = Px.TextButton(statRoot, "Buy", PxArt.Get("Awaken/buy_button"), DetailX + 12f, DetailY + 74f, 120f, 16f, "", 11, Color.white, BuySelected);
-            buyLabel = buyButton.Inner.GetComponentInChildren<Text>();
+            buyButton = view.buy.Wire(BuySelected);
+            buyLabel = view.buy.Label;
 
-            Px.IconButton(Content, "Close", PxArt.Get("Common/button_small"), PxArt.Get("Icons/close"), CloseBox.x, CloseBox.y,
-                          CloseBox.width, CloseBox.height, 2f, 2f, 19f, 19f, Close);
+            view.close.Wire(Close);
 #if UNITY_EDITOR
             // 에디터 전용 "SP +1"(사용자 2026-09-29 — 스킬을 한 층씩 찍어 보며 테스트). 예전 로비 전문화 탭에 있던 것을 옮겼다.
             // SP는 레벨에서 나오므로 레벨을 1 올린다. 빌드한 게임엔 없다 — 그래서 프로필 직접 대입의 예외로 둔다(`docs/state-ownership.md`).
-            var sp = Px.TextButton(skillDetail, "TestSp", PxArt.Sliced("Common/button", 4), 492f, 164f, 96f, 18f, "SP +1 (테스트)", 8,
-                                   Color.white, () => { ProfileService.Current.level++; SaveService.Save(); });
-            sp.Art.type = Image.Type.Sliced;
+            view.testSp.Wire(() => { ProfileService.Current.level++; SaveService.Save(); });
+#else
+            if (view.testSp.button != null) view.testSp.button.gameObject.SetActive(false);
 #endif
         }
 
@@ -301,8 +263,8 @@ namespace ChronoSavior.UI
         {
             var p = ProfileService.Current;
             // 지금 탭은 글자를 노랗게(Figma는 두 탭이 같은 모양 — 어느 쪽인지 보이게)
-            tabAwaken.Inner.GetComponentInChildren<Text>().color = statTab ? Color.white : Gold;
-            tabStat.Inner.GetComponentInChildren<Text>().color = statTab ? Gold : Color.white;
+            tabAwaken.Inner.GetComponentInChildren<Text>().color = statTab ? Color.white : view.gold;
+            tabStat.Inner.GetComponentInChildren<Text>().color = statTab ? view.gold : Color.white;
             statValues[0].text = $"LV.{p.level}";
             statValues[1].text = FormatStat(UpgradeStat.Hp, PlayerStatCalculator.ComputeMaxHp(p));
             statValues[2].text = FormatStat(UpgradeStat.Atk, PlayerStatCalculator.ComputeAtk(p));
@@ -331,9 +293,9 @@ namespace ChronoSavior.UI
                     var icon = iconPath != null ? PxArt.Get(iconPath) : null;
                     icons[r, c].sprite = icon;
                     icons[r, c].enabled = icon != null;
-                    icons[r, c].color = locked ? Dim : Color.white;
+                    icons[r, c].color = locked ? view.dim : Color.white;
                     numbers[r, c].enabled = exists && icon == null;
-                    numbers[r, c].color = locked ? Dim : Color.white;
+                    numbers[r, c].color = locked ? view.dim : Color.white;
                     badges[r, c].enabled = learned;
                     cursors[r, c].enabled = r * Cols + c == NavIndex;
                 }
@@ -351,8 +313,7 @@ namespace ChronoSavior.UI
                 upLevels[i].text = $"Lv.{p.GetUpgradeLevel(stat)}";
             }
             int maxTop = UpgradeOrder.Length - RowsVisible;
-            float t = maxTop > 0 ? (float)listTop / maxTop : 0f;
-            thumb.anchoredPosition = new Vector2(ScrollX, -(ScrollY + t * (ScrollH - ThumbH)));
+            view.SetScroll(maxTop > 0 ? (float)listTop / maxTop : 0f);
 
             // 상세 — 지금 단계 → 산 뒤 단계(구매 단위만큼, 원본 `previewGoldUpgrade`)
             var sel = UpgradeOrder[selStat];

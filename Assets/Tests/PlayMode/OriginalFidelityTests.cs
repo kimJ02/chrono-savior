@@ -379,6 +379,28 @@ public class OriginalFidelityTests
             ("DotShapes.Rect",             "DotShapes.cs"),        // BrokenGoddessBoss.BeginGrabWarn(이름이 흔해 클래스까지 적는다)
             ("DotShapes.Wedge",            "DotShapes.cs"),        // BrokenGoddessBoss.BeginSweepWarn
             ("TakeDamageIgnoringInvuln",   "IDamageable.cs"),      // BrokenGoddessBoss.FinishGrab이 호출, PlayerHealth.cs가 오버라이드(2026-11-18 무적 무시 버그 수정)
+            // 프리팹 UI 시범(2026-11-22) — 화면 모양 프리팹을 불러 버튼을 연결하는 길
+            ("LoadView",                   "PxScreen.cs"),         // PauseMenu.Build
+            ("WireButton",                 "PauseMenuView.cs"),    // PauseMenu.Build(안 부르면 버튼이 눌려도 아무 일도 안 한다)
+            ("WirePopupButton",            "CommonPopupView.cs"),  // CommonPopup.Build(안 부르면 팝업 버튼이 눌려도 아무 일도 안 한다)
+            ("WireTitleButton",            "TitleMenuView.cs"),    // TitleMenu.Build(안 부르면 타이틀 메뉴가 눌려도 아무 일도 안 한다)
+            ("PlaceCursor",                "TitleMenuView.cs"),    // TitleMenu.OnNavChanged(안 부르면 ◆가 안 따라온다)
+            ("WireRegressionButton",       "RegressionScreenView.cs"), // RegressionScreen.Build(안 부르면 회귀·취소가 눌려도 아무 일도 안 한다)
+            ("WireSettings",               "SettingsWindowView.cs"),   // SettingsWindow.Build(안 부르면 X·적용·◀▶·음량 막대가 아무 일도 안 한다)
+            ("WireResultButton",           "RunResultScreenView.cs"),  // RunResultScreen.Build(안 부르면 다시 입장·마을로가 아무 일도 안 한다)
+            ("SetProgress",                "RunResultScreenView.cs"),  // RunResultScreen.Refresh(안 부르면 진행 막대가 비어 있다)
+            ("BuildRows",                  "AchievementsScreenView.cs"), // AchievementsScreen.Build(안 부르면 업적 줄이 하나도 없다)
+            ("TooltipAnchor",              "AchievementsScreenView.cs"), // AchievementsScreen.OnNavChanged(안 부르면 설명 상자가 안 뜬다)
+            ("MarkerPositionFor",          "StageSelectScreenView.cs"), // StageSelectScreen.Refresh(안 부르면 ▼가 챕터 리본을 안 따라간다)
+            ("CardLook",                   "CharacterSelectScreen.cs"), // CharacterSelectScreenView.CreateFromCode(안 부르면 선택칸 이름·그림이 빈 채로 지어진다)
+            ("LobbyHudView.Clone",         "LobbyHudView.cs"),     // LobbyHud.Build(안 부르면 미니맵 건물·건물 글씨가 없다 — 이름이 흔해 클래스까지 적는다)
+            ("MinimapX",                   "LobbyHudView.cs"),     // LobbyHud.MapX(안 부르면 미니맵 건물·캐릭터 점 자리가 안 맞는다)
+            ("SetExp",                     "LobbyHudView.cs"),     // LobbyHud.Refresh(안 부르면 경험치 바가 비어 있다)
+            ("BuildSlots",                 "RelicScreenView.cs"),  // RelicScreen.Build(안 부르면 유물 칸이 하나도 없다)
+            ("RelicScreenView.RectOf",     "RelicScreenView.cs"),  // RelicScreen.RefreshTip(안 부르면 [1]·[10] 설명 상자 자리가 틀린다 — 이름이 흔해 클래스까지)
+            ("PxArt.White",                "PxArt.cs"),            // RelicScreenView·PxWhiteArt(안 부르면 등급 ◆가 흰 그림이 아니라 원본 커서색)
+            ("SetScroll",                  "AwakenScreenView.cs"), // AwakenScreen.RefreshUpgrades(안 부르면 강화 목록 스크롤 표시가 안 움직인다)
+            ("RelicHudStrip.Attach",       "RelicHudStrip.cs"),    // CombatHud.Build(안 부르면 전투 화면에 유물 칸이 없다)
         };
 
         var scriptFiles = Directory.GetFiles(

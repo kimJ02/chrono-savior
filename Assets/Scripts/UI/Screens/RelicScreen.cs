@@ -28,31 +28,14 @@ namespace ChronoSavior.UI
         protected override bool Modal => true;
         protected override bool WantsVisible => open && GameState.Current == GameScene.Lobby;
         protected override NavLayout Layout => NavLayout.Grid;
-        protected override int NavColumns => Cols;
+        protected override int NavColumns => view != null ? view.Columns : 5;
 
-        // 스크린샷에서 잰 값(640판 환산, ±1도트) — 창 왼쪽 위(W)를 기준으로 한 상대 좌표
-        static readonly Color Bg = Px.Hex(0x414141);
-        static readonly Vector2 W = new Vector2(64f, 36f);                   // 창 512×304(Common/window_tall)
-        static readonly Rect Plate = new Rect(192f, -15f, 128f, 32f);        // 제목판(Common/title_plate)
-        static readonly Rect CloseBox = new Rect(478f, -4f, 40f, 40f);       // 나가기 버튼(Common/close_frame + close_x)
-        static readonly Rect GridPanel = new Rect(23f, 44f, 220f, 236f);     // 유물칸 백그라운드
-        const float SlotX = 43f, SlotY = 52f, SlotStep = 37f, SlotSize = 32f; // 칸 32, 간격 5
-        const int Cols = 5, Rows = 6, PerPage = Cols * Rows;
-        const float RightX = 257f, RightW = 240f;
-        static readonly Rect ShardBar = new Rect(RightX, 44f, RightW, 32f);  // 유물 설명 막대 1
-        static readonly Rect CountBar = new Rect(RightX, 84f, RightW, 32f);  // 유물 설명 막대 2
-        static readonly Rect RatePanel = new Rect(RightX, 131f, RightW, 120f);
-        static readonly Rect Pull1Box = new Rect(259f, 255f, 96f, 32f);
-        static readonly Rect Pull10Box = new Rect(398f, 255f, 96f, 32f);
-        static readonly float[] RateRowY = { 16f, 44f, 73f, 103f };           // 확률 줄 가운데 y(판 안쪽 기준)
-        static readonly float[] RateLineY = { 30f, 58f, 88f };                // 줄 사이 가는 선
-        static readonly Color RateValue = Px.Hex(0xfff0c0);
-        static readonly Color RateLine = Px.Hex(0x30364e);
-        // 스크린샷에 없는 것 — 쪽 넘김(격자 밑 빈틈)
-        const float PageY = 282f, PageBtnW = 18f, PageBtnH = 14f;
+        // 모양(좌표·색)은 프리팹 RelicScreenView에 있다(2026-11-23 프리팹 UI 11호). 여기엔 한 쪽 칸 수·데이터·동작만.
+        const int PerPage = 30; // 한 쪽 칸 수(6줄×5열) — 유물 35종을 두 쪽으로
 
         static readonly string[] GradeNames = { "노말", "레어", "에픽", "레전드" };
 
+        RelicScreenView view;
         readonly Image[] gems = new Image[PerPage];
         readonly Image[] gemEdges = new Image[PerPage];
         readonly Image[] locks = new Image[PerPage]; // 아직 없는 유물 — 자물쇠(Common 그림과 같은 32×32)
@@ -61,10 +44,11 @@ namespace ChronoSavior.UI
         PxButton pull1, pull10;
         PxTooltip tip;
         int page;
-        Sprite whiteGem;
+
+        /// <summary>모양을 프리팹에서 불러왔는가 — false면 프리팹이 없어 코드로 지었다(테스트·검증용).</summary>
+        public bool UsesViewPrefab { get; private set; }
 
         static int Pages => (ItemDatabase.All.Length + PerPage - 1) / PerPage;
-        static Rect SlotRect(int i) => new Rect(W.x + SlotX + (i % Cols) * SlotStep, W.y + SlotY + (i / Cols) * SlotStep, SlotSize, SlotSize);
 
         protected override void Awake()
         {
@@ -78,82 +62,74 @@ namespace ChronoSavior.UI
             if (instance == this) instance = null;
         }
 
+        /// <summary>
+        /// 모양은 프리팹(<see cref="RelicScreenView"/>, `Resources/UI/Views/RelicScreenView`)이 원본이다(2026-11-23 프리팹 UI 11호).
+        /// 여기선 견본 칸을 30칸으로 복제하고, 확률 판의 데이터(등급 이름·색·확률)를 채우고, 버튼 동작·키보드 순서(칸 0~29 → [1] → [10])를 잇는다.
+        /// 프리팹이 없으면 경고를 남기고 예전과 같은 코드 모양으로 짓는다.
+        /// </summary>
         protected override void Build()
         {
             if (instance == null) instance = this;
-            whiteGem = PxArt.Derive(PxArt.Get("Common/cursor"), "white", c => c.a > 0 ? new Color32(255, 255, 255, c.a) : c);
+            view = LoadView<RelicScreenView>(RelicScreenView.ResourcePath);
+            UsesViewPrefab = view != null;
+            if (view == null)
+            {
+                Debug.LogWarning("[RelicScreen] 화면 프리팹(Resources/" + RelicScreenView.ResourcePath + ")이 없어 코드로 짓는다 — " +
+                                 "메뉴 ChronoSavior/UI 프리팹/유물 소환 만들기", this);
+                view = RelicScreenView.CreateFromCode(Root);
+            }
+            if (view.rateRows.Length != GradeNames.Length)
+                Debug.LogError($"[RelicScreen] 화면 프리팹 확률 줄 수가 다르다({view.rateRows.Length}) — {GradeNames.Length}(노말·레어·에픽·레전드)이어야 한다", view);
 
-            Px.FullFill(Back, "Background", Bg);
-            Px.Image(Content, "Window", PxArt.Get("Common/window_tall"), W.x, W.y, 512f, 304f);
-            Px.Image(Content, "TitlePlate", PxArt.Get("Common/title_plate"), W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height);
-            Px.Text(Content, "Title", "유물 소환", W.x + Plate.x, W.y + Plate.y, Plate.width, Plate.height, 20, Color.white);
-            Px.Image(Content, "GridPanel", PxArt.Get("Relic/grid_panel"), W.x + GridPanel.x, W.y + GridPanel.y, GridPanel.width, GridPanel.height);
-
+            var slots = view.BuildSlots(PerPage);
             for (int i = 0; i < PerPage; i++)
             {
-                var r = SlotRect(i);
-                var b = Px.Button(Content, "Slot" + i, PxArt.Get("Relic/slot"), r.x, r.y, SlotSize, SlotSize, null, out var inner);
-                // ◆ 뒤에 한 도트 큰 어두운 ◆ — 밝은 칸 바탕에서 노말(연회색)도 보이게
-                gemEdges[i] = Px.Image(inner, "GemEdge", whiteGem, 7f, 6f, 18f, 18f);
-                gemEdges[i].color = Px.Ink;
-                gems[i] = Px.Image(inner, "Gem", whiteGem, 8f, 7f, 16f, 16f);
-                locks[i] = Px.Image(inner, "Lock", PxArt.Get("Relic/lock"), 0f, 0f, SlotSize, SlotSize); // 32×32 그대로(1:1)
-                counts[i] = Px.Text(inner, "Count", "", 0f, 21f, SlotSize - 3f, 10f, 8, Color.white, TextAnchor.MiddleRight)
-                              .WithOutline(Px.Ink);
-                AddNav(b);
+                var sl = slots[i];
+                gemEdges[i] = sl != null ? sl.gemEdge : null;
+                gems[i] = sl != null ? sl.gem : null;
+                locks[i] = sl != null ? sl.lockIcon : null;
+                counts[i] = sl != null ? sl.count : null;
+                AddNav(sl != null ? sl.Wire() : null);
             }
-            Px.TextButton(Content, "PrevPage", PxArt.Sliced("Common/button", 4), W.x + GridPanel.x + 76f, W.y + PageY, PageBtnW, PageBtnH, "<", 8, Color.white,
-                          () => { page = (page + Pages - 1) % Pages; RefreshTip(); }).Art.type = Image.Type.Sliced;
-            pageText = Px.Text(Content, "Page", "", W.x + GridPanel.x + 76f + PageBtnW, W.y + PageY, 48f, PageBtnH, 8, Color.white);
-            Px.TextButton(Content, "NextPage", PxArt.Sliced("Common/button", 4), W.x + GridPanel.x + 76f + PageBtnW + 48f, W.y + PageY, PageBtnW, PageBtnH, ">", 8, Color.white,
-                          () => { page = (page + 1) % Pages; RefreshTip(); }).Art.type = Image.Type.Sliced;
+            view.prevPage.Wire(() => { page = (page + Pages - 1) % Pages; RefreshTip(); });
+            pageText = view.pageText;
+            view.nextPage.Wire(() => { page = (page + 1) % Pages; RefreshTip(); });
 
-            // 오른쪽: 보유 시간의 파편 · 보유 유물 수
-            Px.Image(Content, "ShardBar", PxArt.Get("Relic/info_bar"), W.x + ShardBar.x, W.y + ShardBar.y, ShardBar.width, ShardBar.height);
-            Px.Image(Content, "ShardIcon", PxArt.Get("Icons/shard"), W.x + ShardBar.x + 40f, W.y + ShardBar.y + 8f, 16f, 16f);
-            shardText = Px.Text(Content, "Shards", "", W.x + ShardBar.x + 60f, W.y + ShardBar.y, 170f, ShardBar.height, 13, Color.white, TextAnchor.MiddleLeft);
-            Px.Image(Content, "CountBar", PxArt.Get("Relic/info_bar"), W.x + CountBar.x, W.y + CountBar.y, CountBar.width, CountBar.height);
-            countText = Px.Text(Content, "OwnedCount", "", W.x + CountBar.x, W.y + CountBar.y, CountBar.width, CountBar.height, 13, Color.white);
+            shardText = view.shardText;
+            countText = view.countText;
 
-            // 유물 확률 판 — 판 위에 걸친 작은 이름표
-            float rx = W.x + RatePanel.x, ry = W.y + RatePanel.y;
-            Px.Image(Content, "RatePanel", PxArt.Get("Relic/rate_panel"), rx, ry, RatePanel.width, RatePanel.height);
+            // 유물 확률 판 — 등급 이름·색·확률은 데이터(ItemDatabase)에서
             int total = 0;
-            for (int g = 0; g < 4; g++) total += ItemDatabase.Weight((ItemGrade)g);
-            for (int g = 0; g < 4; g++)
+            for (int g = 0; g < GradeNames.Length; g++) total += ItemDatabase.Weight((ItemGrade)g);
+            for (int g = 0; g < GradeNames.Length && g < view.rateRows.Length; g++)
             {
-                float cy = ry + RateRowY[g];
-                var gem = Px.Image(Content, "RateGem" + g, whiteGem, rx + 7f, cy - 6f, 12f, 12f);
-                gem.color = ItemDatabase.GradeColor((ItemGrade)g);
-                Px.Text(Content, "RateName" + g, GradeNames[g] + ":", rx + 32f, cy - 10f, 120f, 20f, 16, Color.white, TextAnchor.MiddleLeft);
-                int pct = Mathf.RoundToInt(100f * ItemDatabase.Weight((ItemGrade)g) / total);
-                Px.Text(Content, "RateValue" + g, pct + "%", rx + 116f, cy - 10f, 100f, 20f, 16, RateValue, TextAnchor.MiddleRight);
+                var row = view.rateRows[g];
+                if (row.gem != null)
+                {
+                    var white = row.gem.GetComponent<PxWhiteArt>(); // 흰 ◆(실행 중 만든 그림)를 먼저 다시 넣는다
+                    if (white != null) white.Apply();
+                    row.gem.color = ItemDatabase.GradeColor((ItemGrade)g);
+                }
+                if (row.name != null) row.name.text = GradeNames[g] + ":";
+                if (row.value != null) row.value.text = Mathf.RoundToInt(100f * ItemDatabase.Weight((ItemGrade)g) / total) + "%";
             }
-            for (int k = 0; k < RateLineY.Length; k++)
-                Px.Fill(Content, "RateLine" + k, RateLine, rx + 20f, ry + RateLineY[k], 198f, 1f);
-            var plate = Px.Image(Content, "RatePlate", PxArt.Sliced("Common/title_plate", 4), rx + 89f, ry - 10f, 62f, 19f);
-            plate.type = Image.Type.Sliced;
-            Px.Text(Content, "RatePlateText", "유물 확률", rx + 89f, ry - 10f, 62f, 19f, 11, Color.white).WithOutline(Px.Ink);
 
-            pull1 = AddNav(Px.TextButton(Content, "Pull1", PxArt.Get("Relic/pull1"), W.x + Pull1Box.x, W.y + Pull1Box.y, Pull1Box.width,
-                                         Pull1Box.height, "1", 16, Color.white, () => Pull(1)));
-            pull10 = AddNav(Px.TextButton(Content, "Pull10", PxArt.Get("Relic/pull10"), W.x + Pull10Box.x, W.y + Pull10Box.y,
-                                          Pull10Box.width, Pull10Box.height, "10", 16, Color.white, () => Pull(10)));
-            Px.IconButton(Content, "Close", PxArt.Get("Common/close_frame"), PxArt.Get("Icons/close_x"),
-                          W.x + CloseBox.x, W.y + CloseBox.y, CloseBox.width, CloseBox.height, 0f, 0f, CloseBox.width, CloseBox.height, Close);
+            pull1 = AddNav(view.pull1.Wire(() => Pull(1)));
+            pull10 = AddNav(view.pull10.Wire(() => Pull(10)));
+            view.close.Wire(Close);
 #if UNITY_EDITOR
             // 에디터 전용 "유물 전부 지급"(2026-11-19 테스트 유물 확인용) — 30종을 모두 상한(각성)까지. 빌드한 게임엔 없다.
-            var all = Px.TextButton(Content, "TestAllRelics", PxArt.Sliced("Common/button", 4), 352f, 272f, 120f, 16f, "유물 전부 각성 (테스트)", 8,
-                                    Color.white, () =>
-                                    {
-                                        var inv = ProfileService.Current.items;
-                                        foreach (var d in ItemDatabase.All)
-                                            while (inv.Count(d.id) < ItemDatabase.Cap(d.grade)) inv.Add(d.id);
-                                        SaveService.Save();
-                                    });
-            all.Art.type = Image.Type.Sliced;
+            view.testAllRelics.Wire(() =>
+            {
+                var inv = ProfileService.Current.items;
+                foreach (var d in ItemDatabase.All)
+                    while (inv.Count(d.id) < ItemDatabase.Cap(d.grade)) inv.Add(d.id);
+                SaveService.Save();
+            });
+#else
+            if (view.testAllRelics.button != null) view.testAllRelics.button.gameObject.SetActive(false);
 #endif
-            tip = new PxTooltip(Content);
+            tip = new PxTooltip(view.board != null ? view.board : Root);
         }
 
         protected override void OnShown() => page = 0;
@@ -217,9 +193,8 @@ namespace ChronoSavior.UI
             if (i == PerPage || i == PerPage + 1) // [1]·[10] — 값은 스크린샷 글자엔 없어서 설명 상자로
             {
                 int n = i == PerPage ? 1 : 10;
-                var box = i == PerPage ? Pull1Box : Pull10Box;
                 tip.Show($"{n}회 소환 — 시간의 파편 {GachaService.Cost * n}개\n천장 {ProfileService.Current.items.pity}/{GachaService.PityAt}",
-                         new Rect(W.x + box.x, W.y + box.y, box.width, box.height));
+                         RelicScreenView.RectOf(i == PerPage ? pull1 : pull10));
                 return;
             }
             var def = i >= 0 && i < PerPage ? ItemAt(i) : null;
@@ -235,7 +210,7 @@ namespace ChronoSavior.UI
                 ? $"{def.name}  {grade}  <color=#9aa4b8>{who}</color>\n랭크 {Mathf.Min(have, cap)}/{cap}{(have >= cap ? "  <color=#fac70e>각성</color>" : "")}"
                   + (on ? "" : "  <color=#9aa4b8>(지금 꺼짐)</color>") + $"\n{def.description}"
                 : $"미확인 유물  {grade}  <color=#9aa4b8>{who}</color>";
-            tip.Show(body, SlotRect(i));
+            tip.Show(body, view.SlotRect(i));
         }
 
         void Pull(int n)

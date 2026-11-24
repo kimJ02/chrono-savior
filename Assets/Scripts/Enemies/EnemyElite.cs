@@ -40,7 +40,7 @@ namespace ChronoSavior.Enemies
             crown = NewChild("EliteCrown", CrownSprite(), body.sortingOrder + 1);
             crown.color = CrownColor;
             crown.transform.position = new Vector3(b.center.x, b.max.y + 0.08f + crown.sprite.bounds.extents.y, 0f);
-            VfxDots.Attach(transform, VfxDots.Motion.Rise, 3, AuraColor, b.extents.x, 0.5f, 0.3f, body.sortingOrder + 1); // 원본 가끔 오르는 보라 불씨
+            VfxDots.AttachBodyRise(body, AuraColor, body.sortingOrder + 1);
         }
 
         void Update()

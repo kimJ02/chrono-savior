@@ -18,6 +18,15 @@ namespace ChronoSavior.Enemies
     /// - **휘두르기**: 방향 고정(<c>State.SweepPrep</c>) → 전방 부채꼴 경고(<c>State.SweepWarn</c>) →
     ///   판정(<c>State.SweepActive</c>, 범위 안이면 1회 피해) → 후딜레이.
     ///
+    /// **보스 강화(2026-11-24 사용자 — 요청서 밖, "너무 쉽다", 접촉 피해는 없는 대신 더 빠르게)**: 접근 걷기 <see cref="ApproachSpeed"/>
+    /// (공통 보스의 1.5배), 준비 ×0.8·후딜 ×0.7·쿨타임 ×0.75(경고 시간은 그대로 — 피할 수는 있게), 그리고 패턴 3 **돌진 잡기**:
+    /// 거리 <see cref="DashMinDistance"/>~<see cref="DashMaxDistance"/>이면 방향 고정(<c>State.DashPrep</c>) → 바닥 직선 경고(<c>State.DashWarn</c>) →
+    /// 초당 <see cref="DashSpeed"/>로 최대 <see cref="DashLength"/> 미끄러짐(<c>State.DashRun</c>, 몸 앞 <see cref="DashHitRange"/> 안이면 기존 잡기의
+    /// 끌어당김·붙잡아 둠·피해로) → 빗나가면 <c>State.DashRecover</c>. 그림은 잡기 그림을 빌려 쓴다.
+    ///
+    /// **2차 조정(2026-11-24 사용자 플레이 뒤)**: 잡기·휘두르기는 사거리 끝이 아니라 **사거리의 <see cref="EngageRatio"/>(60%) 안**에 들어와야 시작한다
+    /// (판정 범위는 그대로), 같은 패턴 2번 연속 허용(<see cref="MaxConsecutive"/>), 휘두르기 직후 <see cref="ComboChance"/> 확률로 **바로 잡기**(연계).
+    ///
     /// 고르기(요청서 4절): 둘 다 "쿨타임이 끝났고 사거리 안"이면 랜덤, 하나만 되면 그것, 둘 다 안 되면
     /// (너무 멀거나 둘 다 쿨) **접근**(기존 적 AI처럼 그냥 걸어간다, `Boss.MoveSpeed` 재사용) — 요청서 6절
     /// "기본 이동은 기존 적 AI 시스템을 우선 재사용한다"를 그대로 따른 것. 같은 패턴 연속 사용은 금지
@@ -62,43 +71,96 @@ namespace ChronoSavior.Enemies
         public const float HitRadius = 0.75f; // Mathf.Min(VisualSize.x, VisualSize.y) / 2
 
         // ── 패턴 1 잡기(사용자 2026-11-18 요청서 2절 "초기 설정값" — 명세서 범위보다 이 값을 우선한다) ──
-        public const float GrabPrepTime = 0.6f;     // 공격 준비 시간
+        public const float GrabPrepTime = 0.48f;    // 공격 준비 시간 — 2026-11-24 보스 강화 ×0.8(예전 0.6)
         public const float GrabWarnTime = 0.5f;     // 경고 표시 시간
         public const float GrabRange = 3f;          // 잡기 사거리(유닛)
         public const float GrabHeight = 1.5f;       // 잡기 판정 높이(유닛)
         public const float GrabThrustTime = 0.25f;  // 팔 뻗기 시간(= 판정 지속)
         public const float GrabPullTime = 0.5f;     // 끌어당기기 시간
-        public const float GrabHoldTime = 0.2f;     // 끌어당긴 후 유지 시간
+        public const float GrabHoldTime = 0.8f;     // 끌어당긴 후 유지 시간 — 2026-11-24 0.2→0.4(손에 들린 모습이 보이게)→0.8(사용자 요청)
         public const float GrabDamagePct = 0.20f;   // 공격 피해량 — 플레이어 최대 체력의 20%
-        public const float GrabRecoverTime = 1.2f;  // 후딜레이
-        public const float GrabCooldown = 5f;       // 쿨타임
-        /// <summary>끌어당길 때 보스 앞 어디까지 끌어오는지 — 두 문서 모두 "보스 앞으로"만 말하고 정확한
-        /// 거리는 안 정해서 보조로 둔 값(보스 몸 절반 + 팔 길이 느낌의 여유).</summary>
-        public const float GrabAnchorOffset = 0.7f;
+        public const float GrabRecoverTime = 0.84f; // 후딜레이 — 2026-11-24 ×0.7(예전 1.2)
+        public const float GrabCooldown = 3.75f;    // 쿨타임 — 2026-11-24 ×0.75(예전 5)
+        // ── 잡힌 대상이 따라가는 손 위치(2026-11-24, 사용자 "끌려와서 여신상 앞에 서 있기만 한다 — 손에
+        // 들려 있게") — 잡기 그림(100×64, 가운데 기준, 왼쪽을 봄)에서 주먹 가운데를 직접 재서 옮긴 값.
+        // x = 보스 가운데에서 **보는 방향 앞으로**, y = 위로. 그림 1px = BossHeight/64 유닛.
+        // **2차(같은 날, 사용자 "손 위로 캐릭터 머리가 다 보이게, 보이는 건 손이 우선")**: 주먹 가운데가 아니라
+        // **주먹 윗변에 캐릭터의 턱**을 맞춘다 — 머리는 주먹 위로 다 보이고, 몸은 주먹(과 여신상 몸) 뒤로 가려진다
+        // (잡는 동안 여신상 몸을 캐릭터보다 앞에 그린다, 아래 GrabFrontOrder).
+        //   팔 뻗은 주먹(Grab_04·05) — 주먹 가로 가운데 20px, 윗변 40px → 앞 30px · 아래 8px
+        //   들어 올린 주먹(Grab_06·07) — 주먹 가로 가운데 43px, 윗변 20px → 앞 7px · 위 12px
+        //   들어 올린 주먹 크기 ≈ 10×10px(0.23×0.23유닛) — 캐릭터 턱 아래 몸(0.22유닛 높이·폭 0.23)이 거의 꼭 들어간다.
+        /// <summary>잡기 그림 1픽셀의 월드 크기.</summary>
+        public const float GrabArtPixel = EntitySizeConfig.BossHeight / 64f;
+        /// <summary>캐릭터 턱이 캐릭터 기준점보다 얼마나 아래인지(유닛) — 캐릭터 그림(32×48, 기준점 위에서 16px,
+        /// 턱 ≈ 위에서 21px, `CharacterArtSet` 높이 0.375 = 128px/유닛 기준)에서 잰 값. 캐릭터 그림 크기가 바뀌면 다시 잴 것.</summary>
+        public const float GrabChinBelowPivot = 5f / 128f;
+        /// <summary>팔을 뻗은 주먹 — 끌어당기기 앞 2/3(그림 3·4번) 동안 대상을 여기까지 끌고 온다(캐릭터 기준점 자리).</summary>
+        public static readonly Vector2 GrabReachHand = new Vector2(30f, -8f) * GrabArtPixel + new Vector2(0f, GrabChinBelowPivot);
+        /// <summary>들어 올린 주먹 — 끌어당기기 마지막 1/3(그림 5번)에 여기로 들어 올리고, 붙잡아둠(그림 6번) 동안 유지(캐릭터 기준점 자리).</summary>
+        public static readonly Vector2 GrabHeldHand = new Vector2(7f, 12f) * GrabArtPixel + new Vector2(0f, GrabChinBelowPivot);
+        /// <summary>붙잡아둠 동안 손아귀에서 버둥대는 흔들림(좌우, 유닛) — 연출용 임의 값. 주먹과 몸 폭이 거의 같아서
+        /// 크게 흔들면 몸 옆이 삐져나온다 — 1px 남짓.</summary>
+        public const float GrabHoldShake = 0.01f;
+        /// <summary>잡고 있는 동안(끌어당기기·붙잡아둠) 여신상 몸 정렬을 이만큼 올린다 — 잡힌 캐릭터(0)와 그 피격
+        /// 깜빡임(+1)보다 앞에 그려 손이 우선으로 보이게(사용자 2026-11-24). 놓아 주면 원래대로.</summary>
+        public const int GrabFrontOrder = 2;
+
+        /// <summary>손 위치(보스 기준 앞·위)를 월드 좌표로 — 보는 방향을 곱하고 맵 밖으로 안 나가게 자른다.
+        /// 테스트도 이걸로 기대 위치를 계산한다.</summary>
+        public static Vector2 HandPoint(Vector2 bossPos, int facing, Vector2 hand)
+            => new Vector2(Mathf.Clamp(bossPos.x + facing * hand.x, FieldBounds.MinX + 0.1f, FieldBounds.MaxX - 0.1f),
+                           bossPos.y + hand.y);
 
         // ── 패턴 2 휘두르기(사용자 2026-11-18 요청서 3절 "초기 설정값") ──
-        public const float SweepPrepTime = 0.5f;    // 공격 준비 시간
+        public const float SweepPrepTime = 0.4f;    // 공격 준비 시간 — 2026-11-24 ×0.8(예전 0.5)
         public const float SweepWarnTime = 0.6f;    // 경고 표시 시간
         public const float SweepRadius = 3f;        // 공격 범위(반경 유닛)
         public const float SweepHalfAngleDeg = 80f; // 전방 160도의 절반
         public const float SweepActiveTime = 0.3f;  // 실제 공격 판정 시간
         public const float SweepDamagePct = 0.15f;  // 공격 피해량 — 플레이어 최대 체력의 15%
-        public const float SweepRecoverTime = 1f;   // 후딜레이
-        public const float SweepCooldown = 4f;      // 쿨타임
+        public const float SweepRecoverTime = 0.7f; // 후딜레이 — 2026-11-24 ×0.7(예전 1.0)
+        public const float SweepCooldown = 3f;      // 쿨타임 — 2026-11-24 ×0.75(예전 4)
 
         // ── 고르기(요청서 4절) ──
-        public const int MaxConsecutive = 1;        // 같은 패턴 연속 금지
+        public const int MaxConsecutive = 2;        // 같은 패턴은 2번까지 연속 — 2026-11-24 사용자 "번갈아 나와 예측이 쉽다"(예전 1 = 연속 금지)
+
+        // ── 보스 강화(2026-11-24 사용자, `HANDOFF.md` "1·2지역 보스 강화") — 접촉 피해는 없는 대신 더 빠르게 ──
+        /// <summary>접근 걷기 속도 — 공통 보스(<see cref="Boss.MoveSpeed"/> 0.9)의 1.5배(예전엔 그대로 0.9).</summary>
+        public const float ApproachSpeed = 1.35f;
+        /// <summary>
+        /// 잡기·휘두르기를 **시작하는** 거리 = 사거리 × 이 비율(2026-11-24 사용자 "사거리 끝자락에서 공격해 피하기 쉽다" → 60%).
+        /// 판정 범위(<see cref="GrabRange"/>·<see cref="SweepRadius"/>)는 그대로 — 그보다 멀면 더 걸어 들어온다.
+        /// </summary>
+        public const float EngageRatio = 0.6f;
+        public const float GrabEngage = GrabRange * EngageRatio, SweepEngage = SweepRadius * EngageRatio;
+        /// <summary>연계 공격 — 휘두르기가 끝나면 이 확률로 후딜 없이 바로 잡기로 잇는다(잡기 쿨이 돌았고 사거리 안일 때).</summary>
+        public const float ComboChance = 0.4f;
+        /// <summary>연계 잡기의 준비 시간 — 평소(<see cref="GrabPrepTime"/>)보다 짧다. 경고는 평소대로 뜬다.</summary>
+        public const float ComboGrabPrep = 0.25f;
+
+        // 패턴 3 돌진 잡기 — 멀리 있으면(잡기 사거리 밖 ~ DashMaxDistance) 미끄러지며 잡는다
+        public const float DashMinDistance = GrabRange;  // 이보다 가까우면 그냥 잡기·휘두르기
+        public const float DashMaxDistance = 8f;
+        public const float DashPrepTime = 0.5f;     // 방향 고정
+        public const float DashWarnTime = 0.5f;     // 바닥 직선 경고
+        public const float DashSpeed = 8f;          // 유닛/초
+        public const float DashLength = 6f;         // 최대 돌진 거리
+        public const float DashHitRange = 1.0f;     // 몸 앞 이 거리 안에 들어오면 잡힘(높이는 GrabHeight)
+        public const float DashRecoverTime = 1.2f;  // 빗나가면 멈춰서 후딜레이
+        public const float DashCooldown = 6f;
         public const float FirstDelay = 1f;         // 스폰 직후 첫 공격까지 — 플레이어가 상황을 볼 시간
         public const float IdleGap = 0.3f;          // 후딜레이 뒤 다음 선택까지 짧은 틈
         /// <summary>대상 최대 체력을 못 읽을 때(테스트 등) — 플레이어 기본 최대 체력.</summary>
         public const float FallbackTargetMaxHp = 100f;
 
-        public enum Pattern { None, Grab, Sweep }
+        public enum Pattern { None, Grab, Sweep, DashGrab }
         public enum State
         {
             Idle,
             GrabPrep, GrabWarn, GrabThrust, GrabPull, GrabHold, GrabRecover,
             SweepPrep, SweepWarn, SweepActive, SweepRecover,
+            DashPrep, DashWarn, DashRun, DashRecover,
         }
 
         [Tooltip("공격 경고 표시 프리팹(Prefabs/Combat/GroundWarning) — 잡기·휘두르기가 하나씩 따로 인스턴스를 만든다(1지역 보스와 같은 방식).")]
@@ -138,7 +200,12 @@ namespace ChronoSavior.Enemies
         float stateT, stateDur = FirstDelay;
         Pattern last = Pattern.None;
         int consecutive;
-        float clock, grabReadyAt, sweepReadyAt;
+        float clock, grabReadyAt, sweepReadyAt, dashReadyAt;
+        // 돌진 잡기 — 출발점(달린 거리 재기)
+        float dashStartX;
+
+        /// <summary>연계 공격 확률 — 테스트가 0/1로 고정할 수 있게(기본 <see cref="ComboChance"/>).</summary>
+        public float ComboChanceRuntime { get; set; } = ComboChance;
 
         /// <summary>공격 준비가 끝나는 순간 고정한 방향(1 또는 -1) — 공격이 끝날 때까지 안 바뀐다.</summary>
         int lockedFacing = 1;
@@ -146,7 +213,9 @@ namespace ChronoSavior.Enemies
 
         // 붙잡은 대상 — 보스가 죽거나 꺼질 때 반드시 풀어 줘야 하므로 들고 있는다.
         GameObject grabbedTarget;
-        float grabStartX, grabHeldY, grabAnchorX;
+        Vector2 grabStart;
+        int bodyOrderBeforeGrab;
+        bool bodyOrderRaised;
 
         /// <summary>대기 중 걷고 있는지 — 그림이 대기 4장/이동 4장 중 뭘 돌릴지 고른다(<see cref="UpdateBodySprite"/>,
         /// <see cref="IdleApproach"/>가 매긴다).</summary>
@@ -222,6 +291,11 @@ namespace ChronoSavior.Enemies
 
         void ReleaseGrabbedTarget()
         {
+            if (bodyOrderRaised)
+            {
+                if (body != null) body.sortingOrder = bodyOrderBeforeGrab;
+                bodyOrderRaised = false;
+            }
             if (grabbedTarget == null) return;
             var g = grabbedTarget.GetComponent<IGrabbable>();
             g?.EndGrab();
@@ -255,7 +329,7 @@ namespace ChronoSavior.Enemies
                     break;
 
                 case State.GrabPrep:
-                    if (stateT >= GrabPrepTime) BeginGrabWarn();
+                    if (stateT >= stateDur) BeginGrabWarn(); // 평소 GrabPrepTime, 연계면 ComboGrabPrep
                     break;
 
                 case State.GrabWarn:
@@ -294,11 +368,46 @@ namespace ChronoSavior.Enemies
                 case State.SweepActive:
                     if (!sweepHitDone && !targetGone && InSweepArea(transform.position, lockedFacing, SweepRadius, SweepHalfAngleDeg, target.position))
                         ApplySweepHit(target);
-                    if (stateT >= SweepActiveTime) Enter(State.SweepRecover, SweepRecoverTime);
+                    if (stateT >= SweepActiveTime)
+                    {
+                        if (!TryComboGrab(target)) Enter(State.SweepRecover, SweepRecoverTime);
+                    }
                     break;
 
                 case State.SweepRecover:
                     if (stateT >= SweepRecoverTime) ToIdle();
+                    break;
+
+                case State.DashPrep:
+                    if (stateT >= DashPrepTime) BeginDashWarn();
+                    break;
+
+                case State.DashWarn:
+                    if (stateT >= DashWarnTime) BeginDashRun();
+                    break;
+
+                case State.DashRun:
+                {
+                    // 고정한 방향으로 미끄러진다 — 몸 앞에 닿으면 기존 잡기(끌어당김·붙잡아 둠·피해)로 넘어간다
+                    float step = DashSpeed * dt;
+                    float nextX = Mathf.Clamp(x + lockedFacing * step, FieldBounds.MinX + 0.3f, FieldBounds.MaxX - 0.3f);
+                    desiredX = nextX;
+                    if (!grabHitDone && !targetGone && InGrabBox(transform.position, lockedFacing, DashHitRange, GrabHeight, target.position))
+                    {
+                        TryGrab(target); // 성공하면 GrabPull로 넘어간다
+                        if (grabHitDone) { desiredX = x; break; }
+                    }
+                    bool wall = Mathf.Abs(nextX - x) < step * 0.5f; // 맵 끝에 막혔다
+                    if (Mathf.Abs(nextX - dashStartX) >= DashLength || wall || stateT >= stateDur)
+                    {
+                        if (grabWarning != null) grabWarning.Hide();
+                        Enter(State.DashRecover, DashRecoverTime); // 빗나감 — 멈춰서 후딜레이
+                    }
+                    break;
+                }
+
+                case State.DashRecover:
+                    if (stateT >= DashRecoverTime) ToIdle();
                     break;
             }
 
@@ -316,7 +425,7 @@ namespace ChronoSavior.Enemies
             if (target == null) { isMoving = false; return x; }
             float dx = target.position.x - x;
             float dist = Mathf.Abs(dx);
-            float stopDist = Mathf.Max(GrabRange, SweepRadius);
+            float stopDist = Mathf.Max(GrabEngage, SweepEngage); // 2026-11-24 — 사거리 끝이 아니라 안쪽까지 들어온다
             if (dist <= stopDist)
             {
                 isMoving = false;
@@ -329,7 +438,7 @@ namespace ChronoSavior.Enemies
             int dir = dx > 0f ? 1 : -1;
             mover.SetDirection(dir);
             if (body != null) body.flipX = dir >= 0;
-            return x + dir * Boss.MoveSpeed * dt;
+            return x + dir * ApproachSpeed * dt; // 2026-11-24 보스 강화 — 공통 보스 0.9의 1.5배
         }
 
         // ───────────────────────── 고르기(요청서 4절) ─────────────────────────
@@ -348,11 +457,17 @@ namespace ChronoSavior.Enemies
                 grabHitDone = false;
                 Enter(State.GrabPrep, GrabPrepTime);
             }
-            else
+            else if (next == Pattern.Sweep)
             {
                 sweepReadyAt = clock + SweepCooldown;
                 sweepHitDone = false;
                 Enter(State.SweepPrep, SweepPrepTime);
+            }
+            else
+            {
+                dashReadyAt = clock + DashCooldown;
+                grabHitDone = false;
+                Enter(State.DashPrep, DashPrepTime);
             }
         }
 
@@ -364,10 +479,14 @@ namespace ChronoSavior.Enemies
         {
             if (target == null) return Pattern.None;
             float distance = Mathf.Abs(target.position.x - transform.position.x);
-            bool grabOk = clock >= grabReadyAt && distance <= GrabRange
+            bool grabOk = clock >= grabReadyAt && distance <= GrabEngage
                           && !(last == Pattern.Grab && consecutive >= MaxConsecutive);
-            bool sweepOk = clock >= sweepReadyAt && distance <= SweepRadius
+            bool sweepOk = clock >= sweepReadyAt && distance <= SweepEngage
                            && !(last == Pattern.Sweep && consecutive >= MaxConsecutive);
+            // 돌진 잡기(2026-11-24 보스 강화) — 잡기 사거리 밖 ~ DashMaxDistance면 걸어오지 않고 미끄러지며 잡는다
+            bool dashOk = clock >= dashReadyAt && distance > DashMinDistance && distance <= DashMaxDistance
+                          && !(last == Pattern.DashGrab && consecutive >= MaxConsecutive);
+            if (dashOk && !grabOk && !sweepOk) return Pattern.DashGrab;
             if (!grabOk && !sweepOk) return Pattern.None;
             if (grabOk && !sweepOk) return Pattern.Grab;
             if (sweepOk && !grabOk) return Pattern.Sweep;
@@ -375,6 +494,24 @@ namespace ChronoSavior.Enemies
         }
 
         /// <summary>공격 시작 전 방향을 한 번 고정한다 — 공격이 끝날 때까지 다시 안 부른다.</summary>
+        /// <summary>
+        /// 연계 공격(2026-11-24 사용자 "휘두르기·잡기 반복이라 예측이 쉽다 → 변주") — 휘두르기 직후 확률적으로 후딜 없이 잡기로 잇는다.
+        /// 잡기 쿨이 돌았고 대상이 잡기 사거리 안일 때만. 방향은 다시 고정하고(뒤로 빠진 플레이어를 향해), 경고는 평소대로 뜬다.
+        /// </summary>
+        bool TryComboGrab(Transform target)
+        {
+            if (!TargetAlive(target) || clock < grabReadyAt) return false;
+            if (Mathf.Abs(target.position.x - transform.position.x) > GrabRange) return false;
+            if (Random.value >= ComboChanceRuntime) return false;
+            consecutive = last == Pattern.Grab ? consecutive + 1 : 1;
+            last = Pattern.Grab;
+            LockFacing(target);
+            grabReadyAt = clock + GrabCooldown;
+            grabHitDone = false;
+            Enter(State.GrabPrep, ComboGrabPrep);
+            return true;
+        }
+
         void LockFacing(Transform target)
         {
             float dx = target.position.x - transform.position.x;
@@ -412,6 +549,29 @@ namespace ChronoSavior.Enemies
             Enter(State.GrabWarn, GrabWarnTime);
         }
 
+        // ───────────────────────── 패턴 3 돌진 잡기(2026-11-24) ─────────────────────────
+
+        void BeginDashWarn()
+        {
+            if (grabWarning != null)
+            {
+                // 돌진할 길 전체 — 보스 앞으로 DashLength만큼(맵 끝에서 잘린다) 바닥 직선
+                float endX = Mathf.Clamp(transform.position.x + lockedFacing * DashLength, FieldBounds.MinX + 0.3f, FieldBounds.MaxX - 0.3f);
+                float len = Mathf.Max(0.5f, Mathf.Abs(endX - transform.position.x));
+                Vector2 center = (Vector2)transform.position + new Vector2(lockedFacing * len / 2f, 0f);
+                grabWarning.ShowCustom(center, DotShapes.Rect(len, GrabHeight));
+                grabWarning.Lock();
+            }
+            Enter(State.DashWarn, DashWarnTime);
+        }
+
+        void BeginDashRun()
+        {
+            if (grabWarning != null) grabWarning.Flash(); // 경고 사라짐 = 판정 시작(명세서 공통 규칙)
+            dashStartX = transform.position.x;
+            Enter(State.DashRun, DashLength / DashSpeed + 0.1f);
+        }
+
         void BeginGrabThrust()
         {
             if (grabWarning != null) grabWarning.Flash(); // 경고가 사라지는 시점 = 판정 시작 시점(명세서 공통 규칙)
@@ -427,10 +587,17 @@ namespace ChronoSavior.Enemies
 
             grabHitDone = true;
             grabbedTarget = target.gameObject;
-            grabStartX = target.position.x;
-            grabHeldY = target.position.y; // 끌려오는 동안 높이는 바꾸지 않는다(요청서 "지형을 통과하지 않도록")
-            grabAnchorX = Mathf.Clamp(transform.position.x + lockedFacing * GrabAnchorOffset,
-                                       FieldBounds.MinX + 0.1f, FieldBounds.MaxX - 0.1f); // 맵 밖으로 안 나가게 보정
+            // 2026-11-24: 예전엔 높이를 그대로 두고 보스 앞 0.7유닛 땅으로만 끌어와서 "앞에 서 있는" 것처럼
+            // 보였다 — 이제 그림의 주먹을 따라간다(위 GrabReachHand/GrabHeldHand). 놓아 주는 자리(들어 올린
+            // 주먹)는 보스 몸 안쪽이라 보스가 서 있는 빈 공간이다 — 풀려나면 중력이 돌아와 그 자리에서
+            // 떨어지므로 지형 속에 끼지 않는다(요청서 "지형을 통과하지 않도록"의 의도는 그대로).
+            grabStart = target.position;
+            if (body != null && !bodyOrderRaised)
+            {
+                bodyOrderBeforeGrab = body.sortingOrder;
+                body.sortingOrder = bodyOrderBeforeGrab + GrabFrontOrder; // 손이 캐릭터보다 앞에
+                bodyOrderRaised = true;
+            }
 
             grabbable.BeginGrab(gameObject);
             HitFeel.Shake(8f, 0.2f); // 잡기 성공(스냇치) 순간 — PlayerHurt 기본 흔들림(7/0.22) 위로 덮어씀(임의 값, 확인 필요)
@@ -441,23 +608,38 @@ namespace ChronoSavior.Enemies
         void UpdatePull()
         {
             if (grabbedTarget == null) return;
-            float t = EaseOut(Mathf.Clamp01(stateT / GrabPullTime));
-            float newX = Mathf.Lerp(grabStartX, grabAnchorX, t);
             var g = grabbedTarget.GetComponent<IGrabbable>();
-            g?.MoveGrabbedTo(new Vector2(newX, grabHeldY));
+            g?.MoveGrabbedTo(PullPoint(stateT));
         }
 
         void HoldGrabbed()
         {
             if (grabbedTarget == null) return;
             var g = grabbedTarget.GetComponent<IGrabbable>();
-            g?.MoveGrabbedTo(new Vector2(grabAnchorX, grabHeldY)); // 유지 시간 동안 자리 그대로
+            Vector2 held = HandPoint(transform.position, lockedFacing, GrabHeldHand);
+            held.x += Mathf.Sin(stateT * 55f) * GrabHoldShake; // 손아귀에서 버둥댐
+            g?.MoveGrabbedTo(held); // 유지 시간 동안 들어 올린 주먹 자리
+        }
+
+        /// <summary>끌어당기기 t초 시점의 대상 위치 — 그림 3장(<see cref="GrabSprite"/>)과 같은 3등분:
+        /// 앞 2/3은 처음 자리 → 뻗은 주먹, 마지막 1/3은 뻗은 주먹 → 들어 올린 주먹(살짝 위로 휘는 길).</summary>
+        Vector2 PullPoint(float t)
+        {
+            Vector2 reach = HandPoint(transform.position, lockedFacing, GrabReachHand);
+            Vector2 held = HandPoint(transform.position, lockedFacing, GrabHeldHand);
+            float u = Mathf.Clamp01(t / GrabPullTime);
+            const float Split = 2f / 3f;
+            if (u < Split) return Vector2.Lerp(grabStart, reach, EaseOut(u / Split));
+            float k = EaseOut((u - Split) / (1f - Split));
+            Vector2 p = Vector2.Lerp(reach, held, k);
+            p.y += Mathf.Sin(k * Mathf.PI) * 0.15f; // 위로 휘어 들어 올리는 느낌(연출용 임의 값)
+            return p;
         }
 
         /// <summary>
         /// 끌어당기기가 끝난 시점 — 피해를 1회 주고 풀어준다(요청서 "끌어당기기가 끝나면 피해를 준다 →
         /// 이동 제한을 해제한다"). **무적을 무시하고 준다**(<see cref="IDamageable.TakeDamageIgnoringInvuln"/>,
-        /// 2026-11-18 사용자가 실제 플레이로 발견) — 끌어당기기(0.5초)+붙잡아둠(0.2초) = 0.7초 동안
+        /// 2026-11-18 사용자가 실제 플레이로 발견) — 끌어당기기(0.5초)+붙잡아둠(0.8초, 2026-11-24 이전 0.2) = 1.3초 동안
         /// 다른 몹에게 맞아 생긴 무적(기본 0.9초)이 아직 안 끝났으면, 잡기는 분명히 성공(붙잡혀 끌려옴)
         /// 했는데 정작 이 공격의 피해만 조용히 무시되는 게 더 혼란스럽기 때문이다.
         /// </summary>
@@ -546,7 +728,7 @@ namespace ChronoSavior.Enemies
                 if (hit != null) { body.sprite = hit; return; }
             }
             Sprite s;
-            if (state == State.GrabRecover || state == State.SweepRecover)
+            if (state == State.GrabRecover || state == State.SweepRecover || state == State.DashRecover)
             {
                 s = At(idleArt, 0); // 후딜레이 — 다음 대기 되풀이가 시작되기 전까지 대기 그림의 첫 자세로
             }
@@ -580,6 +762,10 @@ namespace ChronoSavior.Enemies
                 case State.GrabThrust: return At(grabArt, 2);
                 case State.GrabPull: return At(grabArt, 3 + Mathf.Clamp(Mathf.FloorToInt(stateT / GrabPullTime * 3f), 0, 2));
                 case State.GrabHold: return At(grabArt, 6);
+                // 돌진 잡기(2026-11-24) — 전용 그림이 없어 잡기 그림을 쓴다: 준비 0 · 경고 1 · 돌진 2(팔 뻗기)
+                case State.DashPrep: return At(grabArt, 0);
+                case State.DashWarn: return At(grabArt, 1);
+                case State.DashRun: return At(grabArt, 2);
                 default: return null;
             }
         }
