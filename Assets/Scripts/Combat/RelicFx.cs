@@ -260,12 +260,21 @@ namespace ChronoSavior.Combat
 
         void OnDestroy() { if (runner == this) runner = null; }
 
-        void Update()
+        void Update() => Step(Time.deltaTime, Time.frameCount);
+
+        /// <summary>
+        /// 편집 화면 캡처용 — 시간이 안 흐르는 편집 화면에서 대기열을 dt만큼 진행한다(만든 프레임 건너뛰기 없이).
+        /// 실제 게임 코드가 그대로 돌아가는 모습을 찍을 때 쓴다(<c>CaptureUiPreview</c>, 2026-11-24).
+        /// </summary>
+        public static void TickForCapture(float dt)
+        {
+            if (runner != null) runner.Step(dt, -1);
+        }
+
+        void Step(float dt, int now)
         {
             // 정리(런 끝·시작)된 뒤의 옛 대기열은 아무것도 실행하지 않는다 — 곧 지워진다(2026-11-20 GPT 리뷰)
             if (generation != RunTransient.Generation) { entries.Clear(); due.Clear(); return; }
-            float dt = Time.deltaTime;
-            int now = Time.frameCount;
             due.Clear();
             for (int i = 0; i < entries.Count; i++)
             {
