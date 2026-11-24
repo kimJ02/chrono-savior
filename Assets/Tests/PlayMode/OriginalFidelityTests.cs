@@ -103,7 +103,7 @@ public class OriginalFidelityTests
     static IEnumerator CollectOneOrb()
     {
         var player = new GameObject("TestPlayer") { tag = "Player" };
-        player.transform.position = new Vector3(5f, FieldBounds.GroundY - ExpOrb.PlayerCenterOffset, 0f);
+        player.transform.position = new Vector3(5f, FieldBounds.GroundY + ExpOrb.DropHeight - ExpOrb.PlayerCenterOffset, 0f); // 구슬이 나오는 자리(바닥 + DropHeight)에 몸 가운데를 둔다
         ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, FieldBounds.GroundY, 0f), player.transform);
         yield return null;
         yield return null;
