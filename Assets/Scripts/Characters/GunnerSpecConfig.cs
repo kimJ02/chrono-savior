@@ -156,6 +156,11 @@ namespace ChronoSavior.Characters
         public static float LinkHitWidth(int tier) => (30f + tier * 3f) / 100f;
         public const float LinkEnemyWidthFactor = 0.25f;
         /// <summary>원본 `0.22 + tier*0.05 + (링크 위 0.08) + (내부 0.06)`.</summary>
+        /// <summary>
+        /// 설치 순간 전력 인입 광선 피해(2026-11-24 사용자 D안 + "광선이 공격처럼 보이면 공격으로") = 링크 위 장판 한 틱의 2배.
+        /// > **의도적 편차 — 원본엔 설치 순간 피해가 없다**(사용자 요청). 1층 0.70 · 3층 0.90 · 5층 1.10배.
+        /// </summary>
+        public static float PowerSurgeDamageMult(int tier) => 2f * FieldDamageMult(tier, true, false);
         public static float FieldDamageMult(int tier, bool onLink, bool insideField) =>
             0.22f + tier * 0.05f + (onLink ? 0.08f : 0f) + (insideField ? 0.06f : 0f);
     }

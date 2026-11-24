@@ -120,9 +120,98 @@ namespace ChronoSavior.Characters
 
         void OnDestroy() => active.Remove(this);
 
+        // ── 설치 순간(2026-11-24 사용자 D안 — "설치 방식은 그대로, 설치하는 순간을 꼬아서 화려·타격감", GPT와 정함) ──
+        /// <summary>
+        /// 낙하 그림(편지 전기 기둥, 물결 번개 지운 것) 재생 속도와 바닥에 닿는 장 — 0.11초 뒤 꽂힌다. 판정은 X 순간부터 켜져 있고 그림만 꽂힐 때 보인다.
+        /// 낙하 그림 가운데~바닥(그림 px).
+        /// </summary>
+        public const float DropFps = 36f, DropBottomPx = 58f;
+        public const int DropLandFrame = 4;
+        public static float DropLandDelay => DropLandFrame / DropFps;
+        /// <summary>전력 인입 광선 — 기존 설치기에서 새 설치기로, 지나가는 적에게 피해(사용자 "광선이 공격처럼 보이면 공격으로 만들어").</summary>
+        public const int PowerFlashSortingOrder = 6;
+
+        float landIn = -1f;
+        Vector3 shownScale;
+        bool hitSparks;
+
+        /// <summary>
+        /// X로 놓은 직후 부른다(<see cref="GunnerAttack"/>). 위에서 에너지가 떨어져 꽂히고(그때까지 그림을 숨김), 꽂히는 순간 첫 공격 틱을 바로 쏘고
+        /// (맞은 적마다 적중 불꽃) 화면을 흔든다. 이어서 이어지는 기존 설치기들에서 새 설치기로 광선이 흘러 들어오며 지나가는 적을 친다.
+        /// 낙하 그림이 없으면 바로 꽂힌다. <paramref name="shake"/>: X 한 번에 하나만 흔든다(삼각 방전의 추가 중계기는 false).
+        /// </summary>
+        public void PlayArrival(bool shake)
+        {
+            shakeOnLand = shake;
+            var drop = VfxPlayer.Spawn(VfxKeys.MechanicWarp, (Vector2)transform.position + new Vector2(0f, DotScale.Units(DropBottomPx)),
+                                       DotScale.Value, DropFps, RelicFx.SortingOrder);
+            if (drop == null) { Land(); return; }
+            shownScale = transform.localScale;
+            transform.localScale = Vector3.zero; // 꽂히기 전엔 안 보인다(판정은 켜져 있다)
+            landIn = DropLandDelay;
+        }
+        bool shakeOnLand;
+
+        void Land()
+        {
+            landIn = -1f;
+            if (shownScale != Vector3.zero) transform.localScale = shownScale;
+            if (shakeOnLand) HitFeel.Shake(2f + Tier * 0.4f, 0.1f); // 원본 :2416(X 순간) — 꽂히는 순간으로 옮겼다
+            hitSparks = true;
+            tickTimer = 0f;
+            DamageTick(); // 꽂히는 순간 첫 공격
+            hitSparks = false;
+            PowerIn();
+        }
+
+        /// <summary>이어지는 기존 설치기(링크 거리 안)마다 머리에서 새 설치기 머리로 광선 — 닿는 순간 선 위 적에게 피해, 새 머리 번쩍.</summary>
+        void PowerIn()
+        {
+            Vector2 head = (Vector2)transform.position + new Vector2(0f, RelayHeadHeight);
+            float linkMax = GunnerSpecConfig.LinkMax(Tier);
+            float arrive = -1f;
+            int k = 0;
+            foreach (var o in active)
+            {
+                if (o == this || o == null) continue;
+                Vector2 from = (Vector2)o.transform.position + new Vector2(0f, RelayHeadHeight);
+                if (Vector2.Distance(from, head) > linkMax) continue;
+                var fx = GunnerChainBeamVfx.Play(GunnerRelics.ChainMaterial, from, head, 0f, k++ % 2 == 0 ? 1f : -1f, head, hitSpark: false);
+                float a = fx != null ? fx.ArriveTime : 0f;
+                arrive = Mathf.Max(arrive, a);
+                Vector2 f0 = from;
+                int tier = Tier;
+                RelicFx.After(a, () => PowerSurge(f0, head, tier));
+            }
+            if (arrive < 0f) return;
+            var self = this;
+            RelicFx.After(arrive, () =>
+            {
+                if (self != null) VfxPlayer.Spawn(VfxKeys.MechanicDroneHit, head, DotScale.Value, 30f, PowerFlashSortingOrder); // 전력이 다 들어왔다
+            });
+        }
+
+        /// <summary>전력 인입 광선 한 줄의 피해 — 선분에서 링크 판정 폭 안의 적 전부, <see cref="GunnerSpecConfig.PowerSurgeDamageMult"/>배.</summary>
+        static void PowerSurge(Vector2 a, Vector2 b, int tier)
+        {
+            float atk = PlayerStatCalculator.ComputeAtk(ProfileService.Current);
+            using var signature = Relics.Signature(); // 설치 시그니처
+            float mult = GunnerSpecConfig.PowerSurgeDamageMult(tier) * GunnerRelics.OverloadDamageMult;
+            Vector2 c = (a + b) * 0.5f;
+            float r = Vector2.Distance(a, b) * 0.5f + GunnerSpecConfig.LinkHitWidth(tier) + GunnerTargets.QueryMargin;
+            foreach (var e in GunnerTargets.Query(c, r))
+            {
+                if (GunnerField.DistToSegment(e.center, a, b) >= GunnerSpecConfig.LinkHitWidth(tier) + e.width * GunnerSpecConfig.LinkEnemyWidthFactor) continue;
+                float dmg = DamageCalculator.Roll(atk * mult, 0f, out _);
+                e.damageable.TakeTickDamage(dmg);
+                VfxPlayer.Spawn(VfxKeys.MechanicDroneHit, e.center, DotScale.Value, 30f, PowerFlashSortingOrder);
+            }
+        }
+
         void Update()
         {
             if (removed) return;
+            if (landIn >= 0f) { landIn -= Time.deltaTime; if (landIn <= 0f) Land(); }
             float dt = Time.deltaTime;
             Age += dt;
             tickTimer += dt;
@@ -148,6 +237,7 @@ namespace ChronoSavior.Characters
                 if (!armedTaken) { armedTaken = true; sig *= GunnerRelics.ConsumeArmedMult(); } // 세트 3 — 맞힌 틱에서만
                 float dmg = DamageCalculator.Roll(atk * DamageMult * sig, 0f, out _); // 원본 noCrit
                 e.damageable.TakeTickDamage(dmg);                            // 원본 kb:0 + noHitstop
+                if (hitSparks) VfxPlayer.Spawn(VfxKeys.MechanicDroneHit, e.center, DotScale.Value, 30f, PowerFlashSortingOrder); // 꽂히는 순간 적중 불꽃
                 // 그림만 — 적 자리 전기 + 중계기 머리에서 그 적까지 아크(적마다 0.25초에 한 번, 2026-11-10)
                 GunnerZap.At(e.collider, e.center, (Vector2)transform.position + new Vector2(0f, RelayHeadHeight), e.width * 0.5f);
             }

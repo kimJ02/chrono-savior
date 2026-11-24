@@ -366,7 +366,7 @@ namespace ChronoSavior.Characters
             }
             // 원본 `placeGunnerTurret`는 `y: p.y` — 발 높이(바닥)에 놓는다.
             SfxEvents.RaiseMechanicTurretSet();
-            GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier);
+            GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier)?.PlayArrival(true); // 설치 순간 — 낙하·첫 공격·전력 인입(2026-11-24 D)
             // 삼각 방전(2026-11-22) — X 한 번에 중계기를 양옆으로 더 놓는다(한도를 넘으면 가장 오래된 것부터 치운다)
             int extra = GunnerRelics.ExtraRelays;
             for (int k = 0; k < extra; k++)
@@ -384,9 +384,9 @@ namespace ChronoSavior.Characters
                         if (oldest == null || t.Age > oldest.Age) oldest = t;
                     oldest?.Remove();
                 }
-                GunnerTurret.Place(turretPrefab, new Vector2(x, FeetPosition.y), Facing, tier);
+                GunnerTurret.Place(turretPrefab, new Vector2(x, FeetPosition.y), Facing, tier)?.PlayArrival(false);
             }
-            HitFeel.Shake(2f + tier * 0.4f, 0.1f); // 원본 :2416
+            // 화면 흔들림(원본 :2416)은 설치기가 꽂히는 순간으로 옮겼다(GunnerTurret.PlayArrival, 2026-11-24)
             ultCdTimer = ultCdMax = GunnerSpecConfig.TurretUltCooldown(tier) * cdMult;
             GunnerRelics.OnSkillUsed(FeetPosition, true); // 메카닉 세트·잔탄 포켓·교차 전류(2026-11-22)
         }

@@ -1045,6 +1045,165 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 메카닉 설치 순간 연출 후보(2026-11-24 사용자 "설치 방식은 그대로, 설치하는 순간을 꼬아서 화려·타격감 — 1번·5번 gif로", GPT와 정함).
+        /// 설치기 둘(멀어서 아직 안 이어짐)이 있고, 플레이어가 X로 가운데에 하나를 더 놓는다 → 셋이 이어져 장판이 생긴다.
+        /// A 지금(바로 생김) / B 1번 낙하 착탄(에너지가 떨어져 꽂히고, 반경 안 적 적중 불꽃·짧은 흔들림) / C 5번 전력 인입(기존 설치기에서 새 설치기로 광선이 흘러 들어가 머리가 번쩍) / D 1+5.
+        /// 게임 코드는 안 바꾸고 여기서만 재현. 설치 위치·시점·반경·장판 규칙은 그대로.
+        /// </summary>
+        public static void RunInstallerPlaceCandidates()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var kit = player.GetComponent<ChronoSavior.Characters.GunnerAttack>();
+            var turretPrefab = AssetDatabase.LoadAssetAtPath<ChronoSavior.Characters.GunnerTurret>("Assets/Prefabs/Combat/GunnerTurret.prefab");
+            var flashMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteFlash.mat");
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var grunt = catalog.Find(EnemyType.Grunt);
+            var skin = grunt.SkinFor(1);
+            Sprite art = skin != null && skin.move != null && skin.move.frames.Length > 0 ? skin.move.frames[0] : grunt.sprite;
+            var field = player.GetComponent<ChronoSavior.Characters.GunnerFieldVfx>();
+            var activeField = typeof(ChronoSavior.Characters.GunnerTurret).GetField("active", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            const int Tier = 3;
+            Vector3 camStart = cam.transform.position;
+            float placeX = kit.FeetPosition.x + ChronoSavior.Characters.GunnerSpecConfig.TurretPlaceForward;
+            var oldX = new[] { 3.3f, 9.3f };
+            var enemyX = new[] { 5.5f, 7.1f, 8.2f, 4.3f };
+            float range = ChronoSavior.Characters.GunnerSpecConfig.TurretRange(Tier);
+
+            var variants = new (string name, bool drop, bool power)[]
+            {
+                ("A_지금_바로생김", false, false),
+                ("B_1번_낙하착탄", true, false),
+                ("C_5번_전력인입", false, true),
+                ("D_1번_5번_같이", true, true),
+            };
+            const float Dt = 1f / 30f, PressAt = 0.35f, DropFps = 36f;
+            var warp = ChronoSavior.Combat.VfxFrames.Get(ChronoSavior.Combat.VfxKeys.MechanicWarp);
+            float landDelay = 4f / DropFps; // 전기 기둥 그림은 4번 장에 바닥에 닿는다
+            foreach (var v in variants)
+            {
+                string dir = Path.Combine(outDir, v.name);
+                Directory.CreateDirectory(dir);
+                ((System.Collections.IList)activeField.GetValue(null)).Clear();
+                var made = new System.Collections.Generic.List<GameObject>();
+                var olds = new System.Collections.Generic.List<ChronoSavior.Characters.GunnerTurret>();
+                foreach (float x in oldX) { var t = ChronoSavior.Characters.GunnerTurret.Spawn(turretPrefab, new Vector2(x, feet), Tier); olds.Add(t); made.Add(t.gameObject); }
+                var flashes = new System.Collections.Generic.List<(Vector2 pos, SpriteRenderer sr)>();
+                foreach (float x in enemyX)
+                {
+                    var e = new GameObject("PreviewEnemy", typeof(SpriteRenderer));
+                    e.transform.position = new Vector2(x, feet + 0.25f);
+                    e.transform.localScale = Vector3.one * DotScale.Value;
+                    e.GetComponent<SpriteRenderer>().sprite = art;
+                    var f = new GameObject("Flash", typeof(SpriteRenderer));
+                    f.transform.SetParent(e.transform, false);
+                    var fsr = f.GetComponent<SpriteRenderer>();
+                    fsr.sprite = art; fsr.sharedMaterial = flashMat; fsr.sortingOrder = 1; fsr.color = new Color(1f, 1f, 1f, 0f);
+                    flashes.Add((e.transform.position, fsr));
+                    made.Add(e);
+                }
+
+                ChronoSavior.Characters.GunnerTurret fresh = null;
+                ChronoSavior.Combat.VfxPlayer dropFx = null;
+                var hops = new System.Collections.Generic.List<ChronoSavior.Characters.GunnerChainBeamVfx>();
+                var sparks = new System.Collections.Generic.List<(ChronoSavior.Combat.VfxPlayer p, float at)>();
+                ChronoSavior.Combat.VfxPlayer headFlash = null; float headAt = -1f;
+                float landAt = PressAt + (v.drop ? landDelay : 0f);   // 설치기가 보이기 시작하는 때(낙하면 꽂히는 순간)
+                float powerArrive = -1f;
+                bool fieldShown = false;
+                int frame = 0;
+                for (float t = 0f; t <= 1.7f; t += Dt, frame++)
+                {
+                    // X — 낙하 그림
+                    if (v.drop && t >= PressAt && dropFx == null && warp.Length > 0)
+                    {
+                        dropFx = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MechanicWarp, new Vector2(placeX, feet + DotScale.Units(58f)), DotScale.Value, DropFps, 4);
+                        made.Add(dropFx.gameObject);
+                    }
+                    if (dropFx != null) dropFx.SetTimeForCapture(t - PressAt);
+                    // 설치기 등장
+                    if (fresh == null && t >= landAt)
+                    {
+                        fresh = ChronoSavior.Characters.GunnerTurret.Spawn(turretPrefab, new Vector2(placeX, feet), Tier);
+                        made.Add(fresh.gameObject);
+                        if (v.drop)
+                        {
+                            // 착탄 — 반경 안 적 적중 불꽃
+                            foreach (var (pos, sr) in flashes)
+                                if (Vector2.Distance(pos + Vector2.up * 0.3f, new Vector2(placeX, feet + ChronoSavior.Characters.GunnerSpecConfig.TurretCenterHeight)) <= range)
+                                {
+                                    var sp = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MechanicDroneHit, pos + Vector2.up * 0.3f, DotScale.Value, 30f, 5);
+                                    if (sp != null) { sparks.Add((sp, t)); made.Add(sp.gameObject); }
+                                }
+                        }
+                        if (v.power)
+                        {
+                            // 전력 인입 — 기존 설치기 머리에서 새 설치기 머리로
+                            Vector2 head = new Vector2(placeX, feet + ChronoSavior.Characters.GunnerTurret.RelayHeadHeight);
+                            int k = 0;
+                            foreach (var o in olds)
+                            {
+                                Vector2 from = (Vector2)o.transform.position + Vector2.up * ChronoSavior.Characters.GunnerTurret.RelayHeadHeight;
+                                var hop = ChronoSavior.Characters.GunnerChainBeamVfx.Play(kit.BeamMaterial, from, head, t, k++ % 2 == 0 ? 1f : -1f, head, hitSpark: false);
+                                hops.Add(hop); made.Add(hop.gameObject);
+                                powerArrive = hop.ArriveTime;
+                            }
+                        }
+                    }
+                    foreach (var h in hops) h.Evaluate(t);
+                    // 머리 번쩍(전력이 다 들어온 순간)
+                    if (v.power && powerArrive > 0f && t >= powerArrive && headFlash == null)
+                    {
+                        headFlash = ChronoSavior.Combat.VfxPlayer.Spawn(ChronoSavior.Combat.VfxKeys.MechanicDroneHit, new Vector2(placeX, feet + ChronoSavior.Characters.GunnerTurret.RelayHeadHeight), DotScale.Value, 30f, 6);
+                        if (headFlash != null) { headAt = t; made.Add(headFlash.gameObject); }
+                    }
+                    if (headFlash != null) headFlash.SetTimeForCapture(t - headAt);
+                    foreach (var (p, at) in sparks) p.SetTimeForCapture(t - at);
+                    // 장판 — 셋이 이어진 순간(전력 인입이면 전력이 들어온 뒤)
+                    float fieldAt = v.power ? powerArrive : landAt;
+                    if (fresh != null && !fieldShown && fieldAt > 0f && t >= fieldAt)
+                    {
+                        var all = new System.Collections.Generic.List<ChronoSavior.Characters.GunnerTurret>(olds) { fresh };
+                        var pts = ChronoSavior.Characters.GunnerField.FieldPoints(all);
+                        var segs = ChronoSavior.Characters.GunnerField.LinkSegments(pts, ChronoSavior.Characters.GunnerSpecConfig.LinkMax(Tier));
+                        field.Show(pts, segs, Tier, kit.bulletSprite);
+                        fieldShown = true; // 선 그림 뿌리(GunnerFieldLinks)는 지우지 않는다 — 다음 후보가 같은 걸 다시 쓴다
+                    }
+                    // 적 깜빡임 — 착탄 순간(낙하) 반경 안
+                    foreach (var (pos, sr) in flashes)
+                    {
+                        bool inR = Vector2.Distance(pos + Vector2.up * 0.3f, new Vector2(placeX, feet + ChronoSavior.Characters.GunnerSpecConfig.TurretCenterHeight)) <= range;
+                        float since = t - landAt;
+                        sr.color = new Color(1f, 1f, 1f, v.drop && inR && since >= 0f ? Mathf.Max(0f, 1f - since * 6f) * 0.75f : 0f);
+                    }
+                    // 착탄 흔들림 — 2장(게임 도트 1칸씩 아래·위)
+                    float shake = 0f;
+                    if (v.drop && t >= landAt && t < landAt + 2.5f * Dt) shake = (t - landAt) < Dt ? -1f : 1f;
+                    cam.transform.position = camStart + new Vector3(0f, shake * DotScale.Units(1f) / DotScale.Value, 0f);
+                    Render(pc, cam, dir, $"f_{frame:00}", 1920, 1080, 3f);
+                }
+                cam.transform.position = camStart;
+                field.Hide();
+                ((System.Collections.IList)activeField.GetValue(null)).Clear();
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            }
+            Debug.Log("[CaptureUiPreview] 설치 순간 후보 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);

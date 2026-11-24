@@ -392,6 +392,26 @@ public class GunnerSkillTreeTests
         Assert.IsFalse(Damaged(outside), "설치기 반경 밖의 적이 맞았다");
     }
 
+    /// <summary>
+    /// 설치 순간(2026-11-24 사용자 D안): 꽂히는 순간 첫 공격을 바로(틱을 기다리지 않음), 이어지는 기존 설치기에서 새 설치기로 전력 인입 광선 —
+    /// 광선이 지나가는 적도 피해(사용자 "광선이 공격처럼 보이면 공격으로"). 두 설치기 반경 밖, 선 위의 적으로 광선 피해만 본다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Turret_Arrival_HitsAtOnce_AndPowerBeamDamagesEnemyOnTheLine()
+    {
+        SetBuild(GunnerBranch.Installer, 3);
+        GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(29f, 0.5f), 3);       // 5.0 ≤ 3층 링크 한도 5.1
+        var near = NewEnemy(new Vector3(34.8f, 0.68f, 0f));                             // 새 설치기 반경(1.72+0.5) 안
+        var onBeam = NewEnemy(new Vector3(31.5f, 0.5f + GunnerTurret.RelayHeadHeight, 0f)); // 두 머리 사이 선 위, 두 반경 밖(2.5 > 2.22)
+        yield return new WaitForFixedUpdate();
+        var fresh = GunnerTurret.Spawn(TestPrefabs.GunnerTurret, new Vector2(34f, 0.5f), 3);
+        fresh.PlayArrival(false);
+        yield return new WaitForSeconds(0.3f); // 낙하 0.11초 + 광선 — 3층 틱(0.38초)보다 빠르다
+
+        Assert.IsTrue(Damaged(near), "꽂히는 순간 첫 공격이 없다(틱을 기다렸다)");
+        Assert.IsTrue(Damaged(onBeam), "전력 인입 광선이 선 위의 적을 안 때렸다");
+    }
+
     // ───────────────────────── 링크 · 내부 장판 ─────────────────────────
 
     [UnityTest]
