@@ -180,9 +180,25 @@ namespace ChronoSavior.Characters
             }
         }
 
+        /// <summary>편지 받은 적이 아직 살아 있나 — 죽는 연출 중(체력 0, 아직 안 사라짐)도 죽은 것으로 본다.</summary>
+        static bool Alive(Collider2D c)
+        {
+            if (c == null || !c.gameObject.activeInHierarchy) return false;
+            var d = c.GetComponent<IDamageable>();
+            return d == null || !d.IsDead;
+        }
+
+        /// <summary>표식을 단 적이 죽으면 표식을 바로 치운다 — 0.1초마다 본다(표식이 사라질 때까지).</summary>
+        static void WatchMark(VfxPlayer mark, Collider2D target, float left)
+        {
+            if (mark == null || left <= 0f) return;
+            if (!Alive(target)) { Object.Destroy(mark.gameObject); return; }
+            RelicFx.After(0.1f, () => WatchMark(mark, target, left - 0.1f));
+        }
+
         static void Deliver(Collider2D target, float stagger, float mult, bool gold, float awakenDelay, float awakenPower)
         {
-            if (target == null || !target.gameObject.activeInHierarchy) return; // 광선이 닿기 전에 죽었다
+            if (!Alive(target)) return; // 광선이 닿기 전에 죽었다
             Relics.MarkLaserTouched(target);
             var b = target.bounds;
             Vector2 center = b.center;
@@ -195,11 +211,14 @@ namespace ChronoSavior.Characters
                 if (mark != null) mark.Play(VfxFrames.Get(VfxKeys.MechanicPellet), LetterMarkFps * LetterRushMult, true, 0f, Color.white); // 곧 터진다
             });
             RelicFx.After(LetterFuse, () => { if (mark != null) Object.Destroy(mark.gameObject); });
+            WatchMark(mark, target, LetterFuse);
 
             float lead = LetterBoomLeadFrames / LetterBoomFps;
             RelicFx.After(LetterFuse + stagger - lead, () =>
             {
-                if (target != null && target.gameObject.activeInHierarchy) { center = target.bounds.center; feetY = target.bounds.min.y; }
+                // 표식을 단 적이 그새 죽었으면 폭발도 없다(2026-11-24 사용자 "적이 이미 죽었는데도 발동") — 예전엔 마지막 자리에서 그대로 터졌다
+                if (!Alive(target)) return;
+                center = target.bounds.center; feetY = target.bounds.min.y;
                 Vector2 boomAt = new Vector2(center.x, feetY + DotScale.Units(LetterBoomBottomPx));
                 VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder);
                 RelicFx.After(lead, () =>
@@ -209,6 +228,7 @@ namespace ChronoSavior.Characters
                     // 각성 — 같은 자리에 한 번 더(옅게)
                     RelicFx.After(awakenDelay - lead, () =>
                     {
+                        if (!Alive(target)) return; // 첫 폭발로 죽었으면 각성 추가 폭발도 없다
                         VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder, tint: new Color(1f, 1f, 1f, 0.6f));
                         RelicFx.After(lead, () => RelicFx.Circle(center, LetterRadius, mult * awakenPower, RelicFx.Cyan, null, showRing: false, gunnerZaps: false));
                     });

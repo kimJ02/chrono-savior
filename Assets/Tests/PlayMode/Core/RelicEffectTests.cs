@@ -201,6 +201,28 @@ public class RelicEffectTests
         Assert.Less(target.CurrentHp, target.MaxHp, "1초 뒤 폭발이 없다");
     }
 
+    /// <summary>
+    /// 편지(2026-11-24 사용자 "적이 이미 죽었는데도 발동") — 표식을 단 적이 폭발 전에 죽으면 전기 기둥·피해가 없다(옆 적도 안 맞는다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Letter_TargetDiesBeforeFuse_NoExplosion()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Gunner;
+        p.gunnerBranch = GunnerBranch.Laser;
+        p.items.Add("letter"); // 1랭크 = 편지 1통 — 가장 가까운 적에게
+        var marked = NewEnemy(new Vector3(600.5f, 0.5f, 0f), 50f);
+        var bystander = NewEnemy(new Vector3(601.8f, 0.5f, 0f)); // 표식 적 옆(폭발 반경 1.3 안), 편지 대상은 아님(더 멀다)
+        yield return new WaitForFixedUpdate();
+
+        using (Relics.Signature()) RelicDirector.OnChainKill(new Vector2(600f, 0.5f));
+        yield return new WaitForSeconds(0.3f);
+        Assert.IsTrue(RelicFx.IsTarget(marked.GetComponent<Collider2D>(), out _), "편지가 가까운 적에게 안 갔다");
+        marked.TakeDamage(1000f, null); // 폭발 전에 죽는다
+        yield return new WaitForSeconds(1.2f);
+        Assert.AreEqual(bystander.MaxHp, bystander.CurrentHp, "표식 적이 죽었는데 그 자리에서 폭발했다");
+    }
+
     /// <summary>메카닉은 시그니처 처치만 공용 처치 유물이 센다(2026-11-22) — 마법사·섬영은 모든 처치.</summary>
     [Test]
     public void CommonKillRelics_CountOnlySignatureKills_ForGunnerAndBlade()
