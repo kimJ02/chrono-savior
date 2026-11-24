@@ -75,6 +75,29 @@ public class RelicEffectTests
         Assert.AreEqual(far.MaxHp, far.CurrentHp, "범위 밖 적이 맞았다");
     }
 
+    /// <summary>
+    /// 메카닉 범위 유물(2026-11-24 사용자 A안): 따로 띄울 그림이 없으면 맞은 적마다 하얀 번개가 가운데부터 퍼지며 친다 —
+    /// 가까운 적이 먼저, 먼 적은 거리 ÷ 14초 뒤에 맞는다(그림과 피해가 같이).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Circle_Gunner_HitsSpreadOutwardWithZaps()
+    {
+        var p = ProfileService.Current;
+        p.character = CharacterId.Gunner;
+        p.gunnerBranch = GunnerBranch.Installer;
+        var near = NewEnemy(new Vector3(500.3f, 0.5f, 0f));
+        var far = NewEnemy(new Vector3(504.2f, 0.5f, 0f)); // 4.2 → 0.3초 뒤
+        yield return new WaitForFixedUpdate();
+
+        RelicFx.Circle(new Vector2(500f, 0.5f), 6f, 1f, Color.white);
+        yield return new WaitForSeconds(0.1f);
+        Assert.Less(near.CurrentHp, near.MaxHp, "가까운 적이 곧바로 안 맞았다");
+        Assert.AreEqual(far.MaxHp, far.CurrentHp, "먼 적이 번개가 닿기 전에 맞았다");
+        Assert.IsNotNull(GameObject.Find("Vfx_" + VfxKeys.MechanicRelayAura.Replace('/', '_')), "맞은 적에 하얀 번개가 없다");
+        yield return new WaitForSeconds(0.35f);
+        Assert.Less(far.CurrentHp, far.MaxHp, "먼 적이 끝내 안 맞았다");
+    }
+
     [UnityTest]
     public IEnumerator EmberLedger_BurningEnemyDeathExplodes()
     {

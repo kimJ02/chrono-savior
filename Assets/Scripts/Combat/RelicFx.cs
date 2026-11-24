@@ -98,14 +98,21 @@ namespace ChronoSavior.Combat
             return p != null && p.character == CharacterId.Gunner ? null : key;
         }
 
+        /// <summary>메카닉 범위 유물 번개가 퍼지는 속도(유닛/초)와 하얀 번개 재생 속도 — 화면 전체(14)는 끝까지 1초.</summary>
+        public const float ZapWaveSpeed = 14f, ZapFps = 30f;
+        static bool IsGunner { get { var p = ProfileService.Current; return p != null && p.character == CharacterId.Gunner; } }
+
         /// <summary>
         /// 원 범위 피해. 맞힌 수를 돌려준다. 그림 키가 있으면 터지는 그림. 범위 고리는 기본으로 안 그린다
         /// (2026-11-23 사용자 "원 테두리 나오는거 다 없애" — 직접 그린 고리 대신 받은 VFX만).
         /// </summary>
         public static int Circle(Vector2 pos, float radius, float atkMult, Color ring, string vfxKey = null,
-                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null, bool showRing = false)
+                                 float knockback = 1.6f, Collider2D except = null, System.Action<Collider2D> onHit = null, bool showRing = false,
+                                 bool gunnerZaps = true)
         {
             int n = 0;
+            // 메카닉이고 따로 띄울 그림이 없으면(다른 직업 그림은 메카닉에서 뺐다) — 맞은 적마다 하얀 번개가 가운데부터 바깥으로 퍼지며 친다(2026-11-24 사용자 A안)
+            bool zaps = gunnerZaps && vfxKey == null && IsGunner;
             var cols = QueryCircle(pos, radius);
             try
             {
@@ -114,6 +121,18 @@ namespace ChronoSavior.Combat
                     if (col == null || col == except || !IsTarget(col, out var target)) continue;
                     float dir = Mathf.Sign(col.transform.position.x - pos.x);
                     if (dir == 0f) dir = 1f;
+                    if (zaps)
+                    {
+                        n++;
+                        var c = col;
+                        After(Vector2.Distance(Center(col), pos) / ZapWaveSpeed, () =>
+                        {
+                            if (c == null || !IsTarget(c, out var t2)) return;
+                            if (HitTarget(t2, atkMult, dir, knockback) > 0f) onHit?.Invoke(c);
+                            VfxPlayer.Spawn(VfxKeys.MechanicRelayAura, Center(c), DotScale.Value, ZapFps, SortingOrder + 1);
+                        });
+                        continue;
+                    }
                     if (HitTarget(target, atkMult, dir, knockback) > 0f) { n++; onHit?.Invoke(col); }
                 }
             }

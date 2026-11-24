@@ -1204,6 +1204,114 @@ namespace ChronoSavior.Editor
             EditorApplication.Exit(0);
         }
 
+        /// <summary>
+        /// 메카닉 공용 유물 범위 피해 그림 후보(2026-11-24 사용자 "공용 유물이 VFX가 안 된 것 같다" — 다른 직업 그림·범위 고리를 뺀 뒤 피해만 남았다).
+        /// 한 규칙으로 통일: A = 범위 안 적마다 하얀 번개(승인 D)가 가운데부터 바깥으로 퍼지듯 시간차 / B = A + 가운데 전기 기둥(편지, 물결 번개 지운 것).
+        /// 한 영상에 작은 범위(등불 r2.2) → 중간(문턱의 시계 r6, 플레이어 중심) → 화면 전체(종언의 종 r14). 게임 코드는 안 바꾼다.
+        /// </summary>
+        public static void RunCommonRelicGunnerCandidates()
+        {
+            string outDir = ArgValue("-captureOut") ?? Path.Combine(Directory.GetCurrentDirectory(), "Temp", "UiCapture");
+            Directory.CreateDirectory(outDir);
+            EditorSceneManager.OpenScene(SceneSetupValidator.PersistentPath, OpenSceneMode.Single);
+            EditorSceneManager.OpenScene(SceneSetupValidator.CombatPath, OpenSceneMode.Additive);
+            FieldLayout.SetBossArena(false);
+            var cam = Camera.main;
+            var player = GameObject.Find("Player");
+            FitPlayerSprite(player);
+            var visuals = Object.FindFirstObjectByType<StageVisuals>();
+            visuals.Build();
+            PlaceWorld(cam, visuals, player, 6f, FieldBounds.GroundY);
+            var pc = PixelCanvas.Create(cam);
+            foreach (var s in pc.GetComponents<PxScreen>()) s.HideForCapture();
+            float feet = FieldBounds.GroundY;
+            var flashMat = AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/SpriteFlash.mat");
+            var catalog = AssetDatabase.LoadAssetAtPath<MonsterCatalog>("Assets/Data/Enemies/MonsterCatalog.asset");
+            var grunt = catalog.Find(EnemyType.Grunt);
+            var skin = grunt.SkinFor(1);
+            Sprite art = skin != null && skin.move != null && skin.move.frames.Length > 0 ? skin.move.frames[0] : grunt.sprite;
+            Vector2 playerC = (Vector2)player.transform.position + Vector2.up * 0.4f;
+            // 바닥·왼쪽 발판·오른쪽 발판에 흩어 둔 적
+            var spots = new System.Collections.Generic.List<Vector2>();
+            foreach (float x in new[] { 1.2f, 2.6f, 4.2f, 7.4f, 8.3f, 9.0f, 10.6f }) spots.Add(new Vector2(x, feet + 0.25f));
+            foreach (float x in new[] { 1.6f, 3.4f, 5.0f }) spots.Add(new Vector2(x, feet + 1.63f));
+            foreach (float x in new[] { 8.0f, 9.4f, 11.0f }) spots.Add(new Vector2(x, feet + 1.63f));
+            Vector2 Center(Vector2 p) => p + new Vector2(0f, DotScale.Units(art.rect.height * 0.5f - art.pivot.y));
+
+            // (이름, 중심, 반경, 시작 시각)
+            var events = new (string name, Vector2 at, float r, float t0)[]
+            {
+                ("등불", Center(spots[4]), 2.2f, 0.2f),
+                ("문턱의시계", playerC, 6f, 1.3f),
+                ("종언의종", playerC, 14f, 2.5f),
+            };
+            const float WaveSpeed = 14f;   // 유닛/초 — 가운데에서 바깥으로 번개가 퍼지는 속도
+            const float Dt = 1f / 30f, Total = 3.7f;
+            var variants = new (string name, bool pillar)[] { ("A_적마다_하얀번개", false), ("B_하얀번개_가운데전기기둥", true) };
+            foreach (var v in variants)
+            {
+                string dir = Path.Combine(outDir, v.name);
+                Directory.CreateDirectory(dir);
+                var made = new System.Collections.Generic.List<GameObject>();
+                var flashes = new System.Collections.Generic.List<SpriteRenderer>();
+                foreach (var sp in spots)
+                {
+                    var e = new GameObject("PreviewEnemy", typeof(SpriteRenderer));
+                    e.transform.position = sp;
+                    e.transform.localScale = Vector3.one * DotScale.Value;
+                    e.GetComponent<SpriteRenderer>().sprite = art;
+                    var f = new GameObject("Flash", typeof(SpriteRenderer));
+                    f.transform.SetParent(e.transform, false);
+                    var fsr = f.GetComponent<SpriteRenderer>();
+                    fsr.sprite = art; fsr.sharedMaterial = flashMat; fsr.sortingOrder = 1; fsr.color = new Color(1f, 1f, 1f, 0f);
+                    flashes.Add(fsr);
+                    made.Add(e);
+                }
+                // 미리 정한 시각표: (그림 키, 위치, 시작, fps)
+                var plan = new System.Collections.Generic.List<(string key, Vector2 at, float t, float fps, int order)>();
+                var hitTimes = new float[spots.Count];
+                for (int i = 0; i < hitTimes.Length; i++) hitTimes[i] = -9f;
+                foreach (var ev in events)
+                {
+                    if (v.pillar) plan.Add((ChronoSavior.Combat.VfxKeys.MechanicWarp, ev.at + new Vector2(0f, DotScale.Units(58f) - 0.4f), ev.t0 - 4f / 24f, 24f, 4));
+                    for (int i = 0; i < spots.Count; i++)
+                    {
+                        Vector2 c = Center(spots[i]);
+                        float d = Vector2.Distance(c, ev.at);
+                        if (d > ev.r) continue;
+                        float th = ev.t0 + d / WaveSpeed;
+                        plan.Add((ChronoSavior.Combat.VfxKeys.MechanicRelayAura, c, th, 30f, 5));
+                        hitTimes[i] = Mathf.Max(hitTimes[i], th);
+                        // 같은 적이 이번 사건에 맞은 시각(깜빡임용) — 사건마다 따로
+                        flashPlan.Add((i, th));
+                    }
+                }
+                var players = new ChronoSavior.Combat.VfxPlayer[plan.Count];
+                int frame = 0;
+                for (float t = 0f; t <= Total; t += Dt, frame++)
+                {
+                    for (int k = 0; k < plan.Count; k++)
+                    {
+                        if (t < plan[k].t) continue;
+                        if (players[k] == null) { players[k] = ChronoSavior.Combat.VfxPlayer.Spawn(plan[k].key, plan[k].at, DotScale.Value, plan[k].fps, plan[k].order); if (players[k] != null) made.Add(players[k].gameObject); }
+                        if (players[k] != null) players[k].SetTimeForCapture(t - plan[k].t);
+                    }
+                    for (int i = 0; i < flashes.Count; i++)
+                    {
+                        float a = 0f;
+                        foreach (var (idx, th) in flashPlan) if (idx == i && t >= th) a = Mathf.Max(a, Mathf.Max(0f, 1f - (t - th) * 6f) * 0.75f);
+                        flashes[i].color = new Color(1f, 1f, 1f, a);
+                    }
+                    Render(pc, cam, dir, $"f_{frame:000}", 1920, 1080, 3f);
+                }
+                flashPlan.Clear();
+                foreach (var go in made) if (go != null) Object.DestroyImmediate(go);
+            }
+            Debug.Log("[CaptureUiPreview] 메카닉 공용 유물 후보 저장: " + outDir);
+            EditorApplication.Exit(0);
+        }
+        static readonly System.Collections.Generic.List<(int idx, float t)> flashPlan = new System.Collections.Generic.List<(int idx, float t)>();
+
         static void Shot(PixelCanvas pc, Camera cam, string dir, string name, System.Action<bool> show)
         {
             HideAll(pc);

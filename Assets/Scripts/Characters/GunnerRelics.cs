@@ -204,13 +204,13 @@ namespace ChronoSavior.Characters
                 VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder);
                 RelicFx.After(lead, () =>
                 {
-                    RelicFx.Circle(center, LetterRadius, mult, RelicFx.Cyan, null, showRing: false);
+                    RelicFx.Circle(center, LetterRadius, mult, RelicFx.Cyan, null, showRing: false, gunnerZaps: false);
                     if (!gold) return;
                     // 각성 — 같은 자리에 한 번 더(옅게)
                     RelicFx.After(awakenDelay - lead, () =>
                     {
                         VfxPlayer.Spawn(VfxKeys.MechanicWarp, boomAt, DotScale.Value, LetterBoomFps, RelicFx.SortingOrder, tint: new Color(1f, 1f, 1f, 0.6f));
-                        RelicFx.After(lead, () => RelicFx.Circle(center, LetterRadius, mult * awakenPower, RelicFx.Cyan, null, showRing: false));
+                        RelicFx.After(lead, () => RelicFx.Circle(center, LetterRadius, mult * awakenPower, RelicFx.Cyan, null, showRing: false, gunnerZaps: false));
                     });
                 });
             });
