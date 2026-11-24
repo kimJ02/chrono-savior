@@ -363,9 +363,8 @@ public class BlobLordBossTests
     {
         var target = NewTarget(3f, FieldBounds.GroundY);
         var boss = NewBoss(11f, target.transform);
-        BoulderProjectile rock = null; bool landed = false;
-        Vector2 landAt = default;
-        boss.Thrown += b => { rock = b; b.Landed += r => { landed = true; landAt = r.transform.position; }; };
+        BoulderProjectile rock = null;
+        boss.Thrown += b => { rock = b; };
         BoulderProjectile first = null;
         boss.Thrown += b => { if (first == null) first = b; };
         yield return Until(() => rock != null);
