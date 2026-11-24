@@ -374,6 +374,60 @@ public class EnemySpawnAndMoveTests
     }
 
     /// <summary>
+    /// 2026-11-24 사용자 "몬스터가 플랫폼 끝에 서 있어도 진동" — 발판 아래(오른쪽 바깥)의 플레이어를 쫓다 끝에 닿으면
+    /// 돌아서지 않고 끝에서 플레이어 쪽을 본 채 선다(예전엔 추적·끝 반전이 번갈아 매 프레임 좌우로 떨었다).
+    /// </summary>
+    [UnityTest]
+    public IEnumerator EnemyMove_ChasingAtPlatformEdge_StandsStill_NoJitter()
+    {
+        int groundLayer = LayerMask.NameToLayer("Ground");
+        float cx = FieldLayout.Platforms[0, 0], cy = FieldLayout.Platforms[0, 1], w = FieldLayout.Platforms[0, 2];
+        var platformGO = new GameObject("TestPlatform0");
+        platformGO.layer = groundLayer;
+        platformGO.transform.position = new Vector3(cx, cy, 0f);
+        var pcol = platformGO.AddComponent<BoxCollider2D>();
+        pcol.size = new Vector2(w, FieldLayout.PlatformThickness);
+        pcol.usedByEffector = true;
+        platformGO.AddComponent<PlatformEffector2D>().useOneWay = true;
+
+        const float radius = 0.3f;
+        float landingY = FieldLayout.PlatformLandingY(0, radius);
+        float rightEdgeX = FieldLayout.PlatformRightX(0);
+        var playerGO = new GameObject("TestPlayer");
+        playerGO.tag = "Player";
+        playerGO.transform.position = new Vector3(rightEdgeX + 1.5f, FieldBounds.GroundY, 0f); // 발판 오른쪽 바깥 아래
+        var monsterGO = new GameObject("TestEdgeMonster");
+        monsterGO.tag = "Enemy";
+        monsterGO.transform.position = new Vector3(rightEdgeX - 0.4f, landingY, 0f);
+        monsterGO.AddComponent<CircleCollider2D>().radius = radius;
+        var move = monsterGO.AddComponent<EnemyMove>();
+        move.Target = playerGO.transform;
+        typeof(EnemyMove).GetField("spawnProtectTimer", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(move, 0f);
+
+        int flips = 0;
+        float x0 = 0f;
+        try
+        {
+            for (int i = 0; i < 40; i++) yield return new WaitForFixedUpdate(); // 끝까지 걸어간다
+            x0 = monsterGO.transform.position.x;
+            int last = move.Direction;
+            for (int i = 0; i < 40; i++)
+            {
+                yield return null;
+                if (move.Direction != last) { flips++; last = move.Direction; }
+            }
+            Assert.AreEqual(1, move.Direction, "끝에서 플레이어(오른쪽)를 안 보고 돌아섰다");
+            Assert.AreEqual(x0, monsterGO.transform.position.x, 0.02f, "끝에 서 있지 않고 왔다 갔다 했다");
+            Assert.AreEqual(landingY, monsterGO.transform.position.y, 0.05f, "발판에서 떨어졌다");
+        }
+        finally
+        {
+            Object.Destroy(monsterGO); Object.Destroy(playerGO); Object.Destroy(platformGO);
+        }
+        Assert.AreEqual(0, flips, "발판 끝에서 방향이 왔다 갔다 했다(진동)");
+    }
+
+    /// <summary>
     /// 스폰 X좌표가 필드 전체 균등 랜덤이 아니라, 원본처럼 발판 중심/바닥그리드 지점(FieldLayout)
     /// 중 하나 근처(그 지점의 폭 안)에만 찍히는지 확인한다. 여러 번 스폰해서 전부 어떤 스폰
     /// 포인트의 창 안에 들어가는지 검사 — 하나라도 창 밖이면 "아무 데서나" 스폰되는 셈이라 실패.

@@ -291,16 +291,20 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
     /// </summary>
     public const float FacingDeadZoneX = 0.1f;
     bool holdX;
+    /// <summary>이번 프레임에 플레이어를 쫓는 중인가(추적 범위 안) — 발판 끝에서 돌아서지 않고 멈춰 서는 데 쓴다.</summary>
+    bool chasing;
 
     /// <summary>원본: `if (Math.abs(dx) < 300) dir = sign(dx) || dir; else { wander }` — 단 바로 위(겹치면 멈춤)는 편차.</summary>
     void UpdateDirection()
     {
         holdX = false;
+        chasing = false;
         if (target != null)
         {
             float dx = target.position.x - transform.position.x;
             if (Mathf.Abs(dx) < aggroRangeX)
             {
+                chasing = true;
                 if (Mathf.Abs(dx) < FacingDeadZoneX) { holdX = true; return; } // 겹쳤다 — 그 방향 그대로 선다
                 dir = dx > 0f ? 1 : -1;
                 return;
@@ -340,15 +344,18 @@ public class EnemyMove : MonoBehaviour, ISpawnProtectable, IGravityAffectable
 
             float leftEdge = left + platformEdgeMargin;
             float rightEdge = right - platformEdgeMargin;
+            // 플레이어를 쫓다 끝에 닿았으면 돌아서지 않고 끝에서 플레이어 쪽을 보고 선다 —
+            // 돌려도 다음 프레임 추적이 다시 바깥으로 돌려 매 프레임 좌우로 떨었다(2026-11-24 사용자 "플랫폼 끝에 서 있어도 진동").
+            // > **의도적 편차 — 원본은 끝에서 매번 안쪽으로 dir 반전**(추적과 번갈아 떤다). 배회 중이면 원본대로 돌아선다.
             if (transform.position.x < leftEdge)
             {
                 transform.position = new Vector3(leftEdge, transform.position.y, transform.position.z);
-                dir = 1;
+                if (chasing && dir < 0) holdX = true; else dir = 1;
             }
             else if (transform.position.x > rightEdge)
             {
                 transform.position = new Vector3(rightEdge, transform.position.y, transform.position.z);
-                dir = -1;
+                if (chasing && dir > 0) holdX = true; else dir = -1;
             }
             break;
         }
