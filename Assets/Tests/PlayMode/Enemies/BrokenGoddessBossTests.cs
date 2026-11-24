@@ -191,11 +191,22 @@ public class BrokenGoddessBossTests
         yield return Until(() => player.IsGrabbed, 2f);
         Assert.IsTrue(GameInput.PlayerGrabbed, "붙잡힌 동안은 점프·공격·스킬도 잠긴다");
 
+        // 2026-11-24: 붙잡아둠 동안엔 여신상의 들어 올린 주먹에 들려 있다(앞에 서 있는 게 아니라).
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabHold, 2f);
+        yield return new WaitForFixedUpdate();
+        Vector2 held = BrokenGoddessBoss.HandPoint(boss.transform.position, -1, BrokenGoddessBoss.GrabHeldHand); // 보스(9)가 왼쪽(8)을 봄
+        Assert.AreEqual(held.x, player.transform.position.x, BrokenGoddessBoss.GrabHoldShake + 0.02f, "주먹 x에 들려 있다");
+        Assert.AreEqual(held.y, player.transform.position.y, 0.02f, "주먹 높이에 들려 있다");
+        Assert.Greater(player.transform.position.y, boss.transform.position.y, "보스 몸 가운데보다 위로 들어 올려졌다");
+        var bossBody = boss.GetComponent<SpriteRenderer>();
+        Assert.AreEqual(BrokenGoddessBoss.GrabFrontOrder, bossBody.sortingOrder, "잡는 동안 여신상(손)이 캐릭터보다 앞에 그려진다");
+
         yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
         Assert.AreEqual(1, damageable.hits - hitsBefore, "이번 잡기로는 한 번만 맞아야 한다");
         Assert.AreEqual(200f * BrokenGoddessBoss.GrabDamagePct, damageable.taken - takenBefore, 0.01f);
         Assert.IsFalse(player.IsGrabbed, "끝나면 풀려난다");
         Assert.IsFalse(GameInput.PlayerGrabbed, "풀려나면 입력 잠금도 같이 풀린다");
+        Assert.AreEqual(0, bossBody.sortingOrder, "놓아 주면 정렬이 원래대로");
     }
 
     /// <summary>요청서 2절 "잡기에 실패하면 피해를 주지 않는다 / 바로 후딜레이로" — 판정이 열리기 전에 플레이어가 멀어지면 실패.</summary>
@@ -272,6 +283,7 @@ public class BrokenGoddessBossTests
         var target = NewTarget(8f);
         target.maxHp = 200f;
         var boss = NewBoss(9f, target.transform); // 보스가 왼쪽(target)을 보도록 방향이 고정된다
+        boss.ComboChanceRuntime = 0f; // 휘두르기 뒤 연계 잡기(2026-11-24)가 끼어들지 않게 — 이 테스트는 휘두르기 후딜까지 본다
 
         bool wasSweepPrep = false;
         yield return Until(() =>
@@ -307,6 +319,96 @@ public class BrokenGoddessBossTests
         // 때까지 기다리면 그 변화의 순간을 놓친다.
         yield return Until(() => boss.LastPattern != first, 8f);
         Assert.AreNotEqual(first, boss.LastPattern, "먼저 쓴 패턴은 쿨타임에 걸려 바로 다음엔 못 쓴다");
+    }
+
+    // ───────────────────────── 보스 강화(2026-11-24) ─────────────────────────
+
+    /// <summary>멀리(돌진 잡기 거리 밖) 있으면 공통 보스보다 빠르게(<see cref="BrokenGoddessBoss.ApproachSpeed"/> = 0.9의 1.5배) 걸어온다.</summary>
+    [UnityTest]
+    public IEnumerator Approach_IsFasterThanCommonBoss()
+    {
+        var target = NewTarget(1f);
+        var boss = NewBoss(14f, target.transform); // 13유닛 — 돌진 잡기(최대 8) 밖
+        float t = 0f;
+        while (t < 0.2f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; } // 첫 착지·출발 프레임은 빼고 잰다
+        float x0 = boss.transform.position.x;
+        t = 0f;
+        while (t < 0.5f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
+        float speed = (x0 - boss.transform.position.x) / t;
+        // 바닥 마찰로 실제 걸음은 지정값(1.35)보다 조금 느리다(2026-11-24 사용자 실행 1.14 — 출발 프레임 포함 값). 공통 보스보다 확실히 빠른지만 본다.
+        Assert.AreEqual(1.35f, BrokenGoddessBoss.ApproachSpeed, 1e-4f, "지정 접근 속도 = 공통 보스 0.9의 1.5배");
+        Assert.Greater(speed, Boss.MoveSpeed * 1.2f, "실제 걸음도 공통 보스(0.9)보다 확실히 빠르다");
+    }
+
+    /// <summary>돌진 잡기 — 잡기 사거리 밖(3~8유닛)이면 경고 뒤 미끄러져 와서 잡고, 기존 잡기처럼 끌어당겨 한 번 피해(최대 체력 20%).</summary>
+    [UnityTest]
+    public IEnumerator DashGrab_FromMidRange_GrabsAndDamagesOnce()
+    {
+        var player = NewGrabbablePlayer(2f, out Dummy damageable);
+        damageable.maxHp = 200f;
+        var boss = NewBoss(9f, player.transform); // 7유닛 — 첫 선택(1초 걸어온 뒤 약 5.6)까지도 잡기(3) 밖, 돌진(8) 안
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.DashWarn, 6f);
+        Assert.AreEqual(BrokenGoddessBoss.Pattern.DashGrab, boss.LastPattern);
+        yield return Until(() => player.IsGrabbed, 3f);
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.GrabRecover, 4f);
+        Assert.AreEqual(1, damageable.hits, "한 번만 맞는다");
+        Assert.AreEqual(200f * BrokenGoddessBoss.GrabDamagePct, damageable.taken, 0.01f);
+        Assert.IsFalse(player.IsGrabbed, "끝나면 풀려난다");
+    }
+
+    /// <summary>돌진 잡기를 피하면(경고 중 보스 뒤로) 아무 피해 없이 멈춰서 후딜.</summary>
+    [UnityTest]
+    public IEnumerator DashGrab_Dodged_NoDamage_Recovers()
+    {
+        var player = NewGrabbablePlayer(2f, out Dummy damageable);
+        var boss = NewBoss(9f, player.transform);
+
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.DashWarn, 6f);
+        // 방향은 이미 고정 — 보스 뒤(오른쪽)로 빠진다
+        player.transform.position = new Vector3(boss.transform.position.x + 2f, 0f, 0f);
+        player.GetComponent<Rigidbody2D>().position = player.transform.position;
+        yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.DashRecover, 3f);
+        Assert.AreEqual(0, damageable.hits, "피했으니 피해 없음");
+        Assert.IsFalse(player.IsGrabbed);
+    }
+
+    /// <summary>잡기·휘두르기는 사거리(3) 끝자락이 아니라 60%(1.8) 안에 들어와야 시작한다(2026-11-24 사용자) — 그 전엔 걸어 들어온다.</summary>
+    [UnityTest]
+    public IEnumerator Engage_WalksInsideBeforeAttacking()
+    {
+        var target = NewTarget(6.5f);
+        var boss = NewBoss(9f, target.transform); // 2.5 — 사거리 안이지만 시작 거리(1.8) 밖, 돌진(3~) 거리도 아님
+        float distAtStart = -1f;
+        yield return Until(() =>
+        {
+            var st = boss.CurrentState;
+            if (st == BrokenGoddessBoss.State.GrabPrep || st == BrokenGoddessBoss.State.SweepPrep)
+            {
+                distAtStart = Mathf.Abs(target.transform.position.x - boss.transform.position.x);
+                return true;
+            }
+            return false;
+        }, 6f);
+        Assert.LessOrEqual(distAtStart, BrokenGoddessBoss.GrabEngage + 0.1f, "시작 거리 안까지 걸어 들어온 뒤 공격");
+    }
+
+    /// <summary>연계 공격(2026-11-24) — 휘두르기가 끝나면(잡기 쿨이 돌았으면) 후딜 없이 바로 잡기로 잇는다.</summary>
+    [UnityTest]
+    public IEnumerator Combo_SweepChainsIntoGrab()
+    {
+        var target = NewTarget(8f);
+        var boss = NewBoss(9f, target.transform);
+        boss.ComboChanceRuntime = 1f;
+        bool combo = false;
+        for (int attempt = 0; attempt < 4 && !combo; attempt++)
+        {
+            yield return Until(() => boss.CurrentState == BrokenGoddessBoss.State.SweepActive, 12f);
+            yield return Until(() => boss.CurrentState != BrokenGoddessBoss.State.SweepActive, 2f);
+            combo = boss.CurrentState == BrokenGoddessBoss.State.GrabPrep; // 잡기 쿨이 안 돌았으면 이번엔 후딜 — 다음 휘두르기를 본다
+        }
+        Assert.IsTrue(combo, "휘두르기 직후 후딜 없이 잡기 준비로");
+        Assert.AreEqual(BrokenGoddessBoss.Pattern.Grab, boss.LastPattern);
     }
 
     // ───────────────────────── 예외 처리 ─────────────────────────

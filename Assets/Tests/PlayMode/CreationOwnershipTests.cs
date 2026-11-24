@@ -47,7 +47,7 @@ public class CreationOwnershipTests
         ["Characters/MageProjectile.cs"]   = (Kind.CombatObject, "마법사 마탄 — 프리팹(Prefabs/Combat/MageBolt)을 세운다. 프리팹은 MageAttack이 넘긴다. 갈래별 탄 그림(라이선스 프레임)이 있으면 그림 자식에 재생기(VfxPlayer)를 붙인다"),
         ["Enemies/EnemyBolt.cs"]           = (Kind.CombatObject, "적 탄 — 프리팹(Prefabs/Combat/EnemyBolt)을 세운다. 프리팹은 쏘는 몹(해골 궁수·보스 프리팹)이 넘긴다"),
         ["Enemies/BoulderProjectile.cs"]   = (Kind.CombatObject, "덩어리 지배자 조약돌 — 프리팹(Prefabs/Combat/BlobLordBoulder)을 세운다. 프리팹은 보스 프리팹(Enemy_BlobLord)이 넘긴다(2026-11-10)"),
-        ["Enemies/BlobLordBoss.cs"]        = (Kind.VisualEffect, "바닥 빨간 경고 2개(점프·투척) — 프리팹(Prefabs/Combat/GroundWarning)을 보스가 살아 있는 동안 하나씩 세워 재사용, 그림만(판정은 보스가)(2026-11-10)"),
+        ["Enemies/BlobLordBoss.cs"]        = (Kind.VisualEffect, "바닥 빨간 경고(점프 1 + 투척 돌마다 최대 5) — 프리팹(Prefabs/Combat/GroundWarning)을 보스가 살아 있는 동안 세워 재사용, 연속 투척용 든 돌 그림·경로 선은 프리팹 자식을 복제(2026-11-24), 그림만(판정은 보스가)(2026-11-10)"),
         ["Enemies/BrokenGoddessBoss.cs"]   = (Kind.VisualEffect, "바닥 경고 2개(잡기 사각·휘두르기 부채꼴) — 프리팹(warningPrefab, 기존 GroundWarning 재사용)을 보스가 살아 있는 동안 하나씩 세워 재사용, 그림만(판정은 보스가)(2026-11-18)"),
         ["Systems/ExpOrb.cs"]              = (Kind.CombatObject, "경험치 구슬 — 프리팹(Prefabs/Combat/ExpOrb)을 세운다. 프리팹은 떨구는 스포너가 넘긴다"),
         ["Characters/GunnerDrone.cs"]      = (Kind.CombatObject, "메카닉 드론 — 프리팹(Prefabs/Combat/GunnerDrone)을 세운다. 프리팹은 GunnerAttack이 넘긴다. 문서 드론 그림(라이선스 프레임 재생기)·빛 원·돌아가는 호 자식(2026-11-09)"),

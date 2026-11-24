@@ -5,6 +5,9 @@
 
 ## 지금 상태 (2026-11-05)
 
+> **지금(2026-11-24~) — 1·2지역 보스 강화 스프린트, 브랜치 `boss-level`**(사용자 "보스가 너무 쉽다"). 범위·수치는 [`HANDOFF.md`](HANDOFF.md) 맨 위, 기록은 로그 (165).
+> 1지역 덩어리 지배자: 몸통 접촉 피해(최대 체력 8%) + 체력 50% 이하 연속 점프 강하 3번 + 착지 0.5초 전 고정 + 조약돌 연속 투척(3개·분노 5개). 2지역 부서진 여신상: 접촉 피해 없이 더 빠르게(접근 1.5배·템포) + 돌진 잡기 + 사거리 60% 안에서 공격 + 연계(휘두르기→잡기)·같은 패턴 2연속.
+
 > **최종 목표가 바뀌었다(2026-09-30)**: 원본을 그대로 옮기는 게 아니라, **원본을 기준으로 팀 회의에서 정한 개선을 반영한다.**
 > 기본값은 여전히 원본 동작이고, 원본과 다른 점을 발견하면 사용자에게 짚는다(`CLAUDE.md` 작업 규칙 첫 항목).
 
@@ -183,6 +186,7 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 확인 필요 / 막힌 것
 
+- **[2026-11-24] `AttackMoveLockTests.Mage_LocksWhileChargingAndFirePose_ThenReleases`가 새 PC에서 실패**("발사 자세 동안은 아직 제자리", None) — 발사 자세 0.1초를 `yield return null` 한 프레임 뒤에 확인해서 그 프레임이 0.1초보다 길면 실패하는 타이밍 의존 테스트. 이번 보스 작업과 무관(Characters는 안 건드림). 다시 돌려도 나오면 고칠 것.
 - **[2026-11-23, 사용자 확인] 화면에 보이는 캐릭터 이름은 "살수"(예전 "섬영")** — 세이브 슬롯 요약은 로그 (163)에서 고쳤다. 아직 "섬영"으로 보이는 곳 둘: 유물 설명 상자 "섬영 전용"(`Core/ItemDatabase.OwnerName`), 업적 설명 "섬영 빌드 5층 완성"(`Core/Achievements` blade5). 에디터 툴팁 `CharacterArtSet`도 "섬영". 작은 글자 수정이라 `main` 후속 커밋으로 고치면 된다(코드 주석·테스트 메시지의 "섬영"은 개발용이라 그대로).
 - **[2026-11-23, 사용자] 스테이지 선택의 스테이지 칸 고르기·들어가기 방식이 원래부터 어색하다 — 나중에 고친다**(프리팹 8호 전부터 있던 동작, 이번엔 안 바꿈).
   스테이지 칸에 마우스를 올리면 그 칸이 바로 "고른 스테이지"가 되어 숫자가 노랗게 바뀌고(`OnNavChanged`가 `stage`를 바꿈), 키보드로 칸을 지정한 뒤 확인 → "원정 떠나기"로 넘어가 한 번 더 눌러야 들어간다(`PickStage`).
@@ -313,6 +317,30 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-24 (167)** — **[사용자 세션] 여신상 잡기 — 손에 들린 모습 — `boss-level`**.
+  - 사용자: "잡기인데 캐릭터가 끌려가서 여신상 앞에 서 있기만 하고 손에 들려 있지 않다". 원인: 예전 끌어당기기는 높이를 그대로 두고 보스 앞 0.7유닛 땅(`GrabAnchorOffset`)으로 x만 옮겼다 — 그림의 주먹 자리와 무관.
+  - **`BrokenGoddessBoss`**: 잡기 그림(100×64)에서 주먹 가운데를 재서 `GrabReachHand`(앞 30px·아래 13px, 그림 4·5번)·`GrabHeldHand`(앞 7px·위 7px, 그림 6·7번), 1px = `GrabArtPixel`(1.5/64). `HandPoint(보스 위치, 방향, 손)`(맵 안으로 자름). `PullPoint`: 끌어당기기 앞 2/3 처음 자리→뻗은 주먹, 마지막 1/3 뻗은 주먹→들어 올린 주먹(위로 0.15 휘는 길) — 그림이 바뀌는 3등분과 맞춤. `HoldGrabbed`는 들어 올린 주먹 + 좌우 버둥댐 `GrabHoldShake` 0.02. `GrabHoldTime` 0.2→0.4→**0.8**(사용자 "붙잡아두는 시간을 0.8초로"). `GrabAnchorOffset`·`grabStartX/grabHeldY/grabAnchorX` 삭제(→ `grabStart`). 돌진 잡기도 같은 `TryGrab`이라 같이 바뀜.
+  - 테스트: `BrokenGoddessBossTests.Grab_SuccessPullsAndDamagesOncePercentOfMaxHp`에 붙잡아둠 동안 들어 올린 주먹 자리(x는 버둥댐 허용)·보스 가운데보다 위·여신상 정렬 확인 추가. `HANDOFF.md` 3차 조정 표.
+  - 이어서 사용자: "손 위로 캐릭터 머리가 다 보이게, 보이는 건 여신상 손이 우선 — 손과 머리만 보이게". 손 위치를 **주먹 윗변 + 캐릭터 턱 높이**(`GrabChinBelowPivot` 5/128 — 캐릭터 그림 32×48에서 기준점 16px·턱 ≈21px)로: 뻗은 주먹 앞 30·아래 8px, 들어 올린 주먹 앞 7·위 12px(+턱). 들어 올린 주먹 ≈10×10px(0.23유닛)이라 턱 아래 몸(0.22 높이·0.23 폭)이 거의 꼭 가려진다. 잡는 동안(끌어당기기·붙잡아둠) 여신상 몸 `sortingOrder` +`GrabFrontOrder`(2) — 캐릭터(0)·피격 깜빡임(+1) 앞, `ReleaseGrabbedTarget`에서 원래대로(보스 피격 깜빡임은 몸 정렬+1을 매번 다시 읽어 같이 따라간다). 버둥댐 0.02→0.01. 테스트에 정렬 2 → 놓은 뒤 0 확인 추가.
+  - 손 확인할 것: 머리가 주먹 위로 딱 맞게 나오는지(캐릭터마다 턱 높이가 조금 다를 수 있음 — 그림 기준점이 같으니 대체로 맞을 것), 몸이 주먹 아래·옆으로 삐져나오는지.
+  - **검증(2026-11-24)**: Unity를 못 돌려 **미검증** — 사용자 에디터에서 PlayMode 전체(예상 652 통과 / 실패 3) → 2지역 보스 잡기 눈으로 확인.
+- **2026-11-24 (166)** — **[사용자 세션] 보스 강화 2차 조정(플레이 피드백) — `boss-level`**.
+  - 사용자: "1지역은 낙하 직전까지 쫓아와 피하기 어렵다 → 0.5초 전쯤 추적 멈춤 / 돌던지기는 너무 쉽다 → 보스 근처에 개수를 늘려 시간차로 생성·발사 / 2지역은 사거리 끝자락에서 공격해 피하기 쉽다 → 안쪽에 있어야 공격 / 휘두르기·잡기 반복이라 예측이 쉽다 → 변주". 질문으로 확정: 돌 3개·0.4초(분노 5개, 돌마다 10%), 시작 거리 60%, 변주 = 연계 공격 + 같은 패턴 연속 허용.
+  - **`BlobLordBoss`**: `LockBeforeImpact` 0.3→**0.5**. 투척을 **연속 투척**으로 — `ThrowPrep` 뒤 `ThrowWarn` 상태가 투척 전체(길이 (n−1)×0.4+0.6): 돌 i는 i×`VolleyInterval`에 보스 둘레(`StonePosition`, 가로 `VolleySpread` 0.55)에 생겨 그 순간 플레이어 발밑(근거리 보정 포함)을 노리고 경고·경로 선을 띄운 뒤 `ThrowWarn`초에 날아감(유도 없음). `VolleyCount` 3 · `VolleyCountEnraged` 5 · `BoulderDamagePct` 0.14→**0.10**. 0번 돌은 프리팹의 `heldBoulder`·`throwPathLine`·`throwWarning`, 나머지는 `Awake`에서 복제(`BuildVolleyParts`). 공개 `VolleySize`, `ThrowTarget`은 첫 돌 끝점. 옛 `BeginThrowWarn`/`Throw`/`ShowHeld`는 `BeginVolley`/`UpdateVolley`/`AimStone`/`ThrowStone`/`ShowHeldStone`/`HideVolley`로.
+  - **`BrokenGoddessBoss`**: `EngageRatio` 0.6 — `GrabEngage`·`SweepEngage` 1.8 안이어야 시작, 접근은 그 거리까지(판정 3은 그대로, 돌진은 여전히 3~8) · `MaxConsecutive` 1→**2** · **연계 공격** `TryComboGrab`: 휘두르기 판정이 끝날 때 `ComboChance` 0.4(테스트용 `ComboChanceRuntime`)로 후딜 없이 잡기(`ComboGrabPrep` 0.25 — `GrabPrep`이 이제 `stateDur`로 끝을 본다), 잡기 쿨이 돌았고 사거리 3 안일 때만.
+  - 테스트: `BlobLordBossTests` 투척 둘 갱신(서 있는 대상은 돌 3개 다 맞음 / 첫 돌만 유도 없음 확인) + 새 2(3개 시간차·보스 근처 출발 / 분노 5개) · `BrokenGoddessBossTests` 휘두르기 테스트에 연계 0 + 새 2(시작 거리 안까지 걸어 들어옴 / 연계 휘두르기→잡기) · `CreationOwnershipTests`(덩어리 지배자 생성 이유 갱신) · `HANDOFF.md` 2차 조정 표.
+  - **검증(2026-11-24)**: 이 세션은 Unity를 못 돌려 **미검증** — 사용자 에디터에서 PlayMode 전체(예상 652 통과 / 실패 3 — 기존 2 + 마법사 타이밍) → 1·2지역 보스전 손 확인.
+- **2026-11-24 (165)** — **[사용자 세션] 1·2지역 보스 강화 — 브랜치 `boss-level`**(새 PC의 클론 `D:\그냥 과제 파일들\yokai_unity-main\yokai_unity`에서 작업, 원래 데스크탑으로 옮길 예정).
+  - 사용자 결정(2026-11-24, 질문 3번으로 확정): 대상 = 1지역 덩어리 지배자·2지역 부서진 여신상, 방향 = "너무 쉽다 → 강화", 패턴은 제안을 받아 고름.
+  - **1지역 `BlobLordBoss`**: ① 몸통 접촉 피해 = 대상 최대 체력 `ContactDamagePct` 8%(공중에 뜬 동안 0) — `EnemyMove.TryAttack`이 `attackPower × 배수`를 주므로 배수를 `최대 체력×8%÷attackPower`로 돌려준다(예전엔 늘 0). ② 체력 `EnrageRatio` 50% 이하에서 추적 점프 강하가 **연속 점프 강하 3번**(`ChainJumps`) — 사이 `ChainGap` 0.35초(땅, 맞는다)·추적 `ChainTrack` 0.6초·1·2번째 착지 `ChainImpactDamagePct` 12%·마지막 20%·후딜은 마지막 뒤에만. 새 상태 `State.ChainGap`, 공개 `IsEnraged`·`JumpsLeft`.
+  - **2지역 `BrokenGoddessBoss`**: 접촉 피해는 그대로 없음, 대신 ① 접근 `ApproachSpeed` 1.35(공통 보스 0.9의 1.5배) ② 준비 ×0.8(잡기 0.6→0.48·휘두르기 0.5→0.4)·후딜 ×0.7(1.2→0.84·1.0→0.7)·쿨 ×0.75(5→3.75·4→3), 경고 시간은 그대로(피할 수는 있게). ③ 새 패턴 **돌진 잡기**(`Pattern.DashGrab`, 상태 `DashPrep/DashWarn/DashRun/DashRecover`): 거리 3~8이면 방향 고정 0.5 → 바닥 직선 경고 0.5 → 초당 8로 최대 6 미끄러짐 → 몸 앞 1유닛 안이면 기존 잡기(끌어당김·붙잡아 둠·피해 20%) → 빗나가면 후딜 1.2, 쿨 6. 그림은 잡기 그림을 빌린다(준비 0·경고 1·돌진 2).
+  - 파일: `Enemies/BlobLordBoss.cs` · `Enemies/BrokenGoddessBoss.cs` · 테스트 `BlobLordBossTests`(+3: 접촉 % / 분노 3연속 / 평소 1번, 기존 "접촉 0" 검사를 "땅에선 접촉 피해 있음"으로) · `BrokenGoddessBossTests`(+3: 접근 속도 / 돌진 잡기 성공 / 돌진 잡기 회피) · `HANDOFF.md`(새 스프린트 절) · `CLAUDE.md`(지금 상태).
+  - **1차 검증(2026-11-24, 사용자 에디터 — 새 PC)**: 실패 6건. 내 변경 탓 3건 → 고침:
+    `Jump_ImpactHitsOnceForPercentOfMaxHp`(1 기대, 3 — 이제 땅에선 몸통 접촉 피해가 있어 무적 없는 가짜 대상에 착지 뒤 접촉이 쌓였다 → 착지 순간(`Impacted`)의 값으로 내려찍기 몫만 센다) ·
+    `Approach_IsFasterThanCommonBoss`(1.35±0.2 기대, 1.14 — 바닥 마찰·출발 프레임 → 상수 1.35 확인 + 실제 걸음은 0.2초 뒤부터 재서 공통 보스 ×1.2보다 빠른지만) ·
+    `DashGrab_FromMidRange…`(경고 검사 — 이 테스트의 보스는 프리팹 없이 세워 경고 프리팹이 없다 → 그 검사만 뺌).
+    나머지 3건은 이번 변경과 무관: `Catalog_Region1…`(800 vs 932)·`Relic_Layout…`(55% vs 70%)는 `main`에서 넘어온 기존 실패, `Mage_LocksWhileChargingAndFirePose_ThenReleases`(발사 자세 0.1초를 한 프레임 뒤에 보는 테스트 — 프레임이 0.1초보다 길면 실패, 새 PC 첫 실행 렉으로 보임 → "확인 필요"). 반대로 기존 실패였던 `BossAndShrine…`는 이번엔 안 나왔다.
+  - **2차 검증(2026-11-24, 사용자 에디터)**: PlayMode **648 통과 / 3 실패 / 0 건너뜀** — 실패는 기존 2건 + 마법사 잠금 테스트(타이밍, "확인 필요"). 이어서 플레이 피드백 → 로그 (166).
 - **2026-11-23 (164)** — **[사용자 세션] 프리팹 UI 14호(마지막): 전투 HUD(`CombatHud`) — `feature/ui-prefab-combathud`**(1~13호와 같은 방식, 범위는 사용자 결정 **"틀만 프리팹"**).
   - 모양(피격 붉은 막·플레이어 판(체력 빨강·막대·숫자·골드)·남은 초/토벌/버프 줄/COMBO/포탈 안내 글자·스킬 칸 셋(아이콘·흐림 3조각·덮개 3조각·틀·쿨다운/키/스택 글자)·미니맵 판·보스 판(잔상·빨강·막대·이름·해골)·경험치 바·팝업 글씨 견본, 색 6가지)은 프리팹 `Resources/UI/Views/CombatHudView`.
     값 읽기(전투 창구 `WorldView.Combat`·프로필)·글자·막대 폭·쿨다운 덮개·보스 등장/잔상 연출·해골 자리·팝업 띄우기·버프 줄·가짜 값(`Preview`)은 그대로 코드(`CombatHud`).
