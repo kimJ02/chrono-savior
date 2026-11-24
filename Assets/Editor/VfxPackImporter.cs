@@ -103,6 +103,7 @@ namespace ChronoSavior.Editor
                 }
             // 드론 탄 — 노랑이 파란 메카닉과 따로 노는 효과처럼 보여 파랑으로(2026-11-10 사용자 D-B '발사 강조형', Codex)
             yield return Frames(VfxKeys.MechanicPellet, Projectiles, "PNG/pj4_energy_pellet_small_blue");
+            yield return Frames(VfxKeys.MechanicPelletGold, Projectiles, "PNG/pj4_energy_pellet_small_yellow"); // 자율 포좌 추가 탄(2026-11-24)
             yield return Recolored(Frames(VfxKeys.MechanicDroneMuzzle, Gigapack, "PNG/Sci-fi/scifi_muzzle_flash_003/scifi_muzzle_flash_003_small_yellow"), 155f);
             yield return Recolored(Frames(VfxKeys.MechanicDroneHit, Gigapack, "PNG/Sci-fi/scifi_spark_burst_001/scifi_spark_burst_001_small_yellow"), 155f);
             // 설치기 — 전기 아크형(2026-11-10 사용자 I-B): 피해 순간 적 자리 전기(보라 → 파랑), 중계기 머리 전기 오라

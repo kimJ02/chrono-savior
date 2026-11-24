@@ -51,6 +51,8 @@ namespace ChronoSavior.Combat
         public static readonly string[] LaserParts = { "origin", "center", "impact" };
         public static readonly string[] LaserPhases = { "start", "loop", "end" };
         public const string MechanicPellet = "mechanic/pellet";
+        /// <summary>자율 포좌(유물) 추가 탄 — 같은 에너지 펠렛의 노랑(금색) 그림(2026-11-24 사용자 "금색으로" — 파랑 그림에 금색을 곱하면 초록으로 보였다).</summary>
+        public const string MechanicPelletGold = "mechanic/pellet_gold";
         /// <summary>레이저 차징(맞을 적이 없을 때 총구) — 가져오기 도구가 노랑 차지를 파랑으로 돌린 파생 그림.</summary>
         public const string MechanicCharge = "mechanic/charge";
         /// <summary>레이저에 맞은 적 자리의 작은 파란 충격(기가팩 directional_impact_001 파랑).</summary>
@@ -109,7 +111,7 @@ namespace ChronoSavior.Combat
                     MageChargeLarge, MageChargeSmall, MageChargeLargeViolet, MageChargeSmallViolet, MageFireProjectile, MageFireProjectileLarge, MageBasicProjectile, MageBasicProjectileLarge, MageFireTrail, MageFireTrailSmall, MageBurn, MageFireTrailWide, MageFireTrailLow, MageFireTrailBig,
                     MageFireSmoke, MageDashPuff, MageDashLand, MageGravitySpark, MageGravitySparkLarge,
                     MageGravityOrbSmall, MageGravityOrbLarge, MageFireExplosion, MageGravityExplosion, MageCollapseExplosion, MageCollapseCritical,
-                    MechanicPellet, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
+                    MechanicPellet, MechanicPelletGold, MechanicCharge, MechanicHitSpark, MechanicDrone, MechanicRelayHead,
                     MechanicDroneMuzzle, MechanicDroneHit, MechanicZap, MechanicRelayAura, MechanicWarp, OrbIdle, OrbComet, OrbPickup,
                     AssassinSlash1, AssassinSlash2, AssassinSlash3, AssassinSpin, AssassinHeartbeat,
                     AssassinCrescent, AssassinBolt1, AssassinBolt2, AssassinBurstSpark, AssassinLandRing, AssassinLandBurst, AssassinLandDust, AssassinRipHit,

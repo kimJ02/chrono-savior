@@ -245,13 +245,13 @@ namespace ChronoSavior.Characters
             Relics.Proc("autoTurret");
             int n = Relics.VI("autoTurret", 1);
             float mult = Relics.V("autoTurret", 2);
-            bool gold = Relics.Awakened("autoTurret");
             for (int i = 0; i < n; i++)
             {
                 float deg = n == 1 ? 14f : (i == 0 ? 16f : -16f);
                 Vector2 d = Quaternion.Euler(0f, 0f, deg) * dir;
-                RelicProjectile.Spawn(pos, d, 12f, 0.8f, mult, RelicProjectile.Mode.Homing, VfxKeys.MechanicPellet,
-                                      gold ? RelicFx.Gold : GunnerAttack.LaserColor, 0.3f, 0);
+                // 금색 펠렛 그림 그대로(틴트 없음) — 예전엔 파랑 그림에 금색을 곱해 초록으로 보였다(2026-11-24 사용자 "금색으로")
+                RelicProjectile.Spawn(pos, d, 12f, 0.8f, mult, RelicProjectile.Mode.Homing, VfxKeys.MechanicPelletGold,
+                                      Color.white, 0.3f, 0);
             }
         }
 
