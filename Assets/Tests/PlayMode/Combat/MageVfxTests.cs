@@ -183,26 +183,51 @@ public class MageVfxTests
         Assert.AreEqual(DotScale.Value, shock.transform.localScale.x, 1e-4f, "공통 도트 배율");
     }
 
-    /// <summary>화상 — 불타는 동안 몸에 불꽃이 붙고(정수 월드 배율), 틱마다 주황으로 깜빡이며 피해를 받고, 끝나면 불꽃이 꺼진다(2026-11-09 사용자).</summary>
     [UnityTest]
-    public IEnumerator Burn_ShowsFlame_TicksDamage_ThenGoesOut()
+    public IEnumerator Burn_ShowsRedOverlayAndRisingDots_ThenRestoresBody()
     {
-        AssumeInstalled(VfxKeys.MageBurn);
         NewEnemy(new Vector3(6f, 0.36f, 0f));
-        var enemy = GameObject.Find("TestEnemy").GetComponent<ChronoSavior.Enemies.EnemyHealth>();
+        var enemy = GameObject.Find("TestEnemy").GetComponent<ChronoSavior.Enemies.EnemyHealth>().Equipped();
+        var body = enemy.GetComponent<SpriteRenderer>();
+        Color original = body.color;
+        enemy.burnDuration = 1.5f;
         enemy.ApplyBurn(2);
-        var flame = enemy.transform.Find("BurnFlame");
-        Assert.IsNotNull(flame, "불타는 그림");
-        Assert.IsTrue(flame.gameObject.activeSelf);
-        Assert.AreEqual(ChronoSavior.Enemies.EnemyHealth.BurnFlameScale, flame.lossyScale.x, 1e-3f, "몹 배율과 무관한 정수 배율");
+
+        var overlay = enemy.FlashRenderer;
+        Assert.IsNotNull(overlay);
+        Color red = overlay.color;
+        Assert.AreEqual(1f, red.r);
+        Assert.AreEqual(0f, red.g);
+        Assert.AreEqual(0f, red.b);
+        Assert.That(red.a, Is.InRange(0.01f, 0.99f));
+        Assert.IsTrue(overlay.enabled);
+        Assert.IsNull(enemy.transform.Find("BurnFlame"));
+        var dots = enemy.GetComponentInChildren<VfxDots>();
+        Assert.IsNotNull(dots);
+        var particles = dots.GetComponentsInChildren<SpriteRenderer>();
+        Assert.AreEqual(3, particles.Length);
+        foreach (var particle in particles)
+        {
+            Assert.AreEqual(Color.red, particle.color);
+            Assert.Greater(particle.sortingOrder, overlay.sortingOrder);
+        }
+
+        enemy.TakeDamage(1f, null);
+        Assert.AreEqual(1f, overlay.color.g, "직접 맞으면 흰색 피격 표시");
+        enemy.ApplyBurn(1);
+        CollectionAssert.AreEqual(new[] { dots }, enemy.GetComponentsInChildren<VfxDots>());
+        Assert.AreSame(overlay, enemy.FlashRenderer);
         float hp = enemy.CurrentHp;
-        yield return new WaitForSeconds(enemy.burnTickInterval + 0.1f);
-        Assert.Less(enemy.CurrentHp, hp, "화상 틱 피해");
-        typeof(ChronoSavior.Enemies.EnemyHealth).GetField("burnRemaining", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).SetValue(enemy, 0f); // 화상 시간이 다 됐다
-        yield return null;
-        yield return null;
+        yield return new WaitForSeconds(enemy.burnTickInterval + 0.05f);
+        Assert.Less(enemy.CurrentHp, hp);
+        Assert.AreEqual(red, overlay.color, "화상 틱에도 빨간색을 유지");
+        Assert.IsTrue(overlay.enabled);
+
+        yield return new WaitForSeconds(enemy.burnDuration);
         Assert.AreEqual(0, enemy.BurnStacks);
-        Assert.IsFalse(flame.gameObject.activeSelf, "화상이 끝나면 불꽃도 꺼진다");
+        Assert.IsFalse(overlay.enabled);
+        Assert.IsNull(enemy.GetComponentInChildren<VfxDots>());
+        Assert.AreEqual(original, body.color);
     }
 
     static void NewEnemy(Vector3 pos)

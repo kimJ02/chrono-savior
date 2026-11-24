@@ -69,7 +69,7 @@ public class CreationOwnershipTests
         ["Characters/GunnerZapArc.cs"]     = (Kind.VisualEffect, "설치기 적중 분기 아크(LineRenderer 둘) — 그림만, GunnerZap이 풀로 돌려 쓴다(2026-11-10)"),
         ["Characters/GunnerFieldVfx.cs"]   = (Kind.VisualEffect, "설치기 링크선(레이저 그림 타일)·내부 장판 칠하기(메시)·흰 점 — 그림만, 2026-11-08 GunnerAttack에서 떼어 냄"),
         ["Characters/BladeVfx.cs"]         = (Kind.VisualEffect, "살수 집중 B(배경 어둡게·하트비트·잔상·속도선·궤적 점·파열 흰 잔상)·칼날폭풍(회전베기·잔상 사슬·착지 충격파·파편 프리팹) — 그림만(2026-11-08, 2026-11-10 다시)"),
-        ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 깜빡임 그림 자식·화상 불꽃(라이선스 프레임 재생기 자식)·불씨 점(2026-11-09)"),
+        ["Enemies/EnemyHealth.cs"]         = (Kind.VisualEffect, "피격 흰빛과 화상 빨간색을 몸 모양으로 덧그리는 공용 자식"),
         ["Combat/GravityVortexVfx.cs"]     = (Kind.VisualEffect, "중력장 암흑 구체 그림(키로 불러온 프레임 재생기 자식)·끌어당김 점·중첩 반짝임"),
         ["Combat/RangeRing.cs"]            = (Kind.VisualEffect, "광역 공격 판정 범위 고리(실행 중에 그린 도트 원) — 그림만(2026-11-09 도트 통일)"),
         ["Enemies/EnemyElite.cs"]          = (Kind.VisualEffect, "엘리트 오라·왕관(원본 drawEnemy :4780)·보라 불씨 — 그림만(2026-11-09)"),
