@@ -367,25 +367,7 @@ namespace ChronoSavior.Characters
             // 원본 `placeGunnerTurret`는 `y: p.y` — 발 높이(바닥)에 놓는다.
             SfxEvents.RaiseMechanicTurretSet();
             GunnerTurret.Place(turretPrefab, FeetPosition, Facing, tier)?.PlayArrival(true); // 설치 순간 — 낙하·첫 공격·전력 인입(2026-11-24 D)
-            // 삼각 방전(2026-11-22) — X 한 번에 중계기를 양옆으로 더 놓는다(한도를 넘으면 가장 오래된 것부터 치운다)
-            int extra = GunnerRelics.ExtraRelays;
-            for (int k = 0; k < extra; k++)
-            {
-                float side = (k % 2 == 0 ? 1f : -1f) * (1.4f + (k / 2) * 1.2f);
-                float minX = FieldBounds.MinX + GunnerSpecConfig.TurretEdgeMargin, maxX = FieldBounds.MaxX - GunnerSpecConfig.TurretEdgeMargin;
-                float x = Mathf.Clamp(FeetPosition.x + side * Facing, minX, maxX);
-                // 가장자리에서 잘려 이미 있는 설치기와 겹치면 반대쪽·더 멀리로 옮긴다(겹친 설치기는 장판이 안 생긴다)
-                for (int tries = 0; tries < 4 && TurretNear(x); tries++)
-                    x = Mathf.Clamp(x + (x >= maxX - 0.01f ? -1f : 1f) * 1.2f * (tries + 1) * (tries % 2 == 0 ? 1f : -1f), minX, maxX);
-                if (GunnerTurret.Active.Count >= GunnerSpecConfig.TurretMax(tier))
-                {
-                    GunnerTurret oldest = null;
-                    foreach (var t in GunnerTurret.Active)
-                        if (oldest == null || t.Age > oldest.Age) oldest = t;
-                    oldest?.Remove();
-                }
-                GunnerTurret.Place(turretPrefab, new Vector2(x, FeetPosition.y), Facing, tier)?.PlayArrival(false);
-            }
+            // 삼각 방전의 "X 한 번에 중계기 더 놓기"는 뺐다(2026-11-24 사용자 "한 번에 3개 말고 하나만") — 한도 증가만 남음
             // 화면 흔들림(원본 :2416)은 설치기가 꽂히는 순간으로 옮겼다(GunnerTurret.PlayArrival, 2026-11-24)
             ultCdTimer = ultCdMax = GunnerSpecConfig.TurretUltCooldown(tier) * cdMult;
             GunnerRelics.OnSkillUsed(FeetPosition, true); // 메카닉 세트·잔탄 포켓·교차 전류(2026-11-22)
@@ -396,13 +378,6 @@ namespace ChronoSavior.Characters
         /// 틱마다 링크·내부 장판 피해. 2개 미만이면 틱 누적을 0으로 되돌린다.
         /// (원본은 무기가 메카닉일 때만 계산한다 — 이 키트가 꺼지면 Update 자체가 안 돌아서 같은 결과다.)
         /// </summary>
-        static bool TurretNear(float x)
-        {
-            foreach (var t in GunnerTurret.Active)
-                if (t != null && Mathf.Abs(t.transform.position.x - x) < 0.6f) return true;
-            return false;
-        }
-
         void UpdateField(float dt)
         {
             int t = InstallerTier;

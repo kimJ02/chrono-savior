@@ -11,7 +11,7 @@ namespace ChronoSavior.Characters
     /// - 잔탄 포켓(기본공격, 두 갈래): Z 적중으로 잔탄을 모아 다음 X 때 전기 연쇄로 터뜨린다.
     /// - 프리즘 구경(레이저, Z): 광선 처치 n번마다 광선이 갈라져 주변 적에게 연쇄.
     /// - 자율 포좌(레이저, X): 드론이 n번 쏠 때마다 부채꼴 추가 탄.
-    /// - 삼각 방전(설치, X): 설치 한도 +, X 한 번에 중계기를 더 놓는다(<see cref="ExtraRelays"/> — GunnerAttack이 놓는다).
+    /// - 삼각 방전(설치, X): 설치 한도 +(X 한 번에 더 놓던 건 2026-11-24 사용자 "하나만"으로 뺐다).
     /// - 교차 전류(설치, X): 설치하는 순간 그 자리에서 전류 방출.
     /// - 공성 연결망(설치, X): 장판이 맞힌 틱마다 적에서 적으로 전류가 이어진다.
     /// 세트 3: X 뒤 첫 시그니처 적중 틱 ×2. 세트 5: X 뒤 5초 과부하(광선 굵기 ×1.35·피해 ×1.5 / 장판 틱 ×0.6·피해 ×1.5).
@@ -34,8 +34,6 @@ namespace ChronoSavior.Characters
 
         // ── 킷·설정이 읽는 값 ──
         public static int TurretBonus => Relics.VI("triangleDischarge", 0);
-        /// <summary>X 한 번에 더 놓는 중계기 수(삼각 방전).</summary>
-        public static int ExtraRelays => Relics.VI("triangleDischarge", 1);
         public static bool Overloaded => Time.time < overloadUntil;
         public static float BeamWidthMult => Overloaded ? 1.35f : 1f;
         public static float FieldTickMult => Overloaded ? 0.6f : 1f;

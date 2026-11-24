@@ -132,7 +132,6 @@ public class RelicEffectTests
         Assert.AreEqual(0, GunnerRelics.TurretBonus, "레이저 갈래에 설치 유물이 켜졌다");
         p.gunnerBranch = GunnerBranch.Installer;
         Assert.AreEqual(5 + 2, GunnerSpecConfig.TurretMax(5), "삼각 방전 2랭크 — 설치 한도 +2");
-        Assert.AreEqual(1, GunnerRelics.ExtraRelays, "X 한 번에 중계기 1개 더");
     }
 
     /// <summary>메카닉 레이저 갈래(2026-11-22 사용자 "레이저가 닿기 전에 죽는 적은 없게") — 유물 공격은 레이저가 닿은 적만 고른다.</summary>
