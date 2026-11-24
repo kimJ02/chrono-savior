@@ -317,6 +317,14 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-24 (177)** — **[사용자 세션] 메카닉 총구 — 총알·레이저가 그림의 총구 끝에서 나가게**.
+  - 사용자: "메카닉 레이저랑 총알 둘 다 총구에서 안 나간다". 원인: 원본 숫자 그대로 총알 (발 + 앞 0.30·위 0.38), 빔 (앞 0.26·위 0.38)이었는데 우리 캐릭터 그림 키가 0.375라 **발에서 0.38 = 머리 꼭대기 위**였다.
+  - > **의도적 편차 —** 총구 자리를 원본 숫자 대신 그림에서 잰다: `Character_Gunner_Attack_01·05`(70×48, 기준점 (0.65, 0.667), 왼쪽을 봄)의 총구 끝 = 왼쪽 첫 열 16px·세로 가운데 28.5px → 기준점에서 앞 29.5px·아래 12.5px(128px = 1유닛). `GunnerSpecConfig.MuzzleForward`/`MuzzleAbovePivot`(옛 `BeamOriginForward/Height`·`GunnerAttack.MuzzleForward/Height` 삭제). 총알·빔이 같은 총구.
+  - `GunnerAttack.MuzzlePosition(facing)` = 오브젝트 자리(그림 기준점) + 위 값 × 캐릭터 배율(`lossyScale` — `PlayerRig`가 그림 높이로 정함, 그림을 키워도 따라감). `Fire()`·`GunnerLaserBeam`·`Editor/CaptureUiPreview`가 이걸 쓴다. `OriginalFidelityTests.DefinedApis`에 추가.
+  - 테스트: `GunnerSkillTreeTests` 레이저 1·3·5층 적 자리를 `MuzzlePosition` 기준으로(예전엔 0.38 하드코딩), 새 `Muzzle_BulletAndBeamStartAtTheGunTip`(좌우·배율·빔 같은 자리). `GunnerAttackTests` 주석.
+  - 손 확인할 것: 발사 순간 그림(공격 2·3장은 반동으로 총구가 3~7px 위)과 맞는지, 오른쪽을 볼 때도 총구에 붙는지.
+  - **검증(2026-11-24)**: Unity를 못 돌려 **미검증**.
+
 - **2026-11-24 (176)** — **[사용자 세션] 병합으로 빠진 feature/relics UI 기능 3개를 팀원 프리팹 UI 위에 다시 얹음**(사용자 "다시 내가 업데이트한 걸로"). 프리팹 파일은 고치지 않고 화면 코드가 열릴 때 프리팹 자리를 기준으로 맞춘다.
   1. **로비 ESC 메뉴**: `PauseMenu` 로비 모드(계속·설정·타이틀로 — 저장 후 확인창). 제목·조작키 글자는 프리팹의 "Title"·"Keys"를 로비일 때만 바꾼다. `LobbyMenuTests` 되살림.
   2. **로비 캐릭터 버튼 뺌**: `LobbyHud.HideCharacterButton` — 첫 칸(캐릭터)을 숨기고 업적·설정을 한 칸씩 당긴다(캐릭터는 새 원정·환생 때만, `OpenForRun`).

@@ -86,11 +86,14 @@ namespace ChronoSavior.UI
                 ("메카 레이저", CharacterId.Gunner, 0), ("메카 설치", CharacterId.Gunner, 1),
                 ("섬영 집중", CharacterId.Blade, 0), ("섬영 폭풍", CharacterId.Blade, 1),
             };
-            Px.Text(Content, "TestLabel", "직업 테스트(에디터)", 4f, 336f, 60f, 20f, 8, Px.Hex(0xfac70e)).WithOutline(Px.Ink);
+            // 프리팹 화면(반투명 "Dim" 판 포함)보다 위에 놓는다 — Content는 프리팹보다 먼저 생겨 그 판에 덮여 흐리고 눌리지 않았다(2026-11-24 팀원 프리팹 UI 병합 뒤 사용자)
+            var testLayer = Px.Board(Root);
+            testLayer.name = "ClassTestLayer";
+            Px.Text(testLayer, "TestLabel", "직업 테스트(에디터)", 4f, 336f, 60f, 20f, 8, Px.Hex(0xfac70e)).WithOutline(Px.Ink);
             for (int k = 0; k < tests.Length; k++)
             {
                 var t = tests[k];
-                var b = Px.TextButton(Content, "ClassTest" + k, PxArt.Sliced("Common/button", 4), 66f + k * 86f, 336f, 82f, 20f,
+                var b = Px.TextButton(testLayer, "ClassTest" + k, PxArt.Sliced("Common/button", 4), 66f + k * 86f, 336f, 82f, 20f,
                                       t.label, 9, Color.white, () => EnterClassTest(t.who, t.branch));
                 b.Art.type = Image.Type.Sliced;
             }

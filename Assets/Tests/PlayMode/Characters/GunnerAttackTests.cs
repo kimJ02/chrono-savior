@@ -87,7 +87,7 @@ public class GunnerAttackTests
     public IEnumerator Bullet_DamagesOneEnemyThenDespawns_BecausePierceIsOne()
     {
         // 플레이어·적 둘 다 반지름 0.5 원이 지면(GroundY=0) 위에 서므로 중심이 y=0.5다.
-        // 총구는 원본처럼 **발**에서 0.38 위(발 0 + 0.38 = 0.38)라 적 몸통(0~1.0) 안을 지난다
+        // 총구는 그림의 총구 끝(중심 0.5보다 약 0.1 아래, 2026-11-24 — 예전엔 원본처럼 발 + 0.38)이라 적 몸통(0~1.0) 안을 지난다
         // (실제 크기인 키 0.5 고블린은 GunnerSkillTreeTests.Bullet_HitsOniSizedEnemyOnSameGround가 본다).
         // 두 적은 서로 반지름 합(1.0)보다 멀리 떼야 물리로 밀어내지 않는다.
         var go = NewGunner(new Vector3(2f, 0.5f, 0f));

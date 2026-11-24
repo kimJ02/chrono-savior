@@ -82,9 +82,8 @@ namespace ChronoSavior.Characters
             }
 
             int facing = mover != null ? mover.Facing : 1;
-            // 원본 ox = p.x + facing*26, oy = p.y - 38 — p.y는 발이라 발 위치에서 잰다(GunnerAttack.FeetPosition).
-            Vector2 o = kit.FeetPosition
-                        + new Vector2(facing * GunnerSpecConfig.BeamOriginForward, GunnerSpecConfig.BeamOriginHeight);
+            // 원본 ox = p.x + facing*26, oy = p.y - 38(발 기준) — 2026-11-24부터 그림의 총구 끝(총알과 같은 자리, 의도적 편차).
+            Vector2 o = kit.MuzzlePosition(facing);
             Vector2 d = new Vector2(facing, 0f);
             float range = GunnerSpecConfig.BeamRange(tier);
             bool curved = false;

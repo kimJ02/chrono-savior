@@ -335,7 +335,8 @@ public class OriginalFidelityTests
         // SplitSpawnProtect). 그건 안 쓰면 컴파일러가 알려주므로 이 검사가 필요 없다.
         var mustBeWired = new (string api, string declaredIn)[]
         {
-            ("AttackLock",                 "CharacterMover2D.cs"),  // 공격 중 이동 잠금(2026-11-16) — 키트가 안 넣으면 조용히 원본처럼 움직인다
+            ("AttackLock",                 "CharacterMover2D.cs"),
+            ("MuzzlePosition",             "GunnerAttack.cs"),      // 메카닉 총구(2026-11-24) — 레이저가 안 쓰면 빔만 다시 머리 위에서 나간다  // 공격 중 이동 잠금(2026-11-16) — 키트가 안 넣으면 조용히 원본처럼 움직인다
             ("ComputeCooldownMultiplier",  "PlayerStatCalculator.cs"),
             ("ComputeDamageTakenMultiplier","PlayerStatCalculator.cs"),
             ("ComputeAttackSpeedMultiplier","PlayerStatCalculator.cs"),
