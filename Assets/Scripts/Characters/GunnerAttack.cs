@@ -37,9 +37,7 @@ namespace ChronoSavior.Characters
         public float baseDamage = 8.2f;
 
         const float BulletSpeed = 13.2f;         // 원본 spd 1320 ÷100(:2192) — 레이저 빌드도 같은 탄속
-        const float MuzzleForward = 0.30f;       // 원본 x: p.x + facing*30(:2199)
-        /// <summary>원본 y: `p.y - 38`(:2199) — **발**에서 0.38 위(<see cref="FeetPosition"/>, <see cref="PlayerBody"/>).</summary>
-        const float MuzzleHeight = 0.38f;
+        // 총구 자리는 GunnerSpecConfig.MuzzleForward/MuzzleAbovePivot(그림에서 잰 값, 의도적 편차 — 원본 30·38px는 머리 위였다).
 
         [Tooltip("메카닉 탄 프리팹(Assets/Prefabs/Combat/GunnerBullet) — 이 무기와 드론이 쏜다.")]
         [SerializeField] GunnerBullet bulletPrefab;
@@ -166,6 +164,18 @@ namespace ChronoSavior.Characters
         /// </summary>
         public Vector2 FeetPosition => PlayerBody.Feet(transform, bodyCol);
 
+        /// <summary>
+        /// 총구 끝(월드) — 총알과 레이저가 여기서 나간다(2026-11-24). 그림 기준점(= 이 오브젝트 자리) + 그림에서 잰
+        /// 총구 자리 × 캐릭터 그림 배율(<see cref="PlayerRig"/>가 그림 높이에 맞춰 localScale을 정한다 — 그림을 키우면 총구도 같이 간다).
+        /// </summary>
+        public Vector2 MuzzlePosition(int facing)
+        {
+            float s = Mathf.Abs(transform.lossyScale.y);
+            if (s < 1e-4f) s = 1f;
+            Vector2 p = transform.position;
+            return p + new Vector2(facing * GunnerSpecConfig.MuzzleForward * s, GunnerSpecConfig.MuzzleAbovePivot * s);
+        }
+
         public void OnSelected()
         {
             cdTimer = 0f;
@@ -288,8 +298,7 @@ namespace ChronoSavior.Characters
         {
             int laserTier = LaserTier;
             int facing = Facing;
-            Vector2 feet = FeetPosition;
-            Vector3 spawnPos = new Vector3(feet.x + facing * MuzzleForward, feet.y + MuzzleHeight, 0f);
+            Vector3 spawnPos = MuzzlePosition(facing);
             Vector2 velocity = new Vector2(facing * BulletSpeed, 0f);
 
             GunnerBullet.Spawn(bulletPrefab, spawnPos, velocity, baseDamage,

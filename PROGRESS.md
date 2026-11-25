@@ -332,6 +332,20 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 - **2026-11-24 (177)** — **[사용자 세션] 편지: 표식 단 적이 먼저 죽으면 폭발 취소** — 사용자 "적 몬스터가 이미 죽었는데도 발동". 예전엔 적이 없으면 마지막 자리에서 그대로 전기 기둥·피해.
   `GunnerRelics.Alive`(체력 0인 죽는 연출 중도 죽은 것으로) — 폭발 직전·각성 추가 폭발 직전에 확인해 죽었으면 취소, 머리 위 표식도 죽는 즉시 치움(`WatchMark`, 0.1초마다).
   테스트 `RelicEffectTests.Letter_TargetDiesBeforeFuse_NoExplosion`. 유물·메카닉 42/42.
+- **2026-11-24 (178)** — **[사용자 세션] 경험치 구슬 — 머리 위 허공이 아니라 몸에 닿을 때 먹힌다**.
+  - 사용자: "구슬이 캐릭터에 닿지 않고 머리 위에 닿을 때 먹어진다". 원인 둘: ① 노리는 자리 `PlayerCenterOffset` 0.4 — 원본 `player.y - 40`의 `p.y`는 **발**인데 우리 `player.position`은 **몸 가운데**(발 + 0.25)라 0.4를 또 더해 발 + 0.65(키 0.375 그림의 머리 위 0.27)를 노렸다. ② 획득 거리 0.44(원본 44px, 키 56px 기준)가 우리 작은 캐릭터엔 커서 몸 가운데에서 재도 머리 꼭대기 0.3 위에서 먹혔다.
+  - `ExpOrb.PlayerCenterOffset` 0.4 → **0**(원본과 같은 "키의 71%"를 우리 그림에 대면 +0.02 — 사실상 몸 가운데).
+  - > **의도적 편차 —** `ExpOrb.CollectRange` 0.44 → **0.29**(원본 44/56 × 우리 키 0.375 — 구슬이 머리에 닿을 즈음 먹힌다). 자석 범위 1.5·끌려오는 속도는 그대로.
+  - 테스트: `ExpOrbTests.Orb_IsCollectedAtTheBody_NotAboveTheHead` 추가(머리 위 0.27에선 안 먹히고 끌려와 몸 근처에서 먹힘), `OriginalFidelityTests.CollectOneOrb` 플레이어 자리를 구슬 나오는 자리로(예전 배치는 옛 0.4 보정에 기대고 있었다).
+  - **검증(2026-11-24)**: Unity를 못 돌려 **미검증**.
+
+- **2026-11-24 (177)** — **[사용자 세션] 메카닉 총구 — 총알·레이저가 그림의 총구 끝에서 나가게**.
+  - 사용자: "메카닉 레이저랑 총알 둘 다 총구에서 안 나간다". 원인: 원본 숫자 그대로 총알 (발 + 앞 0.30·위 0.38), 빔 (앞 0.26·위 0.38)이었는데 우리 캐릭터 그림 키가 0.375라 **발에서 0.38 = 머리 꼭대기 위**였다.
+  - > **의도적 편차 —** 총구 자리를 원본 숫자 대신 그림에서 잰다: `Character_Gunner_Attack_01·05`(70×48, 기준점 (0.65, 0.667), 왼쪽을 봄)의 총구 끝 = 왼쪽 첫 열 16px·세로 가운데 28.5px → 기준점에서 앞 29.5px·아래 12.5px(128px = 1유닛). `GunnerSpecConfig.MuzzleForward`/`MuzzleAbovePivot`(옛 `BeamOriginForward/Height`·`GunnerAttack.MuzzleForward/Height` 삭제). 총알·빔이 같은 총구.
+  - `GunnerAttack.MuzzlePosition(facing)` = 오브젝트 자리(그림 기준점) + 위 값 × 캐릭터 배율(`lossyScale` — `PlayerRig`가 그림 높이로 정함, 그림을 키워도 따라감). `Fire()`·`GunnerLaserBeam`·`Editor/CaptureUiPreview`가 이걸 쓴다. `OriginalFidelityTests.DefinedApis`에 추가.
+  - 테스트: `GunnerSkillTreeTests` 레이저 1·3·5층 적 자리를 `MuzzlePosition` 기준으로(예전엔 0.38 하드코딩), 새 `Muzzle_BulletAndBeamStartAtTheGunTip`(좌우·배율·빔 같은 자리). `GunnerAttackTests` 주석.
+  - 손 확인할 것: 발사 순간 그림(공격 2·3장은 반동으로 총구가 3~7px 위)과 맞는지, 오른쪽을 볼 때도 총구에 붙는지.
+  - **검증(2026-11-24)**: Unity를 못 돌려 **미검증**.
 
 - **2026-11-24 (176)** — **[사용자 세션] 병합으로 빠진 feature/relics UI 기능 3개를 팀원 프리팹 UI 위에 다시 얹음**(사용자 "다시 내가 업데이트한 걸로"). 프리팹 파일은 고치지 않고 화면 코드가 열릴 때 프리팹 자리를 기준으로 맞춘다.
   1. **로비 ESC 메뉴**: `PauseMenu` 로비 모드(계속·설정·타이틀로 — 저장 후 확인창). 제목·조작키 글자는 프리팹의 "Title"·"Keys"를 로비일 때만 바꾼다. `LobbyMenuTests` 되살림.

@@ -40,8 +40,17 @@ namespace ChronoSavior.Characters
         public const int BulletStackOnHit = 1;
 
         // ---- 레이저 빔 (updateGunnerBeam, project_test.html:2224) — Z를 누르고 있는 동안 ----
-        public const float BeamOriginForward = 0.26f;   // 원본 ox = p.x + facing*26
-        public const float BeamOriginHeight = 0.38f;    // 원본 oy = p.y - 38 — p.y는 발, Y+가 아래라 부호를 뒤집음
+        // ---- 총구 (총알·레이저 공통, 2026-11-24 사용자 "레이저랑 총알 둘 다 총구에서 안 나간다") ----
+        // > **의도적 편차 — 총구 자리를 원본 숫자 대신 우리 그림의 총구에서 잰다.** 원본은 총알 (p.x+facing*30, p.y-38)
+        // > (:2199), 빔 (p.x+facing*26, p.y-38)(:2224)인데, 원본 캐릭터보다 우리 그림이 훨씬 작아서(키 0.375유닛)
+        // > 발에서 0.38 위는 머리 꼭대기 위였다. 메카닉 공격 그림(`Character_Gunner_Attack_01·05`, 70×48, 기준점
+        // > (0.65, 0.667), 왼쪽을 봄)에서 총구 끝 = 왼쪽 첫 열 16px, 세로 24~32px(가운데 28.5) →
+        // > 기준점에서 앞으로 45.5−16 = 29.5px, 기준점(위에서 16px)보다 28.5−16 = 12.5px 아래.
+        // > 128px = 1유닛(캐릭터 배율 1 기준 — 실제로는 <see cref="GunnerAttack.MuzzlePosition"/>이 캐릭터 배율을 곱한다).
+        // > 그림 기준점 = 캐릭터 오브젝트 자리라 발이 아니라 **기준점에서** 잰다(그림을 키워도 총구가 그림을 따라가게).
+        // > 지금 배율 1이면 발(기준점 − 0.25)에서 19.5px ≈ 0.15 위. 총알·빔이 같은 총구를 쓴다.
+        public const float MuzzleForward = 29.5f / 128f;      // ≈ 0.23
+        public const float MuzzleAbovePivot = -12.5f / 128f;  // ≈ −0.10 (기준점보다 아래)
         /// <summary>원본 `(tier >= 5 ? 520 : 360 + tier*40) * 0.8` px ÷100.</summary>
         public static float BeamRange(int tier) => (tier >= 5 ? 520f : 360f + tier * 40f) * 0.8f / 100f;
         /// <summary>유도 탐지 거리 — 5층은 사거리의 1.5배(`seekR`).</summary>

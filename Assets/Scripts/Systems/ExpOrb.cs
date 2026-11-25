@@ -22,8 +22,13 @@ namespace ChronoSavior.Systems
         public const int DropEveryKills = 50;
         /// <summary>이 거리 안에 들어오면 끌려오기 시작한다. 원본 `magnetR: 150`.</summary>
         public const float MagnetRange = 1.5f;
-        /// <summary>이 거리 안이면 획득. 원본 `collectR: 44`.</summary>
-        public const float CollectRange = 0.44f;
+        /// <summary>
+        /// 이 거리 안이면 획득. 원본 `collectR: 44`(키 56px 캐릭터 기준 — 키의 79%).
+        /// > **의도적 편차 — 우리 캐릭터 키(그림 0.375)에 비율로 맞춘다**: 0.44를 그대로 두면 몸 가운데에서 0.44 =
+        /// > 머리 꼭대기(가운데 + 0.125)보다 0.3 위에서 먹혀서, 구슬이 머리 위 허공에서 사라졌다(2026-11-24 사용자).
+        /// > 44/56 × 0.375 ≈ 0.29 — 구슬(반지름 0.14)이 머리에 닿을 즈음(가운데 + 0.27) 먹힌다. 자석 범위(1.5)는 그대로.
+        /// </summary>
+        public const float CollectRange = 0.29f;
         /// <summary>획득 시 주는 경험치 = 현재 레벨 필요량 × 이 비율. 원본 `expPct: 0.25`.</summary>
         public const float ExpPercent = 0.25f;
         /// <summary>경험치 하한. 원본 `Math.max(10, ...)`(`:4466`).</summary>
@@ -31,8 +36,14 @@ namespace ChronoSavior.Systems
 
         /// <summary>끌려오는 속도. 원본 `const v = 640 * dt`(`:4458`) ÷100.</summary>
         public const float MagnetSpeed = 6.4f;
-        /// <summary>플레이어의 "몸통 중심" 보정. 원본은 `player.y - 40`을 기준으로 거리를 잰다.</summary>
-        public const float PlayerCenterOffset = 0.4f;
+        /// <summary>
+        /// 플레이어 오브젝트 자리에서 구슬이 노리는 "몸통" 높이 보정. 원본은 `player.y - 40`(`:4455`)인데 원본 `p.y`는
+        /// **발**이고(키 56px의 위 71% — 가슴께), 우리 `player.position`은 **몸 가운데**(발 + 0.25)다.
+        /// 예전엔 원본 0.4를 몸 가운데에 그대로 더해서 발 + 0.65 = 키 0.375인 그림의 머리 위를 노렸다
+        /// (2026-11-24 사용자 "구슬이 캐릭터에 닿지 않고 머리 위에 닿을 때 먹어진다").
+        /// 원본과 같은 "키의 71%"를 우리 그림(키 0.375, 발 = 자리 − 0.25)에 대면 0.27 − 0.25 ≈ +0.02라 사실상 몸 가운데 — 0으로 둔다.
+        /// </summary>
+        public const float PlayerCenterOffset = 0f;
         /// <summary>드랍 위치를 시체보다 이만큼 위로. 원본 `y: min(e.y, groundY) - 40`(`:1861`).</summary>
         public const float DropHeight = 0.4f;
 

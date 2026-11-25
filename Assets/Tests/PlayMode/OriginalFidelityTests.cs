@@ -103,7 +103,7 @@ public class OriginalFidelityTests
     static IEnumerator CollectOneOrb()
     {
         var player = new GameObject("TestPlayer") { tag = "Player" };
-        player.transform.position = new Vector3(5f, FieldBounds.GroundY - ExpOrb.PlayerCenterOffset, 0f);
+        player.transform.position = new Vector3(5f, FieldBounds.GroundY + ExpOrb.DropHeight - ExpOrb.PlayerCenterOffset, 0f); // 구슬이 나오는 자리(바닥 + DropHeight)에 몸 가운데를 둔다
         ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, FieldBounds.GroundY, 0f), player.transform);
         yield return null;
         yield return null;
@@ -335,7 +335,8 @@ public class OriginalFidelityTests
         // SplitSpawnProtect). 그건 안 쓰면 컴파일러가 알려주므로 이 검사가 필요 없다.
         var mustBeWired = new (string api, string declaredIn)[]
         {
-            ("AttackLock",                 "CharacterMover2D.cs"),  // 공격 중 이동 잠금(2026-11-16) — 키트가 안 넣으면 조용히 원본처럼 움직인다
+            ("AttackLock",                 "CharacterMover2D.cs"),
+            ("MuzzlePosition",             "GunnerAttack.cs"),      // 메카닉 총구(2026-11-24) — 레이저가 안 쓰면 빔만 다시 머리 위에서 나간다  // 공격 중 이동 잠금(2026-11-16) — 키트가 안 넣으면 조용히 원본처럼 움직인다
             ("ComputeCooldownMultiplier",  "PlayerStatCalculator.cs"),
             ("ComputeDamageTakenMultiplier","PlayerStatCalculator.cs"),
             ("ComputeAttackSpeedMultiplier","PlayerStatCalculator.cs"),

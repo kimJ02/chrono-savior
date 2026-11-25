@@ -124,6 +124,32 @@ public class ExpOrbTests
     }
 
     /// <summary>
+    /// 구슬은 캐릭터 **몸**에 닿아야 먹힌다(2026-11-24 사용자 "머리 위에 닿을 때 먹어진다") — 플레이어 자리 = 몸 가운데(발 + 0.25),
+    /// 그림 키 0.375라 머리 꼭대기는 발 + 0.375. 머리 위 0.27(발 + 0.65, 예전 노리던 자리)에 있는 구슬은 첫 프레임에 안 먹히고,
+    /// 끌려와서 몸 가운데 <see cref="ExpOrb.CollectRange"/>(0.29 — 원본 44px를 키 비율로) 안에 들어온 뒤에 먹힌다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Orb_IsCollectedAtTheBody_NotAboveTheHead()
+    {
+        RunState.Begin(1, RunMode.Normal);
+        Assert.AreEqual(0f, ExpOrb.PlayerCenterOffset, 1e-6f, "플레이어 자리가 이미 몸 가운데 — 원본 −40px(발 기준)을 또 더하면 머리 위");
+        float feet = FieldBounds.GroundY;
+        var player = NewPlayer(new Vector3(5f, feet + 0.25f, 0f));
+        var orb = ExpOrb.Spawn(TestPrefabs.ExpOrb, new Vector3(5f, feet + 0.65f - ExpOrb.DropHeight, 0f), player.transform);
+        Assert.AreEqual(feet + 0.65f, orb.transform.position.y, 1e-4f, "머리 위(예전 노리던 자리)에 놓였다");
+        yield return null;
+        Assert.IsTrue(orb != null, "머리 위 0.27에서 먹혔다 — 몸에 닿기 전");
+
+        float lastY = orb.transform.position.y, t = 0f;
+        while (orb != null && t < 1f) { lastY = orb.transform.position.y; yield return null; t += Time.deltaTime; }
+        Assert.IsTrue(orb == null, "끌려와도 안 먹혔다");
+        Assert.Less(lastY - (feet + 0.25f), ExpOrb.CollectRange + 0.15f, "몸 가운데 근처까지 와서 먹혔다");
+        Assert.Less(ExpOrb.CollectRange, 0.125f + 0.14f + 0.05f, "획득 거리가 머리 꼭대기(가운데 + 0.125) + 구슬 반지름(0.14)을 크게 넘으면 다시 허공에서 먹힌다");
+
+        Object.DestroyImmediate(player);
+    }
+
+    /// <summary>
     /// 구슬은 **지면 아래에서 나오지 않는다**(원본 `Math.min(e.y, groundY)`, `:1861` —
     /// 원본은 Y+가 아래라 min이지만 우리 좌표계에선 max다).
     /// </summary>

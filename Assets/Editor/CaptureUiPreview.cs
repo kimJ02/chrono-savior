@@ -818,7 +818,7 @@ namespace ChronoSavior.Editor
                 // 본 레이저 — 실제 게임과 같은 5층 곡선 경로(총구 → 앞으로 나갔다가 목표로 휜다, 그림은 목표 가장자리에서 끝)
                 var beam = ChronoSavior.Characters.GunnerBeamVfx.Create(kit.BeamMaterial, kit.LaserTipPrefab);
                 made.Add(beam.gameObject);
-                Vector2 o = kit.FeetPosition + new Vector2(ChronoSavior.Characters.GunnerSpecConfig.BeamOriginForward, ChronoSavior.Characters.GunnerSpecConfig.BeamOriginHeight);
+                Vector2 o = kit.MuzzlePosition(1); // 그림의 총구 끝(2026-11-24)
                 Vector2 tc = Center(spots[0]);
                 Vector2 tv = tc - o;
                 float len = tv.magnitude;

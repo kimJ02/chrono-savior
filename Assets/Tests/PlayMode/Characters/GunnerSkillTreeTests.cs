@@ -117,11 +117,12 @@ public class GunnerSkillTreeTests
     [UnityTest]
     public IEnumerator LaserBeam_Tier1_HitsEnemyAhead_NotBehindOrBeyondRange_AndChargesStacks()
     {
-        // 총구 = 발(5, 0.5-0.5) + (0.26, 0.38) — 원본 p.y는 발. 1층 사거리 = (360+40)×0.8 ÷100 = 3.2
+        // 총구 = 그림의 총구 끝(GunnerAttack.MuzzlePosition, 2026-11-24). 1층 사거리 = (360+40)×0.8 ÷100 = 3.2
         var g = NewGunner(new Vector3(5f, 0.5f, 0f), GunnerBranch.Laser, 1);
-        var ahead = NewEnemy(new Vector3(7.26f, 0.38f, 0f));
-        var behind = NewEnemy(new Vector3(3.0f, 0.38f, 0f));
-        var beyond = NewEnemy(new Vector3(9.26f, 0.38f, 0f)); // 앞으로 4.0 > 3.2
+        Vector2 mz = g.MuzzlePosition(1);
+        var ahead = NewEnemy(new Vector3(mz.x + 2f, mz.y, 0f));
+        var behind = NewEnemy(new Vector3(3.0f, mz.y, 0f));
+        var beyond = NewEnemy(new Vector3(mz.x + 4f, mz.y, 0f)); // 앞으로 4.0 > 3.2
         yield return new WaitForFixedUpdate();
 
         HoldBeam(g, 30); // 1.5초 — 틱 0.13초
@@ -141,7 +142,8 @@ public class GunnerSkillTreeTests
     {
         // 총구에서 (2.5, 0.6) — 각도 0.2355rad(3층 콘 0.26 안), 직선 광선과의 거리 0.6 > 폭 0.156+적폭×0.35=0.506
         var g = NewGunner(new Vector3(5f, 0.5f, 0f), GunnerBranch.Laser, 1);
-        var off = NewEnemy(new Vector3(7.76f, 0.98f, 0f));
+        Vector2 mz = g.MuzzlePosition(1);
+        var off = NewEnemy(new Vector3(mz.x + 2.5f, mz.y + 0.6f, 0f));
         yield return new WaitForFixedUpdate();
 
         HoldBeam(g, 20);
@@ -158,7 +160,8 @@ public class GunnerSkillTreeTests
     {
         // 각도 atan(1.2/2.0)=0.54rad — 4층 콘(0.44) 밖, 5층 콘(0.6109) 안
         var g = NewGunner(new Vector3(5f, 0.5f, 0f), GunnerBranch.Laser, 4);
-        var wide = NewEnemy(new Vector3(7.26f, 1.58f, 0f));
+        Vector2 mz = g.MuzzlePosition(1);
+        var wide = NewEnemy(new Vector3(mz.x + 2f, mz.y + 1.2f, 0f));
         yield return new WaitForFixedUpdate();
 
         HoldBeam(g, 20);
@@ -224,6 +227,29 @@ public class GunnerSkillTreeTests
         while (t < 0.4f) { yield return new WaitForFixedUpdate(); t += Time.fixedDeltaTime; }
 
         Assert.IsTrue(Damaged(oni), "바닥의 고블린 크기 적을 정면 총알이 못 맞혔다 — 총구 높이를 발에서 재는지 확인");
+    }
+
+    /// <summary>
+    /// 총알·레이저는 그림의 총구 끝에서 나간다(2026-11-24 사용자 "레이저랑 총알 둘 다 총구에서 안 나간다" — 원본 숫자
+    /// (발 + 0.38)는 우리 캐릭터(키 0.375) 머리 위였다). 캐릭터 그림 배율을 따라가고, 보는 방향으로 뒤집힌다.
+    /// </summary>
+    [UnityTest]
+    public IEnumerator Muzzle_BulletAndBeamStartAtTheGunTip()
+    {
+        var g = NewGunner(new Vector3(5f, 0.5f, 0f), GunnerBranch.Laser, 1);
+        yield return null;
+        Vector2 right = g.MuzzlePosition(1), left = g.MuzzlePosition(-1);
+        Assert.AreEqual(5f + GunnerSpecConfig.MuzzleForward, right.x, 1e-4f);
+        Assert.AreEqual(0.5f + GunnerSpecConfig.MuzzleAbovePivot, right.y, 1e-4f, "그림 기준점보다 12.5px 아래(총구)");
+        Assert.AreEqual(5f - GunnerSpecConfig.MuzzleForward, left.x, 1e-4f, "왼쪽을 보면 반대편");
+        Assert.Less(right.y - (0.5f - 0.25f), 0.375f * 0.6f, "실제 크기(발 = 기준점 − 0.25)에서 총구가 키의 60% 아래 — 머리 위가 아니다");
+
+        g.transform.localScale = new Vector3(2f, 2f, 1f); // 그림을 키우면 총구도 따라간다
+        Assert.AreEqual(5f + GunnerSpecConfig.MuzzleForward * 2f, g.MuzzlePosition(1).x, 1e-4f);
+
+        g.transform.localScale = Vector3.one;
+        HoldBeam(g, 1);
+        Assert.AreEqual(g.MuzzlePosition(1), g.Beam.Origin, "레이저도 같은 총구에서");
     }
 
     [UnityTest]
