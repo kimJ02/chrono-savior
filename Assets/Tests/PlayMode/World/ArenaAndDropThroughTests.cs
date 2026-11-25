@@ -45,16 +45,16 @@ public class ArenaAndDropThroughTests
         Assert.AreEqual(FieldLayout.NormalMapWidth, FieldBounds.MaxX, 0.01f);
     }
 
-    /// <summary>발판 배치도 통째로 갈린다(원본 15개 → 3개).</summary>
+    /// <summary>발판 배치도 통째로 갈린다(원본 15개 → 3개, 위층 가운데를 뺀 2개 — 2026-11-25 사용자).</summary>
     [Test]
     public void BossArena_SwapsPlatformTable()
     {
         Assert.AreEqual(15, FieldLayout.NormalPlatforms.GetLength(0));
-        Assert.AreEqual(3, FieldLayout.BossPlatforms.GetLength(0));
+        Assert.AreEqual(2, FieldLayout.BossPlatforms.GetLength(0));
 
         Assert.AreEqual(15, FieldLayout.Platforms.GetLength(0));
         FieldLayout.SetBossArena(true);
-        Assert.AreEqual(3, FieldLayout.Platforms.GetLength(0));
+        Assert.AreEqual(2, FieldLayout.Platforms.GetLength(0));
     }
 
     /// <summary>

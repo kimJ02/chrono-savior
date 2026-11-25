@@ -317,6 +317,9 @@ git checkout main            # 2026-11-05: 구조 정리 진행 중 — 끝난 �
 
 ## 로그 (최신이 위)
 
+- **2026-11-25 (180)** — **[사용자 세션] 보스 무대 위층 가운데 발판 제거**(사용자 "2층 플랫폼에 올라가면 보스한테도 안 맞고 피통이 플레이어를 가린다"). 의도적 편차 — 원본 `BOSS_PLATFORMS` 3개 중 `{x:740,y:360,w:300}`을 뺌.
+  - `FieldLayout.BossPlatforms` 3 → 2개(아래층 좌우만), `20_Combat` 씬 `Platforms_Boss/Platform_2`(8.90, 2.70)와 그 선 재질을 지움(복사본에서 에디터로 지운 뒤 삭제분만 옮김 — 다른 줄은 그대로). 테스트 개수 3 → 2.
+  - 테스트(복사본 PlayMode): 보스 무대·발판·부팅·미니맵·덩어리 지배자 67개 중 65 통과. 실패 2개(`Catalog_Region1UsesBlobLord_OthersKeepCommonBoss` 체력 800 기대 932, `BossAndShrine_GetTheirStatsAndSizes` 85 기대 91)는 보스 체력·크기 수치 검사라 발판과 무관.
 - **2026-11-25 (179)** — **[사용자 세션] 직업 테스트 세팅에 공용 유물 다시 넣음**(사용자 "공용 유물 다시 적용", (173) 되돌림). `SavePresets.BuildClassTest`: 그 직업 전용 + 공용 유물 전부 각성, 다른 직업 전용만 뺀다. 공용 유물은 (170)대에 맵 전체 피해를 낮추고 흰 전기 파동 그림을 단 상태 그대로.
   - 테스트: `SaveSlotTests` 5/5 통과(복사본 PlayMode). `ClassTest_ReachesFinalTier_ForEveryBuild`가 공용 = 각성, 다른 직업 전용 = 0을 확인.
 - **2026-11-24 (178)** — **[사용자 세션] 편지 발동 = 레이저 광선·드론 탄 처치 8/6/5번마다 + 자율 포좌 탄 금색**
