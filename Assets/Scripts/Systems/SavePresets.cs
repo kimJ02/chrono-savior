@@ -66,7 +66,7 @@ namespace ChronoSavior.Systems
         public const int ClassTestSlot = 9;
 
         /// <summary>
-        /// 직업별 최종 빌드 + 그 직업 전용 유물 전부 각성(2026-11-22 사용자 "각 직업마다 최종 빌드 + 유물 버전 플레이 테스트", 2026-11-24 공용 유물 뺌) — 슬롯 3과 같은 조건
+        /// 직업별 최종 빌드 + 그 직업 전용 + 공용 유물 전부 각성(2026-11-22 사용자 "각 직업마다 최종 빌드 + 유물 버전 플레이 테스트", 2026-11-24 공용 뺐다가 2026-11-25 다시 넣음) — 슬롯 3과 같은 조건
         /// (레벨 25, 강화 15씩, 챕터 1~2 정복, 몬스터 배율 2)에 그 캐릭터·갈래를 끝까지 찍는다.
         /// </summary>
         public static PlayerProfile BuildClassTest(CharacterId who, int branch)
@@ -88,10 +88,10 @@ namespace ChronoSavior.Systems
             SetUpgrades(p, 15);
             p.gold = 50000;
             p.shards = 200;
-            // 그 직업 전용 유물만 전부 각성 — 공용 유물은 뺐다(2026-11-24 사용자 "공용 유물 빼봐": 끌어당기기·운석 같은 공용 효과가 섞여 직업 플레이를 보기 어려웠다)
+            // 그 직업 전용 + 공용 유물 전부 각성 — 다른 직업 전용만 뺀다(2026-11-24 공용을 뺐다가 2026-11-25 사용자 "공용 유물 다시 적용")
             var owner = who == CharacterId.Mage ? RelicOwner.Mage : who == CharacterId.Gunner ? RelicOwner.Gunner : RelicOwner.Blade;
             foreach (var d in ItemDatabase.All)
-                if (d.owner == owner)
+                if (d.owner == owner || d.owner == RelicOwner.Common)
                     while (p.items.Count(d.id) < ItemDatabase.Cap(d.grade)) p.items.Add(d.id);
             Conquer(p, 2);
             p.spawnScale = 2f;

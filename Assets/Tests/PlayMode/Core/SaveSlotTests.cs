@@ -99,7 +99,7 @@ public class SaveSlotTests
         Assert.AreEqual(5, ProfileService.Current.mageTier, "깨진 슬롯은 시나리오 처음 상태로 되살아나야 한다");
     }
 
-    /// <summary>직업 테스트 세팅(2026-11-22) — 여섯 빌드 모두 끝 층(5)까지, 그 직업 전용 유물만 전부 각성(공용은 없음, 2026-11-24), 슬롯 1~3과 다른 번호.</summary>
+    /// <summary>직업 테스트 세팅(2026-11-22) — 여섯 빌드 모두 끝 층(5)까지, 그 직업 전용 + 공용 유물 전부 각성(다른 직업 전용은 없음, 2026-11-25), 슬롯 1~3과 다른 번호.</summary>
     [Test]
     public void ClassTest_ReachesFinalTier_ForEveryBuild()
     {
@@ -116,10 +116,11 @@ public class SaveSlotTests
             Assert.AreEqual(5, s.bladeTier, $"섬영 갈래 {b}");
             foreach (var d in ItemDatabase.All)
             {
-                // 그 직업 전용 유물만 전부 각성, 공용 유물은 없음(2026-11-24 사용자 "공용 유물 빼봐")
-                int want = d.owner == RelicOwner.Blade ? ItemDatabase.Cap(d.grade) : 0;
-                Assert.AreEqual(want, s.items.Count(d.id), $"{d.id} — 섬영 세팅");
-                Assert.AreEqual(d.owner == RelicOwner.Gunner ? ItemDatabase.Cap(d.grade) : 0, g.items.Count(d.id), $"{d.id} — 메카닉 세팅");
+                // 그 직업 전용 + 공용 유물 전부 각성, 다른 직업 전용은 없음(2026-11-25 사용자 "공용 유물 다시 적용")
+                int cap = ItemDatabase.Cap(d.grade);
+                bool common = d.owner == RelicOwner.Common;
+                Assert.AreEqual(d.owner == RelicOwner.Blade || common ? cap : 0, s.items.Count(d.id), $"{d.id} — 섬영 세팅");
+                Assert.AreEqual(d.owner == RelicOwner.Gunner || common ? cap : 0, g.items.Count(d.id), $"{d.id} — 메카닉 세팅");
             }
         }
     }
